@@ -6058,22 +6058,32 @@ async function runKIAnalysis() {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         system: buildSystemPrompt(),
-        messages: [{
-          role: 'user',
-          content: `Analysiere dieses Bauprojekt:\n\n${JSON.stringify(snapshot, null, 2)}`
-        }]
+        messages: [{ role: 'user', content: `Analysiere dieses Bauprojekt:\n\n${JSON.stringify(snapshot, null, 2)}` }]
       })
     });
 
+    console.log('KI Status:', resp.status);
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('KI Fehler Response:', errText);
+      throw new Error(`HTTP ${resp.status}: ${errText.slice(0,200)}`);
+    }
+
     const data = await resp.json();
+    console.log('KI Response:', data);
+
+    if (data.error) throw new Error(data.error);
+
     const text = (data.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
     const result = JSON.parse(text);
     renderKIResults(result, snapshot);
 
   } catch(e) {
+    console.error('KI Fehler:', e);
     document.getElementById('ki-loading').style.display = 'none';
     document.getElementById('ki-empty').style.display   = 'block';
-    document.getElementById('ki-empty').innerHTML = `<div style="padding:14px 16px;background:var(--danger-light);border-radius:11px;border:1.5px solid #fecaca;color:var(--danger);font-weight:600;font-size:0.85rem">⚠️ Analyse fehlgeschlagen – bitte erneut versuchen.</div>`;
+    document.getElementById('ki-empty').innerHTML = `<div style="padding:14px 16px;background:var(--danger-light);border-radius:11px;border:1.5px solid #fecaca;color:var(--danger);font-weight:600;font-size:0.85rem">⚠️ Fehler: ${e.message} – bitte Console (F12) prüfen.</div>`;
   }
   document.getElementById('ki-analyze-btn').disabled = false;
 }
