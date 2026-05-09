@@ -8943,27 +8943,48 @@ function exportKostenPDF() {
   const projName = state.settings?.name || 'Bauvorhaben';
   pdfHeader(doc, 'Kostenverfolgung', projName);
 
-  const rows = state.kosten.map(k => [
-    fmtDate(k.datum),
-    k.kategorie || '–',
-    k.beschreibung || '–',
-    k.lieferant || '–',
-    fmt(k.netto || 0),
-    fmt(k.brutto || 0),
-    k.bezahlt ? '✓' : '○'
-  ]);
-  const total = state.kosten.reduce((s, k) => s + (k.brutto || 0), 0);
+  const active = state.kosten.filter(k => k.status !== 'Storniert');
+  const rows = state.kosten.map(k => {
+    const netto = k.netto ?? k.betrag;
+    return [
+      fmtDate(k.datum),
+      k.kat || '–',
+      k.beschr || '–',
+      k.anbieter || '–',
+      fmt(parseFloat(netto) || 0),
+      k.mwst > 0 ? `${k.mwst}%` : '0%',
+      fmt(parseFloat(k.betrag) || 0),
+      k.status || '–'
+    ];
+  });
+  const totalBrutto = active.reduce((s, k) => s + (parseFloat(k.betrag) || 0), 0);
+  const totalNetto  = active.reduce((s, k) => s + (parseFloat(k.netto ?? k.betrag) || 0), 0);
 
   doc.autoTable({
     startY: 34,
-    head: [['Datum', 'Kategorie', 'Beschreibung', 'Lieferant', 'Netto', 'Brutto', 'Bezahlt']],
+    head: [['Datum', 'Kategorie', 'Beschreibung', 'Anbieter', 'Netto', 'MwSt', 'Brutto', 'Status']],
     body: rows,
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 7.5, cellPadding: 2.5 },
+    headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: [248, 249, 252] },
-    columnStyles: { 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'center' } },
-    foot: [['', '', '', 'Gesamt', '', fmt(total), '']],
-    footStyles: { fillColor: [240, 244, 255], fontStyle: 'bold', textColor: [41, 98, 255] }
+    columnStyles: {
+      0: { cellWidth: 20 },
+      2: { cellWidth: 40 },
+      4: { halign: 'right', cellWidth: 22 },
+      5: { halign: 'center', cellWidth: 12 },
+      6: { halign: 'right', cellWidth: 22 },
+      7: { cellWidth: 18 }
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 7) {
+        const s = data.cell.raw;
+        if (s === 'Bezahlt') data.cell.styles.textColor = [22, 163, 74];
+        else if (s === 'Ausstehend') data.cell.styles.textColor = [217, 119, 6];
+        else if (s === 'Storniert') data.cell.styles.textColor = [220, 38, 38];
+      }
+    },
+    foot: [['', '', '', 'Gesamt (ohne Storniert)', fmt(totalNetto), '', fmt(totalBrutto), '']],
+    footStyles: { fillColor: [240, 244, 255], fontStyle: 'bold', textColor: [41, 98, 255], fontSize: 7.5 }
   });
   doc.save(`Kostenverfolgung_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
   showToast('📄 Kostenverfolgung als PDF gespeichert', 'success');
@@ -8985,18 +9006,26 @@ function exportRechnungenPDF() {
     `${r.mwst || 0}%`,
     fmt(r.brutto || 0)
   ]);
-  const total = state.gescannteRechnungen.reduce((s, r) => s + (r.brutto || 0), 0);
+  const totalBrutto = state.gescannteRechnungen.reduce((s, r) => s + (r.brutto || 0), 0);
+  const totalNetto  = state.gescannteRechnungen.reduce((s, r) => s + (r.netto  || 0), 0);
 
   doc.autoTable({
     startY: 34,
     head: [['Datum', 'Lieferant', 'Kategorie', 'Rechnungs-Nr.', 'Netto', 'MwSt', 'Brutto']],
     body: rows,
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 7.5, cellPadding: 2.5 },
+    headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: [250, 248, 255] },
-    columnStyles: { 4: { halign: 'right' }, 5: { halign: 'center' }, 6: { halign: 'right' } },
-    foot: [['', '', '', 'Gesamt', '', '', fmt(total)]],
-    footStyles: { fillColor: [243, 240, 255], fontStyle: 'bold', textColor: [109, 40, 217] }
+    columnStyles: {
+      0: { cellWidth: 20 },
+      1: { cellWidth: 35 },
+      3: { cellWidth: 28 },
+      4: { halign: 'right', cellWidth: 24 },
+      5: { halign: 'center', cellWidth: 12 },
+      6: { halign: 'right', cellWidth: 24 }
+    },
+    foot: [['', '', 'Gesamt', '', fmt(totalNetto), '', fmt(totalBrutto)]],
+    footStyles: { fillColor: [243, 240, 255], fontStyle: 'bold', textColor: [109, 40, 217], fontSize: 7.5 }
   });
   doc.save(`Rechnungen_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
   showToast('📄 Rechnungsübersicht als PDF gespeichert', 'success');
