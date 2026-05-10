@@ -3651,6 +3651,10 @@ async function doLogout() {
   currentUser = null;
   projects = [];
   state = EMPTY_PROJECT();
+  // Clear localStorage so next user on this device starts fresh
+  localStorage.removeItem('bauplan_projects');
+  localStorage.removeItem('bauplan_current');
+  localStorage.removeItem('bauplan_data');
   // Reset sidebar email
   const emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = 'v3.0 · Buildora';
@@ -3688,20 +3692,39 @@ async function deleteAccount() {
   if (!confirmed2) return;
 
   try {
-    // Delete all user data from Supabase
+    const userId = currentUser?.id;
+
+    // 1. Delete project data and profile from DB
     if (currentUser) {
       await supa.from('projektdaten').delete().eq('user_id', currentUser.id);
       await supa.from('profiles').delete().eq('id', currentUser.id);
     }
-    // Clear local storage
-    localStorage.clear();
-    // Sign out and delete account via admin API (needs Edge Function in production)
-    // For now: sign out and show message
+
+    // 2. Delete auth user via server endpoint (requires SUPABASE_SERVICE_ROLE_KEY on Vercel)
+    if (userId) {
+      const { data: { session } } = await supa.auth.getSession();
+      const token = session?.access_token;
+      const resp = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId })
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        // If service key not configured, just sign out (auth entry stays but data is gone)
+        if (resp.status !== 501) throw new Error(err.error || 'Account-Löschung fehlgeschlagen');
+      }
+    }
+
+    // 3. Clear local state
+    localStorage.removeItem('bauplan_projects');
+    localStorage.removeItem('bauplan_current');
+    localStorage.removeItem('bauplan_data');
     await supa.auth.signOut();
     currentUser = null;
     projects = [];
     state = EMPTY_PROJECT();
-    alert('Dein Account wurde gelöscht. Auf Wiedersehen!');
+    showToast('✅ Account wurde gelöscht.', 'success');
     showAuthOverlay();
   } catch(e) {
     alert('Fehler beim Löschen: ' + e.message);
@@ -7390,6 +7413,11 @@ async function onAuthSuccess(user, isNewUser = false) {
   const emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = user.email;
 
+  // Clear any stale localStorage from a previous user before loading
+  localStorage.removeItem('bauplan_projects');
+  localStorage.removeItem('bauplan_current');
+  localStorage.removeItem('bauplan_data');
+
   // Load data from cloud
   const cloudData = await loadFromCloud();
 
@@ -7455,7 +7483,10 @@ async function loadFromCloud() {
 
     if (error) {
       console.error('Load error:', error.message);
-      loadAll(); // fallback
+      // Start fresh – never load another user's localStorage data
+      projects = [EMPTY_PROJECT()];
+      currentProjectId = projects[0].id;
+      loadProject(currentProjectId, false);
       return null;
     }
 
@@ -7465,19 +7496,23 @@ async function loadFromCloud() {
       const found = savedId && projects.find(p => p.id === savedId);
       currentProjectId = found ? found.id : projects[0].id;
       loadProject(currentProjectId, false);
-      // Also update local backup
+      // Update local cache for this user
       localStorage.setItem('bauplan_projects', JSON.stringify(projects));
       localStorage.setItem('bauplan_current', String(currentProjectId));
-      return data.daten; // return full data incl. onboarded flag
+      return data.daten;
     }
 
-    // No cloud data yet – check localStorage
-    loadAll();
+    // No cloud data yet for this user – start fresh (never use stale localStorage)
+    projects = [EMPTY_PROJECT()];
+    currentProjectId = projects[0].id;
+    loadProject(currentProjectId, false);
     return null;
 
   } catch(e) {
     console.error('Load exception:', e.message);
-    loadAll();
+    projects = [EMPTY_PROJECT()];
+    currentProjectId = projects[0].id;
+    loadProject(currentProjectId, false);
     return null;
   }
 }
