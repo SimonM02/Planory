@@ -4492,6 +4492,7 @@ async function enableNotifications() {
   loadNotificationStatus();
   if (perm === 'granted') {
     showToast('🔔 Mitteilungen aktiviert', 'success');
+    subscribeToPush();
     scheduleAllReminders();
     setTimeout(() => _showNotification('Buildora', '✅ Erinnerungen sind jetzt aktiv', 'test'), 500);
   } else {
@@ -9101,19 +9102,35 @@ async function refreshApp() {
 }
 
 // ── NOTIFICATIONS ───────────────────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BNKgG8O88DyLMqEAXvdxBISEQudVwsfrT6Z77kc-U321wMlLU8BoWlEGO3XafiHfkRHvRqk0JvDlG2iiSEuK27A';
 let _notifTimers = {};
 
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-    // Once SW is active, schedule reminders
-    reg.addEventListener('updatefound', () => {
-      reg.installing?.addEventListener('statechange', e => {
-        if (e.target.state === 'activated') scheduleAllReminders();
-      });
-    });
+    await navigator.serviceWorker.register('/sw.js', { scope: '/' });
   } catch(e) { console.warn('SW registration failed:', e); }
+}
+
+// Called once after permission is granted – registers device for server-side push
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !currentUser) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const key  = Uint8Array.from(atob(VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+
+    const { data: { session } } = await supa.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    await fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ subscription: sub.toJSON() })
+    });
+  } catch(e) { console.warn('Push subscription failed:', e); }
 }
 
 async function _showNotification(title, body, tag) {
@@ -9151,14 +9168,16 @@ async function scheduleAllReminders() {
   _notifTimers = {};
 
   const now  = Date.now();
-  const defT = state.settings?.notifTime || '08:00'; // default reminder time
+  const defT = state.settings?.notifTime || '08:00';
+  const _collected = []; // for server-side push sync
 
   function sched(key, dateStr, timeStr, title, body) {
     if (!dateStr) return;
     const dt    = new Date(dateStr + 'T' + (timeStr || defT));
     const delay = dt.getTime() - now;
-    if (delay < -60000 || delay > 14 * 86400000) return; // between -1min and 14 days
+    if (delay < -60000 || delay > 14 * 86400000) return;
     _notifTimers[key] = setTimeout(() => _showNotification(title, body, key), Math.max(0, delay));
+    if (delay > -60000) _collected.push({ notif_id: key, scheduled_for: dt.toISOString(), title, body });
   }
 
   function daysBefore(dateStr, n) {
@@ -9212,6 +9231,31 @@ async function scheduleAllReminders() {
     sched('zahlung-0-' + z.id, z.faellig, defT,
       '💶 Zahlung heute fällig: ' + name, `${fmt(z.betrag)} heute fällig`);
   }
+
+  // ── Server-side push sync (runs in background, non-blocking)
+  if (currentUser && _collected.length) _syncPushSchedule(_collected);
+}
+
+async function _syncPushSchedule(notifications) {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (!session?.access_token) return;
+    const SUPA = 'https://savrxykygruzyngttekl.supabase.co';
+    const hdrs = {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdnJ4eWt5Z3J1enluZ3R0ZWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTU4NTEsImV4cCI6MjA2MjI5MTg1MX0.P0Uu2NnSNDVpV1pM5hMHJqASFVjUhp4HJNVqHhI7cyg',
+      'Content-Type': 'application/json'
+    };
+    // Delete old unsent notifications for this user, then insert fresh batch
+    await fetch(`${SUPA}/rest/v1/scheduled_notifications?user_id=eq.${currentUser.id}&sent=eq.false`,
+      { method: 'DELETE', headers: hdrs });
+    const rows = notifications.map(n => ({ ...n, user_id: currentUser.id }));
+    await fetch(`${SUPA}/rest/v1/scheduled_notifications`, {
+      method: 'POST',
+      headers: { ...hdrs, Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify(rows)
+    });
+  } catch(e) { console.warn('Push schedule sync failed:', e); }
 }
 
 // Alias for backward compat
@@ -9244,6 +9288,7 @@ async function enableNotifFromModal() {
   if (granted) {
     hint.innerHTML = '<span style="color:var(--success)">✓ Benachrichtigungen aktiv</span>';
     showToast('✅ Benachrichtigungen aktiviert', 'success');
+    subscribeToPush();
     scheduleAllReminders();
   } else {
     hint.innerHTML = '<span style="color:var(--danger)">⚠️ Nicht erlaubt – bitte in den Einstellungen aktivieren</span>';
