@@ -592,14 +592,7 @@
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes slideUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
 
-  @media (max-width: 700px) {
-    .sidebar { width: 54px; }
-    .nav-item span, .logo h1, .logo span, .logo-icon + div, .sidebar-footer, .nav-section { display: none; }
-    .logo { justify-content: center; padding: 14px 0; }
-    .main { padding: 18px 14px; }
-    .two-col { grid-template-columns: 1fr; }
-    .cards-grid { grid-template-columns: 1fr 1fr; }
-  }
+  /* old 700px block removed — handled by 768px block below */
 
   /* DIARY */
   .diary-entry:hover { box-shadow: var(--shadow); }
@@ -1329,8 +1322,9 @@
     }
     /* Hide the floating sidebar-show btn on mobile (topbar handles it) */
     #sidebar-show-btn { display: none !important; }
-    /* Don't collapse via body class on mobile */
-    body.sidebar-collapsed .sidebar { width: 280px !important; left: -280px; overflow: hidden !important; }
+    /* Don't collapse via body class on mobile – use mobile-open instead */
+    body.sidebar-collapsed .sidebar { width: 280px !important; left: -280px; overflow-y: auto !important; }
+    body.sidebar-collapsed .sidebar.mobile-open { left: 0 !important; }
 
     /* Better card grid on mobile */
     .cards-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
