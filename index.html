@@ -8883,12 +8883,15 @@ function cdpOpen(id) {
   cdpRender(id);
   popup.style.display = 'block';
   // close on outside click
+  // NOTE: must check document.body.contains(e.target) first — when cdpRender()
+  // replaces innerHTML the clicked button is detached from DOM, contains() returns
+  // false and the popup would close immediately. Detached = internal click → keep open.
   setTimeout(() => {
     const handler = (e) => {
-      if (!document.getElementById(id+'-wrap')?.contains(e.target)) {
-        popup.style.display = 'none';
-        document.removeEventListener('click', handler);
-      }
+      if (!document.body.contains(e.target)) return; // detached = internal re-render click
+      if (document.getElementById(id+'-wrap')?.contains(e.target)) return; // inside picker
+      popup.style.display = 'none';
+      document.removeEventListener('click', handler);
     };
     document.addEventListener('click', handler);
   }, 10);
@@ -8907,7 +8910,7 @@ function cdpRender(id) {
       <span style="font-weight:700;font-size:0.9rem;color:#1a1a2e">Jahr wählen</span>
       <span></span>
     </div><div class="cdp-year-grid">`;
-    for (let y = curY - 2; y <= curY + 15; y++) {
+    for (let y = curY - 10; y <= curY + 15; y++) {
       html += `<button class="cdp-year-btn${s.year===y?' selected':''}" onclick="cdpSelYear('${id}',${y})">${y}</button>`;
     }
     html += '</div>';
