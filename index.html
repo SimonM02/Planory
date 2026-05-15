@@ -8544,11 +8544,16 @@ function _loadFromLocalStorage() {
 
 async function loadFromCloud() {
   if (!currentUser) return null;
+  // ?nocloud=1 → skip all cloud operations (safe recovery mode)
+  if (new URLSearchParams(location.search).get('nocloud') === '1') {
+    _loadFromLocalStorage();
+    return null;
+  }
   try {
     const { data, error } = await supa.from('projektdaten')
       .select('daten')
       .eq('user_id', currentUser.id)
-      .maybeSingle();  // maybeSingle() doesn't throw if no row found
+      .maybeSingle();
 
     if (error) {
       console.error('Load error:', error.message);
@@ -8560,34 +8565,26 @@ async function loadFromCloud() {
     const localTs    = localStorage.getItem('bauplan_updated_at') || '';
     const localOwner = localStorage.getItem('bauplan_user_id') || '';
 
-    // If localStorage has NEWER data for THIS user → use it and immediately re-sync
-    // BUT only if local data actually has meaningful content (prevent empty local overwriting good cloud)
-    if (localOwner === currentUser?.id && localTs && cloudTs && localTs > cloudTs) {
-      const localProjects = JSON.parse(localStorage.getItem('bauplan_projects') || '[]');
-      const localHasData = localProjects.length > 0 && localProjects.some(p =>
-        (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
-        (p.budgetKat?.length > 0) || (p.notizen?.length > 0) ||
-        (p.settings?.name && p.settings.name !== 'Neues Projekt' && p.settings.name !== 'Mein erstes Projekt')
-      );
-      const cloudHasData = data?.daten?.projects?.length > 0 &&
-        data.daten.projects.some(p =>
-          (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
-          (p.budgetKat?.length > 0) || (p.notizen?.length > 0)
-        );
+    // Helper: does a projects array have meaningful data?
+    const _hasData = (arr) => Array.isArray(arr) && arr.some(p =>
+      (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
+      (p.budgetKat?.length > 0) || (p.notizen?.length > 0) || (p.maengel?.length > 0)
+    );
 
-      if (cloudHasData && !localHasData) {
-        // Local is newer but empty – cloud has real data, use cloud and overwrite local
-        console.log('Local is newer but empty – using cloud data to restore');
-        // fall through to cloud loading below
-      } else {
-        console.log('Local data is newer than cloud – using local and re-syncing');
-        _loadFromLocalStorage();
-        syncToCloud(); // push the newer local state to cloud
-        return data?.daten || null;
-      }
+    const localProjects = JSON.parse(localStorage.getItem('bauplan_projects') || '[]');
+    const localHasData  = localOwner === currentUser?.id && _hasData(localProjects);
+    const cloudHasData  = _hasData(data?.daten?.projects);
+
+    // LOCAL wins if: local has real data AND (cloud is empty OR local is newer)
+    if (localHasData && (!cloudHasData || (localTs && cloudTs && localTs > cloudTs))) {
+      console.log('Local data used – syncing to cloud');
+      _loadFromLocalStorage();
+      syncToCloud();
+      return data?.daten || null;
     }
 
-    if (data?.daten?.projects?.length > 0) {
+    // CLOUD wins if it has real data
+    if (cloudHasData) {
       projects = data.daten.projects;
       const savedId = data.daten.currentProjectId;
       const found = savedId && projects.find(p => p.id === savedId);
@@ -8600,7 +8597,7 @@ async function loadFromCloud() {
       return data.daten;
     }
 
-    // No cloud data yet – check if localStorage has data for this user
+    // Neither has data – load whatever is local (new user or fresh start)
     if (localOwner === currentUser?.id) {
       _loadFromLocalStorage();
     } else {
