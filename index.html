@@ -1729,7 +1729,8 @@
 <!-- ══════════════════════════════════════
      AUTH OVERLAY (Login / Register)
 ══════════════════════════════════════ -->
-<div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#f0f4ff;align-items:center;justify-content:center">
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#f0f4ff;align-items:center;justify-content:center;color:#1a1a2e">
+  <style>#auth-overlay,#auth-overlay *{--bg:#f0f4ff;--surface:#ffffff;--surface2:#f0f4ff;--text:#1a1a2e;--text2:#4a5568;--text3:#718096;--border:#e2e8f0;color:inherit}</style>
   <div style="width:100%;max-width:420px;padding:24px">
 
     <!-- Logo -->
@@ -8561,15 +8562,17 @@ async function loadFromCloud() {
       return null;
     }
 
-    // Helper: does a projects array have meaningful data?
-    const _hasData = (arr) => Array.isArray(arr) && arr.some(p =>
+    // A projects array counts as "has data" if any project has a real name OR any content.
+    // This correctly handles: new users (named project, no entries yet) AND returning users.
+    const _hasData = (arr) => Array.isArray(arr) && arr.length > 0 && arr.some(p =>
+      (p.settings?.name && p.settings.name !== 'Neues Projekt' && p.settings.name !== 'Mein erstes Projekt') ||
       (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
       (p.budgetKat?.length > 0) || (p.notizen?.length > 0) || (p.maengel?.length > 0)
     );
 
     const cloudHasData = _hasData(data?.daten?.projects);
 
-    // CLOUD always wins if it has real data — simple and safe, no timestamp comparison
+    // ── CLOUD WINS (always, when it has data) ──────────────────────────────────
     if (cloudHasData) {
       projects = data.daten.projects;
       const savedId = data.daten.currentProjectId;
@@ -8584,26 +8587,38 @@ async function loadFromCloud() {
       return data.daten;
     }
 
-    // Cloud is empty → check local (recovery or new user)
-    const localOwner = localStorage.getItem('bauplan_user_id') || '';
+    // ── CLOUD EMPTY → use local as fallback ────────────────────────────────────
+    const localOwner   = localStorage.getItem('bauplan_user_id') || '';
     const localProjects = JSON.parse(localStorage.getItem('bauplan_projects') || '[]');
-    const localHasData = localOwner === currentUser?.id && _hasData(localProjects);
+    const localHasData  = localOwner === currentUser?.id && _hasData(localProjects);
 
     if (localHasData) {
-      // Local has data but cloud is empty → restore cloud from local
-      console.log('Cloud empty but local has data – restoring cloud');
+      // Cloud is empty but local has real data → load local, then silently restore cloud.
+      // syncToCloud() has its own guard: it will never write empty data to a non-empty cloud.
+      console.log('Cloud empty, local has data – loading local and restoring cloud');
       _loadFromLocalStorage();
       syncToCloud();
       return null;
     }
 
-    // Both empty → fresh start or new user
-    if (localOwner === currentUser?.id) {
-      _loadFromLocalStorage();
-    } else {
+    // ── BOTH EMPTY ─────────────────────────────────────────────────────────────
+    if (data === null) {
+      // No DB row at all → genuine new user → onboarding will handle this
       projects = [EMPTY_PROJECT()];
       currentProjectId = projects[0].id;
       loadProject(currentProjectId, false);
+    } else {
+      // DB row exists but empty + local empty → data was lost → show warning
+      console.warn('Data loss detected: DB row exists but both cloud and local are empty');
+      projects = [EMPTY_PROJECT()];
+      currentProjectId = projects[0].id;
+      loadProject(currentProjectId, false);
+      setTimeout(() => {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:14px 16px;font-size:0.9rem;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
+        banner.innerHTML = '⚠️ <strong>Deine Daten konnten nicht geladen werden.</strong> Bitte wende dich an den Support oder öffne die App auf einem anderen Gerät mit <b>?nocloud=1</b>.';
+        document.body.prepend(banner);
+      }, 1000);
     }
     return null;
 
@@ -10030,6 +10045,28 @@ function _showRecoveryBanner() {
   document.body.prepend(banner);
 }
 
+function _showRestorePrompt() {
+  if (document.getElementById('recovery-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'recovery-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.9rem;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
+  banner.innerHTML = `
+    <span>💾 <strong>Lokale Daten gefunden.</strong> Deine Cloud ist leer — sollen die lokalen Daten in die Cloud gespeichert werden?</span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="_confirmRestoreToCloud()" style="background:#fff;color:#f59e0b;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer">✅ Ja, speichern</button>
+      <button onclick="this.closest('#recovery-banner').remove()" style="background:rgba(255,255,255,0.2);color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer">✕ Nein</button>
+    </div>`;
+  document.body.prepend(banner);
+}
+
+async function _confirmRestoreToCloud() {
+  const btn = document.querySelector('#recovery-banner button');
+  if (btn) { btn.textContent = '⏳ Speichern...'; btn.disabled = true; }
+  await syncToCloud();
+  document.getElementById('recovery-banner')?.remove();
+  showToast('✅ Daten in Cloud gespeichert!', 'success');
+}
+
 async function _forceCloudReload() {
   const btn = document.querySelector('#recovery-banner button');
   if (btn) { btn.textContent = '⏳ Lädt...'; btn.disabled = true; }
@@ -10351,31 +10388,36 @@ async function enableNotifFromModal() {
 }
 
 // Re-schedule whenever app comes back to foreground
+async function _syncAndRender() {
+  if (!currentUser) return;
+  await loadFromCloud();
+  applyModuleVisibility();
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const pageId = active.id.replace('page-', '');
+  if (pageId === 'dashboard') renderDashboard();
+  else if (pageId === 'kosten') renderKosten();
+  else if (pageId === 'budget') renderBudget();
+  else if (pageId === 'aufgaben') renderTasks();
+  else if (pageId === 'dokumente') { renderNotizen(); renderDokumente(); }
+  else if (pageId === 'angebote') renderAngebote();
+  else if (pageId === 'zahlungsplan') renderZahlungsplan();
+  else if (pageId === 'kontakte') renderKontakte();
+  else if (pageId === 'maengel') renderMaengel();
+  else if (pageId === 'fotos') renderFotos();
+  else if (pageId === 'zeitplan') renderZeitplan?.();
+}
+
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
     scheduleAllReminders();
-    // Re-pull cloud data to pick up changes from other devices
-    if (currentUser) {
-      const cloudData = await loadFromCloud();
-      if (cloudData) {
-        applyModuleVisibility();
-        const active = document.querySelector('.page.active');
-        if (active) {
-          const pageId = active.id.replace('page-', '');
-          if (pageId === 'dashboard') renderDashboard();
-          else if (pageId === 'kosten') renderKosten();
-          else if (pageId === 'budget') renderBudget();
-          else if (pageId === 'aufgaben') renderTasks();
-          else if (pageId === 'dokumente') { renderNotizen(); renderDokumente(); }
-          else if (pageId === 'angebote') renderAngebote();
-          else if (pageId === 'zahlungsplan') renderZahlungsplan();
-          else if (pageId === 'kontakte') renderKontakte();
-          else if (pageId === 'maengel') renderMaengel();
-          else if (pageId === 'fotos') renderFotos();
-        }
-      }
-    }
+    await _syncAndRender();
   }
+});
+
+// PWA on iOS/Android: 'focus' fires when app comes to foreground from homescreen
+window.addEventListener('focus', async () => {
+  await _syncAndRender();
 });
 
 // Init on load — SW first, then schedule after ready
