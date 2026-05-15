@@ -8512,11 +8512,30 @@ async function loadFromCloud() {
     const localOwner = localStorage.getItem('bauplan_user_id') || '';
 
     // If localStorage has NEWER data for THIS user → use it and immediately re-sync
+    // BUT only if local data actually has meaningful content (prevent empty local overwriting good cloud)
     if (localOwner === currentUser?.id && localTs && cloudTs && localTs > cloudTs) {
-      console.log('Local data is newer than cloud – using local and re-syncing');
-      _loadFromLocalStorage();
-      syncToCloud(); // push the newer local state to cloud
-      return data?.daten || null;
+      const localProjects = JSON.parse(localStorage.getItem('bauplan_projects') || '[]');
+      const localHasData = localProjects.length > 0 && localProjects.some(p =>
+        (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
+        (p.budgetKat?.length > 0) || (p.notizen?.length > 0) ||
+        (p.settings?.name && p.settings.name !== 'Neues Projekt' && p.settings.name !== 'Mein erstes Projekt')
+      );
+      const cloudHasData = data?.daten?.projects?.length > 0 &&
+        data.daten.projects.some(p =>
+          (p.kosten?.length > 0) || (p.aufgaben?.length > 0) || (p.dokumentation?.length > 0) ||
+          (p.budgetKat?.length > 0) || (p.notizen?.length > 0)
+        );
+
+      if (cloudHasData && !localHasData) {
+        // Local is newer but empty – cloud has real data, use cloud and overwrite local
+        console.log('Local is newer but empty – using cloud data to restore');
+        // fall through to cloud loading below
+      } else {
+        console.log('Local data is newer than cloud – using local and re-syncing');
+        _loadFromLocalStorage();
+        syncToCloud(); // push the newer local state to cloud
+        return data?.daten || null;
+      }
     }
 
     if (data?.daten?.projects?.length > 0) {
