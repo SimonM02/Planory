@@ -2598,7 +2598,8 @@
               <div style="display:flex;gap:8px">
                 <button onclick="subscribeToPushAndConfirm()" class="btn btn-ghost" style="font-size:0.8rem;flex:1" id="push-reg-btn">📱 Dieses Gerät registrieren</button>
                 <button onclick="runPushDiag()" class="btn btn-ghost" style="font-size:0.8rem;padding:0 10px" title="Diagnose">🔍</button>
-                <button onclick="_showNotification('🔔 Test','Benachrichtigung funktioniert!','test-now')" class="btn btn-ghost" style="font-size:0.8rem;padding:0 10px" title="Jetzt testen">▶</button>
+                <button onclick="testServerPush()" class="btn btn-ghost" style="font-size:0.8rem;padding:0 10px" title="Server-Push testen">🌐</button>
+                <button onclick="_showNotification('🔔 Test','Benachrichtigung funktioniert!','test-now')" class="btn btn-ghost" style="font-size:0.8rem;padding:0 10px" title="Lokal testen">▶</button>
               </div>
               <div id="push-device-status" style="font-size:0.75rem;border-radius:8px;padding:8px 12px;display:none"></div>
               <div id="push-diag-output" style="display:none;font-size:0.73rem;font-family:monospace;background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.7;white-space:pre-wrap;color:var(--text2)"></div>
@@ -10375,6 +10376,37 @@ async function subscribeToPush() {
   } catch(e) {
     console.warn('Push subscription failed:', e);
     return null;
+  }
+}
+
+// Test full server-side push path (bypasses cron, sends immediately via /api/push-test)
+async function testServerPush() {
+  const statusEl = document.getElementById('push-device-status');
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#fefce8'; statusEl.style.color = '#854d0e'; statusEl.textContent = '⏳ Server-Push wird getestet…'; }
+
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (!session?.access_token) { showToast('⚠️ Nicht eingeloggt', 'error'); return; }
+
+    const res = await fetch('/api/push-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      if (statusEl) { statusEl.style.background = '#f0fdf4'; statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Server-Push erfolgreich! Benachrichtigung sollte gleich ankommen.'; }
+      showToast('✅ Server-Push gesendet!', 'success');
+    } else {
+      const msg = data.error || 'Unbekannter Fehler';
+      const detail = data.diag ? '\n' + JSON.stringify(data.diag, null, 2) : '';
+      if (statusEl) { statusEl.style.background = '#fef2f2'; statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ ' + msg + (data.diag?.webpush_status ? ' (HTTP ' + data.diag.webpush_status + ')' : ''); }
+      showToast('❌ ' + msg, 'error', 8000);
+      console.error('push-test failed:', data);
+    }
+  } catch(e) {
+    if (statusEl) { statusEl.style.background = '#fef2f2'; statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ Netzwerkfehler: ' + e.message; }
+    showToast('❌ Fehler: ' + e.message, 'error');
   }
 }
 
