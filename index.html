@@ -3755,6 +3755,11 @@
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
+    style="position:fixed;top:18px;right:58px;z-index:10001;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:8px;padding:6px 12px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;backdrop-filter:blur(6px)"
+    onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+    ⬇ Herunterladen
+  </button>
   <img id="lightbox-img" src="" alt="">
   <div class="lightbox-info">
     <strong id="lightbox-title"></strong>
@@ -7815,6 +7820,17 @@ function openMgLightbox(url, title) {
 
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 
+function downloadLightboxPhoto() {
+  const src = document.getElementById('lightbox-img').src;
+  if (!src) return;
+  const title = document.getElementById('lightbox-title').textContent || 'foto';
+  const safeName = title.replace(/[^a-zA-Z0-9äöüÄÖÜß\-_]/g, '_').slice(0, 60);
+  const a = document.createElement('a');
+  a.href     = src;
+  a.download = safeName + '.jpg';
+  a.click();
+}
+
 function renderFotos() {
   refreshFotoKat('foto-filter');
   const search    = (document.getElementById('foto-search')?.value || '').toLowerCase();
@@ -8332,10 +8348,41 @@ function renderGrPinFotosPreview() {
   if (!el) return;
   el.innerHTML = _grPinFotosPending.map((src, i) => `
     <div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--border);flex-shrink:0">
-      <img src="${src}" style="width:100%;height:100%;object-fit:cover">
-      <button onclick="removeGrPinFoto(${i})"
-        style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+      <img src="${src}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openGrPinFotoLightbox(${i})" title="Foto öffnen">
+      <div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:2px 3px;background:rgba(0,0,0,0.55)">
+        <button onclick="openGrPinFotoLightbox(${i})"
+          style="background:none;color:white;border:none;font-size:0.6rem;cursor:pointer;padding:0" title="Öffnen">🔍</button>
+        <button onclick="downloadGrPinFoto(${i})"
+          style="background:none;color:white;border:none;font-size:0.6rem;cursor:pointer;padding:0" title="Herunterladen">⬇</button>
+        <button onclick="removeGrPinFoto(${i})"
+          style="background:none;color:white;border:none;font-size:0.6rem;cursor:pointer;padding:0" title="Entfernen">✕</button>
+      </div>
     </div>`).join('');
+}
+
+function openGrPinFotoLightbox(i) {
+  const src = _grPinFotosPending[i];
+  if (!src) return;
+  // Re-use the existing lightbox overlay
+  const lb = document.getElementById('lightbox');
+  if (lb) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-title').textContent = `Foto ${i + 1} von ${_grPinFotosPending.length}`;
+    document.getElementById('lightbox-meta').textContent  = '';
+    lb.classList.add('open');
+    // store download callback on lightbox for the download button
+    lb._grFotoSrc = src;
+    lb._grFotoIdx = i;
+  }
+}
+
+function downloadGrPinFoto(i) {
+  const src = _grPinFotosPending[i];
+  if (!src) return;
+  const a = document.createElement('a');
+  a.href     = src;
+  a.download = `pin-foto-${i + 1}.jpg`;
+  a.click();
 }
 
 function removeGrPinFoto(i) {
