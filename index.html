@@ -4508,14 +4508,18 @@ function switchKostenTab(tab, btn) {
 const FALLBACK_KATS = ['Rohbau','Dach','Fenster & Türen','Elektro','Sanitär','Heizung','Innenausbau','Außenanlagen','Sonstiges'];
 
 function getKatList() {
-  // Merge budget categories + fallbacks, deduplicated
+  // Use budget categories if defined, otherwise fall back to defaults
   const budgetNames = (state.budgetKat || []).map(k => k.name);
-  const all = [...budgetNames, ...FALLBACK_KATS.filter(f => !budgetNames.includes(f))];
-  return all;
+  return budgetNames.length > 0 ? budgetNames : FALLBACK_KATS;
 }
 
 function getKatOptions(selectedVal = '') {
-  return getKatList().map(k =>
+  const list = getKatList();
+  // Always include the currently selected value even if it's no longer in the budget list
+  // (so existing expenses don't lose their category when editing)
+  const opts = [...list];
+  if (selectedVal && !opts.includes(selectedVal)) opts.push(selectedVal);
+  return opts.map(k =>
     `<option value="${k}" ${k === selectedVal ? 'selected' : ''}>${k}</option>`
   ).join('');
 }
