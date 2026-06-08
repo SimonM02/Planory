@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
   const pub  = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subj = process.env.VAPID_SUBJECT || 'mailto:info@buildora.app';
+  const subj = process.env.VAPID_SUBJECT || 'mailto:info@planory.app';
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const diag = { userId, vapid_pub: !!pub, vapid_priv: !!priv, svc_key: !!svcKey };
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
   try {
     await webpush.sendNotification(sub, JSON.stringify({
-      title: '🔔 Buildora Test',
+      title: '🔔 Planory Test',
       body: 'Server-Push funktioniert! ✅',
       tag: 'push-test-' + Date.now()
     }));

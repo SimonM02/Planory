@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   if (!customerId) return res.status(404).json({ error: 'no subscription found' });
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const origin = req.headers.origin || 'https://bauplan-weld.vercel.app';
+  const origin = req.headers.origin || 'https://planory.vercel.app';
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${origin}/`,

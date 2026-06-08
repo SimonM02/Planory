@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   const pub  = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subj = process.env.VAPID_SUBJECT || 'mailto:info@buildora.app';
+  const subj = process.env.VAPID_SUBJECT || 'mailto:info@planory.app';
   if (!pub || !priv) return res.status(500).json({ error: 'VAPID keys not configured' });
 
   webpush.setVapidDetails(subj, pub, priv);

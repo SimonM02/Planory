@@ -35,9 +35,9 @@ self.addEventListener('notificationclick', e => {
 self.addEventListener('push', e => {
   const d = e.data?.json?.() || {};
   e.waitUntil(
-    self.registration.showNotification(d.title || 'Buildora Erinnerung', {
+    self.registration.showNotification(d.title || 'Planory Erinnerung', {
       body: d.body || '',
-      tag: d.tag || 'buildora-push',
+      tag: d.tag || 'planory-push',
       icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%233d6ff8"/><path d="M16 7L5 16h3v9h7v-5h2v5h7v-9h3z" fill="white"/></svg>',
       data: d
     })

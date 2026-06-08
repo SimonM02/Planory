@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Buildora – Mein Bauprojekt</title>
+<title>Planory – Dein digitaler Bauassistent</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233d6ff8'/><path d='M16 7L5 16h3v9h7v-5h2v5h7v-9h3z' fill='white'/></svg>">
 <meta name="theme-color" content="#3d6ff8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Buildora">
+<meta name="apple-mobile-web-app-title" content="Planory">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233d6ff8'/><path d='M16 7L5 16h3v9h7v-5h2v5h7v-9h3z' fill='white'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1766,7 +1766,8 @@
 <!-- Splash screen: covers app until auth state is known -->
 <div id="auth-splash" style="position:fixed;inset:0;z-index:1001;background:#f0f4ff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
   <div style="width:64px;height:64px;background:#3d6ff8;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 8px 24px rgba(61,111,248,0.3)">🏗️</div>
-  <div style="font-size:1.4rem;font-weight:800;color:#1a1a2e;letter-spacing:-0.5px">Buildora</div>
+  <div style="font-size:1.4rem;font-weight:800;color:#1a1a2e;letter-spacing:-0.5px">Planory</div>
+  <div style="font-size:0.8rem;color:#718096;letter-spacing:0.3px">Dein digitaler Bauassistent</div>
   <div style="width:32px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden"><div style="height:100%;background:#3d6ff8;border-radius:2px;animation:splashLoad 1.2s ease-in-out infinite"></div></div>
   <style>@keyframes splashLoad{0%{width:0%}50%{width:100%}100%{width:0%;margin-left:100%}}</style>
 </div>
@@ -1784,8 +1785,8 @@
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:32px">
       <div style="width:64px;height:64px;background:var(--accent);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:14px;box-shadow:0 8px 24px rgba(61,111,248,0.3)">🏗️</div>
-      <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);letter-spacing:-0.5px">Buildora</h1>
-      <p style="color:var(--text3);font-size:0.85rem;margin-top:4px">Dein smarter Bauprojekt-Manager</p>
+      <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);letter-spacing:-0.5px">Planory</h1>
+      <p style="color:var(--text3);font-size:0.85rem;margin-top:4px">Dein digitaler Bauassistent</p>
     </div>
 
     <!-- Tabs -->
@@ -1846,7 +1847,7 @@
       <div id="auth-msg" style="display:none;margin-top:14px;padding:10px 14px;border-radius:9px;font-size:0.83rem;font-weight:600;text-align:center"></div>
     </div>
 
-    <!-- Demo Button – only shown when ?demo=buildora2025 is in the URL -->
+    <!-- Demo Button – only shown when ?demo=planory2025 is in the URL -->
     <div id="demo-entry" style="display:none;margin-top:16px;text-align:center">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
         <div style="flex:1;height:1px;background:#e2e8f0"></div>
@@ -1908,8 +1909,8 @@
       <div class="ob-step" data-step="0">
         <div style="text-align:center;margin-bottom:28px">
           <div style="font-size:3.5rem;margin-bottom:14px">👋</div>
-          <h2 style="font-size:1.7rem;font-weight:800;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px">Willkommen bei Buildora!</h2>
-          <p style="color:var(--text2);line-height:1.65;font-size:0.9rem">Dein smarter Begleiter für Bauprojekte. Budgets, Kosten, Tagebuch, Dokumentation und KI-Bauberatung – alles an einem Ort.</p>
+          <h2 style="font-size:1.7rem;font-weight:800;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px">Willkommen bei Planory!</h2>
+          <p style="color:var(--text2);line-height:1.65;font-size:0.9rem">Dein digitaler Bauassistent. Budgets, Kosten, Tagebuch, Dokumentation und KI-Bauberatung – alles an einem Ort.</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
           <div style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:14px 16px;border:1.5px solid var(--border);box-shadow:var(--shadow)">
@@ -2097,7 +2098,7 @@
 
 <div id="mobile-topbar" style="display:none">
   <button onclick="toggleMobileSidebar()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text2);padding:4px;flex-shrink:0;line-height:1">☰</button>
-  <span id="mobile-topbar-title">Buildora</span>
+  <span id="mobile-topbar-title">Planory</span>
   <button onclick="refreshApp()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text3);padding:4px;flex-shrink:0;line-height:1" title="Aktualisieren">🔄</button>
 </div>
 <button id="sidebar-show-btn" onclick="toggleSidebar()" title="Menü einblenden">☰</button>
@@ -2109,7 +2110,7 @@
       onmouseout="this.style.background='none';this.style.color='var(--text3)'">☰</button>
     <div class="logo-icon">🏗️</div>
     <div style="flex:1;min-width:0">
-      <h1 id="current-project-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Buildora</h1>
+      <h1 id="current-project-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Planory</h1>
       <span id="current-project-sub" style="display:block">Projekt wechseln ▾</span>
     </div>
     <button onclick="event.stopPropagation();refreshApp()" id="refresh-btn" title="Alle Daten neu laden"
@@ -2194,7 +2195,7 @@
     </button>
   </div>
   <div class="sidebar-footer" style="display:flex;align-items:center;justify-content:space-between;gap:4px">
-    <span id="auth-user-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:0.78rem">v3.0 · Buildora</span>
+    <span id="auth-user-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:0.78rem">v3.0 · Planory</span>
     <button onclick="doLogout()" title="Abmelden"
       style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:0.9rem;padding:2px 4px;flex-shrink:0"
       onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text3)'">⎋</button>
@@ -3960,10 +3961,10 @@ function saveAll() {
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
   const ts = new Date().toISOString();
-  localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
-  localStorage.setItem('bauplan_current',    String(currentProjectId));
-  localStorage.setItem('bauplan_user_id',    currentUser?.id || '');
-  localStorage.setItem('bauplan_updated_at', ts);
+  localStorage.setItem('planory_projects',   JSON.stringify(projects));
+  localStorage.setItem('planory_current',    String(currentProjectId));
+  localStorage.setItem('planory_user_id',    currentUser?.id || '');
+  localStorage.setItem('planory_updated_at', ts);
   if (currentUser && !_demoMode) {
     setSyncStatus('pending');
     clearTimeout(syncTimeout);
@@ -3983,13 +3984,13 @@ function setSyncStatus(status) {
 }
 
 function loadAll() {
-  const raw = localStorage.getItem('bauplan_projects');
-  const cur = localStorage.getItem('bauplan_current');
+  const raw = localStorage.getItem('planory_projects');
+  const cur = localStorage.getItem('planory_current');
   if (raw) {
     projects = JSON.parse(raw);
   } else {
     // Migrate old single-project data
-    const old = localStorage.getItem('bauplan_data');
+    const old = localStorage.getItem('planory_data');
     const firstProject = EMPTY_PROJECT();
     if (old) {
       const parsed = JSON.parse(old);
@@ -4068,7 +4069,7 @@ function updateProjectHeader() {
   const s = state.settings;
   const nameEl = document.getElementById('current-project-name');
   const subEl  = document.getElementById('current-project-sub');
-  if (nameEl) nameEl.textContent = s.name || 'Buildora';
+  if (nameEl) nameEl.textContent = s.name || 'Planory';
   if (subEl)  subEl.textContent  = (s.type || '') + (projects.length > 1 ? ` · ${projects.length} Projekte` : '');
 
   // Sidebar accent color per project
@@ -4079,7 +4080,7 @@ function updateProjectHeader() {
   document.documentElement.style.setProperty('--accent-light', color + '18');
   document.documentElement.style.setProperty('--accent-grad', `linear-gradient(135deg, ${color}, ${color}cc)`);
   const mobileTitle = document.getElementById('mobile-topbar-title');
-  if (mobileTitle) mobileTitle.textContent = document.getElementById('current-project-name')?.textContent || 'Buildora';
+  if (mobileTitle) mobileTitle.textContent = document.getElementById('current-project-name')?.textContent || 'Planory';
 }
 
 // ──────────────── EINMAL-HINWEISE ────────────────
@@ -4105,11 +4106,11 @@ const PAGE_HINTS = {
   settings:       'Projektdaten anpassen, Budget-Kategorien verwalten, Module ein-/ausblenden und zwischen mehreren Projekten wechseln – Klick auf das Logo oben links.'
 };
 
-let _seenHints = new Set(JSON.parse(localStorage.getItem('buildora_seen_hints') || '[]'));
+let _seenHints = new Set(JSON.parse(localStorage.getItem('planory_seen_hints') || '[]'));
 
 function dismissHint(pageId) {
   _seenHints.add(pageId);
-  localStorage.setItem('buildora_seen_hints', JSON.stringify([..._seenHints]));
+  localStorage.setItem('planory_seen_hints', JSON.stringify([..._seenHints]));
   const el = document.getElementById('page-hint-' + pageId);
   if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 220); }
 }
@@ -4458,12 +4459,12 @@ async function doLogout() {
   projects = [];
   state = EMPTY_PROJECT();
   // Clear localStorage so next user on this device starts fresh
-  localStorage.removeItem('bauplan_projects');
-  localStorage.removeItem('bauplan_current');
-  localStorage.removeItem('bauplan_data');
+  localStorage.removeItem('planory_projects');
+  localStorage.removeItem('planory_current');
+  localStorage.removeItem('planory_data');
   // Reset sidebar email
   const emailEl = document.getElementById('auth-user-email');
-  if (emailEl) emailEl.textContent = 'v3.0 · Buildora';
+  if (emailEl) emailEl.textContent = 'v3.0 · Planory';
   // Reset auth form
   const loginForm = document.getElementById('auth-form-login');
   const regForm   = document.getElementById('auth-form-register');
@@ -4523,9 +4524,9 @@ async function deleteAccount() {
     }
 
     // 3. Clear local state
-    localStorage.removeItem('bauplan_projects');
-    localStorage.removeItem('bauplan_current');
-    localStorage.removeItem('bauplan_data');
+    localStorage.removeItem('planory_projects');
+    localStorage.removeItem('planory_current');
+    localStorage.removeItem('planory_data');
     await supa.auth.signOut();
     currentUser = null;
     projects = [];
@@ -5045,7 +5046,7 @@ async function deleteBudgetKat(id) {
   // Update localStorage + projects array immediately
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
-  localStorage.setItem('bauplan_projects', JSON.stringify(projects));
+  localStorage.setItem('planory_projects', JSON.stringify(projects));
   // Sync immediately — projektdaten is written FIRST in syncToCloud so by the
   // time Realtime fires from projekt_items upserts, the cloud already has the
   // correct (post-deletion) budgetKat
@@ -5306,7 +5307,7 @@ function checkAllDeadlines() {
 
   // Browser-Notification wenn erlaubt
   if (Notification.permission === 'granted') {
-    msgs.forEach((msg, i) => setTimeout(() => new Notification('Buildora', { body: msg, icon: '/favicon.ico' }), i * 800));
+    msgs.forEach((msg, i) => setTimeout(() => new Notification('Planory', { body: msg, icon: '/favicon.ico' }), i * 800));
   } else {
     // Fallback: Toast-Nachrichten gestaffelt
     msgs.forEach((msg, i) => setTimeout(() => showToast(msg, 'warning', 6000), i * 1200 + 1500));
@@ -5327,7 +5328,7 @@ async function enableNotifications() {
     showToast('🔔 Mitteilungen aktiviert', 'success');
     subscribeToPush();
     scheduleAllReminders();
-    setTimeout(() => _showNotification('Buildora', '✅ Erinnerungen sind jetzt aktiv', 'test'), 500);
+    setTimeout(() => _showNotification('Planory', '✅ Erinnerungen sind jetzt aktiv', 'test'), 500);
   } else {
     showToast('⚠️ Mitteilungen wurden nicht erlaubt', 'error');
   }
@@ -5393,9 +5394,9 @@ async function forceCloudOverwrite() {
     projects = cloudData.projects || [];
     currentProjectId = cloudData.currentProjectId || (projects[0]?.id ?? null);
     if (currentProjectId) state = projects.find(p => p.id === currentProjectId) || EMPTY_PROJECT();
-    localStorage.setItem('bauplan_projects', JSON.stringify(projects));
-    localStorage.setItem('bauplan_current_project', String(currentProjectId));
-    localStorage.setItem('bauplan_user_id', currentUser.id);
+    localStorage.setItem('planory_projects', JSON.stringify(projects));
+    localStorage.setItem('planory_current_project', String(currentProjectId));
+    localStorage.setItem('planory_user_id', currentUser.id);
     applyModuleVisibility();
     renderDashboard();
     if (out) out.textContent = `✅ Cloud-Daten übernommen!\nProjekte: ${projects.length}\nKonto: ${currentUser.email}`;
@@ -5419,7 +5420,7 @@ async function forceSyncFromCloud() {
       else if (pid === 'kosten') renderKosten();
       else if (pid === 'dashboard') renderDashboard();
     }
-    const ts = localStorage.getItem('bauplan_updated_at') || '–';
+    const ts = localStorage.getItem('planory_updated_at') || '–';
     const count = projects.reduce((s,p)=>s+(p.aufgaben?.length||0),0);
     if (out) out.textContent = `✅ Geladen!\nProjekte: ${projects.length}\nAufgaben gesamt: ${count}\nLetztes Update: ${ts ? new Date(ts).toLocaleString('de') : '–'}\nKonto: ${currentUser?.email||'–'}`;
     showToast('✅ Cloud-Daten geladen', 'success');
@@ -5576,7 +5577,7 @@ function sendStatusReport() {
     `MÄNGEL`,
     `  Offen: ${offeneMaengel}`,
     ``,
-    `–– Erstellt mit Buildora ––`
+    `–– Erstellt mit Planory ––`
   ].join('\n');
 
   const subject = encodeURIComponent(`Statusbericht ${proj} – ${new Date().toLocaleDateString('de-AT')}`);
@@ -9212,7 +9213,7 @@ function showAuthOverlay() {
   document.getElementById('auth-splash')?.remove();
   document.getElementById('auth-overlay').style.display = 'flex';
   // Show demo button only if secret URL parameter is present
-  const isDemoUrl = new URLSearchParams(location.search).get('demo') === 'buildora2025';
+  const isDemoUrl = new URLSearchParams(location.search).get('demo') === 'planory2025';
   const demoEntry = document.getElementById('demo-entry');
   if (demoEntry) demoEntry.style.display = isDemoUrl ? '' : 'none';
 }
@@ -9322,13 +9323,13 @@ async function onAuthSuccess(user, isNewUser = false) {
   if (emailEl) emailEl.textContent = user.email;
 
   // Clear localStorage ONLY if it belongs to a different user
-  const localOwner = localStorage.getItem('bauplan_user_id');
+  const localOwner = localStorage.getItem('planory_user_id');
   if (localOwner && localOwner !== user.id) {
-    localStorage.removeItem('bauplan_projects');
-    localStorage.removeItem('bauplan_current');
-    localStorage.removeItem('bauplan_data');
-    localStorage.removeItem('bauplan_user_id');
-    localStorage.removeItem('bauplan_updated_at');
+    localStorage.removeItem('planory_projects');
+    localStorage.removeItem('planory_current');
+    localStorage.removeItem('planory_data');
+    localStorage.removeItem('planory_user_id');
+    localStorage.removeItem('planory_updated_at');
   }
 
   // Load data from cloud (with local timestamp comparison)
@@ -9620,7 +9621,7 @@ async function syncToCloud() {
     if (hasRealData) _saveLocalBackup(projects);
 
     const ts = new Date().toISOString();
-    localStorage.setItem('bauplan_updated_at', ts);
+    localStorage.setItem('planory_updated_at', ts);
 
     // ── 1. Save projektdaten (budgetKat, settings) FIRST ───────────
     // CRITICAL ORDER: projektdaten must be written before projekt_items upserts.
@@ -9711,8 +9712,8 @@ async function syncToCloud() {
 }
 
 function _loadFromLocalStorage() {
-  const raw = localStorage.getItem('bauplan_projects');
-  const cur = localStorage.getItem('bauplan_current');
+  const raw = localStorage.getItem('planory_projects');
+  const cur = localStorage.getItem('planory_current');
   if (raw) {
     try {
       projects = JSON.parse(raw);
@@ -9753,7 +9754,7 @@ async function loadFromCloud() {
     // Old format: projektdaten.daten.projects had full arrays.
     // Detect by: no rows in projekt_items but projektdaten has items.
     const oldFormatHasItems = !itemsHaveData && cloudMeta?.projects?.some(p =>
-      ITEM_TYPES.some(t => (p[t]?.length || 0) > 0)
+      ITEM_TYPES.filter(t => t !== 'budgetKat').some(t => (p[t]?.length || 0) > 0)
     );
     if (oldFormatHasItems) {
       console.log('Migrating from old format to projekt_items…');
@@ -9764,9 +9765,9 @@ async function loadFromCloud() {
       const curId = cloudMeta.currentProjectId || oldProjects[0]?.id;
       currentProjectId = curId;
       state = projects.find(p => p.id === curId) || EMPTY_PROJECT();
-      localStorage.setItem('bauplan_projects', JSON.stringify(projects));
-      localStorage.setItem('bauplan_current', String(currentProjectId));
-      localStorage.setItem('bauplan_user_id', currentUser.id);
+      localStorage.setItem('planory_projects', JSON.stringify(projects));
+      localStorage.setItem('planory_current', String(currentProjectId));
+      localStorage.setItem('planory_user_id', currentUser.id);
       await syncToCloud(); // this pushes items to projekt_items
       return loadFromCloud(); // reload fresh from new format
     }
@@ -9837,8 +9838,8 @@ async function loadFromCloud() {
       });
     } else {
       // ── Nothing in cloud ────────────────────────────────────────
-      const localOwner    = localStorage.getItem('bauplan_user_id') || '';
-      const rawLocal      = localStorage.getItem('bauplan_projects');
+      const localOwner    = localStorage.getItem('planory_user_id') || '';
+      const rawLocal      = localStorage.getItem('planory_projects');
       const localProjects = rawLocal ? (() => { try { return JSON.parse(rawLocal); } catch(e) { return []; } })() : [];
       const localHasData  = localOwner === currentUser?.id && _hasData(localProjects);
       if (localHasData) {
@@ -9863,10 +9864,10 @@ async function loadFromCloud() {
     loadProject(currentProjectId, false);
 
     const cloudTs = cloudMeta?.updated_at || new Date().toISOString();
-    localStorage.setItem('bauplan_projects',      JSON.stringify(projects));
-    localStorage.setItem('bauplan_current',       String(currentProjectId));
-    localStorage.setItem('bauplan_user_id',       currentUser.id);
-    localStorage.setItem('bauplan_updated_at',    cloudTs);
+    localStorage.setItem('planory_projects',      JSON.stringify(projects));
+    localStorage.setItem('planory_current',       String(currentProjectId));
+    localStorage.setItem('planory_user_id',       currentUser.id);
+    localStorage.setItem('planory_updated_at',    cloudTs);
     localStorage.setItem('bauplan_last_synced_at', cloudTs);
 
     // Dark mode preference
@@ -11346,7 +11347,7 @@ function renderKostenaufteilung() {
 
   if (isPreview) {
     // Demo ohne Login
-    currentUser = { id: 'demo', email: 'demo@buildora.app' };
+    currentUser = { id: 'demo', email: 'demo@planory.app' };
     hideAuthOverlay();
     const emailEl = document.getElementById('auth-user-email');
     if (emailEl) emailEl.textContent = 'Demo-Modus';
@@ -11406,7 +11407,7 @@ function renderKostenaufteilung() {
   }
 
   // Demo mode: start immediately if secret URL param is present
-  if (new URLSearchParams(location.search).get('demo') === 'buildora2025') {
+  if (new URLSearchParams(location.search).get('demo') === 'planory2025') {
     startDemo();
     return;
   }
@@ -11474,7 +11475,7 @@ async function _confirmRestoreToCloud() {
 async function _forceCloudReload() {
   const btn = document.querySelector('#recovery-banner button');
   if (btn) { btn.textContent = '⏳ Lädt...'; btn.disabled = true; }
-  localStorage.removeItem('bauplan_updated_at');
+  localStorage.removeItem('planory_updated_at');
   await loadFromCloud();
   applyModuleVisibility();
   renderDashboard();
@@ -11489,7 +11490,7 @@ async function refreshApp() {
   if (btn) { btn.style.animation = 'spin 0.8s linear'; btn.disabled = true; }
   if (currentUser) {
     // Re-load from cloud and force-overwrite local
-    localStorage.removeItem('bauplan_updated_at'); // force cloud data to win
+    localStorage.removeItem('planory_updated_at'); // force cloud data to win
     const cloudData = await loadFromCloud();
     applyModuleVisibility();
     renderDashboard();
@@ -11949,7 +11950,7 @@ async function _fireOverdueNotifications() {
         ).catch(() => {});
       }, i * 1200);
     }
-    console.log(`[Buildora] Fired ${items.length} overdue notification(s)`);
+    console.log(`[Planory] Fired ${items.length} overdue notification(s)`);
   } catch(e) { console.warn('_fireOverdueNotifications failed:', e); }
 }
 
@@ -11970,7 +11971,7 @@ async function onTaskTimeChange() {
   if (Notification.permission === 'granted') {
     hint.innerHTML = '<span style="color:var(--success)">✓ Benachrichtigungen aktiv</span>';
   } else if (Notification.permission === 'denied') {
-    hint.innerHTML = '<span style="color:var(--danger)">⚠️ Blockiert – Einstellungen → Safari → Buildora → Mitteilungen</span>';
+    hint.innerHTML = '<span style="color:var(--danger)">⚠️ Blockiert – Einstellungen → Safari → Planory → Mitteilungen</span>';
   } else {
     hint.innerHTML = '<button class="btn btn-ghost" style="font-size:0.75rem;padding:4px 10px" onclick="enableNotifFromModal()">🔔 Benachrichtigungen erlauben</button>';
   }
@@ -12055,7 +12056,7 @@ function pdfHeader(doc, title, subtitle) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('buildora', 14, 10);
+  doc.text('planory', 14, 10);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(title, 14, 17);
@@ -12248,7 +12249,7 @@ function exportRechnungenPDF() {
 <div id="modal-dsgvo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border-radius:16px;max-width:480px;width:100%;padding:32px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto">
     <div style="font-size:1.5rem;margin-bottom:8px">🏗️</div>
-    <h2 style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:8px">Willkommen bei Buildora</h2>
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:8px">Willkommen bei Planory</h2>
     <p style="font-size:0.85rem;color:var(--text2);margin-bottom:20px;line-height:1.6">
       Bevor du loslegst, informieren wir dich kurz über die Verarbeitung deiner Daten gemäß <strong>DSGVO</strong>.
     </p>
@@ -12273,7 +12274,7 @@ function exportRechnungenPDF() {
     <button onclick="acceptDsgvo()" id="dsgvo-accept-btn"
       style="width:100%;background:var(--accent);color:white;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer;transition:background 0.15s"
       onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
-      Zustimmen &amp; Buildora öffnen
+      Zustimmen &amp; Planory öffnen
     </button>
   </div>
 </div>
@@ -12329,7 +12330,7 @@ function exportRechnungenPDF() {
     <p id="upgrade-modal-desc" style="font-size:0.86rem;color:var(--text3);margin-bottom:20px;line-height:1.6"></p>
 
     <div style="background:linear-gradient(135deg,#ede9fe,#dbeafe);border-radius:12px;padding:16px 18px;margin-bottom:20px;text-align:left">
-      <div style="font-weight:700;font-size:0.85rem;color:#1e1b4b;margin-bottom:10px">⭐ Buildora Pro beinhaltet:</div>
+      <div style="font-weight:700;font-size:0.85rem;color:#1e1b4b;margin-bottom:10px">⭐ Planory Pro beinhaltet:</div>
       <div style="font-size:0.82rem;color:#3730a3;line-height:1.8">
         ✅ KI-Bauberater – automatische Projektanalyse<br>
         ✅ Unbegrenzte Projekte<br>

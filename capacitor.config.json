@@ -1,0 +1,16 @@
+{
+  "appId": "com.planory.app",
+  "appName": "Planory",
+  "webDir": "www",
+  "server": {
+    "allowNavigation": ["*.supabase.co"]
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

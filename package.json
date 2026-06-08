@@ -1,9 +1,12 @@
 {
-  "name": "buildora",
+  "name": "planory",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "web-push": "^3.6.7",
-    "stripe": "^14.0.0"
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
+    "stripe": "^14.0.0",
+    "web-push": "^3.6.7"
   }
 }

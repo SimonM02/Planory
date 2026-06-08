@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     customerId = customer.id;
   }
 
-  const origin = req.headers.origin || 'https://bauplan-weld.vercel.app';
+  const origin = req.headers.origin || 'https://planory.vercel.app';
 
   // Create Checkout Session
   const session = await stripe.checkout.sessions.create({
