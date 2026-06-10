@@ -9620,6 +9620,24 @@ async function syncToCloud() {
     const hasRealData = projects.some(p => ITEM_TYPES.some(t => (p[t]?.length || 0) > 0));
     if (hasRealData) _saveLocalBackup(projects);
 
+    // ── SAFETY GUARD: never overwrite real cloud data with an empty state ──
+    // If a load failure left us with a blank EMPTY_PROJECT (no items anywhere),
+    // syncing would clobber the user's real metadata (project names, budgetKat).
+    // In that case: verify the cloud first — if it still holds real items,
+    // abort the overwrite and reload from cloud to restore the real data.
+    if (!hasRealData) {
+      const { count, error: cntErr } = await supa.from('projekt_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id).eq('deleted', false);
+      if (!cntErr && (count || 0) > 0) {
+        console.warn('[SAFETY] Sync abgebrochen: lokaler Zustand leer, aber Cloud hat ' +
+                     count + ' Einträge. Lade neu statt zu überschreiben.');
+        setSyncStatus('ok');
+        setTimeout(() => loadFromCloud(), 100); // restore real data on next tick
+        return;
+      }
+    }
+
     const ts = new Date().toISOString();
     localStorage.setItem('bauplan_updated_at', ts);
 
