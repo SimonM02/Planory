@@ -3961,10 +3961,10 @@ function saveAll() {
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
   const ts = new Date().toISOString();
-  localStorage.setItem('planory_projects',   JSON.stringify(projects));
-  localStorage.setItem('planory_current',    String(currentProjectId));
-  localStorage.setItem('planory_user_id',    currentUser?.id || '');
-  localStorage.setItem('planory_updated_at', ts);
+  localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
+  localStorage.setItem('bauplan_current',    String(currentProjectId));
+  localStorage.setItem('bauplan_user_id',    currentUser?.id || '');
+  localStorage.setItem('bauplan_updated_at', ts);
   if (currentUser && !_demoMode) {
     setSyncStatus('pending');
     clearTimeout(syncTimeout);
@@ -3984,13 +3984,13 @@ function setSyncStatus(status) {
 }
 
 function loadAll() {
-  const raw = localStorage.getItem('planory_projects');
-  const cur = localStorage.getItem('planory_current');
+  const raw = localStorage.getItem('bauplan_projects');
+  const cur = localStorage.getItem('bauplan_current');
   if (raw) {
     projects = JSON.parse(raw);
   } else {
     // Migrate old single-project data
-    const old = localStorage.getItem('planory_data');
+    const old = localStorage.getItem('bauplan_data');
     const firstProject = EMPTY_PROJECT();
     if (old) {
       const parsed = JSON.parse(old);
@@ -4106,11 +4106,11 @@ const PAGE_HINTS = {
   settings:       'Projektdaten anpassen, Budget-Kategorien verwalten, Module ein-/ausblenden und zwischen mehreren Projekten wechseln – Klick auf das Logo oben links.'
 };
 
-let _seenHints = new Set(JSON.parse(localStorage.getItem('planory_seen_hints') || '[]'));
+let _seenHints = new Set(JSON.parse(localStorage.getItem('bauplan_seen_hints') || '[]'));
 
 function dismissHint(pageId) {
   _seenHints.add(pageId);
-  localStorage.setItem('planory_seen_hints', JSON.stringify([..._seenHints]));
+  localStorage.setItem('bauplan_seen_hints', JSON.stringify([..._seenHints]));
   const el = document.getElementById('page-hint-' + pageId);
   if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 220); }
 }
@@ -4459,9 +4459,9 @@ async function doLogout() {
   projects = [];
   state = EMPTY_PROJECT();
   // Clear localStorage so next user on this device starts fresh
-  localStorage.removeItem('planory_projects');
-  localStorage.removeItem('planory_current');
-  localStorage.removeItem('planory_data');
+  localStorage.removeItem('bauplan_projects');
+  localStorage.removeItem('bauplan_current');
+  localStorage.removeItem('bauplan_data');
   // Reset sidebar email
   const emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = 'v3.0 · Planory';
@@ -4524,9 +4524,9 @@ async function deleteAccount() {
     }
 
     // 3. Clear local state
-    localStorage.removeItem('planory_projects');
-    localStorage.removeItem('planory_current');
-    localStorage.removeItem('planory_data');
+    localStorage.removeItem('bauplan_projects');
+    localStorage.removeItem('bauplan_current');
+    localStorage.removeItem('bauplan_data');
     await supa.auth.signOut();
     currentUser = null;
     projects = [];
@@ -5046,7 +5046,7 @@ async function deleteBudgetKat(id) {
   // Update localStorage + projects array immediately
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
-  localStorage.setItem('planory_projects', JSON.stringify(projects));
+  localStorage.setItem('bauplan_projects', JSON.stringify(projects));
   // Sync immediately — projektdaten is written FIRST in syncToCloud so by the
   // time Realtime fires from projekt_items upserts, the cloud already has the
   // correct (post-deletion) budgetKat
@@ -5394,9 +5394,9 @@ async function forceCloudOverwrite() {
     projects = cloudData.projects || [];
     currentProjectId = cloudData.currentProjectId || (projects[0]?.id ?? null);
     if (currentProjectId) state = projects.find(p => p.id === currentProjectId) || EMPTY_PROJECT();
-    localStorage.setItem('planory_projects', JSON.stringify(projects));
-    localStorage.setItem('planory_current_project', String(currentProjectId));
-    localStorage.setItem('planory_user_id', currentUser.id);
+    localStorage.setItem('bauplan_projects', JSON.stringify(projects));
+    localStorage.setItem('bauplan_current_project', String(currentProjectId));
+    localStorage.setItem('bauplan_user_id', currentUser.id);
     applyModuleVisibility();
     renderDashboard();
     if (out) out.textContent = `✅ Cloud-Daten übernommen!\nProjekte: ${projects.length}\nKonto: ${currentUser.email}`;
@@ -5420,7 +5420,7 @@ async function forceSyncFromCloud() {
       else if (pid === 'kosten') renderKosten();
       else if (pid === 'dashboard') renderDashboard();
     }
-    const ts = localStorage.getItem('planory_updated_at') || '–';
+    const ts = localStorage.getItem('bauplan_updated_at') || '–';
     const count = projects.reduce((s,p)=>s+(p.aufgaben?.length||0),0);
     if (out) out.textContent = `✅ Geladen!\nProjekte: ${projects.length}\nAufgaben gesamt: ${count}\nLetztes Update: ${ts ? new Date(ts).toLocaleString('de') : '–'}\nKonto: ${currentUser?.email||'–'}`;
     showToast('✅ Cloud-Daten geladen', 'success');
@@ -9323,13 +9323,13 @@ async function onAuthSuccess(user, isNewUser = false) {
   if (emailEl) emailEl.textContent = user.email;
 
   // Clear localStorage ONLY if it belongs to a different user
-  const localOwner = localStorage.getItem('planory_user_id');
+  const localOwner = localStorage.getItem('bauplan_user_id');
   if (localOwner && localOwner !== user.id) {
-    localStorage.removeItem('planory_projects');
-    localStorage.removeItem('planory_current');
-    localStorage.removeItem('planory_data');
-    localStorage.removeItem('planory_user_id');
-    localStorage.removeItem('planory_updated_at');
+    localStorage.removeItem('bauplan_projects');
+    localStorage.removeItem('bauplan_current');
+    localStorage.removeItem('bauplan_data');
+    localStorage.removeItem('bauplan_user_id');
+    localStorage.removeItem('bauplan_updated_at');
   }
 
   // Load data from cloud (with local timestamp comparison)
@@ -9621,7 +9621,7 @@ async function syncToCloud() {
     if (hasRealData) _saveLocalBackup(projects);
 
     const ts = new Date().toISOString();
-    localStorage.setItem('planory_updated_at', ts);
+    localStorage.setItem('bauplan_updated_at', ts);
 
     // ── 1. Save projektdaten (budgetKat, settings) FIRST ───────────
     // CRITICAL ORDER: projektdaten must be written before projekt_items upserts.
@@ -9712,8 +9712,8 @@ async function syncToCloud() {
 }
 
 function _loadFromLocalStorage() {
-  const raw = localStorage.getItem('planory_projects');
-  const cur = localStorage.getItem('planory_current');
+  const raw = localStorage.getItem('bauplan_projects');
+  const cur = localStorage.getItem('bauplan_current');
   if (raw) {
     try {
       projects = JSON.parse(raw);
@@ -9765,9 +9765,9 @@ async function loadFromCloud() {
       const curId = cloudMeta.currentProjectId || oldProjects[0]?.id;
       currentProjectId = curId;
       state = projects.find(p => p.id === curId) || EMPTY_PROJECT();
-      localStorage.setItem('planory_projects', JSON.stringify(projects));
-      localStorage.setItem('planory_current', String(currentProjectId));
-      localStorage.setItem('planory_user_id', currentUser.id);
+      localStorage.setItem('bauplan_projects', JSON.stringify(projects));
+      localStorage.setItem('bauplan_current', String(currentProjectId));
+      localStorage.setItem('bauplan_user_id', currentUser.id);
       await syncToCloud(); // this pushes items to projekt_items
       return loadFromCloud(); // reload fresh from new format
     }
@@ -9838,8 +9838,8 @@ async function loadFromCloud() {
       });
     } else {
       // ── Nothing in cloud ────────────────────────────────────────
-      const localOwner    = localStorage.getItem('planory_user_id') || '';
-      const rawLocal      = localStorage.getItem('planory_projects');
+      const localOwner    = localStorage.getItem('bauplan_user_id') || '';
+      const rawLocal      = localStorage.getItem('bauplan_projects');
       const localProjects = rawLocal ? (() => { try { return JSON.parse(rawLocal); } catch(e) { return []; } })() : [];
       const localHasData  = localOwner === currentUser?.id && _hasData(localProjects);
       if (localHasData) {
@@ -9864,10 +9864,10 @@ async function loadFromCloud() {
     loadProject(currentProjectId, false);
 
     const cloudTs = cloudMeta?.updated_at || new Date().toISOString();
-    localStorage.setItem('planory_projects',      JSON.stringify(projects));
-    localStorage.setItem('planory_current',       String(currentProjectId));
-    localStorage.setItem('planory_user_id',       currentUser.id);
-    localStorage.setItem('planory_updated_at',    cloudTs);
+    localStorage.setItem('bauplan_projects',      JSON.stringify(projects));
+    localStorage.setItem('bauplan_current',       String(currentProjectId));
+    localStorage.setItem('bauplan_user_id',       currentUser.id);
+    localStorage.setItem('bauplan_updated_at',    cloudTs);
     localStorage.setItem('bauplan_last_synced_at', cloudTs);
 
     // Dark mode preference
@@ -11475,7 +11475,7 @@ async function _confirmRestoreToCloud() {
 async function _forceCloudReload() {
   const btn = document.querySelector('#recovery-banner button');
   if (btn) { btn.textContent = '⏳ Lädt...'; btn.disabled = true; }
-  localStorage.removeItem('planory_updated_at');
+  localStorage.removeItem('bauplan_updated_at');
   await loadFromCloud();
   applyModuleVisibility();
   renderDashboard();
@@ -11490,7 +11490,7 @@ async function refreshApp() {
   if (btn) { btn.style.animation = 'spin 0.8s linear'; btn.disabled = true; }
   if (currentUser) {
     // Re-load from cloud and force-overwrite local
-    localStorage.removeItem('planory_updated_at'); // force cloud data to win
+    localStorage.removeItem('bauplan_updated_at'); // force cloud data to win
     const cloudData = await loadFromCloud();
     applyModuleVisibility();
     renderDashboard();
