@@ -1,0 +1,10 @@
+.vercel
+node_modules/
+.claude/
+staging-repo/
+index-staging.html
+appicon-fullbleed.svg
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+.DS_Store
