@@ -4079,13 +4079,11 @@ function updateProjectHeader() {
   if (nameEl) nameEl.textContent = s.name || 'Planory';
   if (subEl)  subEl.textContent  = (s.type || '') + (projects.length > 1 ? ` · ${projects.length} Projekte` : '');
 
-  // Sidebar accent color per project
-  const color = s.color || '#ff9f1c';
-  document.documentElement.style.setProperty('--accent', color);
-  // derive accent2 (lighter)
-  document.documentElement.style.setProperty('--accent2', color + 'cc');
-  document.documentElement.style.setProperty('--accent-light', color + '18');
-  document.documentElement.style.setProperty('--accent-grad', `linear-gradient(135deg, ${color}, ${color}cc)`);
+  // Brand accent stays fixed (amber) — project color is only used for
+  // project avatars/dots, never as the global accent. Clean up any override
+  // a previous version may have left as inline style on <html>.
+  ['--accent','--accent2','--accent-light','--accent-grad'].forEach(v =>
+    document.documentElement.style.removeProperty(v));
   const mobileTitle = document.getElementById('mobile-topbar-title');
   if (mobileTitle) mobileTitle.textContent = document.getElementById('current-project-name')?.textContent || 'Planory';
 }
