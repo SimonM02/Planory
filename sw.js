@@ -10,8 +10,8 @@ self.addEventListener('message', e => {
     self.registration.showNotification(title, {
       body,
       tag: tag || ('task-' + taskId),
-      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%233d6ff8"/><path d="M16 7L5 16h3v9h7v-5h2v5h7v-9h3z" fill="white"/></svg>',
-      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%233d6ff8"/></svg>',
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%2311151F"/><path d="M16 7L5 16h3v9h7v-5h2v5h7v-9h3z" fill="%23FF9F1C"/></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%2311151F"/></svg>',
       vibrate: [200, 100, 200],
       data: { taskId }
     });
@@ -38,7 +38,7 @@ self.addEventListener('push', e => {
     self.registration.showNotification(d.title || 'Planory Erinnerung', {
       body: d.body || '',
       tag: d.tag || 'planory-push',
-      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%233d6ff8"/><path d="M16 7L5 16h3v9h7v-5h2v5h7v-9h3z" fill="white"/></svg>',
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%2311151F"/><path d="M16 7L5 16h3v9h7v-5h2v5h7v-9h3z" fill="%23FF9F1C"/></svg>',
       data: d
     })
   );
