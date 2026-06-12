@@ -2688,7 +2688,7 @@
                   🔒 KI-Bauberater (Pro)<br>
                   🔒 Unbegrenzte Projekte (Pro)
                 </div>
-                <button onclick="startStripeCheckout()"
+                <button id="btn-stripe-upgrade" onclick="startStripeCheckout()"
                   style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:9px;padding:11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:white;cursor:pointer;transition:opacity 0.15s"
                   onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
                   ⭐ Jetzt auf Pro upgraden
@@ -2712,7 +2712,7 @@
                   ✅ Prioritäts-Support<br>
                   <span id="plan-period-end" style="font-size:0.75rem;color:var(--text3)"></span>
                 </div>
-                <button onclick="openStripePortal()"
+                <button id="btn-stripe-portal" onclick="openStripePortal()"
                   style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.15s"
                   onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
                   onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
@@ -4354,6 +4354,30 @@ function loadSettings() {
 }
 
 // ── Stripe / Plan ──────────────────────────────────────────────────────────
+// Erkennt, ob die App als native App (Capacitor-Wrapper, z. B. iOS App Store)
+// läuft. In der nativen App muss externe Bezahlung (Stripe) ausgeblendet werden
+// (Apple-Richtlinie 3.1.1). Im Browser ist das immer false – Web bleibt unverändert.
+function isNativeApp() {
+  return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform());
+}
+
+// Blendet alle externen Bezahl-Elemente aus, wenn die App nativ läuft.
+function applyNativePaymentPolicy() {
+  if (!isNativeApp()) return;
+  ['btn-stripe-upgrade','btn-stripe-portal','btn-modal-stripe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const laterBtn = document.getElementById('btn-modal-later');
+  if (laterBtn) laterBtn.textContent = 'Schließen';
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyNativePaymentPolicy);
+} else {
+  applyNativePaymentPolicy();
+}
+
 async function loadUserPlan() {
   if (!currentUser) return;
   try {
@@ -4398,6 +4422,7 @@ async function loadUserPlan() {
 }
 
 async function startStripeCheckout() {
+  if (isNativeApp()) return;
   if (!currentUser) return;
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = 'Weiterleitung…'; }
@@ -4422,6 +4447,7 @@ async function startStripeCheckout() {
 }
 
 async function openStripePortal() {
+  if (isNativeApp()) return;
   if (!currentUser) return;
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = 'Weiterleitung…'; }
@@ -12363,12 +12389,12 @@ function exportRechnungenPDF() {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button onclick="closeModal('modal-upgrade');startStripeCheckout()"
+      <button id="btn-modal-stripe" onclick="closeModal('modal-upgrade');startStripeCheckout()"
         style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:10px;padding:13px;font-family:'Hanken Grotesk',sans-serif;font-size:0.92rem;font-weight:700;color:white;cursor:pointer;transition:opacity 0.15s"
         onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
         ⭐ Jetzt Pro werden
       </button>
-      <button onclick="closeModal('modal-upgrade')"
+      <button id="btn-modal-later" onclick="closeModal('modal-upgrade')"
         style="width:100%;background:none;border:1.5px solid var(--border);border-radius:10px;padding:11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--text3);cursor:pointer">
         Vielleicht später
       </button>
