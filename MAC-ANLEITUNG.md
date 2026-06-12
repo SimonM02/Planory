@@ -25,7 +25,7 @@ npx cap open ios     # öffnet Xcode
 2. Tab **Signing & Capabilities**:
    - ✅ "Automatically manage signing" anhaken
    - **Team**: deinen Developer-Account auswählen
-   - **Bundle Identifier**: muss `com.planory.app` sein
+   - **Bundle Identifier**: muss `com.planory.bau` sein
 3. Tab **General**:
    - Display Name: `Planory`
    - Version: `1.0`, Build: `1`
