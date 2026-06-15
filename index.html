@@ -1393,7 +1393,7 @@
   .sidebar { transition: width 0.22s ease; }
 
   .hide-mobile { display: table-cell; }
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .hide-mobile { display: none !important; }
     /* Sidebar becomes a slide-in overlay */
     .sidebar {
@@ -4155,7 +4155,7 @@ function showPlanTab(tab, btn) {
 }
 
 function showPage(id) {
-  if (window.innerWidth <= 768) closeMobileSidebar();
+  if (window.innerWidth <= 1024) closeMobileSidebar();
   // Redirect legacy planning page IDs to unified page
   const planTabMap = { gantt: 'zeitplan', meilensteine: 'meilensteine', abhaengigkeiten: 'ablauf' };
   const planTab = planTabMap[id];
