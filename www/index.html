@@ -1457,6 +1457,14 @@
     .cards-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
     .two-col { grid-template-columns: 1fr !important; }
 
+    /* Prevent the whole page from overflowing/shifting sideways on mobile */
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .main { max-width: 100%; overflow-x: hidden; }
+    /* Let page-header title + action buttons wrap instead of overflowing */
+    .page-header { flex-wrap: wrap; gap: 12px; }
+    .page-header > div { flex-wrap: wrap; max-width: 100%; }
+    .page-header .btn { flex: 0 1 auto; }
+
     /* Better table scrolling */
     .table-wrap { overflow-x: auto; }
     table { min-width: 500px; }
