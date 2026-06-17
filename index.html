@@ -2393,7 +2393,7 @@
           <input class="search-bar" id="kosten-search" placeholder="🔍 Suchen..." oninput="renderKosten()">
         </div>
         <table>
-          <thead><tr><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th>Netto</th><th>MwSt</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Datum</th><th class="hide-mobile">Kategorie</th><th>Beschreibung</th><th class="hide-mobile">Netto</th><th class="hide-mobile">MwSt</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
           <tbody id="kosten-table"></tbody>
         </table>
       </div>
@@ -4935,10 +4935,10 @@ function renderKosten() {
       }
       return `<tr>
         <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
-        <td><span class="badge badge-gray">${k.kat}</span></td>
+        <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
         <td>${k.beschr}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem">🤖 KI</span>`:''}${skontoBadge}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
+        <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
+        <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
         <td><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td style="display:flex;gap:4px">
