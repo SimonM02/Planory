@@ -2405,7 +2405,7 @@
           <div class="table-title">Eigenleistungen</div>
         </div>
         <table>
-          <thead><tr><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th>Marktwert</th><th>Geleistet von</th><th></th></tr></thead>
+          <thead><tr><th>Datum</th><th class="hide-mobile">Kategorie</th><th>Beschreibung</th><th>Marktwert</th><th class="hide-mobile">Geleistet von</th><th></th></tr></thead>
           <tbody id="eigen-table"></tbody>
         </table>
       </div>
@@ -2582,7 +2582,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Gewerk</th><th>Telefon</th><th>E-Mail</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th class="hide-mobile">Gewerk</th><th>Telefon</th><th class="hide-mobile">E-Mail</th><th>Status</th><th></th></tr></thead>
         <tbody id="kontakt-table"></tbody>
       </table>
     </div>
@@ -3012,7 +3012,7 @@
     <div id="ang-liste-view">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Datum</th><th>Gewerk / Beschreibung</th><th>Anbieter</th><th>Betrag</th><th>Status</th><th>Fälligkeit</th><th></th></tr></thead>
+          <thead><tr><th class="hide-mobile">Datum</th><th>Gewerk / Beschreibung</th><th class="hide-mobile">Anbieter</th><th>Betrag</th><th>Status</th><th class="hide-mobile">Fälligkeit</th><th></th></tr></thead>
           <tbody id="angebot-table"></tbody>
         </table>
       </div>
@@ -4957,13 +4957,13 @@ function renderKosten() {
     etbody.innerHTML = [...state.eigenleistungen].reverse().map(e => `
       <tr>
         <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
-        <td><span class="badge badge-gray">${e.kat}</span></td>
+        <td class="hide-mobile"><span class="badge badge-gray">${e.kat}</span></td>
         <td>
           ${e.beschr}
           ${e.notiz ? `<br><span style="font-size:0.75rem;color:var(--text3)">${e.notiz}</span>` : ''}
         </td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
-        <td>${e.von || '–'}</td>
+        <td class="hide-mobile">${e.von || '–'}</td>
         <td style="display:flex;gap:4px">
           <button class="action-btn" onclick="editEigenleistung(${e.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteEigenleistung(${e.id})">🗑</button>
@@ -6604,7 +6604,7 @@ function renderDiarySummary() {
     <div class="table-wrap">
       <div class="table-header"><div class="table-title">Alle Einträge – Übersicht</div></div>
       <table>
-        <thead><tr><th>Datum</th><th>Titel</th><th>Wetter</th><th>Arbeiter</th><th>Stunden</th></tr></thead>
+        <thead><tr><th>Datum</th><th>Titel</th><th class="hide-mobile">Wetter</th><th class="hide-mobile">Arbeiter</th><th>Stunden</th></tr></thead>
         <tbody>
           ${[...state.tagebuch].reverse().map(e => {
             const ws = e.workers || [];
@@ -6612,8 +6612,8 @@ function renderDiarySummary() {
             return `<tr>
               <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
               <td>${e.title}</td>
-              <td>${e.weather}</td>
-              <td>${ws.length ? ws.map(w=>`<span class="badge badge-gray" style="margin:1px">${w.name}</span>`).join('') : '<span style="color:var(--text3)">–</span>'}</td>
+              <td class="hide-mobile">${e.weather}</td>
+              <td class="hide-mobile">${ws.length ? ws.map(w=>`<span class="badge badge-gray" style="margin:1px">${w.name}</span>`).join('') : '<span style="color:var(--text3)">–</span>'}</td>
               <td style="font-family:'JetBrains Mono',monospace">${hrs > 0 ? hrs+'h' : '–'}</td>
             </tr>`;
           }).join('')}
@@ -6988,9 +6988,9 @@ function renderKontakte() {
   tbody.innerHTML = state.kontakte.map(k => `
     <tr>
       <td><strong>${k.name}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${k.notiz}</span>`:''}</td>
-      <td><span class="badge badge-gray">${k.gewerk}</span></td>
+      <td class="hide-mobile"><span class="badge badge-gray">${k.gewerk}</span></td>
       <td>${k.tel?`<a href="tel:${k.tel}" style="color:var(--accent);text-decoration:none">${k.tel}</a>`:'–'}</td>
-      <td>${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
+      <td class="hide-mobile">${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
       <td><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
@@ -10782,12 +10782,12 @@ function renderAngebote() {
     const gueltigD = a.gueltig ? new Date(a.gueltig) : null;
     const isExpired = gueltigD && gueltigD < now && a.status === 'Ausstehend';
     return `<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
+      <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
       <td><strong>${a.beschr}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${a.notiz}</span>`:''}</td>
-      <td style="font-size:0.82rem">${a.anbieter||'–'}</td>
+      <td class="hide-mobile" style="font-size:0.82rem">${a.anbieter||'–'}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
       <td><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
+      <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn" onclick="document.getElementById('ang-edit-id').value=${a.id};angebotZuRechnung()" title="Zu Rechnung umwandeln">→💶</button>
