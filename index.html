@@ -3309,7 +3309,7 @@
 
     <div class="form-row">
       <label>Kategorie</label>
-      <input type="text" id="bk-name" placeholder="Name der Kategorie..." oninput="updateBudgetKatPreview()">
+      <input type="text" id="bk-name" placeholder="Name der Kategorie..." oninput="updateBudgetKatPreview()" onkeydown="if(event.key==='Enter')addBudgetKat()">
       <div id="bk-presets-wrap">
         <div style="font-size:0.7rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:10px;margin-bottom:7px">Typische Kategorien:</div>
         <div id="bk-presets" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -3318,7 +3318,7 @@
 
     <div class="form-row">
       <label>Geplantes Budget (€)</label>
-      <input type="number" id="bk-budget" placeholder="z.B. 50000" oninput="updateBudgetKatPreview()">
+      <input type="number" id="bk-budget" placeholder="z.B. 50000" oninput="updateBudgetKatPreview()" onkeydown="if(event.key==='Enter')addBudgetKat()">
       <div id="bk-preview" style="font-size:0.82rem;color:var(--accent);margin-top:6px;font-weight:700;min-height:18px"></div>
     </div>
 
@@ -5038,14 +5038,14 @@ function updateBudgetKatPreview() {
 }
 
 function addBudgetKat() {
-  const editId = parseInt(document.getElementById('bk-edit-id')?.value) || null;
+  const editId = document.getElementById('bk-edit-id')?.value || null;
   const name   = document.getElementById('bk-name').value.trim();
   const budget = parseFloat(document.getElementById('bk-budget').value) || 0;
   if (!name) { document.getElementById('bk-name').focus(); return; }
   if (budget <= 0) { document.getElementById('bk-budget').focus(); return; }
 
   if (editId) {
-    const idx = state.budgetKat.findIndex(k => k.id === editId);
+    const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
     if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget };
   } else {
     if (state.budgetKat.find(k => k.name === name)) { alert(`Kategorie "${name}" existiert bereits.`); return; }
@@ -5062,11 +5062,11 @@ function addBudgetKat() {
 }
 
 function editBudgetKat(id) {
-  const k = state.budgetKat.find(k => k.id === id);
+  const k = state.budgetKat.find(k => String(k.id) === String(id));
   if (!k) return;
   document.getElementById('bk-name').value   = k.name;
   document.getElementById('bk-budget').value = k.budget;
-  if (document.getElementById('bk-edit-id')) document.getElementById('bk-edit-id').value = id;
+  if (document.getElementById('bk-edit-id')) document.getElementById('bk-edit-id').value = String(k.id);
   if (document.getElementById('bk-modal-title')) document.getElementById('bk-modal-title').textContent = 'Kategorie bearbeiten';
   updateBudgetKatPreview();
   renderBudgetPresets();
@@ -12336,8 +12336,8 @@ function exportRechnungenPDF() {
       <div style="margin-bottom:8px"><strong style="color:var(--text)">✅ Deine Rechte</strong></div>
       <p>Du kannst dein Konto und alle Daten jederzeit unter <em>Einstellungen → Konto → Konto löschen</em> vollständig löschen.</p>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:12px;background:var(--accent-light);border-radius:8px;cursor:pointer" onclick="document.getElementById('dsgvo-check').click()">
-      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:12px;background:var(--accent-light);border-radius:8px;cursor:pointer" onclick="if(event.target.id!=='dsgvo-check')document.getElementById('dsgvo-check').click()">
+      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer" onclick="event.stopPropagation()">
       <label for="dsgvo-check" style="font-size:0.82rem;color:var(--text2);cursor:pointer;line-height:1.55">
         Ich habe die Datenschutzinformation gelesen und stimme der Verarbeitung meiner Daten gemäß der obigen Beschreibung zu.
       </label>
