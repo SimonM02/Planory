@@ -1477,6 +1477,33 @@
     .main { padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important; }
   }
 
+  /* ── PHONE (≤600px) ──────────────────────────────────────── */
+  @media (max-width: 600px) {
+    /* Single-column cards so numbers don't get clipped */
+    .cards-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+
+    /* Smaller number font so long values fit */
+    .card-value { font-size: 1.25rem !important; }
+
+    /* Page header stacks on phone */
+    .page-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+    .page-header > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+    .page-header .btn { font-size: 0.76rem !important; padding: 7px 10px !important; }
+
+    /* Tables scroll within wrapper – don't let them blow out the page */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 0 !important; width: max-content; }
+
+    /* Budget-Aktions-Spalte fixiert rechts (kein sticky auf narrow) */
+    td[style*="position:sticky"] { position: relative !important; }
+
+    /* Tighter main padding */
+    .main { padding-left: 10px !important; padding-right: 10px !important; }
+
+    /* KI-panel buttons wrap */
+    #ki-advisor-panel [style*="display:flex"] { flex-wrap: wrap; }
+  }
+
   /* DIARY */
   .diary-entry {
     background: var(--surface);
