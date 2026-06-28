@@ -12363,11 +12363,11 @@ function exportRechnungenPDF() {
       <div style="margin-bottom:8px"><strong style="color:var(--text)">✅ Deine Rechte</strong></div>
       <p>Du kannst dein Konto und alle Daten jederzeit unter <em>Einstellungen → Konto → Konto löschen</em> vollständig löschen.</p>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:12px;background:var(--accent-light);border-radius:8px">
-      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer">
-      <label for="dsgvo-check" style="font-size:0.82rem;color:var(--text2);cursor:pointer;line-height:1.55">
+    <div onclick="var c=document.getElementById('dsgvo-check');c.checked=!c.checked" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:12px;background:var(--accent-light);border-radius:8px;cursor:pointer">
+      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;pointer-events:none">
+      <span style="font-size:0.82rem;color:var(--text2);line-height:1.55">
         Ich habe die Datenschutzinformation gelesen und stimme der Verarbeitung meiner Daten gemäß der obigen Beschreibung zu.
-      </label>
+      </span>
     </div>
     <button onclick="acceptDsgvo()" id="dsgvo-accept-btn"
       style="width:100%;background:var(--accent);color:var(--accent-text);border:none;border-radius:10px;padding:13px;font-family:'Hanken Grotesk',sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer;transition:background 0.15s"
