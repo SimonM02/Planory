@@ -2703,8 +2703,8 @@
             </div>
           </div>
 
-          <div class="table-header" style="border-top:1px solid var(--border)"><div class="table-title">⭐ Mein Plan</div></div>
-          <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div class="table-header" id="plan-section-header" style="border-top:1px solid var(--border)"><div class="table-title">⭐ Mein Plan</div></div>
+          <div id="plan-section-body" style="padding:20px;display:flex;flex-direction:column;gap:12px">
 
             <!-- Free plan card -->
             <div id="plan-free-card" style="display:none;border-radius:12px;border:1.5px solid var(--border);overflow:hidden">
@@ -4397,10 +4397,21 @@ function isNativeApp() {
             && window.Capacitor.isNativePlatform());
 }
 
-// Blendet alle externen Bezahl-Elemente aus, wenn die App nativ läuft.
+// In der nativen App (App Store) gibt es keinen externen Bezahl-Weg. Damit keine
+// gesperrten Funktionen ohne Kaufmöglichkeit gezeigt werden (Apple-Richtlinie 2.1
+// & 3.1.1), sind in der App alle Funktionen freigeschaltet. Früher Default, damit
+// auch Feature-Checks vor dem Laden des Plans korrekt durchlaufen.
+if (isNativeApp()) window._userPlan = 'pro';
+
+// Blendet alle externen Bezahl-Elemente aus und schaltet in der nativen App
+// alle Funktionen frei.
 function applyNativePaymentPolicy() {
   if (!isNativeApp()) return;
-  ['btn-stripe-upgrade','btn-stripe-portal','btn-modal-stripe'].forEach(id => {
+  // Alle Pro-Funktionen freischalten (kein Upgrade-Fenster, keine Sperren)
+  window._userPlan = 'pro';
+  // Externe Bezahl-/Plan-Elemente ausblenden
+  ['btn-stripe-upgrade','btn-stripe-portal','btn-modal-stripe',
+   'plan-section-header','plan-section-body'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -4415,6 +4426,15 @@ if (document.readyState === 'loading') {
 
 async function loadUserPlan() {
   if (!currentUser) return;
+  // Native App: alles freigeschaltet, keine Plan-/Bezahl-Karten anzeigen
+  if (isNativeApp()) {
+    window._userPlan = 'pro';
+    ['plan-loading-card','plan-free-card','plan-pro-card'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    return;
+  }
   try {
     const { data, error } = await supa
       .from('subscriptions')
