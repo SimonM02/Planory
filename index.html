@@ -12364,7 +12364,7 @@ function exportRechnungenPDF() {
       <p>Du kannst dein Konto und alle Daten jederzeit unter <em>Einstellungen → Konto → Konto löschen</em> vollständig löschen.</p>
     </div>
     <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:12px;background:var(--accent-light);border-radius:8px;cursor:pointer">
-      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer">
+      <input type="checkbox" id="dsgvo-check" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer" onclick="event.stopPropagation()">
       <span style="font-size:0.82rem;color:var(--text2);line-height:1.55">
         Ich habe die Datenschutzinformation gelesen und stimme der Verarbeitung meiner Daten gemäß der obigen Beschreibung zu.
       </span>
