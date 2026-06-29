@@ -4096,7 +4096,7 @@ function _deduplicateProject(proj) {
 }
 
 function loadProject(id, rerender = true) {
-  const proj = projects.find(p => p.id === id);
+  const proj = projects.find(p => String(p.id) === String(id));
   if (!proj) return;
   currentProjectId = id;
   // Dedup before deep-copy so state and projects are both clean
@@ -4803,7 +4803,7 @@ function saveKosten() {
 }
 
 function editKosten(id) {
-  const k = state.kosten.find(k => k.id === id);
+  const k = state.kosten.find(k => String(k.id) === String(id));
   if (!k) return;
   refreshAllKatSelects(k.kat);
   document.getElementById('k-modal-title').textContent = 'Ausgabe bearbeiten';
@@ -4829,7 +4829,7 @@ function editKosten(id) {
 
 function deleteKosten(id) { _trackDeletion(id, 'kosten');
   if (!confirm('Ausgabe löschen?')) return;
-  state.kosten = state.kosten.filter(k => k.id !== id);
+  state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); renderKosten(); renderBudget(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
 
@@ -4896,7 +4896,7 @@ function openBudgetDrilldown(katName) {
 function deleteDrilldownKosten(id, katName) {
   if (!confirm('Ausgabe löschen?')) return;
   _trackDeletion(id, 'kosten');
-  state.kosten = state.kosten.filter(k => k.id !== id);
+  state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save();
   renderKosten();
   renderBudget();
@@ -4931,7 +4931,7 @@ function addEigenleistung() {
 }
 
 function editEigenleistung(id) {
-  const e = (state.eigenleistungen||[]).find(e => e.id === id);
+  const e = (state.eigenleistungen||[]).find(e => String(e.id) === String(id));
   if (!e) return;
   document.getElementById('el-datum').value  = e.datum  || '';
   document.getElementById('el-beschr').value = e.beschr || '';
@@ -4948,7 +4948,7 @@ function editEigenleistung(id) {
 function deleteEigenleistung(id) {
   if (!confirm('Eigenleistung löschen?')) return;
   _trackDeletion(id, 'eigenleistungen');
-  state.eigenleistungen = (state.eigenleistungen||[]).filter(e => e.id !== id);
+  state.eigenleistungen = (state.eigenleistungen||[]).filter(e => String(e.id) !== String(id));
   save(); renderKosten(); showToast('🗑 Eigenleistung gelöscht', 'success');
 }
 
@@ -5159,7 +5159,7 @@ function editBudgetKat(id) {
 
 async function deleteBudgetKat(id) {
   if (!confirm('Kategorie löschen?')) return;
-  state.budgetKat = state.budgetKat.filter(k => k.id !== id);
+  state.budgetKat = state.budgetKat.filter(k => String(k.id) !== String(id));
   // Re-stamp _order after deletion so positions stay clean
   state.budgetKat.forEach((k, i) => { k._order = i; });
   // Timestamp so loadFromCloud() knows our local state is authoritative
@@ -5920,7 +5920,7 @@ function addMilestone() {
 }
 
 function editMilestone(id) {
-  const m = state.meilensteine.find(m => m.id === id);
+  const m = state.meilensteine.find(m => String(m.id) === String(id));
   if (!m) return;
   document.getElementById('ms-name').value  = m.name  || '';
   document.getElementById('ms-datum').value = m.datum || '';
@@ -5931,7 +5931,7 @@ function editMilestone(id) {
 }
 
 function toggleMilestone(id) {
-  const m = state.meilensteine.find(m => m.id === id);
+  const m = state.meilensteine.find(m => String(m.id) === String(id));
   if (m) { m.done = !m.done; m._updatedAt = Date.now(); showToast(m.done ? '✅ Meilenstein abgehakt' : '↩️ Meilenstein wieder offen', 'success'); }
   save(); renderMilestones();
 }
@@ -5939,7 +5939,7 @@ function toggleMilestone(id) {
 function deleteMilestone(id) {
   if (!confirm('Meilenstein löschen?')) return;
   _trackDeletion(id, 'meilensteine');
-  state.meilensteine = state.meilensteine.filter(m => m.id !== id);
+  state.meilensteine = state.meilensteine.filter(m => String(m.id) !== String(id));
   save(); renderMilestones(); showToast('🗑 Meilenstein gelöscht', 'success');
 }
 
@@ -6255,7 +6255,7 @@ function resetTaskModal() {
 }
 
 function editTask(id) {
-  const t = state.aufgaben.find(t => t.id === id);
+  const t = state.aufgaben.find(t => String(t.id) === String(id));
   if (!t) return;
   _populateTaskPersonList();
   document.getElementById('t-name').value   = t.name   || '';
@@ -6272,7 +6272,7 @@ function editTask(id) {
 }
 
 function toggleTask(id) {
-  const t = state.aufgaben.find(t => t.id === id);
+  const t = state.aufgaben.find(t => String(t.id) === String(id));
   if (t) {
     t.status = t.status === 'Erledigt' ? 'Offen' : 'Erledigt';
     t._updatedAt = Date.now();
@@ -6287,7 +6287,7 @@ function deleteTask(id) {
   _trackDeletion(id, 'aufgaben');
   // Remove synced notiz
   state.notizen = state.notizen.filter(n => n.__taskId !== id);
-  state.aufgaben = state.aufgaben.filter(t => t.id !== id);
+  state.aufgaben = state.aufgaben.filter(t => String(t.id) !== String(id));
   save(); renderTasks(); showToast('🗑 Aufgabe gelöscht', 'success');
 }
 
@@ -6483,7 +6483,7 @@ function addDiary() {
 }
 
 function editDiary(id) {
-  const e = state.tagebuch.find(e => e.id === id);
+  const e = state.tagebuch.find(e => String(e.id) === String(id));
   if (!e) return;
   document.getElementById('tb-datum').value  = e.datum   || '';
   document.getElementById('tb-title').value  = e.title   || '';
@@ -6512,7 +6512,7 @@ function editDiary(id) {
 function deleteDiary(id) {
   if (!confirm('Eintrag löschen?')) return;
   _trackDeletion(id, 'tagebuch');
-  state.tagebuch = state.tagebuch.filter(e => e.id !== id);
+  state.tagebuch = state.tagebuch.filter(e => String(e.id) !== String(id));
   save(); renderDiary();
   showToast('🗑 Eintrag gelöscht', 'success');
 }
@@ -6768,7 +6768,7 @@ function addNotiz() {
 }
 
 function editNotiz(id) {
-  const n = state.notizen.find(n => n.id === id);
+  const n = state.notizen.find(n => String(n.id) === String(id));
   if (!n) return;
   document.getElementById('n-title').value   = n.title   || '';
   document.getElementById('n-text').value    = n.text    || '';
@@ -6783,7 +6783,7 @@ function editNotiz(id) {
 function deleteNotiz(id) {
   if (!confirm('Notiz löschen?')) return;
   _trackDeletion(id, 'notizen');
-  state.notizen = state.notizen.filter(n => n.id !== id);
+  state.notizen = state.notizen.filter(n => String(n.id) !== String(id));
   save(); renderNotizen();
   showToast('🗑 Notiz gelöscht', 'success');
 }
@@ -6948,7 +6948,7 @@ async function _getDokumentUrl(d) {
 }
 
 async function downloadDokument(id) {
-  const d = (state.dateien||[]).find(d => d.id === id);
+  const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (!d) return;
   const url = await _getDokumentUrl(d);
   if (!url) return;
@@ -6957,7 +6957,7 @@ async function downloadDokument(id) {
 }
 
 async function openDokument(id) {
-  const d = (state.dateien||[]).find(d => d.id === id);
+  const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (!d) return;
   const url = await _getDokumentUrl(d);
   if (!url) { showToast('Datei konnte nicht geladen werden', 'error'); return; }
@@ -6972,11 +6972,11 @@ async function openDokument(id) {
 
 async function deleteDokument(id) {
   if (!confirm('Dokument löschen?')) return;
-  const d = (state.dateien||[]).find(d => d.id === id);
+  const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (d?.storage) {
     await supa.storage.from('dokumente').remove([d.storage]);
   }
-  state.dateien = (state.dateien||[]).filter(d => d.id !== id);
+  state.dateien = (state.dateien||[]).filter(d => String(d.id) !== String(id));
   save(); renderDokumente();
   showToast('🗑 Dokument gelöscht', 'success');
 }
@@ -7038,7 +7038,7 @@ function addKontakt() {
 }
 
 function editKontakt(id) {
-  const k = state.kontakte.find(k => k.id === id);
+  const k = state.kontakte.find(k => String(k.id) === String(id));
   if (!k) return;
   document.getElementById('c-name').value  = k.name   || '';
   document.getElementById('c-tel').value   = k.tel    || '';
@@ -7056,11 +7056,11 @@ function editKontakt(id) {
 function deleteKontakt(id) {
   if (!confirm('Kontakt löschen?')) return;
   _trackDeletion(id, 'kontakte');
-  const k = state.kontakte.find(k => k.id === id);
+  const k = state.kontakte.find(k => String(k.id) === String(id));
   if (k && k.firma) {
     (state.angebote||[]).forEach(a => { if (a.anbieter === k.firma) a.anbieter = ''; });
   }
-  state.kontakte = state.kontakte.filter(k => k.id !== id);
+  state.kontakte = state.kontakte.filter(k => String(k.id) !== String(id));
   save(); renderKontakte();
   showToast('🗑 Kontakt gelöscht', 'success');
 }
@@ -7122,7 +7122,7 @@ function saveGanttItem() {
 }
 
 function editGanttItem(id) {
-  const g = state.gantt.find(g => g.id === id);
+  const g = state.gantt.find(g => String(g.id) === String(id));
   if (!g) return;
   document.getElementById('g-name').value  = g.name  || '';
   document.getElementById('g-start').value = g.start || '';
@@ -7138,7 +7138,7 @@ function editGanttItem(id) {
 function deleteGanttItem(id) {
   if (!confirm('Eintrag löschen?')) return;
   _trackDeletion(id, 'gantt');
-  state.gantt = state.gantt.filter(g => g.id !== id);
+  state.gantt = state.gantt.filter(g => String(g.id) !== String(id));
   save(); renderGantt();
   showToast('🗑 Phase gelöscht', 'success');
 }
@@ -7347,7 +7347,7 @@ let ganttDrag = null;
 
 function ganttStartDrag(e, id, mode) {
   e.preventDefault();
-  const g   = state.gantt.find(g => g.id === id);
+  const g   = state.gantt.find(g => String(g.id) === String(id));
   if (!g) return;
   const bar = e.currentTarget;
 
@@ -7641,9 +7641,9 @@ function addFotosToAlbum(input) {
 
 function deletePhotoFromAlbum(id) {
   if (!confirm('Foto löschen?')) return;
-  const f = state.fotos.find(f => f.id === id);
+  const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) deletePhotoFromStorage(f.path);
-  state.fotos = state.fotos.filter(f => f.id !== id);
+  state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
   save();
   // Refresh album view
   const remaining = (state.fotos || []).filter(f => f.albumId === _openAlbumId);
@@ -7735,14 +7735,14 @@ async function confirmPhoto() {
 
 async function deletePhoto(id) {
   if (!confirm('Foto löschen?')) return;
-  const f = state.fotos.find(f => f.id === id);
+  const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) await deletePhotoFromStorage(f.path);
-  state.fotos = state.fotos.filter(f => f.id !== id);
+  state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
   save(); renderFotos();
 }
 
 function openLightbox(id) {
-  const f = state.fotos.find(f => f.id === id);
+  const f = state.fotos.find(f => String(f.id) === String(id));
   if (!f) return;
   document.getElementById('lightbox-img').src = f.url || f.data || '';
   document.getElementById('lightbox-title').textContent = f.title;
@@ -8067,7 +8067,7 @@ function renderFotos() {
 }
 
 function editFoto(id) {
-  const f = state.fotos.find(f => f.id === id);
+  const f = state.fotos.find(f => String(f.id) === String(id));
   if (!f) return;
   document.getElementById('fi-title').value = f.title || '';
   document.getElementById('fi-datum').value = f.datum || today();
@@ -8502,10 +8502,10 @@ function saveGrundrissModal() {
 }
 
 function deleteGrundriss(id) {
-  const g = (state.grundrisse||[]).find(x => x.id === id);
+  const g = (state.grundrisse||[]).find(x => String(x.id) === String(id));
   if (!g) return;
   if (!confirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`)) return;
-  state.grundrisse = state.grundrisse.filter(x => x.id !== id);
+  state.grundrisse = state.grundrisse.filter(x => String(x.id) !== String(id));
   _grActiveId = state.grundrisse[0]?.id || null;
   save();
   renderGrundrisse();
@@ -8664,7 +8664,7 @@ function filterDoku(typ, btn) {
 
 
 function editDoku(id) {
-  const d = (state.dokumentation||[]).find(d => d.id === id);
+  const d = (state.dokumentation||[]).find(d => String(d.id) === String(id));
   if (!d) return;
   document.getElementById('dk-title').value   = d.title   || '';
   document.getElementById('dk-raum').value    = d.raum    || '';
@@ -8681,7 +8681,7 @@ function editDoku(id) {
 function deleteDoku(id) {
   if (!confirm('Eintrag löschen?')) return;
   _trackDeletion(id, 'dokumentation');
-  state.dokumentation = state.dokumentation.filter(d => d.id !== id);
+  state.dokumentation = state.dokumentation.filter(d => String(d.id) !== String(id));
   save(); renderDoku();
   showToast('🗑 Dokumentation gelöscht', 'success');
 }
@@ -8786,7 +8786,7 @@ function addWartung() {
 }
 
 function editWartung(id) {
-  const w = (state.wartungen||[]).find(w => w.id === id);
+  const w = (state.wartungen||[]).find(w => String(w.id) === String(id));
   if (!w) return;
   document.getElementById('wt-name').value      = w.name      || '';
   document.getElementById('wt-desc').value      = w.desc      || '';
@@ -8805,13 +8805,13 @@ function editWartung(id) {
 function deleteWartung(id) {
   if (!confirm('Wartung löschen?')) return;
   _trackDeletion(id, 'wartungen');
-  state.wartungen = state.wartungen.filter(w => w.id !== id);
+  state.wartungen = state.wartungen.filter(w => String(w.id) !== String(id));
   save(); renderWartung();
   showToast('🗑 Wartung gelöscht', 'success');
 }
 
 function markWartungDone(id) {
-  const w = (state.wartungen || []).find(w => w.id === id);
+  const w = (state.wartungen || []).find(w => String(w.id) === String(id));
   if (w) { w.last = today(); save(); renderWartung(); }
 }
 
@@ -9219,7 +9219,7 @@ function deleteProject(id) {
   if (projects.length <= 1) { alert('Du kannst das letzte Projekt nicht löschen.'); return; }
   const name = projects.find(p=>p.id===id)?.settings?.name;
   if (!confirm(`Projekt "${name}" und alle Daten löschen?`)) return;
-  projects = projects.filter(p => p.id !== id);
+  projects = projects.filter(p => String(p.id) !== String(id));
   if (currentProjectId === id) loadProject(projects[0].id, true);
   saveAll();
   renderProjectSwitcher();
@@ -9227,7 +9227,7 @@ function deleteProject(id) {
 
 function editProject(id) {
   closeModal('modal-project-switcher');
-  const p = projects.find(p => p.id === id);
+  const p = projects.find(p => String(p.id) === String(id));
   if (!p) return;
   document.getElementById('edit-proj-id').value = id;
   document.getElementById('new-proj-title').textContent = 'Projekt bearbeiten';
@@ -10480,13 +10480,13 @@ function addAbhBlock() {
 
 function deleteAbhBlock(id) {
   _trackDeletion(id, 'abhaengigkeiten');
-  state.abhaengigkeiten = (state.abhaengigkeiten||[]).filter(b => b.id !== id);
+  state.abhaengigkeiten = (state.abhaengigkeiten||[]).filter(b => String(b.id) !== String(id));
   save(); renderAbhaengigkeiten();
   showToast('🗑 Abhängigkeit gelöscht', 'success');
 }
 
 function toggleAbhStatus(id) {
-  const b = (state.abhaengigkeiten||[]).find(b => b.id === id);
+  const b = (state.abhaengigkeiten||[]).find(b => String(b.id) === String(id));
   if (!b) return;
   const cycle = ['Offen','In Arbeit','Erledigt'];
   b.status = cycle[(cycle.indexOf(b.status)+1) % cycle.length];
@@ -10636,7 +10636,7 @@ async function saveAngebot() {
 }
 
 function editAngebot(id) {
-  const a = (state.angebote||[]).find(a => a.id === id);
+  const a = (state.angebote||[]).find(a => String(a.id) === String(id));
   if (!a) return;
   document.getElementById('ang-beschr').value   = a.beschr   || '';
   document.getElementById('ang-anbieter').value = a.anbieter || '';
@@ -10657,7 +10657,7 @@ function editAngebot(id) {
 function deleteAngebot(id) {
   if (!confirm('Angebot löschen?')) return;
   _trackDeletion(id, 'angebote');
-  state.angebote = (state.angebote||[]).filter(a => a.id !== id);
+  state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
   save(); renderAngebote();
   showToast('🗑 Angebot gelöscht', 'success');
 }
@@ -10666,7 +10666,7 @@ let _pendingAngebotId = null;
 
 function angebotZuRechnung() {
   const id = parseInt(document.getElementById('ang-edit-id').value);
-  const a  = (state.angebote||[]).find(a => a.id === id);
+  const a  = (state.angebote||[]).find(a => String(a.id) === String(id));
   if (!a) return;
   if (a.konvertiert) {
     showToast('⚠️ Dieses Angebot wurde bereits in eine Rechnung umgewandelt', 'error');
@@ -10748,7 +10748,7 @@ function renderAngVergleich() {
 }
 
 function openAngebotDatei(id) {
-  const a = (state.angebote||[]).find(a => a.id === id);
+  const a = (state.angebote||[]).find(a => String(a.id) === String(id));
   if (!a?.datei) return;
   const viewable = ['application/pdf','image/jpeg','image/jpg','image/png','image/gif'];
   if (viewable.includes(a.datei.type) || a.datei.type?.startsWith('image/')) {
@@ -10937,7 +10937,7 @@ function saveZahlung() {
 }
 
 function editZahlung(id) {
-  const z = (state.zahlungen||[]).find(z => z.id === id);
+  const z = (state.zahlungen||[]).find(z => String(z.id) === String(id));
   if (!z) return;
   document.getElementById('zp-beschr').value        = z.beschr       || '';
   document.getElementById('zp-anbieter').value      = z.anbieter     || '';
@@ -10957,13 +10957,13 @@ function editZahlung(id) {
 function deleteZahlung(id) {
   if (!confirm('Zahlung löschen?')) return;
   _trackDeletion(id, 'zahlungen');
-  state.zahlungen = (state.zahlungen||[]).filter(z => z.id !== id);
+  state.zahlungen = (state.zahlungen||[]).filter(z => String(z.id) !== String(id));
   save(); renderZahlungsplan();
   showToast('🗑 Zahlung gelöscht', 'success');
 }
 
 function markZahlungBezahlt(id) {
-  const z = (state.zahlungen||[]).find(z => z.id === id);
+  const z = (state.zahlungen||[]).find(z => String(z.id) === String(id));
   if (!z) return;
   z.status = 'Bezahlt'; z.bezahltDatum = today();
   // Sync matching Kosten entry to "Bezahlt" if still Ausstehend
@@ -11094,7 +11094,7 @@ function resetMgModal() {
 
 
 function editMangel(id) {
-  const m = (state.maengel||[]).find(m => m.id === id);
+  const m = (state.maengel||[]).find(m => String(m.id) === String(id));
   if (!m) return;
   mgPendingPhotos = [];
   document.getElementById('mg-titel').value        = m.titel        || '';
@@ -11123,13 +11123,13 @@ function editMangel(id) {
 function deleteMangel(id) {
   if (!confirm('Mangel löschen?')) return;
   _trackDeletion(id, 'maengel');
-  state.maengel = (state.maengel||[]).filter(m => m.id !== id);
+  state.maengel = (state.maengel||[]).filter(m => String(m.id) !== String(id));
   save(); renderMaengel();
   showToast('🗑 Mangel gelöscht', 'success');
 }
 
 function cycleMaengelStatus(id) {
-  const m = (state.maengel||[]).find(m => m.id === id);
+  const m = (state.maengel||[]).find(m => String(m.id) === String(id));
   if (!m) return;
   const cycle = ['Offen','In Bearbeitung','Behoben'];
   m.status = cycle[(cycle.indexOf(m.status)+1) % cycle.length];
@@ -11307,7 +11307,7 @@ function renderGescannteRechnungen() {
 
 function deleteGescannteRechnung(id) {
   if (!confirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)')) return;
-  state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => r.id !== id);
+  state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');
 }
@@ -11333,9 +11333,9 @@ function addZahlungsPerson() {
 function deleteZahlungsPerson(id) {
   if (!confirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.')) return;
   _trackDeletion(id, 'zahlungspersonen');
-  const person = (state.zahlungspersonen||[]).find(p => p.id === id);
+  const person = (state.zahlungspersonen||[]).find(p => String(p.id) === String(id));
   if (person) state.kosten.forEach(k => { if (k.bezahltVon === person.name) k.bezahltVon = ''; });
-  state.zahlungspersonen = (state.zahlungspersonen||[]).filter(p => p.id !== id);
+  state.zahlungspersonen = (state.zahlungspersonen||[]).filter(p => String(p.id) !== String(id));
   save();
   renderPersonenList();
   refreshBezahltVonSelects();
