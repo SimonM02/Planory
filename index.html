@@ -1502,6 +1502,48 @@
 
     /* KI-panel buttons wrap */
     #ki-advisor-panel [style*="display:flex"] { flex-wrap: wrap; }
+
+    /* ── Budget-Detailübersicht als Karten statt breiter Tabelle ── */
+    .budget-detail-table table,
+    .budget-detail-table tbody,
+    .budget-detail-table tr,
+    .budget-detail-table td { display: block; width: auto !important; min-width: 0 !important; }
+    .budget-detail-table thead { display: none; }
+    .budget-detail-table { overflow-x: visible; }
+    .budget-detail-table tr {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: var(--surface);
+      position: relative;
+    }
+    /* Drag-Griff (erste Zelle) ausblenden auf Phone */
+    .budget-detail-table tbody td:first-child { display: none; }
+    /* Kategorie-Name (zweite Zelle) als Titel */
+    .budget-detail-table td:nth-child(2) {
+      font-size: 1rem; font-weight: 700; padding: 0 0 8px 0;
+      border-bottom: 1px solid var(--border); margin-bottom: 8px;
+    }
+    /* Zahlen-Zeilen mit Label links, Wert rechts */
+    .budget-detail-table td[data-label] {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; font-size: 0.9rem;
+    }
+    .budget-detail-table td[data-label]::before {
+      content: attr(data-label);
+      color: var(--text3); font-weight: 600; font-family: 'Hanken Grotesk', sans-serif;
+      text-transform: none; letter-spacing: 0;
+    }
+    /* Aktions-Buttons (letzte Zelle) als eigene Zeile, rechtsbündig */
+    .budget-detail-table tbody td:last-child {
+      text-align: right; padding-top: 10px; margin-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .budget-detail-table .action-btn { font-size: 1.15rem; padding: 6px 10px; }
+    /* Gesamt-Zeile hervorheben */
+    .budget-detail-table tr:last-child { background: var(--surface2); border-width: 2px; }
+    .budget-detail-table tr:last-child td[colspan] { padding-top: 6px; }
   }
 
   /* DIARY */
@@ -2485,7 +2527,7 @@
     </div>
 
     <!-- Kategorientabelle -->
-    <div class="table-wrap">
+    <div class="table-wrap budget-detail-table">
       <div class="table-header">
         <div class="table-title">Detailübersicht</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text3)" id="bg-kat-count"></div>
@@ -5276,10 +5318,10 @@ function renderBudget() {
           </span>
           ${count > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${count} Buchungen – zum Öffnen klicken</div>` : `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">Noch keine Buchungen</div>`}
         </td>
-        <td style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
+        <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${share}%</span></td>
-        <td style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
+        <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
+        <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
         <td class="hide-mobile">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="flex:1;height:6px;background:var(--surface3);border-radius:99px;overflow:hidden;min-width:60px">
@@ -5298,11 +5340,11 @@ function renderBudget() {
     `<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
       <td></td>
       <td style="font-weight:800">∑ Gesamt</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
-      <td><span class="badge badge-blue">100%</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
-      <td colspan="2"><span class="badge ${totalPct>90?'badge-red':totalPct>70?'badge-yellow':'badge-green'}">${totalPct}%</span></td>
+      <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
+      <td class="hide-mobile"><span class="badge badge-blue">100%</span></td>
+      <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
+      <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
+      <td colspan="2" class="hide-mobile"><span class="badge ${totalPct>90?'badge-red':totalPct>70?'badge-yellow':'badge-green'}">${totalPct}%</span></td>
     </tr>`
   ].join('');
 }
