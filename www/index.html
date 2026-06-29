@@ -3349,6 +3349,12 @@
       <div id="bk-preview" style="font-size:0.82rem;color:var(--accent);margin-top:6px;font-weight:700;min-height:18px"></div>
     </div>
 
+    <div class="form-row">
+      <label>Farbe</label>
+      <input type="hidden" id="bk-color">
+      <div id="bk-color-swatches" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-budget-kat');document.getElementById('bk-edit-id').value='';document.getElementById('bk-modal-title').textContent='Budgetkategorie anlegen';document.getElementById('bk-presets-wrap').style.display=''">Abbrechen</button>
       <button class="btn btn-primary" id="bk-save-btn" onclick="addBudgetKat()">+ Hinzufügen</button>
@@ -4232,7 +4238,14 @@ function openModal(id) {
   document.getElementById(id).classList.add('open');
   const d = document.querySelector('#' + id + ' input[type="date"]');
   if (d && !d.value) d.value = today();
-  if (id === 'modal-budget-kat') renderBudgetPresets();
+  if (id === 'modal-budget-kat') {
+    renderBudgetPresets();
+    // Neue Kategorie (kein Edit): Standardfarbe vorbelegen
+    const editId = document.getElementById('bk-edit-id')?.value;
+    const colEl = document.getElementById('bk-color');
+    if (colEl && !editId) colEl.value = BG_COLORS[state.budgetKat.length % BG_COLORS.length];
+    renderBudgetColorSwatches();
+  }
   if (id === 'modal-kosten' || id === 'modal-rechnung-scan') {
     refreshBezahltVonSelects();
   }
@@ -5071,6 +5084,26 @@ function selectBudgetPreset(name) {
   document.getElementById('bk-budget').focus();
 }
 
+// Rendert die Farb-Auswahl im Budget-Modal und hebt die aktive Farbe hervor.
+function renderBudgetColorSwatches() {
+  const wrap = document.getElementById('bk-color-swatches');
+  if (!wrap) return;
+  const selected = (document.getElementById('bk-color').value || '').toLowerCase();
+  wrap.innerHTML = BG_COLORS.map(c => {
+    const active = c.toLowerCase() === selected;
+    return `<span onclick="selectBudgetColor('${c}')" title="${c}"
+      style="width:26px;height:26px;border-radius:7px;background:${c};cursor:pointer;
+             border:3px solid ${active ? 'var(--text)' : 'transparent'};
+             box-shadow:0 0 0 1.5px var(--border);transition:transform 0.1s"
+      onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'"></span>`;
+  }).join('');
+}
+
+function selectBudgetColor(color) {
+  document.getElementById('bk-color').value = color;
+  renderBudgetColorSwatches();
+}
+
 function updateBudgetKatPreview() {
   const val = parseFloat(document.getElementById('bk-budget').value) || 0;
   const currentTotal = state.budgetKat.reduce((s,k) => s + k.budget, 0);
@@ -5088,19 +5121,21 @@ function addBudgetKat() {
   const editId = document.getElementById('bk-edit-id')?.value || null;
   const name   = document.getElementById('bk-name').value.trim();
   const budget = parseFloat(document.getElementById('bk-budget').value) || 0;
+  const color  = document.getElementById('bk-color')?.value || '';
   if (!name) { document.getElementById('bk-name').focus(); return; }
   if (budget <= 0) { document.getElementById('bk-budget').focus(); return; }
 
   if (editId) {
     const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
-    if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget };
+    if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color };
   } else {
     if (state.budgetKat.find(k => k.name === name)) { alert(`Kategorie "${name}" existiert bereits.`); return; }
-    state.budgetKat.push({ id: Date.now(), name, budget, color: BG_COLORS[state.budgetKat.length % BG_COLORS.length] });
+    state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length] });
   }
   save(); closeModal('modal-budget-kat');
   document.getElementById('bk-name').value   = '';
   document.getElementById('bk-budget').value = '';
+  if (document.getElementById('bk-color')) document.getElementById('bk-color').value = '';
   document.getElementById('bk-preview').textContent = '';
   if (document.getElementById('bk-edit-id')) document.getElementById('bk-edit-id').value = '';
   if (document.getElementById('bk-modal-title')) document.getElementById('bk-modal-title').textContent = 'Budgetkategorie anlegen';
@@ -5113,10 +5148,12 @@ function editBudgetKat(id) {
   if (!k) return;
   document.getElementById('bk-name').value   = k.name;
   document.getElementById('bk-budget').value = k.budget;
+  if (document.getElementById('bk-color')) document.getElementById('bk-color').value = k.color || '';
   if (document.getElementById('bk-edit-id')) document.getElementById('bk-edit-id').value = String(k.id);
   if (document.getElementById('bk-modal-title')) document.getElementById('bk-modal-title').textContent = 'Kategorie bearbeiten';
   updateBudgetKatPreview();
   renderBudgetPresets();
+  renderBudgetColorSwatches();
   openModal('modal-budget-kat');
 }
 
