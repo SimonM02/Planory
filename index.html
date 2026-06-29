@@ -4006,7 +4006,7 @@ function saveAll() {
     state._budgetKatTs = state._budgetKatTs || Date.now();
   }
 
-  const idx = projects.findIndex(p => p.id === currentProjectId);
+  const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
   const ts = new Date().toISOString();
   localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
@@ -4774,18 +4774,18 @@ function saveKosten() {
     anbieter: document.getElementById('k-anbieter').value,
     skontoProz: parseFloat(document.getElementById('k-skonto-proz').value) || 0,
     skontoBis:  document.getElementById('k-skonto-bis').value || '',
-    aiScanned:  editId ? (state.kosten.find(k => k.id === editId)?.aiScanned || false) : false,
+    aiScanned:  editId ? (state.kosten.find(k => String(k.id) === String(editId))?.aiScanned || false) : false,
     _updatedAt: Date.now()
   };
 
   if (editId) {
-    const idx = state.kosten.findIndex(k => k.id === editId);
+    const idx = state.kosten.findIndex(k => String(k.id) === String(editId));
     if (idx > -1) state.kosten[idx] = item;
   } else {
     state.kosten.push(item);
   }
   if (_pendingAngebotId && !editId) {
-    const ang = (state.angebote||[]).find(a => a.id === _pendingAngebotId);
+    const ang = (state.angebote||[]).find(a => String(a.id) === String(_pendingAngebotId));
     if (ang) { ang.konvertiert = true; ang.status = 'Umgewandelt'; }
     _pendingAngebotId = null;
   }
@@ -4918,7 +4918,7 @@ function addEigenleistung() {
     notiz: document.getElementById('el-notiz').value
   };
   if (editId) {
-    const idx = state.eigenleistungen.findIndex(e => e.id === editId);
+    const idx = state.eigenleistungen.findIndex(e => String(e.id) === String(editId));
     if (idx > -1) state.eigenleistungen[idx] = item;
   } else {
     state.eigenleistungen.push(item);
@@ -5168,7 +5168,7 @@ async function deleteBudgetKat(id) {
   renderBudget();
   showToast('🗑 Kategorie gelöscht', 'success');
   // Update localStorage + projects array immediately
-  const idx = projects.findIndex(p => p.id === currentProjectId);
+  const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
   localStorage.setItem('bauplan_projects', JSON.stringify(projects));
   // Sync immediately — projektdaten is written FIRST in syncToCloud so by the
@@ -5517,7 +5517,7 @@ async function forceCloudOverwrite() {
     // Overwrite local — no merge
     projects = cloudData.projects || [];
     currentProjectId = cloudData.currentProjectId || (projects[0]?.id ?? null);
-    if (currentProjectId) state = projects.find(p => p.id === currentProjectId) || EMPTY_PROJECT();
+    if (currentProjectId) state = projects.find(p => String(p.id) === String(currentProjectId)) || EMPTY_PROJECT();
     localStorage.setItem('bauplan_projects', JSON.stringify(projects));
     localStorage.setItem('bauplan_current_project', String(currentProjectId));
     localStorage.setItem('bauplan_user_id', currentUser.id);
@@ -5907,7 +5907,7 @@ function addMilestone() {
     _updatedAt: Date.now()
   };
   if (editId) {
-    const idx = state.meilensteine.findIndex(m => m.id === editId);
+    const idx = state.meilensteine.findIndex(m => String(m.id) === String(editId));
     if (idx > -1) state.meilensteine[idx] = item;
   } else {
     state.meilensteine.push(item);
@@ -6150,7 +6150,7 @@ function addTask() {
     status: editId ? (state.aufgaben.find(t=>t.id===editId)?.status || 'Offen') : 'Offen'
   };
   if (editId) {
-    const idx = state.aufgaben.findIndex(t => t.id === editId);
+    const idx = state.aufgaben.findIndex(t => String(t.id) === String(editId));
     if (idx > -1) state.aufgaben[idx] = item;
   } else {
     state.aufgaben.push(item);
@@ -6208,11 +6208,11 @@ function saveTask() {
     time:       document.getElementById('t-time')?.value || '',
     person:     document.getElementById('t-person').value.trim() || '',
     notiz:      document.getElementById('t-notiz').value.trim() || '',
-    status:     editId ? (state.aufgaben.find(t => t.id === editId)?.status || 'Offen') : 'Offen',
+    status:     editId ? (state.aufgaben.find(t => String(t.id) === String(editId))?.status || 'Offen') : 'Offen',
     _updatedAt: Date.now()
   };
   if (editId) {
-    const idx = state.aufgaben.findIndex(t => t.id === editId);
+    const idx = state.aufgaben.findIndex(t => String(t.id) === String(editId));
     if (idx > -1) state.aufgaben[idx] = item;
   } else {
     state.aufgaben.push(item);
@@ -6469,7 +6469,7 @@ function addDiary() {
     workers
   };
   if (editId) {
-    const idx = state.tagebuch.findIndex(e => e.id === editId);
+    const idx = state.tagebuch.findIndex(e => String(e.id) === String(editId));
     if (idx > -1) state.tagebuch[idx] = { ...item, fotos: state.tagebuch[idx].fotos };
   } else {
     state.tagebuch.push(item);
@@ -6743,7 +6743,7 @@ function renderDiarySummary() {
 // ──────────────── NOTIZEN ────────────────
 function addNotiz() {
   const editId = parseInt(document.getElementById('n-edit-id')?.value) || null;
-  const prev   = editId ? state.notizen.find(n => n.id === editId) : null;
+  const prev   = editId ? state.notizen.find(n => String(n.id) === String(editId)) : null;
   const item = {
     id:    editId || Date.now(),
     title:    document.getElementById('n-title').value || 'Notiz',
@@ -6755,7 +6755,7 @@ function addNotiz() {
     ...(prev?.__taskId ? { __taskId: prev.__taskId, __userEdited: true } : {})
   };
   if (editId) {
-    const idx = state.notizen.findIndex(n => n.id === editId);
+    const idx = state.notizen.findIndex(n => String(n.id) === String(editId));
     if (idx > -1) state.notizen[idx] = item;
   } else {
     state.notizen.push(item);
@@ -7025,7 +7025,7 @@ function addKontakt() {
     notiz:  document.getElementById('c-notiz').value
   };
   if (editId) {
-    const idx = state.kontakte.findIndex(k => k.id === editId);
+    const idx = state.kontakte.findIndex(k => String(k.id) === String(editId));
     if (idx > -1) state.kontakte[idx] = item;
   } else {
     state.kontakte.push(item);
@@ -7111,7 +7111,7 @@ function saveGanttItem() {
     notiz:  document.getElementById('g-notiz').value
   };
   if (editId) {
-    const idx = state.gantt.findIndex(g => g.id === editId);
+    const idx = state.gantt.findIndex(g => String(g.id) === String(editId));
     if (idx > -1) state.gantt[idx] = item;
   } else {
     state.gantt.push(item);
@@ -7693,7 +7693,7 @@ async function confirmPhoto() {
   const editId = document.getElementById('modal-foto-info')._editId;
   if (editId) {
     // Edit-Modus: nur Metadaten ändern, kein Upload
-    const f = state.fotos.find(f => f.id === editId);
+    const f = state.fotos.find(f => String(f.id) === String(editId));
     if (f) {
       f.title = document.getElementById('fi-title').value || 'Foto';
       f.kat   = document.getElementById('fi-kat').value;
@@ -7833,7 +7833,7 @@ async function addDoku() {
   };
 
   if (editId) {
-    const idx = state.dokumentation.findIndex(d => d.id === editId);
+    const idx = state.dokumentation.findIndex(d => String(d.id) === String(editId));
     if (idx > -1) {
       const existingFotos = state.dokumentation[idx].fotos || [];
       state.dokumentation[idx] = { ...state.dokumentation[idx], ...data, fotos: [...existingFotos, ...uploadedFotos] };
@@ -7929,7 +7929,7 @@ function resetMgModal() {
 async function saveMangel() {
   state.maengel = state.maengel || [];
   const editId   = parseInt(document.getElementById('mg-edit-id').value) || null;
-  const existing = editId ? state.maengel.find(m => m.id === editId) : null;
+  const existing = editId ? state.maengel.find(m => String(m.id) === String(editId)) : null;
   const btn      = document.querySelector('#modal-mangel .btn-primary');
   if (btn && mgPendingFiles.length > 0) { btn.textContent = 'Wird hochgeladen…'; btn.disabled = true; }
 
@@ -7958,7 +7958,7 @@ async function saveMangel() {
   };
 
   if (editId) {
-    const idx = state.maengel.findIndex(m => m.id === editId);
+    const idx = state.maengel.findIndex(m => String(m.id) === String(editId));
     if (idx > -1) state.maengel[idx] = item;
   } else {
     state.maengel.push(item);
@@ -8372,7 +8372,7 @@ function handleGrundrissClick(e, grundrissId) {
 }
 
 function openAddGrundrissModal(editId) {
-  const g = editId ? (state.grundrisse||[]).find(x => x.id === editId) : null;
+  const g = editId ? (state.grundrisse||[]).find(x => String(x.id) === String(editId)) : null;
   document.getElementById('gr-add-title').textContent = g ? 'Stockwerk bearbeiten' : 'Stockwerk hinzufügen';
   document.getElementById('gr-edit-id').value = g ? g.id : '';
   document.getElementById('gr-name').value    = g ? g.name : '';
@@ -8484,7 +8484,7 @@ function saveGrundrissModal() {
   state.grundrisse = state.grundrisse || [];
 
   if (editId) {
-    const g = state.grundrisse.find(x => x.id === editId);
+    const g = state.grundrisse.find(x => String(x.id) === String(editId));
     if (g) {
       g.name = name;
       if (newBild) g.bild = newBild;
@@ -8774,7 +8774,7 @@ function addWartung() {
     kosten:    parseFloat(document.getElementById('wt-kosten').value) || 0
   };
   if (editId) {
-    const idx = state.wartungen.findIndex(w => w.id === editId);
+    const idx = state.wartungen.findIndex(w => String(w.id) === String(editId));
     if (idx > -1) state.wartungen[idx] = item;
   } else {
     state.wartungen.push(item);
@@ -9176,7 +9176,7 @@ function renderProjectSwitcher() {
   const container = document.getElementById('project-list');
   if (!container) return;
   container.innerHTML = projects.map(p => {
-    const isCurrent = p.id === currentProjectId;
+    const isCurrent = String(p.id) === String(currentProjectId);
     const color = p.settings?.color || '#ff9f1c';
     const spent = (p.kosten||[]).filter(k=>k.status!=='Storniert').reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
     const budget = (p.budgetKat||[]).reduce((s,k)=>s+k.budget,0);
@@ -9252,7 +9252,7 @@ function saveProject() {
   });
 
   if (editId) {
-    const p = projects.find(p => p.id === editId);
+    const p = projects.find(p => String(p.id) === String(editId));
     if (p) {
       p.settings.name    = document.getElementById('np-name').value || 'Projekt';
       p.settings.type    = document.getElementById('np-type').value;
@@ -9743,7 +9743,7 @@ async function syncToCloud() {
   _realtimeLoading = true;
   _holdRealtime(500); // immediate guard while we work
   try {
-    const idx = projects.findIndex(p => p.id === currentProjectId);
+    const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
     if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
 
     const hasRealData = projects.some(p => ITEM_TYPES.some(t => (p[t]?.length || 0) > 0));
@@ -10625,7 +10625,7 @@ async function saveAngebot() {
     fileInput.value = '';
   }
   if (editId) {
-    const idx = state.angebote.findIndex(a => a.id === editId);
+    const idx = state.angebote.findIndex(a => String(a.id) === String(editId));
     if (idx > -1) state.angebote[idx] = item;
   } else {
     state.angebote.push(item);
@@ -10926,7 +10926,7 @@ function saveZahlung() {
     notiz:         document.getElementById('zp-notiz').value
   };
   if (editId) {
-    const idx = state.zahlungen.findIndex(z => z.id === editId);
+    const idx = state.zahlungen.findIndex(z => String(z.id) === String(editId));
     if (idx > -1) state.zahlungen[idx] = item;
   } else {
     state.zahlungen.push(item);
