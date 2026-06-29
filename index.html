@@ -5575,6 +5575,8 @@ function acceptDsgvo() {
   localStorage.setItem('dsgvoAccepted', '1');
   const m = document.getElementById('modal-dsgvo');
   if (m) m.style.display = 'none';
+  // Zustimmung am Konto speichern, damit sie auf jedem Geraet erkannt wird
+  if (currentUser && !_demoMode) { try { syncToCloud(); } catch(e){} }
 }
 
 function _updateDarkModeToggle(on) {
@@ -9421,6 +9423,9 @@ async function onAuthSuccess(user, isNewUser = false) {
   // Load data from cloud (with local timestamp comparison)
   const cloudData = await loadFromCloud();
 
+  // DSGVO: einmal pro Konto zugestimmt → auf jedem weiteren Geraet merken
+  if (cloudData?.dsgvoAccepted) localStorage.setItem('dsgvoAccepted', '1');
+
   // Check onboarding: use cloud flag OR isNewUser OR no projects loaded
   const hasProjects = projects.length > 0 && projects[0].settings.name !== 'Mein erstes Projekt' && projects[0].settings.name !== 'Neues Projekt';
   const hasOnboarded = cloudData?.onboarded || (!isNewUser && hasProjects);
@@ -9743,6 +9748,7 @@ async function syncToCloud() {
       projects: metaProjects,
       currentProjectId,
       onboarded: true,
+      dsgvoAccepted: !!localStorage.getItem('dsgvoAccepted'),
       updated_at: ts,
       prefs: { darkMode: document.body.classList.contains('dark-mode') }
     };
