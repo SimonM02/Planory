@@ -2491,7 +2491,7 @@
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text3)" id="bg-kat-count"></div>
       </div>
       <table>
-        <thead><tr><th style="width:28px"></th><th>Kategorie</th><th>Geplant</th><th class="hide-mobile">% Gesamt</th><th>Ausgegeben</th><th>Rest</th><th class="hide-mobile">Auslastung</th><th style="position:sticky;right:0;background:var(--surface2)"></th></tr></thead>
+        <thead><tr><th style="width:28px"></th><th>Kategorie</th><th>Geplant</th><th class="hide-mobile">% Gesamt</th><th>Ausgegeben</th><th>Rest</th><th class="hide-mobile">Auslastung</th><th style="width:90px"></th></tr></thead>
         <tbody id="budget-table"></tbody>
       </table>
     </div>
@@ -5250,7 +5250,7 @@ function renderBudget() {
             <span class="badge ${pct>90?'badge-red':pct>70?'badge-yellow':'badge-green'}" style="white-space:nowrap">${pct}%</span>
           </div>
         </td>
-        <td onclick="event.stopPropagation()" style="display:flex;gap:4px;position:sticky;right:0;background:var(--surface)">
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;text-align:right">
           <button class="action-btn" onclick="editBudgetKat(${kat.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteBudgetKat(${kat.id})">🗑</button>
         </td>
