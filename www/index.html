@@ -1544,6 +1544,38 @@
     /* Gesamt-Zeile hervorheben */
     .budget-detail-table tr:last-child { background: var(--surface2); border-width: 2px; }
     .budget-detail-table tr:last-child td[colspan] { padding-top: 6px; }
+
+    /* ── Generische Karten-Ansicht fuer breite Listen-Tabellen ── */
+    .mobile-cards table, .mobile-cards tbody { display: block; width: auto !important; }
+    .mobile-cards thead { display: none; }
+    .mobile-cards { overflow-x: visible; }
+    .mobile-cards tr {
+      display: flex; flex-direction: column;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 10px; background: var(--surface);
+    }
+    .mobile-cards td { display: block; width: auto !important; min-width: 0 !important; }
+    .mobile-cards td[data-title] {
+      order: -1; font-size: 1rem; font-weight: 700;
+      padding: 0 0 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+    }
+    .mobile-cards td[data-label] {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 4px 0; font-size: 0.9rem;
+    }
+    .mobile-cards td[data-label]::before {
+      content: attr(data-label); color: var(--text3); font-weight: 600; flex-shrink: 0;
+    }
+    .mobile-cards tbody td:last-child {
+      display: flex; justify-content: flex-end; gap: 6px;
+      padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--border);
+    }
+    .mobile-cards .action-btn { font-size: 1.1rem; padding: 6px 10px; }
+    /* Leerer Zustand: keine Karten-Optik */
+    .mobile-cards tbody td[colspan] {
+      display: block; text-align: center; border: none;
+      padding: 16px 0; justify-content: center;
+    }
   }
 
   /* DIARY */
@@ -2456,7 +2488,7 @@
     </div>
 
     <div id="kosten-ausgaben-panel">
-      <div class="table-wrap">
+      <div class="table-wrap mobile-cards">
         <div class="table-header">
           <div class="table-title">Ausgabenliste</div>
           <input class="search-bar" id="kosten-search" placeholder="🔍 Suchen..." oninput="renderKosten()">
@@ -3079,7 +3111,7 @@
       <button class="chart-tab" id="ang-tab-vergleich" onclick="setAngView('vergleich',this)">⚖️ Vergleich</button>
     </div>
     <div id="ang-liste-view">
-      <div class="table-wrap">
+      <div class="table-wrap mobile-cards">
         <table>
           <thead><tr><th class="hide-mobile">Datum</th><th>Gewerk / Beschreibung</th><th class="hide-mobile">Anbieter</th><th>Betrag</th><th>Status</th><th class="hide-mobile">Fälligkeit</th><th></th></tr></thead>
           <tbody id="angebot-table"></tbody>
@@ -3153,9 +3185,9 @@
       <input class="search-bar" id="gr-search" placeholder="🔍 Suchen…" oninput="renderGescannteRechnungen()">
     </div>
 
-    <div class="table-wrap">
+    <div class="table-wrap mobile-cards">
       <table>
-        <thead><tr><th>Datum</th><th>Vorschau</th><th>Beschreibung</th><th>Anbieter</th><th>Kategorie</th><th>Netto</th><th>MwSt</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Datum</th><th class="hide-mobile">Vorschau</th><th>Beschreibung</th><th>Anbieter</th><th class="hide-mobile">Kategorie</th><th class="hide-mobile">Netto</th><th class="hide-mobile">MwSt</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
         <tbody id="gr-table"></tbody>
       </table>
     </div>
@@ -5036,13 +5068,13 @@ function renderKosten() {
         else skontoBadge = `<span class="badge badge-gray" style="font-size:0.62rem;margin-left:4px" title="Skonto bis ${fmtDate(k.skontoBis)}">💰 ${k.skontoProz}%</span>`;
       }
       return `<tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
+        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
-        <td>${k.beschr}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem">🤖 KI</span>`:''}${skontoBadge}</td>
+        <td data-title>${k.beschr}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem">🤖 KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
-        <td><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
+        <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
+        <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td style="display:flex;gap:4px">
           <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
@@ -10929,10 +10961,10 @@ function renderAngebote() {
     const isExpired = gueltigD && gueltigD < now && a.status === 'Ausstehend';
     return `<tr>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
-      <td><strong>${a.beschr}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${a.notiz}</span>`:''}</td>
+      <td data-title><strong>${a.beschr}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${a.notiz}</span>`:''}</td>
       <td class="hide-mobile" style="font-size:0.82rem">${a.anbieter||'–'}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
-      <td><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
+      <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
+      <td data-label="Status"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
@@ -11313,8 +11345,8 @@ function renderGescannteRechnungen() {
   tbody.innerHTML = [...filtered].reverse().map(r => {
     const mwstBetrag = (r.brutto||0) - (r.netto||0);
     return `<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
-      <td>
+      <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
+      <td class="hide-mobile">
         ${r.scanUrl
           ? `<img src="${r.scanUrl}" alt="Scan"
                onclick="document.getElementById('lightbox-img').src='${r.scanUrl}';document.getElementById('lightbox-title').textContent='${r.beschr}';document.getElementById('lightbox-meta').textContent='Gescannte Rechnung';document.getElementById('lightbox').classList.add('open')"
@@ -11323,19 +11355,19 @@ function renderGescannteRechnungen() {
           : `<div style="width:48px;height:48px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--text3)">📄</div>`
         }
       </td>
-      <td>
+      <td data-title>
         <div style="font-weight:600;font-size:0.84rem">${r.beschr}</div>
         <span class="badge badge-purple" style="font-size:0.62rem;margin-top:2px">🤖 KI</span>
       </td>
-      <td style="font-size:0.82rem;color:var(--text2)">${r.anbieter||'–'}</td>
-      <td><span class="badge badge-gray">${r.kat||'–'}</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(r.netto||0)}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">
+      <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${r.anbieter||'–'}</td>
+      <td class="hide-mobile"><span class="badge badge-gray">${r.kat||'–'}</span></td>
+      <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(r.netto||0)}</td>
+      <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">
         ${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'}
         ${r.mwst > 0 ? `<span class="badge badge-yellow" style="font-size:0.6rem;margin-left:3px">${r.mwst}%</span>` : ''}
       </td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
-      <td><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
+      <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
+      <td data-label="Status"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
       <td style="white-space:nowrap">
         ${r.scanUrl
           ? `<a href="${r.scanUrl}" target="_blank" class="action-btn" title="Original öffnen">🔗</a>`
