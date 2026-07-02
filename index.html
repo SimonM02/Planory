@@ -5503,8 +5503,8 @@ function checkAllDeadlines() {
 
   if (msgs.length === 0) return;
 
-  // Browser-Notification wenn erlaubt
-  if (Notification.permission === 'granted') {
+  // Browser-Notification wenn erlaubt (in der nativen App gibt es kein Notification-Objekt → Toast-Fallback)
+  if (('Notification' in window) && Notification.permission === 'granted') {
     msgs.forEach((msg, i) => setTimeout(() => new Notification('Planory', { body: msg, icon: '/favicon.ico' }), i * 800));
   } else {
     // Fallback: Toast-Nachrichten gestaffelt
@@ -5513,12 +5513,31 @@ function checkAllDeadlines() {
 }
 
 async function requestNotifications() {
+  if (isNativeApp()) {
+    await _requestNativeNotifPermission();
+    scheduleAllReminders();
+    checkAllDeadlines();
+    return;
+  }
   if (!('Notification' in window)) return;
   if (Notification.permission === 'default') await Notification.requestPermission();
   checkAllDeadlines();
 }
 
 async function enableNotifications() {
+  // Native App: iOS-Berechtigung anfragen und Erinnerungen lokal einplanen
+  if (isNativeApp()) {
+    const ok = await _requestNativeNotifPermission();
+    loadNotificationStatus();
+    if (ok) {
+      showToast('🔔 Mitteilungen aktiviert', 'success');
+      scheduleAllReminders();
+      setTimeout(() => _showNotification('Planory', '✅ Erinnerungen sind jetzt aktiv', 'test'), 500);
+    } else {
+      showToast('⚠️ Mitteilungen nicht erlaubt – bitte in den iOS-Einstellungen unter Planory freigeben', 'error');
+    }
+    return;
+  }
   if (!('Notification' in window)) { showToast('⚠️ Dein Browser unterstützt keine Mitteilungen. Bitte die App zum Home-Bildschirm hinzufügen (iOS 16.4+)', 'error'); return; }
   const perm = await Notification.requestPermission();
   loadNotificationStatus();
@@ -5533,11 +5552,29 @@ async function enableNotifications() {
 }
 
 
-function loadNotificationStatus() {
+async function loadNotificationStatus() {
   const label  = document.getElementById('notif-status-label');
   const badge  = document.getElementById('notif-status-badge');
   const btn    = document.getElementById('notif-allow-btn');
   if (!label || !badge) return;
+  // Native App: Status ueber das iOS-System, Web-Push-UI ausblenden
+  if (isNativeApp()) {
+    ['push-register-row','push-info-box'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    try {
+      const st = await _localNotifPlugin()?.checkPermissions();
+      const granted = st?.display === 'granted';
+      label.textContent = granted
+        ? 'Mitteilungen aktiv ✅ Erinnerungen kommen direkt vom iPhone – auch bei geschlossener App'
+        : 'Mitteilungen noch nicht erlaubt';
+      badge.textContent = granted ? '✅ Aktiv' : '–';
+      badge.className   = 'badge ' + (granted ? 'badge-green' : 'badge-gray');
+      if (btn) btn.style.display = granted ? 'none' : '';
+    } catch(e) { label.textContent = 'Mitteilungen'; }
+    return;
+  }
   if (!('Notification' in window)) {
     label.textContent = 'Nicht unterstützt';
     badge.textContent = 'N/A'; badge.className = 'badge badge-gray';
@@ -12016,7 +12053,72 @@ async function runPushDiag() {
   out.textContent = lines.join('\n');
 }
 
+// ── Native App (iOS): Erinnerungen als lokale System-Benachrichtigungen ──
+// Die App plant alle bekannten Termine direkt beim Betriebssystem ein –
+// iOS zeigt sie auch bei geschlossener App und gesperrtem Handy an.
+// Kein Server, kein Push-Zertifikat noetig.
+function _localNotifPlugin() {
+  return isNativeApp() ? window.Capacitor?.Plugins?.LocalNotifications : null;
+}
+
+// iOS braucht numerische IDs – stabiler 32-bit-Hash aus dem Notification-Key
+function _notifIdFromKey(key) {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return Math.abs(h) || 1;
+}
+
+async function _requestNativeNotifPermission() {
+  const ln = _localNotifPlugin();
+  if (!ln) return false;
+  try {
+    let st = await ln.checkPermissions();
+    if (st.display !== 'granted') st = await ln.requestPermissions();
+    return st.display === 'granted';
+  } catch(e) { console.warn('Native notif permission failed', e); return false; }
+}
+
+// Plant die gesammelten Erinnerungen als lokale Benachrichtigungen.
+// iOS-Limit: max. 64 anstehende pro App – die naechsten 60 reichen locker,
+// bei jedem App-Start/Speichern wird neu geplant.
+async function _scheduleNativeReminders(collected) {
+  const ln = _localNotifPlugin();
+  if (!ln) return;
+  if (!(await _requestNativeNotifPermission())) return;
+  try {
+    const pending = await ln.getPending();
+    if (pending?.notifications?.length) {
+      await ln.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    }
+    const upcoming = collected
+      .map(n => ({ ...n, at: new Date(n.scheduled_for) }))
+      .filter(n => n.at.getTime() > Date.now())
+      .sort((a, b) => a.at - b.at)
+      .slice(0, 60);
+    if (!upcoming.length) return;
+    await ln.schedule({ notifications: upcoming.map(n => ({
+      id: _notifIdFromKey(n.notif_id),
+      title: n.title,
+      body: n.body || '',
+      schedule: { at: n.at }
+    })) });
+  } catch(e) { console.warn('Native reminder scheduling failed', e); }
+}
+
 async function _showNotification(title, body, tag) {
+  // Native App: sofortige lokale Benachrichtigung ueber das System
+  const _ln = _localNotifPlugin();
+  if (_ln) {
+    if (!(await _requestNativeNotifPermission())) return;
+    try {
+      await _ln.schedule({ notifications: [{
+        id: _notifIdFromKey((tag || 'now') + Date.now()),
+        title, body: body || '',
+        schedule: { at: new Date(Date.now() + 1000) }
+      }] });
+    } catch(e) { console.warn('Native notification failed', e); }
+    return;
+  }
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
     const reg = await navigator.serviceWorker.ready;
@@ -12032,6 +12134,7 @@ async function _showNotification(title, body, tag) {
 }
 
 async function requestNotifPermission(showUi = true) {
+  if (isNativeApp()) return _requestNativeNotifPermission();
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;
   if (Notification.permission === 'denied') {
@@ -12044,7 +12147,8 @@ async function requestNotifPermission(showUi = true) {
 
 // Central scheduler — called after every save and on app foreground
 async function scheduleAllReminders() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const _native = isNativeApp();
+  if (!_native && (!('Notification' in window) || Notification.permission !== 'granted')) return;
 
   // Cancel previous timers
   Object.values(_notifTimers).forEach(clearTimeout);
@@ -12052,18 +12156,18 @@ async function scheduleAllReminders() {
 
   const now  = Date.now();
   const defT = state.settings?.notifTime || '08:00';
-  const _collected = []; // for server-side push sync
+  const _collected = []; // for server-side push sync / native scheduling
 
   function sched(key, dateStr, timeStr, title, body) {
     if (!dateStr) return;
     const dt    = new Date(dateStr + 'T' + (timeStr || defT));
     const delay = dt.getTime() - now;
     if (delay < -60000) return; // already more than 1 min past → skip
-    // setTimeout only for next 14 days (avoid thousands of timers)
-    if (delay <= 14 * 86400000) {
+    // setTimeout only for next 14 days (avoid thousands of timers) – web only
+    if (!_native && delay <= 14 * 86400000) {
       _notifTimers[key] = setTimeout(() => _showNotification(title, body, key), Math.max(0, delay));
     }
-    // Server-side push: collect ALL future notifications (up to 365 days)
+    // Collect ALL future notifications (up to 365 days)
     if (delay <= 365 * 86400000) {
       _collected.push({ notif_id: key, scheduled_for: dt.toISOString(), title, body });
     }
@@ -12121,6 +12225,9 @@ async function scheduleAllReminders() {
       '💶 Zahlung heute fällig: ' + name, `${fmt(z.betrag)} heute fällig`);
   }
 
+  // ── Native App: direkt beim iOS-System einplanen (kein Server noetig)
+  if (_native) { _scheduleNativeReminders(_collected); return; }
+
   // ── Server-side push sync (runs in background, non-blocking)
   if (currentUser && _collected.length) _syncPushSchedule(_collected);
 }
@@ -12151,7 +12258,7 @@ async function _syncPushSchedule(notifications) {
 // Runs on every app open/foreground — catches what the cron might have missed.
 // Works even on Vercel Hobby plan (no cron needed).
 async function _fireOverdueNotifications() {
-  if (!currentUser || Notification.permission !== 'granted') return;
+  if (!currentUser || !('Notification' in window) || Notification.permission !== 'granted') return;
   if (!('serviceWorker' in navigator)) return;
   try {
     const { data: { session } } = await supa.auth.getSession();
@@ -12200,6 +12307,16 @@ async function onTaskTimeChange() {
   if (!hint) return;
   if (!timeEl?.value) { hint.style.display = 'none'; return; }
   hint.style.display = 'block';
+  // Native App: Status ueber iOS pruefen
+  if (isNativeApp()) {
+    const st = await _localNotifPlugin()?.checkPermissions().catch(() => null);
+    if (st?.display === 'granted') {
+      hint.innerHTML = '<span style="color:var(--success)">\u2713 Benachrichtigungen aktiv</span>';
+    } else {
+      hint.innerHTML = '<button class="btn btn-ghost" style="font-size:0.75rem;padding:4px 10px" onclick="enableNotifFromModal()">\ud83d\udd14 Benachrichtigungen erlauben</button>';
+    }
+    return;
+  }
   if (!('Notification' in window)) {
     hint.innerHTML = '<span style="color:var(--text3)">Nicht unterstützt – App zum Home-Bildschirm hinzufügen (iOS 16.4+)</span>';
     return;
