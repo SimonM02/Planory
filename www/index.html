@@ -2719,7 +2719,7 @@
             </div>
             <div style="padding-top:8px;border-top:1px solid var(--border)">
               <button class="btn btn-danger" style="font-size:0.8rem;padding:7px 14px"
-                onclick="if(confirm('Dieses Projekt und alle Projektdaten löschen?')){deleteProject(currentProjectId)}">
+                onclick="deleteProject(currentProjectId)">
                 🗑 Projekt löschen
               </button>
             </div>
@@ -4367,6 +4367,46 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   });
 });
 
+// ── App-eigene Dialoge (ersetzen window.confirm / window.prompt) ──
+// Browser-Dialoge ("Diese Seite meldet...") wirken fremd zur App;
+// dieser Dialog nutzt das Planory-Design. showConfirm liefert ein
+// Promise<boolean>, showPrompt ein Promise<string|null> (null = Abbruch).
+let _acResolveFn = null;
+function _acResolve(ok) {
+  closeModal('modal-app-confirm');
+  const r = _acResolveFn; _acResolveFn = null;
+  if (!r) return;
+  const isPrompt = document.getElementById('ac-input-row').style.display !== 'none';
+  r(isPrompt ? (ok ? document.getElementById('ac-input').value : null) : ok);
+}
+function showConfirm(message, opts = {}) {
+  return new Promise(resolve => {
+    _acResolveFn = resolve;
+    document.getElementById('ac-title').textContent = opts.title || 'Bist du sicher?';
+    document.getElementById('ac-text').textContent  = message;
+    document.getElementById('ac-input-row').style.display = 'none';
+    const ok = document.getElementById('ac-ok-btn');
+    ok.textContent = opts.okText || 'Ja';
+    ok.className   = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
+    openModal('modal-app-confirm');
+  });
+}
+function showPrompt(message, defaultValue = '', opts = {}) {
+  return new Promise(resolve => {
+    _acResolveFn = resolve;
+    document.getElementById('ac-title').textContent = opts.title || 'Eingabe';
+    document.getElementById('ac-text').textContent  = message;
+    document.getElementById('ac-input-row').style.display = '';
+    const inp = document.getElementById('ac-input');
+    inp.value = defaultValue || '';
+    const ok = document.getElementById('ac-ok-btn');
+    ok.textContent = opts.okText || 'Speichern';
+    ok.className   = 'btn btn-primary';
+    openModal('modal-app-confirm');
+    setTimeout(() => inp.focus(), 60);
+  });
+}
+
 // ──────────────── SETTINGS ────────────────
 // ──────────────── MODULES ────────────────
 const MODULES = [
@@ -4642,7 +4682,7 @@ async function openStripePortal() {
 // ── End Stripe / Plan ───────────────────────────────────────────────────────
 
 async function doLogout() {
-  if (!confirm('Wirklich abmelden? Deine Daten werden vorher gespeichert.')) return;
+  if (!(await showConfirm('Wirklich abmelden? Deine Daten werden vorher gespeichert.'))) return;
   await syncToCloud();
   await supa.auth.signOut();
   currentUser = null;
@@ -4683,9 +4723,9 @@ async function doLogout() {
 }
 
 async function deleteAccount() {
-  const confirmed = confirm('Account wirklich dauerhaft löschen?\n\nDiese Aktion löscht deinen Account und alle deine Daten unwiderruflich.');
+  const confirmed = await showConfirm('Account wirklich dauerhaft löschen?\n\nDiese Aktion löscht deinen Account und alle deine Daten unwiderruflich.', { okText: 'Account löschen' });
   if (!confirmed) return;
-  const confirmed2 = confirm('Letzte Warnung: Alle Projekte, Kosten, Tagebucheinträge und Fotos werden gelöscht. Fortfahren?');
+  const confirmed2 = await showConfirm('Letzte Warnung: Alle Projekte, Kosten, Tagebucheinträge und Fotos werden gelöscht. Fortfahren?', { okText: 'Endgültig löschen' });
   if (!confirmed2) return;
 
   try {
@@ -4724,7 +4764,7 @@ async function deleteAccount() {
     showToast('✅ Account wurde gelöscht.', 'success');
     showAuthOverlay();
   } catch(e) {
-    alert('Fehler beim Löschen: ' + e.message);
+    showToast('❌ Fehler beim Löschen: ' + e.message, 'error');
   }
 }
 
@@ -4918,8 +4958,8 @@ function editKosten(id) {
   openModal('modal-kosten');
 }
 
-function deleteKosten(id) { _trackDeletion(id, 'kosten');
-  if (!confirm('Ausgabe löschen?')) return;
+async function deleteKosten(id) { _trackDeletion(id, 'kosten');
+  if (!(await showConfirm('Ausgabe löschen?'))) return;
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); renderKosten(); renderBudget(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
@@ -4984,8 +5024,8 @@ function openBudgetDrilldown(katName) {
   openModal('modal-budget-drilldown');
 }
 
-function deleteDrilldownKosten(id, katName) {
-  if (!confirm('Ausgabe löschen?')) return;
+async function deleteDrilldownKosten(id, katName) {
+  if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save();
@@ -5036,8 +5076,8 @@ function editEigenleistung(id) {
   openModal('modal-eigenleistung');
 }
 
-function deleteEigenleistung(id) {
-  if (!confirm('Eigenleistung löschen?')) return;
+async function deleteEigenleistung(id) {
+  if (!(await showConfirm('Eigenleistung löschen?'))) return;
   _trackDeletion(id, 'eigenleistungen');
   state.eigenleistungen = (state.eigenleistungen||[]).filter(e => String(e.id) !== String(id));
   save(); renderKosten(); showToast('🗑 Eigenleistung gelöscht', 'success');
@@ -5220,7 +5260,7 @@ function addBudgetKat() {
     const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
     if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color };
   } else {
-    if (state.budgetKat.find(k => k.name === name)) { alert(`Kategorie "${name}" existiert bereits.`); return; }
+    if (state.budgetKat.find(k => k.name === name)) { showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return; }
     state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length] });
   }
   save(); closeModal('modal-budget-kat');
@@ -5249,7 +5289,7 @@ function editBudgetKat(id) {
 }
 
 async function deleteBudgetKat(id) {
-  if (!confirm('Kategorie löschen?')) return;
+  if (!(await showConfirm('Kategorie löschen?'))) return;
   state.budgetKat = state.budgetKat.filter(k => String(k.id) !== String(id));
   // Re-stamp _order after deletion so positions stay clean
   state.budgetKat.forEach((k, i) => { k._order = i; });
@@ -5632,7 +5672,7 @@ async function loadNotificationStatus() {
 // Hard reset: throw away ALL local data and replace with whatever is in the cloud.
 // Use this to fix duplicate/desync issues on a specific device.
 async function forceCloudOverwrite() {
-  if (!confirm('⚠️ Alle lokalen Daten auf diesem Gerät werden durch die Cloud-Version ersetzt. Fortfahren?')) return;
+  if (!(await showConfirm('⚠️ Alle lokalen Daten auf diesem Gerät werden durch die Cloud-Version ersetzt. Fortfahren?'))) return;
   const out = document.getElementById('sync-info-output');
   if (out) { out.style.display = 'block'; out.textContent = '⏳ Lade Cloud-Daten…'; }
   try {
@@ -5734,7 +5774,7 @@ function acceptDsgvo() {
   const check = document.getElementById('dsgvo-check');
   if (!check?.checked) {
     check?.parentElement?.animate([{outline:'2px solid red'},{outline:'none'}],{duration:800});
-    alert('Bitte bestätige die Datenschutzinformation.');
+    showToast('⚠️ Bitte bestätige die Datenschutzinformation', 'error');
     return;
   }
   localStorage.setItem('dsgvoAccepted', '1');
@@ -6064,8 +6104,8 @@ function toggleMilestone(id) {
   save(); renderMilestones();
 }
 
-function deleteMilestone(id) {
-  if (!confirm('Meilenstein löschen?')) return;
+async function deleteMilestone(id) {
+  if (!(await showConfirm('Meilenstein löschen?'))) return;
   _trackDeletion(id, 'meilensteine');
   state.meilensteine = state.meilensteine.filter(m => String(m.id) !== String(id));
   save(); renderMilestones(); showToast('🗑 Meilenstein gelöscht', 'success');
@@ -6410,8 +6450,8 @@ function toggleTask(id) {
   save(); renderTasks();
 }
 
-function deleteTask(id) {
-  if (!confirm('Aufgabe löschen?')) return;
+async function deleteTask(id) {
+  if (!(await showConfirm('Aufgabe löschen?'))) return;
   _trackDeletion(id, 'aufgaben');
   // Remove synced notiz
   state.notizen = state.notizen.filter(n => n.__taskId !== id);
@@ -6637,8 +6677,8 @@ function editDiary(id) {
   openModal('modal-tagebuch');
 }
 
-function deleteDiary(id) {
-  if (!confirm('Eintrag löschen?')) return;
+async function deleteDiary(id) {
+  if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'tagebuch');
   state.tagebuch = state.tagebuch.filter(e => String(e.id) !== String(id));
   save(); renderDiary();
@@ -6908,8 +6948,8 @@ function editNotiz(id) {
   openModal('modal-notiz');
 }
 
-function deleteNotiz(id) {
-  if (!confirm('Notiz löschen?')) return;
+async function deleteNotiz(id) {
+  if (!(await showConfirm('Notiz löschen?'))) return;
   _trackDeletion(id, 'notizen');
   state.notizen = state.notizen.filter(n => String(n.id) !== String(id));
   save(); renderNotizen();
@@ -7099,7 +7139,7 @@ async function openDokument(id) {
 }
 
 async function deleteDokument(id) {
-  if (!confirm('Dokument löschen?')) return;
+  if (!(await showConfirm('Dokument löschen?'))) return;
   const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (d?.storage) {
     await supa.storage.from('dokumente').remove([d.storage]);
@@ -7181,8 +7221,8 @@ function editKontakt(id) {
   openModal('modal-kontakt');
 }
 
-function deleteKontakt(id) {
-  if (!confirm('Kontakt löschen?')) return;
+async function deleteKontakt(id) {
+  if (!(await showConfirm('Kontakt löschen?'))) return;
   _trackDeletion(id, 'kontakte');
   const k = state.kontakte.find(k => String(k.id) === String(id));
   if (k && k.firma) {
@@ -7263,8 +7303,8 @@ function editGanttItem(id) {
   openModal('modal-gantt');
 }
 
-function deleteGanttItem(id) {
-  if (!confirm('Eintrag löschen?')) return;
+async function deleteGanttItem(id) {
+  if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'gantt');
   state.gantt = state.gantt.filter(g => String(g.id) !== String(id));
   save(); renderGantt();
@@ -7767,8 +7807,8 @@ function addFotosToAlbum(input) {
   }
 }
 
-function deletePhotoFromAlbum(id) {
-  if (!confirm('Foto löschen?')) return;
+async function deletePhotoFromAlbum(id) {
+  if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) deletePhotoFromStorage(f.path);
   state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
@@ -7795,9 +7835,9 @@ function deleteAlbumData(albumId) {
   save();
 }
 
-function deleteAlbum(albumId) {
+async function deleteAlbum(albumId) {
   const fotos = (state.fotos||[]).filter(f => f.albumId === albumId);
-  if (!confirm(`Album und alle ${fotos.length} Foto${fotos.length!==1?'s':''} löschen?`)) return;
+  if (!(await showConfirm(`Album und alle ${fotos.length} Foto${fotos.length!==1?'s':''} löschen?`))) return;
   fotos.forEach(f => { if(f.path) deletePhotoFromStorage(f.path); });
   deleteAlbumData(albumId);
   closeModal('modal-album-view');
@@ -7805,10 +7845,10 @@ function deleteAlbum(albumId) {
   showToast('🗑 Album gelöscht', 'success');
 }
 
-function editAlbum(albumId) {
+async function editAlbum(albumId) {
   const album = (state.fotoAlben||[]).find(a => a.id === albumId);
   if (!album) return;
-  const newTitle = prompt('Album-Beschreibung:', album.title);
+  const newTitle = await showPrompt('Album-Beschreibung:', album.title);
   if (newTitle === null) return;
   album.title = newTitle || album.title;
   save();
@@ -7862,7 +7902,7 @@ async function confirmPhoto() {
 }
 
 async function deletePhoto(id) {
-  if (!confirm('Foto löschen?')) return;
+  if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) await deletePhotoFromStorage(f.path);
   state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
@@ -8629,10 +8669,10 @@ function saveGrundrissModal() {
   renderGrundrisse();
 }
 
-function deleteGrundriss(id) {
+async function deleteGrundriss(id) {
   const g = (state.grundrisse||[]).find(x => String(x.id) === String(id));
   if (!g) return;
-  if (!confirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`)) return;
+  if (!(await showConfirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`))) return;
   state.grundrisse = state.grundrisse.filter(x => String(x.id) !== String(id));
   _grActiveId = state.grundrisse[0]?.id || null;
   save();
@@ -8768,10 +8808,10 @@ function savePinModal() {
   renderGrundrisse();
 }
 
-function deletePinFromModal() {
+async function deletePinFromModal() {
   const grundrissId = parseInt(document.getElementById('gr-pin-grundriss-id').value);
   const pinId       = parseInt(document.getElementById('gr-pin-id').value);
-  if (!confirm('Markierung löschen?')) return;
+  if (!(await showConfirm('Markierung löschen?'))) return;
   const g = (state.grundrisse||[]).find(x => x.id === grundrissId);
   if (g) g.pins = (g.pins||[]).filter(p => p.id !== pinId);
   save();
@@ -8806,8 +8846,8 @@ function editDoku(id) {
   openModal('modal-doku');
 }
 
-function deleteDoku(id) {
-  if (!confirm('Eintrag löschen?')) return;
+async function deleteDoku(id) {
+  if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'dokumentation');
   state.dokumentation = state.dokumentation.filter(d => String(d.id) !== String(id));
   save(); renderDoku();
@@ -8941,8 +8981,8 @@ function editWartung(id) {
   openModal('modal-wartung');
 }
 
-function deleteWartung(id) {
-  if (!confirm('Wartung löschen?')) return;
+async function deleteWartung(id) {
+  if (!(await showConfirm('Wartung löschen?'))) return;
   _trackDeletion(id, 'wartungen');
   state.wartungen = state.wartungen.filter(w => String(w.id) !== String(id));
   save(); renderWartung();
@@ -9354,10 +9394,10 @@ function switchToProject(id) {
   showToast(`📂 Gewechselt zu: ${projects.find(p=>p.id===id)?.settings?.name}`, 'success');
 }
 
-function deleteProject(id) {
-  if (projects.length <= 1) { alert('Du kannst das letzte Projekt nicht löschen.'); return; }
+async function deleteProject(id) {
+  if (projects.length <= 1) { showToast('⚠️ Du kannst das letzte Projekt nicht löschen', 'error'); return; }
   const name = projects.find(p=>p.id===id)?.settings?.name;
-  if (!confirm(`Projekt "${name}" und alle Daten löschen?`)) return;
+  if (!(await showConfirm(`Projekt "${name}" und alle Daten löschen?`))) return;
   projects = projects.filter(p => String(p.id) !== String(id));
   if (currentProjectId === id) loadProject(projects[0].id, true);
   saveAll();
@@ -10793,8 +10833,8 @@ function editAngebot(id) {
   openModal('modal-angebot');
 }
 
-function deleteAngebot(id) {
-  if (!confirm('Angebot löschen?')) return;
+async function deleteAngebot(id) {
+  if (!(await showConfirm('Angebot löschen?'))) return;
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
   save(); renderAngebote();
@@ -11093,8 +11133,8 @@ function editZahlung(id) {
   openModal('modal-zahlung');
 }
 
-function deleteZahlung(id) {
-  if (!confirm('Zahlung löschen?')) return;
+async function deleteZahlung(id) {
+  if (!(await showConfirm('Zahlung löschen?'))) return;
   _trackDeletion(id, 'zahlungen');
   state.zahlungen = (state.zahlungen||[]).filter(z => String(z.id) !== String(id));
   save(); renderZahlungsplan();
@@ -11259,8 +11299,8 @@ function editMangel(id) {
   openModal('modal-mangel');
 }
 
-function deleteMangel(id) {
-  if (!confirm('Mangel löschen?')) return;
+async function deleteMangel(id) {
+  if (!(await showConfirm('Mangel löschen?'))) return;
   _trackDeletion(id, 'maengel');
   state.maengel = (state.maengel||[]).filter(m => String(m.id) !== String(id));
   save(); renderMaengel();
@@ -11444,8 +11484,8 @@ function renderGescannteRechnungen() {
   }).join('');
 }
 
-function deleteGescannteRechnung(id) {
-  if (!confirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)')) return;
+async function deleteGescannteRechnung(id) {
+  if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)'))) return;
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');
@@ -11469,8 +11509,8 @@ function addZahlungsPerson() {
   showToast('✅ Person hinzugefügt', 'success');
 }
 
-function deleteZahlungsPerson(id) {
-  if (!confirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.')) return;
+async function deleteZahlungsPerson(id) {
+  if (!(await showConfirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.'))) return;
   _trackDeletion(id, 'zahlungspersonen');
   const person = (state.zahlungspersonen||[]).find(p => String(p.id) === String(id));
   if (person) state.kosten.forEach(k => { if (k.bezahltVon === person.name) k.bezahltVon = ''; });
@@ -12656,6 +12696,20 @@ function exportRechnungenPDF() {
       onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
       Zustimmen &amp; Planory öffnen
     </button>
+  </div>
+</div>
+<!-- App-eigener Bestaetigungs-/Eingabe-Dialog (ersetzt window.confirm/prompt) -->
+<div class="modal-overlay" id="modal-app-confirm" style="z-index:10050">
+  <div class="modal" style="max-width:380px">
+    <h3 id="ac-title" style="margin-bottom:10px">Bist du sicher?</h3>
+    <p id="ac-text" style="font-size:0.88rem;color:var(--text2);line-height:1.6;margin-bottom:18px;white-space:pre-line"></p>
+    <div class="form-row" id="ac-input-row" style="display:none;margin-bottom:18px">
+      <input type="text" id="ac-input" onkeydown="if(event.key==='Enter')_acResolve(true)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="_acResolve(false)">Abbrechen</button>
+      <button class="btn btn-danger" id="ac-ok-btn" onclick="_acResolve(true)">Ja</button>
+    </div>
   </div>
 </div>
 <!-- Dokument Kategorie Modal -->
