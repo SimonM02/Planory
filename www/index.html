@@ -5583,6 +5583,10 @@ async function requestNotifications() {
 async function enableNotifications() {
   // Native App: iOS-Berechtigung anfragen und Erinnerungen lokal einplanen
   if (isNativeApp()) {
+    if (!_localNotifPlugin()) {
+      showToast('⚠️ Mitteilungen brauchen die neueste App-Version – bitte das Update aus dem App Store installieren', 'error', 6000);
+      return;
+    }
     const ok = await _requestNativeNotifPermission();
     loadNotificationStatus();
     if (ok) {
@@ -5619,6 +5623,12 @@ async function loadNotificationStatus() {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
+    if (!_localNotifPlugin()) {
+      label.textContent = 'Mitteilungen sind ab dem nächsten App-Update verfügbar';
+      badge.textContent = 'Update'; badge.className = 'badge badge-yellow';
+      if (btn) btn.style.display = 'none';
+      return;
+    }
     try {
       const st = await _localNotifPlugin()?.checkPermissions();
       const granted = st?.display === 'granted';

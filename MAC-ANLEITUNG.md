@@ -17,7 +17,34 @@ npx cap sync ios
 npx cap open ios     # öffnet Xcode
 ```
 
-> Bei späteren Updates reicht: `git pull && npx cap sync ios`
+> Bei späteren Updates: `git pull && npm install && npx cap sync ios`
+> (`npm install` nicht weglassen — neue Plugins wie die Benachrichtigungen
+> kommen sonst nicht in die App!)
+
+## Update hochladen (z.B. Build 5 mit Benachrichtigungen)
+
+```bash
+cd Planory        # bzw. der Ordner heißt evtl. klein: planory
+git pull
+npm install       # WICHTIG: installiert @capacitor/local-notifications
+npx cap sync ios
+npx cap open ios
+```
+
+Dann in Xcode:
+1. Links Projekt **App** → Target **App** → Tab **General**
+2. **Build**-Nummer um 1 erhöhen (z.B. 4 → 5). Version bleibt 1.0.
+3. Gerät oben auf **Any iOS Device (arm64)**
+4. **Product → Archive** → **Distribute App** → **App Store Connect** → **Upload**
+5. In App Store Connect (Browser): Version öffnen → neuen Build auswählen
+   → „Zur Prüfung einreichen"
+
+### Benachrichtigungen danach testen (TestFlight oder Store-Version)
+1. App öffnen → Einstellungen → Mitteilungen → **🔔 Erlauben** → iOS-Dialog bestätigen
+2. **▶ Lokal testen** → nach ~1 Sekunde muss eine iPhone-Mitteilung erscheinen
+3. Aufgabe mit heutigem Datum + Uhrzeit in 3 Minuten anlegen
+4. App komplett schließen, Handy sperren → zur Uhrzeit kommt die Erinnerung
+   am Sperrbildschirm
 
 ## 2. In Xcode konfigurieren (einmalig)
 
