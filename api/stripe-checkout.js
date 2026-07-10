@@ -24,8 +24,19 @@ export default async function handler(req, res) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId) return res.status(500).json({ error: 'STRIPE_PRICE_ID not configured' });
+
+  // Abo-Modell: 3,99 €/Monat oder 28,99 €/Jahr (Gratismonat läuft account-
+  // basiert in der App, daher hier kein Stripe-Trial). Price-IDs kommen aus
+  // den Vercel-Umgebungsvariablen; STRIPE_PRICE_ID bleibt als Fallback.
+  let plan = 'monthly';
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    if (body.plan === 'yearly') plan = 'yearly';
+  } catch (e) { /* default monthly */ }
+  const priceId = plan === 'yearly'
+    ? process.env.STRIPE_PRICE_YEARLY
+    : (process.env.STRIPE_PRICE_MONTHLY || process.env.STRIPE_PRICE_ID);
+  if (!priceId) return res.status(500).json({ error: 'Stripe price not configured (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY)' });
 
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const hdrs = { Authorization: `Bearer ${svcKey}`, apikey: svcKey, 'Content-Type': 'application/json' };

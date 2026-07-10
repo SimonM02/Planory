@@ -4411,6 +4411,57 @@ function showPrompt(message, defaultValue = '', opts = {}) {
   });
 }
 
+// ── Abo-Modell: 1 Monat gratis testen, danach 3,99 €/Monat oder 28,99 €/Jahr.
+// Ohne aktives Abo ist Planory Nur-Lesen: bestehende Daten bleiben sichtbar,
+// Aufgaben/Wartungen abhaken bleibt erlaubt, aber nichts Neues und keine KI.
+// In der nativen iOS-App bleibt (bis der In-App-Kauf integriert ist) alles
+// frei – sonst wuerde Apple die App ablehnen (Guideline 3.1.1).
+function _subActive() { return window._userPlan === 'pro' || window._userPlan === 'trial'; }
+function requireSub() {
+  if (isNativeApp()) return true;
+  if (_demoMode || !currentUser) return true; // Demo & Vor-Login nie blocken
+  if (_subActive()) return true;
+  openPaywall();
+  return false;
+}
+function openPaywall() { openModal('modal-paywall'); }
+
+// Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
+function _applyFreePlan(freeEl) {
+  const created  = new Date(currentUser?.created_at || Date.now());
+  const trialEnd = new Date(created.getTime() + 30 * 86400000);
+  window._trialEnd = trialEnd;
+  const inTrial  = Date.now() < trialEnd.getTime();
+  window._userPlan = inTrial ? 'trial' : 'expired';
+  const banner = document.getElementById('readonly-banner');
+  if (banner) banner.style.display = inTrial ? 'none' : '';
+  if (!freeEl) return;
+  const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000));
+  freeEl.style.display = 'block';
+  freeEl.innerHTML = `
+    <div style="padding:16px 18px;background:${inTrial ? 'var(--surface2)' : '#fff7ed'};display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${inTrial ? 'Testphase aktiv' : 'Nur-Lese-Modus'}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${inTrial ? `Noch ${days} Tag${days===1?'':'e'} alles gratis` : 'Ansehen & Abhaken frei – Eintragen braucht ein Abo'}</div>
+      </div>
+      <span style="background:${inTrial ? '#dbeafe' : '#fed7aa'};color:${inTrial ? '#1d4ed8' : '#9a3412'};font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap">${inTrial ? 'GRATISMONAT' : 'ABGELAUFEN'}</span>
+    </div>
+    <div style="padding:14px 18px;background:var(--surface);display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">
+        ✅ Alles eintragen &amp; bearbeiten<br>
+        ✅ KI-Bauberater, KI-Zeitplan &amp; Rechnungs-Scan<br>
+        ✅ Unbegrenzte Projekte
+      </div>
+      <button id="btn-sub-yearly" onclick="startStripeCheckout('yearly')"
+        style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:9px;padding:11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:white;cursor:pointer">
+        28,99 € / Jahr · spare 40 %
+      </button>
+      <button id="btn-sub-monthly" onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;padding:10px;font-size:0.85rem">
+        3,99 € / Monat
+      </button>
+    </div>`;
+}
+
 // ──────────────── SETTINGS ────────────────
 // ──────────────── MODULES ────────────────
 const MODULES = [
@@ -4508,6 +4559,7 @@ function renderModuleToggles() {
 
 // ──────────────── SETTINGS ────────────────
 function saveSettings() {
+  if (!requireSub()) return;
   state.settings.name    = document.getElementById('s-name').value;
   state.settings.start   = document.getElementById('s-start').value;
   state.settings.end     = document.getElementById('s-end').value;
@@ -4607,24 +4659,24 @@ async function loadUserPlan() {
       }
       // Store plan in state for feature gating
       window._userPlan = 'pro';
+      const _rb = document.getElementById('readonly-banner');
+      if (_rb) _rb.style.display = 'none';
       // Hide lock icons
       const lockEl = document.getElementById('ki-nav-lock');
       if (lockEl) lockEl.style.display = 'none';
     } else {
-      freeEl.style.display = 'block';
-      window._userPlan = 'free';
+      _applyFreePlan(freeEl);
     }
   } catch(e) {
     // Silently show free card if subscriptions table doesn't exist yet
     const loadingEl = document.getElementById('plan-loading-card');
     const freeEl    = document.getElementById('plan-free-card');
     if (loadingEl) loadingEl.style.display = 'none';
-    if (freeEl)    freeEl.style.display    = 'block';
-    window._userPlan = 'free';
+    _applyFreePlan(freeEl);
   }
 }
 
-async function startStripeCheckout() {
+async function startStripeCheckout(plan = 'monthly') {
   if (isNativeApp()) return;
   if (!currentUser) return;
   const btn = event?.target;
@@ -4635,7 +4687,8 @@ async function startStripeCheckout() {
     if (!token) throw new Error('not logged in');
     const res = await fetch('/api/stripe-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ plan })
     });
     const json = await res.json();
     if (json.url) {
@@ -4890,6 +4943,7 @@ function refreshAllKatSelects(selectedVal = '', extraIds = []) {
 
 // ──────────────── KOSTEN ADD / EDIT ────────────────
 function saveKosten() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('k-edit-id').value) || null;
   const mwstRate = parseFloat(document.getElementById('k-mwst').value) || 0;
   const brutto   = parseFloat(document.getElementById('k-betrag').value) || 0;
@@ -4963,6 +5017,7 @@ function editKosten(id) {
 }
 
 async function deleteKosten(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
@@ -5030,6 +5085,7 @@ function openBudgetDrilldown(katName) {
 }
 
 async function deleteDrilldownKosten(id, katName) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
@@ -5041,6 +5097,7 @@ async function deleteDrilldownKosten(id, katName) {
 
 // ──────────────── EIGENLEISTUNGEN ────────────────
 function addEigenleistung() {
+  if (!requireSub()) return;
   state.eigenleistungen = state.eigenleistungen || [];
   const editId = parseInt(document.getElementById('el-edit-id')?.value) || null;
   const item = {
@@ -5082,6 +5139,7 @@ function editEigenleistung(id) {
 }
 
 async function deleteEigenleistung(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Eigenleistung löschen?'))) return;
   _trackDeletion(id, 'eigenleistungen');
   state.eigenleistungen = (state.eigenleistungen||[]).filter(e => String(e.id) !== String(id));
@@ -5254,6 +5312,7 @@ function updateBudgetKatPreview() {
 }
 
 function addBudgetKat() {
+  if (!requireSub()) return;
   const editId = document.getElementById('bk-edit-id')?.value || null;
   const name   = document.getElementById('bk-name').value.trim();
   const budget = parseFloat(document.getElementById('bk-budget').value) || 0;
@@ -5294,6 +5353,7 @@ function editBudgetKat(id) {
 }
 
 async function deleteBudgetKat(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Kategorie löschen?'))) return;
   state.budgetKat = state.budgetKat.filter(k => String(k.id) !== String(id));
   // Re-stamp _order after deletion so positions stay clean
@@ -5894,6 +5954,7 @@ function sendStatusReport() {
 }
 
 async function handleRechnungScan(input) {
+  if (!requireSub()) return;
   const file = input.files[0];
   if (!file) return;
 
@@ -6001,6 +6062,7 @@ async function handleRechnungScan(input) {
 }
 
 async function confirmRechnungScan() {
+  if (!requireSub()) return;
   const brutto   = parseFloat(document.getElementById('scan-brutto').value)  || 0;
   const mwst     = parseFloat(document.getElementById('scan-mwst').value)    || 0;
   const netto    = mwst > 0 ? brutto / (1 + mwst/100) : brutto;
@@ -6079,6 +6141,7 @@ async function confirmRechnungScan() {
 
 // ──────────────── MILESTONES ────────────────
 function addMilestone() {
+  if (!requireSub()) return;
   const editId = parseFloat(document.getElementById('ms-edit-id')?.value) || null;
   const item = {
     id: editId || Date.now(),
@@ -6120,6 +6183,7 @@ function toggleMilestone(id) {
 }
 
 async function deleteMilestone(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Meilenstein löschen?'))) return;
   _trackDeletion(id, 'meilensteine');
   state.meilensteine = state.meilensteine.filter(m => String(m.id) !== String(id));
@@ -6130,7 +6194,7 @@ async function deleteMilestone(id) {
 let _kiZeitplanData = null;
 
 async function generateKIMeilensteine(regen = false) {
-  if (window._userPlan !== 'pro') { showUpgradeModal('KI-Zeitplan'); return; }
+  if (!requireSub()) return;
 
   openModal('modal-ki-zeitplan');
   document.getElementById('ki-zeitplan-loading').style.display = 'block';
@@ -6254,6 +6318,7 @@ function _renderKIZeitplanPreview(data, startDate) {
 }
 
 function importKIZeitplan() {
+  if (!requireSub()) return;
   if (!_kiZeitplanData) return;
 
   // Read possibly-edited values from the preview
@@ -6322,6 +6387,7 @@ function renderMilestones() {
 
 // ──────────────── TASKS ────────────────
 function addTask() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('t-edit-id')?.value) || null;
   const item = {
     id:     editId || Date.now(),
@@ -6379,6 +6445,7 @@ function _populateTaskPersonList() {
 }
 
 function saveTask() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('t-edit-id').value) || null;
   const name = document.getElementById('t-name').value.trim();
   if (!name) { showToast('⚠️ Bitte eine Aufgabe eingeben', 'error'); return; }
@@ -6466,6 +6533,7 @@ function toggleTask(id) {
 }
 
 async function deleteTask(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Aufgabe löschen?'))) return;
   _trackDeletion(id, 'aufgaben');
   // Remove synced notiz
@@ -6633,6 +6701,7 @@ function addWorkerRow() {
 }
 
 function addDiary() {
+  if (!requireSub()) return;
   const workers = [];
   document.querySelectorAll('#tb-worker-rows > div').forEach(row => {
     const name  = row.querySelector('.tb-worker-name')?.value?.trim();
@@ -6693,6 +6762,7 @@ function editDiary(id) {
 }
 
 async function deleteDiary(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'tagebuch');
   state.tagebuch = state.tagebuch.filter(e => String(e.id) !== String(id));
@@ -6924,6 +6994,7 @@ function renderDiarySummary() {
 
 // ──────────────── NOTIZEN ────────────────
 function addNotiz() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('n-edit-id')?.value) || null;
   const prev   = editId ? state.notizen.find(n => String(n.id) === String(editId)) : null;
   const item = {
@@ -6964,6 +7035,7 @@ function editNotiz(id) {
 }
 
 async function deleteNotiz(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Notiz löschen?'))) return;
   _trackDeletion(id, 'notizen');
   state.notizen = state.notizen.filter(n => String(n.id) !== String(id));
@@ -7154,6 +7226,7 @@ async function openDokument(id) {
 }
 
 async function deleteDokument(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Dokument löschen?'))) return;
   const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (d?.storage) {
@@ -7196,6 +7269,7 @@ function renderDokumente() {
 
 // ──────────────── KONTAKTE ────────────────
 function addKontakt() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('c-edit-id')?.value) || null;
   const item = {
     id: editId || Date.now(),
@@ -7237,6 +7311,7 @@ function editKontakt(id) {
 }
 
 async function deleteKontakt(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Kontakt löschen?'))) return;
   _trackDeletion(id, 'kontakte');
   const k = state.kontakte.find(k => String(k.id) === String(id));
@@ -7279,6 +7354,7 @@ function resetGanttModal() {
 }
 
 function saveGanttItem() {
+  if (!requireSub()) return;
   const start = document.getElementById('g-start').value;
   const end   = document.getElementById('g-end').value;
   if (!start || !end) { showToast('Bitte Start- und Enddatum angeben!', 'error'); return; }
@@ -7319,6 +7395,7 @@ function editGanttItem(id) {
 }
 
 async function deleteGanttItem(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'gantt');
   state.gantt = state.gantt.filter(g => String(g.id) !== String(id));
@@ -7723,6 +7800,7 @@ function openBatchPhotoModal(files, targetAlbumId) {
 }
 
 async function confirmBatchPhotos() {
+  if (!requireSub()) return;
   const kat    = document.getElementById('fb-kat').value;
   const datum  = document.getElementById('fb-datum').value || today();
   const beschr = document.getElementById('fb-beschr').value.trim();
@@ -7811,6 +7889,7 @@ function renderAlbumGrid(fotos) {
 }
 
 function addFotosToAlbum(input) {
+  if (!requireSub()) return;
   const files = Array.from(input.files);
   input.value = '';
   if (!files.length || !_openAlbumId) return;
@@ -7823,6 +7902,7 @@ function addFotosToAlbum(input) {
 }
 
 async function deletePhotoFromAlbum(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) deletePhotoFromStorage(f.path);
@@ -7851,6 +7931,7 @@ function deleteAlbumData(albumId) {
 }
 
 async function deleteAlbum(albumId) {
+  if (!requireSub()) return;
   const fotos = (state.fotos||[]).filter(f => f.albumId === albumId);
   if (!(await showConfirm(`Album und alle ${fotos.length} Foto${fotos.length!==1?'s':''} löschen?`))) return;
   fotos.forEach(f => { if(f.path) deletePhotoFromStorage(f.path); });
@@ -7861,6 +7942,7 @@ async function deleteAlbum(albumId) {
 }
 
 async function editAlbum(albumId) {
+  if (!requireSub()) return;
   const album = (state.fotoAlben||[]).find(a => a.id === albumId);
   if (!album) return;
   const newTitle = await showPrompt('Album-Beschreibung:', album.title);
@@ -7872,6 +7954,7 @@ async function editAlbum(albumId) {
 }
 
 async function confirmPhoto() {
+  if (!requireSub()) return;
   const editId = document.getElementById('modal-foto-info')._editId;
   if (editId) {
     // Edit-Modus: nur Metadaten ändern, kein Upload
@@ -7917,6 +8000,7 @@ async function confirmPhoto() {
 }
 
 async function deletePhoto(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) await deletePhotoFromStorage(f.path);
@@ -7988,6 +8072,7 @@ function renderDokuPhotoPreviews() {
 }
 
 async function addDoku() {
+  if (!requireSub()) return;
   state.dokumentation = state.dokumentation || [];
   const editId = document.getElementById('modal-doku')._editId || null;
   const btn = document.querySelector('#modal-doku .btn-primary');
@@ -8109,6 +8194,7 @@ function resetMgModal() {
 }
 
 async function saveMangel() {
+  if (!requireSub()) return;
   state.maengel = state.maengel || [];
   const editId   = parseInt(document.getElementById('mg-edit-id').value) || null;
   const existing = editId ? state.maengel.find(m => String(m.id) === String(editId)) : null;
@@ -8656,6 +8742,7 @@ function grPdfChangePage(delta) {
 }
 
 function saveGrundrissModal() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('gr-edit-id').value) || null;
   const name   = document.getElementById('gr-name').value.trim();
   if (!name) { showToast('⚠️ Bitte eine Bezeichnung eingeben', 'error'); return; }
@@ -8685,6 +8772,7 @@ function saveGrundrissModal() {
 }
 
 async function deleteGrundriss(id) {
+  if (!requireSub()) return;
   const g = (state.grundrisse||[]).find(x => String(x.id) === String(id));
   if (!g) return;
   if (!(await showConfirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`))) return;
@@ -8793,6 +8881,7 @@ function removeGrPinFoto(i) {
 }
 
 function savePinModal() {
+  if (!requireSub()) return;
   const grundrissId = parseInt(document.getElementById('gr-pin-grundriss-id').value);
   const pinId       = parseInt(document.getElementById('gr-pin-id').value) || null;
   const typ         = document.getElementById('gr-pin-typ').value;
@@ -8824,6 +8913,7 @@ function savePinModal() {
 }
 
 async function deletePinFromModal() {
+  if (!requireSub()) return;
   const grundrissId = parseInt(document.getElementById('gr-pin-grundriss-id').value);
   const pinId       = parseInt(document.getElementById('gr-pin-id').value);
   if (!(await showConfirm('Markierung löschen?'))) return;
@@ -8862,6 +8952,7 @@ function editDoku(id) {
 }
 
 async function deleteDoku(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'dokumentation');
   state.dokumentation = state.dokumentation.filter(d => String(d.id) !== String(id));
@@ -8952,6 +9043,7 @@ function resetWartungModal() {
 }
 
 function addWartung() {
+  if (!requireSub()) return;
   state.wartungen = state.wartungen || [];
   const editId = parseInt(document.getElementById('wt-edit-id')?.value) || null;
   const intervall = parseInt(document.getElementById('wt-intervall').value) || 1;
@@ -8997,6 +9089,7 @@ function editWartung(id) {
 }
 
 async function deleteWartung(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Wartung löschen?'))) return;
   _trackDeletion(id, 'wartungen');
   state.wartungen = state.wartungen.filter(w => String(w.id) !== String(id));
@@ -9204,7 +9297,7 @@ Liefere 3-6 insights. Sei spezifisch mit Zahlen aus den Projektdaten. Wenn das P
 }
 
 async function runKIAnalysis() {
-  if (window._userPlan !== 'pro') { showUpgradeModal('KI-Bauberater'); return; }
+  if (!requireSub()) return;
   const snapshot = buildProjectSnapshot();
   document.getElementById('ki-empty').style.display    = 'none';
   document.getElementById('ki-results').style.display  = 'none';
@@ -9323,6 +9416,7 @@ function renderKIResults(result, snapshot) {
 }
 
 async function askKI() {
+  if (!requireSub()) return;
   const question = document.getElementById('ki-chat-input').value.trim();
   if (!question) return;
 
@@ -9410,6 +9504,7 @@ function switchToProject(id) {
 }
 
 async function deleteProject(id) {
+  if (!requireSub()) return;
   if (projects.length <= 1) { showToast('⚠️ Du kannst das letzte Projekt nicht löschen', 'error'); return; }
   const name = projects.find(p=>p.id===id)?.settings?.name;
   if (!(await showConfirm(`Projekt "${name}" und alle Daten löschen?`))) return;
@@ -9437,6 +9532,7 @@ function editProject(id) {
 }
 
 function saveProject() {
+  if (!requireSub()) return;
   const editId = parseInt(document.getElementById('edit-proj-id').value) || null;
   const selectedColor = document.querySelector('#np-color-picker .color-dot.selected')?.dataset.color || '#ff9f1c';
   const modules = {};
@@ -9461,12 +9557,6 @@ function saveProject() {
       }
     }
   } else {
-    // New project – Pro check
-    if (window._userPlan !== 'pro' && projects.length >= 1) {
-      closeModal('modal-new-project');
-      showUpgradeModal('Mehrere Projekte');
-      return;
-    }
     const proj = EMPTY_PROJECT();
     proj.settings.name    = document.getElementById('np-name').value || 'Neues Projekt';
     proj.settings.type    = document.getElementById('np-type').value;
@@ -10655,6 +10745,7 @@ async function finishOnboarding() {
 
 // ──────────────── ABHÄNGIGKEITEN ────────────────
 function addAbhBlock() {
+  if (!requireSub()) return;
   state.abhaengigkeiten = state.abhaengigkeiten || [];
   state.abhaengigkeiten.push({
     id: Date.now(),
@@ -10673,6 +10764,7 @@ function addAbhBlock() {
 }
 
 function deleteAbhBlock(id) {
+  if (!requireSub()) return;
   _trackDeletion(id, 'abhaengigkeiten');
   state.abhaengigkeiten = (state.abhaengigkeiten||[]).filter(b => String(b.id) !== String(id));
   save(); renderAbhaengigkeiten();
@@ -10793,6 +10885,7 @@ function resetAngModal() {
 }
 
 async function saveAngebot() {
+  if (!requireSub()) return;
   state.angebote = state.angebote || [];
   const editId = parseInt(document.getElementById('ang-edit-id').value) || null;
   const item = {
@@ -10849,6 +10942,7 @@ function editAngebot(id) {
 }
 
 async function deleteAngebot(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Angebot löschen?'))) return;
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
@@ -10992,6 +11086,7 @@ async function compressImage(file, maxPx = 1280, quality = 0.75) {
 }
 
 async function scanAngKI() {
+  if (!requireSub()) return;
   const text = document.getElementById('ang-ki-text').value.trim();
   const file = document.getElementById('ang-ki-file').files[0];
   if (!text && !file) { showToast('Bitte Text einfügen oder Foto hochladen', 'error'); return; }
@@ -11036,6 +11131,7 @@ async function scanAngKI() {
 }
 
 function confirmAngKI() {
+  if (!requireSub()) return;
   document.getElementById('ang-beschr').value   = document.getElementById('ang-ki-beschr').value;
   document.getElementById('ang-anbieter').value = document.getElementById('ang-ki-anbieter').value;
   document.getElementById('ang-betrag').value   = document.getElementById('ang-ki-betrag').value;
@@ -11105,6 +11201,7 @@ function resetZpModal() {
 }
 
 function saveZahlung() {
+  if (!requireSub()) return;
   state.zahlungen = state.zahlungen || [];
   const editId = parseInt(document.getElementById('zp-edit-id').value) || null;
   const item = {
@@ -11149,6 +11246,7 @@ function editZahlung(id) {
 }
 
 async function deleteZahlung(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Zahlung löschen?'))) return;
   _trackDeletion(id, 'zahlungen');
   state.zahlungen = (state.zahlungen||[]).filter(z => String(z.id) !== String(id));
@@ -11315,6 +11413,7 @@ function editMangel(id) {
 }
 
 async function deleteMangel(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Mangel löschen?'))) return;
   _trackDeletion(id, 'maengel');
   state.maengel = (state.maengel||[]).filter(m => String(m.id) !== String(id));
@@ -11500,6 +11599,7 @@ function renderGescannteRechnungen() {
 }
 
 async function deleteGescannteRechnung(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)'))) return;
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
@@ -11510,6 +11610,7 @@ async function deleteGescannteRechnung(id) {
 // ZAHLUNGSPERSONEN & KOSTENAUFTEILUNG
 // ══════════════════════════════════════
 function addZahlungsPerson() {
+  if (!requireSub()) return;
   const name = document.getElementById('new-person-name').value.trim();
   if (!name) return;
   state.zahlungspersonen = state.zahlungspersonen || [];
@@ -11525,6 +11626,7 @@ function addZahlungsPerson() {
 }
 
 async function deleteZahlungsPerson(id) {
+  if (!requireSub()) return;
   if (!(await showConfirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.'))) return;
   _trackDeletion(id, 'zahlungspersonen');
   const person = (state.zahlungspersonen||[]).find(p => String(p.id) === String(id));
@@ -12713,6 +12815,24 @@ function exportRechnungenPDF() {
     </button>
   </div>
 </div>
+<!-- Paywall: ohne aktives Abo (nach dem Gratismonat) ist Planory Nur-Lesen -->
+<div class="modal-overlay" id="modal-paywall" style="z-index:10040">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div style="font-size:2.6rem;margin-bottom:10px">🏗️</div>
+    <h3 id="pw-title" style="margin-bottom:8px">Dein Gratismonat ist vorbei</h3>
+    <p style="font-size:0.86rem;color:var(--text2);line-height:1.6;margin-bottom:18px">
+      Mit dem Planory-Abo kannst du weiter eintragen, Rechnungen scannen und die KI nutzen.
+      Deine bisherigen Daten bleiben immer sichtbar – auch ohne Abo.
+    </p>
+    <button onclick="startStripeCheckout('yearly')" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">
+      28,99 € / Jahr &nbsp;<span style="opacity:.8;font-size:0.8rem">statt 47,88 € – spare 40 %</span>
+    </button>
+    <button onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:12px">3,99 € / Monat</button>
+    <div style="font-size:0.72rem;color:var(--text3);margin-bottom:14px">Jederzeit kündbar · Aufgaben abhaken bleibt immer gratis</div>
+    <button onclick="closeModal('modal-paywall')" style="background:none;border:none;color:var(--text3);font-size:0.8rem;cursor:pointer;text-decoration:underline">Weiter nur ansehen</button>
+  </div>
+</div>
+<div id="readonly-banner" onclick="openPaywall()" style="display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.25);white-space:nowrap">👁 Nur-Lese-Modus · Abo aktivieren</div>
 <!-- App-eigener Bestaetigungs-/Eingabe-Dialog (ersetzt window.confirm/prompt) -->
 <div class="modal-overlay" id="modal-app-confirm" style="z-index:10050">
   <div class="modal" style="max-width:380px">
