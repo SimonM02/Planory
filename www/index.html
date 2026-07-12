@@ -4597,6 +4597,11 @@ function isNativeApp() {
             && window.Capacitor.isNativePlatform());
 }
 
+// Server-Adresse fuer /api-Aufrufe (KI, Stripe, Push): Im Web reichen
+// relative Pfade. Die native App laeuft unter capacitor://localhost –
+// dort MUSS die volle Domain stehen, sonst gehen KI & Co. ins Leere.
+const API_BASE = isNativeApp() ? 'https://planory.at' : '';
+
 // In der nativen App (App Store) gibt es keinen externen Bezahl-Weg. Damit keine
 // gesperrten Funktionen ohne Kaufmöglichkeit gezeigt werden (Apple-Richtlinie 2.1
 // & 3.1.1), sind in der App alle Funktionen freigeschaltet. Früher Default, damit
@@ -4685,7 +4690,7 @@ async function startStripeCheckout(plan = 'monthly') {
     const { data: { session } } = await supa.auth.getSession();
     const token = session?.access_token;
     if (!token) throw new Error('not logged in');
-    const res = await fetch('/api/stripe-checkout', {
+    const res = await fetch(API_BASE + '/api/stripe-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ plan })
@@ -4711,7 +4716,7 @@ async function openStripePortal() {
     const { data: { session } } = await supa.auth.getSession();
     const token = session?.access_token;
     if (!token) throw new Error('not logged in');
-    const res = await fetch('/api/stripe-portal', {
+    const res = await fetch(API_BASE + '/api/stripe-portal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
     });
@@ -4798,7 +4803,7 @@ async function deleteAccount() {
     if (userId) {
       const { data: { session } } = await supa.auth.getSession();
       const token = session?.access_token;
-      const resp = await fetch('/api/delete-user', {
+      const resp = await fetch(API_BASE + '/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ userId })
@@ -5989,7 +5994,7 @@ async function handleRechnungScan(input) {
   try {
     const mediaType = file.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg';
 
-    const response = await fetch('/api/ki', {
+    const response = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6256,7 +6261,7 @@ Antworte NUR mit validem JSON (kein Text davor/danach):
 }`;
 
   try {
-    const resp = await fetch('/api/ki', {
+    const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -9305,7 +9310,7 @@ async function runKIAnalysis() {
   document.getElementById('ki-analyze-btn').disabled   = true;
 
   try {
-    const resp = await fetch('/api/ki', {
+    const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -9431,7 +9436,7 @@ async function askKI() {
   const snapshot = buildProjectSnapshot();
 
   try {
-    const resp = await fetch('/api/ki', {
+    const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -11104,7 +11109,7 @@ async function scanAngKI() {
     } else {
       messages = [{ role:'user', content:`${prompt}\n\nAngebotstext:\n${text}` }];
     }
-    const resp = await fetch('/api/ki', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:512, messages }) });
+    const resp = await fetch(API_BASE + '/api/ki', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:512, messages }) });
     const respText = await resp.text();
     let data;
     try { data = JSON.parse(respText); } catch { throw new Error('Server-Fehler: ' + respText.slice(0,80)); }
@@ -11989,7 +11994,7 @@ async function subscribeToPush() {
     const token = session?.access_token;
     if (!token) return null;
 
-    const res = await fetch('/api/push-subscribe', {
+    const res = await fetch(API_BASE + '/api/push-subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ subscription: sub.toJSON() })
@@ -12010,7 +12015,7 @@ async function testServerPush() {
     const { data: { session } } = await supa.auth.getSession();
     if (!session?.access_token) { if (out) out.textContent = '❌ Nicht eingeloggt'; showToast('⚠️ Nicht eingeloggt', 'error'); return; }
 
-    const res = await fetch('/api/push-test', {
+    const res = await fetch(API_BASE + '/api/push-test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
     });
@@ -12162,7 +12167,7 @@ async function runPushDiag() {
 
   // 8 API /push-subscribe
   try {
-    const res = await fetch('/api/push-subscribe', {
+    const res = await fetch(API_BASE + '/api/push-subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ subscription: sub.toJSON() })
