@@ -1425,11 +1425,12 @@
       display: flex !important;
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 56px;
+      /* Hoehe + Notch: Hintergrund fuellt die Statusleiste, Inhalt darunter */
+      height: calc(56px + env(safe-area-inset-top));
+      padding: env(safe-area-inset-top) 14px 0;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       align-items: center;
-      padding: 0 14px;
       gap: 12px;
       z-index: 400;
       box-shadow: var(--shadow-sm);
@@ -1444,7 +1445,7 @@
       text-overflow: ellipsis;
     }
     .main {
-      padding: 72px 14px 24px !important;
+      padding: calc(72px + env(safe-area-inset-top)) 14px 24px !important;
       width: 100% !important;
     }
     /* Hide the floating sidebar-show btn on mobile (topbar handles it) */
@@ -1892,7 +1893,7 @@
   <style>@keyframes splashLoad{0%{width:0%}50%{width:100%}100%{width:0%;margin-left:100%}}</style>
 </div>
 
-<div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#f4f5f7;align-items:center;justify-content:center;color:#14202e">
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#f4f5f7;align-items:center;justify-content:center;color:#14202e;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)">
   <style>
     #auth-overlay,#auth-overlay *{--bg:#f4f5f7;--surface:#ffffff;--surface2:#f4f5f7;--text:#14202e;--text2:#4a5568;--text3:#718096;--border:#e2e8f0;color:inherit}
     #auth-overlay input{background:#ffffff!important;border:1.5px solid #e2e8f0!important;border-radius:10px!important;padding:11px 14px!important;font-size:0.9rem!important;color:#1a1a2e!important;width:100%!important;box-sizing:border-box!important;outline:none!important;-webkit-text-fill-color:#1a1a2e!important}
@@ -1990,7 +1991,7 @@
 <!-- ══════════════════════════════════════
      ONBOARDING OVERLAY
 ══════════════════════════════════════ -->
-<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;z-index:999;background:#f4f5f7;overflow-y:auto;color:#14202e">
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;z-index:999;background:#f4f5f7;overflow-y:auto;color:#14202e;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)">
   <style>
     #onboarding-overlay,#onboarding-overlay *{--bg:#f4f5f7;--surface:#ffffff;--surface2:#f4f5f7;--text:#14202e;--text2:#4a5568;--text3:#718096;--border:#e2e8f0;color:inherit}
     .cdp-wrap{position:relative}
@@ -4624,9 +4625,9 @@ function applyNativePaymentPolicy() {
   if (laterBtn) laterBtn.textContent = 'Schließen';
 }
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', applyNativePaymentPolicy);
+  document.addEventListener('DOMContentLoaded', () => { applyNativePaymentPolicy(); _applyStatusBarStyle(); });
 } else {
-  applyNativePaymentPolicy();
+  applyNativePaymentPolicy(); _applyStatusBarStyle();
 }
 
 async function loadUserPlan() {
@@ -5832,10 +5833,23 @@ function closeMobileSidebar() {
   document.getElementById('mobile-backdrop')?.classList.remove('visible');
 }
 
+// Faerbt die iOS-Statusleiste passend zum Hell/Dunkel-Modus
+// (DARK = heller Text fuer dunklen Hintergrund, LIGHT = dunkler Text)
+async function _applyStatusBarStyle() {
+  const sb = window.Capacitor?.Plugins?.StatusBar;
+  if (!sb || !isNativeApp()) return;
+  const dark = document.body.classList.contains('dark-mode');
+  try {
+    await sb.setOverlaysWebView({ overlay: true });
+    await sb.setStyle({ style: dark ? 'DARK' : 'LIGHT' });
+  } catch(e) { /* Plugin evtl. in aelterer App-Version nicht vorhanden */ }
+}
+
 function toggleDarkMode() {
   const on = document.body.classList.toggle('dark-mode');
   localStorage.setItem('darkMode', on ? '1' : '0');
   _updateDarkModeToggle(on);
+  _applyStatusBarStyle();
   // Save to cloud so it syncs across devices/PWA contexts
   if (currentUser) {
     clearTimeout(syncTimeout);
@@ -9476,9 +9490,9 @@ function renderProjectSwitcher() {
     const modCount = Object.values(p.settings?.modules||{}).filter(v=>v!==false).length || MODULES.length;
     return `
     <div onclick="switchToProject(${p.id})"
-      style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:2px solid ${isCurrent?color:'var(--border)'};background:${isCurrent?color+'0f':'white'};cursor:pointer;transition:all 0.15s"
+      style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:2px solid ${isCurrent?color:'var(--border)'};background:${isCurrent?color+'0f':'var(--surface)'};cursor:pointer;transition:all 0.15s"
       onmouseover="if(!${isCurrent})this.style.borderColor='${color}';this.style.background='${color}0a'"
-      onmouseout="if(!${isCurrent})this.style.borderColor='var(--border)';this.style.background='white'">
+      onmouseout="if(!${isCurrent})this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
       <div style="width:40px;height:40px;border-radius:10px;background:${color};display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;flex-shrink:0">
         ${{Neubau:'🏠',Umbau:'🔨',Sanierung:'🔧',Sonstiges:'📋'}[p.settings?.type||'Neubau']}
       </div>

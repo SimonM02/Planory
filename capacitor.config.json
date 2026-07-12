@@ -6,11 +6,15 @@
     "allowNavigation": ["*.supabase.co"]
   },
   "ios": {
-    "contentInset": "automatic"
+    "contentInset": "never"
   },
   "plugins": {
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DEFAULT"
     }
   }
 }

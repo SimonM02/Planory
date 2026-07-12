@@ -10,6 +10,15 @@ Stand: 11.07.2026 · App Store: Version 1.1 (Build 5) veröffentlicht
 - Web (planory.at): neues Abo-Modell live – 1 Monat gratis, dann Nur-Lese-Modus
   (Ansehen + Abhaken frei), Paywall mit 3,99 €/Monat & 28,99 €/Jahr
 
+## ‼️ OFFENER MANUELLER SCHRITT (vom User zu erledigen)
+
+- **Vercel + planory.at trennen richtig verkabeln:** planory.at läuft auf
+  GitHub Pages (kann keine /api-Funktionen ausführen → 405/500 bei
+  Stripe/KI/Push). Die API läuft nur auf der Vercel-Adresse (Projekt
+  „bauplan-weld"). Claude muss `API_BASE` im Code auf die Vercel-`.vercel.app`-
+  Adresse setzen → dafür muss der User die genaue Vercel-URL nennen.
+  ERST DANN funktionieren Bezahlen/KI/Push auf planory.at und in der App.
+
 ## 🔴 Phase A – sofort (diese Woche)
 
 1. **Stripe-Preise anlegen** (3,99 €/Monat, 28,99 €/Jahr, alten Preis archivieren)
