@@ -41,32 +41,40 @@ export default async function handler(req, res) {
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const hdrs = { Authorization: `Bearer ${svcKey}`, apikey: svcKey, 'Content-Type': 'application/json' };
 
-  // Check if user already has a Stripe customer ID
-  const subRes = await fetch(`${SUPA_URL}/rest/v1/subscriptions?user_id=eq.${userId}&select=stripe_customer_id`, { headers: hdrs });
-  const subs = await subRes.json();
-  let customerId = subs?.[0]?.stripe_customer_id;
+  try {
+    // Check if user already has a Stripe customer ID
+    const subRes = await fetch(`${SUPA_URL}/rest/v1/subscriptions?user_id=eq.${userId}&select=stripe_customer_id`, { headers: hdrs });
+    const subs = await subRes.json();
+    let customerId = Array.isArray(subs) ? subs?.[0]?.stripe_customer_id : null;
 
-  // Create Stripe customer if needed
-  if (!customerId) {
-    const customer = await stripe.customers.create({ email: userEmail, metadata: { supabase_uid: userId } });
-    customerId = customer.id;
+    // Create Stripe customer if needed
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email: userEmail, metadata: { supabase_uid: userId } });
+      customerId = customer.id;
+    }
+
+    const origin = req.headers.origin || 'https://planory.at';
+
+    // Create Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'subscription',
+      success_url: `${origin}/?upgrade=success`,
+      cancel_url: `${origin}/?upgrade=cancel`,
+      metadata: { supabase_uid: userId },
+      subscription_data: { metadata: { supabase_uid: userId } },
+      allow_promotion_codes: true,  // enables promo/discount codes
+      locale: 'de',
+    });
+
+    return res.status(200).json({ url: session.url });
+  } catch (e) {
+    // Echte Stripe-Fehlermeldung an den Client geben (z. B. "No such price"
+    // bei Test-/Live-Mismatch) statt eines nackten 500 – so ist die Ursache
+    // sofort sichtbar.
+    console.error('stripe-checkout error:', e);
+    return res.status(500).json({ error: e?.message || 'Stripe checkout failed', code: e?.code, type: e?.type });
   }
-
-  const origin = req.headers.origin || 'https://planory.vercel.app';
-
-  // Create Checkout Session
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
-    mode: 'subscription',
-    success_url: `${origin}/?upgrade=success`,
-    cancel_url: `${origin}/?upgrade=cancel`,
-    metadata: { supabase_uid: userId },
-    subscription_data: { metadata: { supabase_uid: userId } },
-    allow_promotion_codes: true,  // enables promo/discount codes
-    locale: 'de',
-  });
-
-  return res.status(200).json({ url: session.url });
 }
