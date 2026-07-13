@@ -65,7 +65,10 @@ auch bei geschlossener App. Nötig (in dieser Reihenfolge):
    geschlossenem Browser
 10. **App-Store-Badge** („Laden im App Store") prominent auf planory.at
 11. **ASO**: App-Store-Beschreibung, Untertitel, Keywords optimieren
-12. **Englische Version** (Sprachsystem DE/EN, inkl. Store-Texte)
+12. **Englische Version** – Welle 1 FERTIG (Fundament, Sprachwahl-Modal,
+    Einstellungs-Umschalter, Konto-Sync, Navigation + Seitentitel DE/EN).
+    Welle 2 OFFEN: Buttons, Modals/Formulare, Toasts, Onboarding, Dialoge,
+    Karten-Labels (t()-Umstellung der Renderfunktionen), App-Store-Texte EN
 13. **Team-/Gäste-Funktion**: Einladung per Code, Rollen Besitzer/Partner/Baustelle
     (Konzept fertig besprochen – Etappen: Metadaten pro Projekt → Einladung →
     eingeschränkte Baustellen-Rolle)
