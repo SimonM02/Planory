@@ -12571,16 +12571,17 @@ async function _syncAndRender() {
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
-    scheduleAllReminders();
-    _fireOverdueNotifications(); // catch anything the cron missed
-    await _syncAndRender();
+    await _syncAndRender();          // erst frische Daten (auch von anderen Geraeten)
+    scheduleAllReminders();          // dann Erinnerungen fuer ALLE Aufgaben einplanen
+    _fireOverdueNotifications();     // Verpasstes nachholen
   }
 });
 
 // PWA on iOS/Android: 'focus' fires when app comes to foreground from homescreen
 window.addEventListener('focus', async () => {
-  _fireOverdueNotifications(); // catch anything the cron missed
   await _syncAndRender();
+  scheduleAllReminders();
+  _fireOverdueNotifications();
 });
 
 // Init on load — SW first, then schedule + catch up after ready
