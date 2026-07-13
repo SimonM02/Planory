@@ -45,17 +45,22 @@ export default async function handler(req, res) {
     `${SUPA_URL}/rest/v1/push_subscriptions?user_id=in.(${userIds.join(',')})&select=*`,
     { headers: hdrs }
   );
-  const subs   = await subsRes.json();
-  const subMap = Object.fromEntries((subs || []).map(s => [s.user_id, s.subscription]));
+  const subs = await subsRes.json();
+  // Alle Geraete pro Nutzer sammeln (geteiltes Konto = mehrere Handys) –
+  // nicht nur eines. Jede Subscription hat eine eigene endpoint-URL.
+  const subsByUser = {};
+  for (const s of (subs || [])) {
+    (subsByUser[s.user_id] = subsByUser[s.user_id] || []).push(s.subscription);
+  }
 
   let sent = 0;
   let failed = 0;
   const results = [];
 
   for (const notif of notifications) {
-    const sub = subMap[notif.user_id];
-    if (!sub) {
-      // No subscription for this user — mark as sent so it doesn't pile up
+    const userSubs = subsByUser[notif.user_id] || [];
+    if (!userSubs.length) {
+      // Kein Geraet fuer diesen Nutzer — als gesendet markieren, damit es sich nicht anstaut
       await fetch(
         `${SUPA_URL}/rest/v1/scheduled_notifications?user_id=eq.${notif.user_id}&notif_id=eq.${encodeURIComponent(notif.notif_id)}`,
         { method: 'PATCH', headers: hdrs, body: JSON.stringify({ sent: true }) }
@@ -64,28 +69,33 @@ export default async function handler(req, res) {
       continue;
     }
 
-    let pushOk = false;
-    try {
-      await webpush.sendNotification(sub, JSON.stringify({
-        title: notif.title,
-        body:  notif.body,
-        tag:   notif.notif_id
-      }));
-      pushOk = true;
-      sent++;
-      results.push({ id: notif.notif_id, status: 'sent' });
-    } catch (e) {
-      failed++;
-      results.push({ id: notif.notif_id, status: 'error', code: e.statusCode, msg: e.message });
-      if (e.statusCode === 410 || e.statusCode === 404) {
-        // Subscription expired – remove it so we don't keep failing
-        await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${notif.user_id}`,
-          { method: 'DELETE', headers: hdrs });
+    // An JEDES registrierte Geraet des Nutzers senden
+    let anyOk = false;
+    for (const sub of userSubs) {
+      try {
+        await webpush.sendNotification(sub, JSON.stringify({
+          title: notif.title,
+          body:  notif.body,
+          tag:   notif.notif_id
+        }));
+        anyOk = true;
+        sent++;
+        results.push({ id: notif.notif_id, status: 'sent' });
+      } catch (e) {
+        failed++;
+        results.push({ id: notif.notif_id, status: 'error', code: e.statusCode, msg: e.message });
+        if (e.statusCode === 410 || e.statusCode === 404) {
+          // Nur DIESES abgelaufene Geraet entfernen (per endpoint), nicht alle des Nutzers
+          try {
+            await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${notif.user_id}&subscription->>endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
+              { method: 'DELETE', headers: hdrs });
+          } catch (_) {}
+        }
       }
     }
 
-    // Only mark as sent if push actually succeeded (so failed ones can be retried next run)
-    if (pushOk) {
+    // Als gesendet markieren, sobald mindestens ein Geraet erreicht wurde
+    if (anyOk) {
       await fetch(
         `${SUPA_URL}/rest/v1/scheduled_notifications?user_id=eq.${notif.user_id}&notif_id=eq.${encodeURIComponent(notif.notif_id)}`,
         { method: 'PATCH', headers: hdrs, body: JSON.stringify({ sent: true }) }
