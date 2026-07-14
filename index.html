@@ -6629,7 +6629,7 @@ Antworte NUR mit validem JSON (kein Text davor/danach):
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -9683,7 +9683,7 @@ async function runKIAnalysis() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: buildSystemPrompt(),
         messages: [{ role: 'user', content: `Analysiere dieses Bauprojekt:\n\n${JSON.stringify(snapshot, null, 2)}` }]
@@ -9809,7 +9809,7 @@ async function askKI() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 800,
         system: ((typeof _lang!=='undefined' && _lang==='en')
           ? `You are an experienced AI construction advisor. Answer the owner's question in English, concretely and helpfully. Use the project data. Max 3-4 sentences, no JSON, no Markdown.`
