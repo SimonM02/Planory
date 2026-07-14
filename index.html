@@ -4518,6 +4518,13 @@ function _sweepPhrases(root) {
     const key = raw.trim();
     if (key && map[key]) node.nodeValue = raw.replace(key, map[key]);
   }
+  // Attribute (Platzhalter, Tooltips) ebenfalls uebersetzen – Voll-Treffer
+  (root || document.body).querySelectorAll('[placeholder],[title]').forEach(el => {
+    ['placeholder','title'].forEach(attr => {
+      const v = el.getAttribute(attr);
+      if (v && map[v.trim()]) el.setAttribute(attr, map[v.trim()]);
+    });
+  });
 }
 function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
