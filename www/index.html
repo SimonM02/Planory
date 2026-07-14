@@ -4568,10 +4568,52 @@ function _sweepPhrases(root) {
     });
   });
 }
+// Dropdown-Werte: Anzeige uebersetzen, gespeicherten value DEUTSCH lassen.
+// Nur bekannte Enum-Werte werden getauscht – Nutzer-Kategorien bleiben unberuehrt.
+const OPTION_I18N = {
+  'Bezahlt':'Paid','Ausstehend':'Pending','Storniert':'Cancelled','Überfällig':'Overdue',
+  'Offen':'Open','In Arbeit':'In progress','Erledigt':'Done','In Bearbeitung':'In progress',
+  'Abgeschlossen':'Completed','Behoben':'Fixed','Aktiv':'Active',
+  'Hoch':'High','Mittel':'Medium','Niedrig':'Low',
+  'Angefragt':'Requested','Angenommen':'Accepted','Abgelehnt':'Rejected',
+  'In Verhandlung':'In negotiation','Umgewandelt':'Converted',
+  'Alle Kategorien':'All categories','Alle Personen':'All people','Phase':'Phase',
+  '– Nicht zugewiesen –':'– Unassigned –','Ohne MwSt (0%)':'No VAT (0%)',
+  '10% MwSt':'10% VAT','20% MwSt':'20% VAT',
+  'Tage':'Days','Wochen':'Weeks','Monat':'Month','Monate':'Months','Jahre':'Years',
+  'Blau':'Blue','Rot':'Red','Grün':'Green','Gelb':'Yellow','Pink':'Pink','Standard (Weiß)':'Default (white)',
+  '🏠 Neubau':'🏠 New build','🔨 Umbau / Erweiterung':'🔨 Conversion / extension',
+  '🔧 Sanierung / Renovierung':'🔧 Refurbishment / renovation','📌 Sonstiges':'📌 Other','📋 Sonstiges':'📋 Other',
+  'Baumeister':'Master builder','Elektriker':'Electrician','Installateur':'Plumber',
+  'Dachdecker':'Roofer','Fliesenleger':'Tiler','Maler':'Painter','Zimmermann':'Carpenter',
+  'Schlosser':'Locksmith','Statiker':'Structural engineer','Architekt':'Architect',
+  'Elektro':'Electrical','Sanitär':'Plumbing','Heizung':'Heating','Rohbau':'Shell construction',
+  'Dach':'Roof','Innenausbau':'Interior','Außenanlagen':'Outdoor works','Fenster & Türen':'Windows & doors',
+  '☀️ Sonnig':'☀️ Sunny','⛅ Bewölkt':'⛅ Cloudy','🌧️ Regen':'🌧️ Rain','❄️ Schnee':'❄️ Snow',
+  '🌬️ Wind':'🌬️ Wind','🌀 Lüftung':'🌀 Ventilation',
+  '⚡ Elektro':'⚡ Electrical','💧 Wasser':'💧 Water','💧 Wasser / Sanitär':'💧 Water / plumbing',
+  '🔥 Heizung':'🔥 Heating','🔥 Heizung / Gas':'🔥 Heating / gas','🔵 Gas':'🔵 Gas',
+  '🏗️ Statik / Konstruktion':'🏗️ Structure','🏠 Dach & Fassade':'🏠 Roof & facade',
+  '🌿 Außenanlage':'🌿 Outdoor','🪟 Fenster & Türen':'🪟 Windows & doors',
+  '📡 Internet / TV':'📡 Internet / TV','🔑 Sicherheit':'🔑 Security'
+};
+function translateOptions(root) {
+  (root || document).querySelectorAll('option').forEach(opt => {
+    let de = opt.dataset.deval;
+    if (!de) {
+      const cur = (opt.textContent || '').trim();
+      if (OPTION_I18N[cur]) { de = cur; opt.dataset.deval = de; opt.value = de; }
+    }
+    if (!de || !OPTION_I18N[de]) return;
+    opt.value = de; // gespeicherter Wert bleibt deutsch
+    opt.textContent = (_lang === 'en') ? OPTION_I18N[de] : de;
+  });
+}
 function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
+  try { translateOptions(document); } catch(e) {}
 }
 function setLang(lang, save = true) {
   _lang = (lang === 'en') ? 'en' : 'de';
@@ -4600,6 +4642,7 @@ else _initI18n();
 
 function openModal(id) {
   document.getElementById(id).classList.add('open');
+  if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
   const d = document.querySelector('#' + id + ' input[type="date"]');
   if (d && !d.value) d.value = today();
   if (id === 'modal-budget-kat') {
