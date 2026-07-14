@@ -9513,7 +9513,11 @@ function buildProjectSnapshot() {
 }
 
 function buildSystemPrompt() {
-  return `Du bist ein erfahrener KI-Bauberater für private Bauherren in Österreich. Du analysierst Bauprojekte und gibst konkrete, ehrliche Handlungsempfehlungen auf Deutsch.
+  const _reply = (typeof _lang !== 'undefined' && _lang === 'en')
+    ? 'IMPORTANT: Write your ENTIRE response in English.'
+    : 'Antworte ausschließlich auf Deutsch.';
+  return `${_reply}
+Du bist ein erfahrener KI-Bauberater für private Bauherren in Österreich. Du analysierst Bauprojekte und gibst konkrete, ehrliche Handlungsempfehlungen.
 
 Deine Analyse soll:
 - Direkt und klar sein, keine Floskeln
@@ -9685,7 +9689,9 @@ async function askKI() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 800,
-        system: `Du bist ein erfahrener KI-Bauberater. Antworte auf die Frage des Bauherrn auf Deutsch, konkret und hilfreich. Nutze die Projektdaten. Antwort max. 3-4 Sätze, kein JSON, kein Markdown.`,
+        system: ((typeof _lang!=='undefined' && _lang==='en')
+          ? `You are an experienced AI construction advisor. Answer the owner's question in English, concretely and helpfully. Use the project data. Max 3-4 sentences, no JSON, no Markdown.`
+          : `Du bist ein erfahrener KI-Bauberater. Antworte auf die Frage des Bauherrn auf Deutsch, konkret und hilfreich. Nutze die Projektdaten. Antwort max. 3-4 Sätze, kein JSON, kein Markdown.`),
         messages: [{
           role: 'user',
           content: `Projektdaten:\n${JSON.stringify(snapshot)}\n\nFrage: ${question}`
