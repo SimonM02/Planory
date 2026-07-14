@@ -4539,7 +4539,37 @@ const PHRASES = {
   'Nettobetrag':'Net amount', 'Diesen Monat':'This month', 'Eigenleistung (Wert)':'Own work (value)',
   'nicht im Budget':'not in budget', 'Meilensteine erledigt':'Milestones completed',
   'Ausgabenliste':'Expense list', 'Tatsächliche Kosten':'Actual costs',
-  'Geplantes Budget':'Planned budget', 'Budget-Rest':'Remaining budget'
+  'Geplantes Budget':'Planned budget', 'Budget-Rest':'Remaining budget',
+  // Onboarding & Auth
+  'Anderes Bauprojekt':'Other construction project',
+  'Bestehendes erweitern oder umbauen':'Extend or convert an existing building',
+  'Haus oder Wohnung neu bauen':'Build a new house or flat',
+  'Modernisieren und instand setzen':'Modernise and repair',
+  'Gib dein geplantes Gesamtbudget ein und teile es auf Kategorien auf.':'Enter your planned total budget and split it into categories.',
+  'Grundlegende Infos – alles kann später in den Einstellungen geändert werden.':'Basic info – everything can be changed later in settings.',
+  'Wähle die Art deines Projekts – du kannst das später ändern.':'Choose the type of your project – you can change this later.',
+  'Passwort':'Password', 'Passwort vergessen?':'Forgot password?',
+  'Projektfarbe':'Project colour', 'Projektname *':'Project name *',
+  'Art des Projekts':'Project type', 'Baubeginn':'Start of construction',
+  'Fertigstellung':'Completion', 'Adresse / Ort':'Address / location',
+  'Analysiert dein Budget & warnt vor Kostenfallen':'Analyses your budget & warns of cost traps',
+  'Fortschritt dokumentieren & Fotos ablegen':'Document progress & store photos',
+  'Kosten & Budget verwalten':'Manage costs & budget',
+  'Nie wieder einen Wartungstermin vergessen':'Never miss a maintenance date again',
+  'Rechnungen scannen, Budgets planen':'Scan invoices, plan budgets',
+  'KI-Bauberater':'AI construction advisor', 'Wartungsplan':'Maintenance plan',
+  // Einstellungen-Abschnitte
+  'Synchronisation':'Sync', 'Diagnose & Test':'Diagnostics & test',
+  'Daten werden automatisch zwischen allen Geräten synchronisiert.':'Data is automatically synced across all devices.',
+  'Erinnerungen bei fälligen Zahlungen, Meilensteinen und Skonto-Fristen':'Reminders for due payments, milestones and cash-discount deadlines',
+  'Mein Plan':'My plan', 'Mein Konto':'My account',
+  // Modale Hinweistexte (haeufig)
+  'Das Gesamtbudget ergibt sich automatisch aus der Summe aller Kategorien.':'The total budget is calculated automatically from the sum of all categories.',
+  'Typische Kategorien:':'Typical categories:', 'Farbe':'Colour',
+  'Bitte bestätige deine E-Mail':'Please confirm your email',
+  'Zum Login':'To login', 'Noch keine Ausgaben erfasst':'No expenses recorded yet',
+  'Noch keine Aufgaben':'No tasks yet', 'Keine Aufgaben gefunden':'No tasks found',
+  'Noch keine Kategorien angelegt':'No categories created yet'
 };
 const _phrasesEN2DE = Object.fromEntries(Object.entries(PHRASES).map(([de,en]) => [en, de]));
 function _sweepPhrases(root) {
