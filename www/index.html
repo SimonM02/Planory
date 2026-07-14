@@ -4497,7 +4497,49 @@ const PHRASES = {
   '🗑 Notiz gelöscht':'🗑 Note deleted', '🗑 Kategorie gelöscht':'🗑 Category deleted',
   '🗑 Projekt gelöscht':'🗑 Project deleted', '✏️ Ausgabe aktualisiert':'✏️ Expense updated',
   '✅ Ausgabe eingebucht':'✅ Expense booked', '✅ Aufgabe erledigt':'✅ Task done',
-  '↩️ Aufgabe wieder offen':'↩️ Task reopened'
+  '↩️ Aufgabe wieder offen':'↩️ Task reopened',
+  // Platzhalter
+  'Passwort eingeben':'Enter password', 'Passwort wiederholen':'Repeat password',
+  'Mindestens 6 Zeichen':'At least 6 characters', 'Name der Kategorie...':'Category name...',
+  'Name / Gewerk':'Name / trade', 'Titel':'Title', 'Details...':'Details...',
+  'Details, Hinweise…':'Details, notes…', 'Details, Konditionen...':'Details, terms...',
+  'Details zur Eigenleistung...':'Details of own work...',
+  'Genaue Beschreibung des Mangels...':'Exact description of the defect...',
+  'Was wurde heute gemacht?':'What was done today?',
+  'Was muss ich erledigen / nachfragen?':'What do I need to do / ask?',
+  'Was genau ist zu tun? Welches Material braucht man?':'What exactly needs to be done? What material is needed?',
+  'Was hat sich ergeben? Antworten, Notizen nach dem Gespräch…':'What came of it? Answers, notes after the conversation…',
+  'Rechnungsnummer, Details...':'Invoice number, details...',
+  'Person eingeben oder auswählen…':'Enter or select a person…',
+  'Text des Angebots hier einfügen (z.B. aus PDF kopiert)…':'Paste the quote text here (e.g. copied from a PDF)…',
+  'Name (z.B. Kredit, Eigenkapital, Bank)':'Name (e.g. loan, equity, bank)',
+  // Buttons / Aktionen (Rest)
+  '📄 PDF exportieren':'📄 Export PDF', '📧 Statusbericht senden':'📧 Send status report',
+  '🔄 Von Cloud laden':'🔄 Load from cloud', '⬆️ Zur Cloud speichern':'⬆️ Save to cloud',
+  '🔄 Cloud überschreibt alles':'🔄 Cloud overwrites everything',
+  '📱 Dieses Gerät registrieren':'📱 Register this device', '🔍 Diagnose':'🔍 Diagnostics',
+  '🌐 Server-Push testen':'🌐 Test server push', '▶ Lokal testen':'▶ Test locally',
+  '📋 Geplante prüfen':'📋 Check scheduled', '🗑 Projekt löschen':'🗑 Delete project',
+  '🤖 KI-Zeitplan generieren':'🤖 Generate AI schedule', '🔄 Neu generieren':'🔄 Regenerate',
+  'Konto löschen':'Delete account', 'Account löschen':'Delete account',
+  'Endgültig löschen':'Delete permanently', 'Weiter nur ansehen':'Continue view-only',
+  'Zustimmen & Planory öffnen':'Agree & open Planory',
+  // Plan / Abo
+  'Testphase aktiv':'Trial active', 'Nur-Lese-Modus':'Read-only mode',
+  'Dein Gratismonat ist vorbei':'Your free month is over', 'GRATISMONAT':'FREE MONTH',
+  'ABGELAUFEN':'EXPIRED', 'PRO AKTIV':'PRO ACTIVE', 'GRATIS':'FREE', 'AKTIV':'ACTIVE',
+  'Abo verwalten / kündigen':'Manage / cancel subscription',
+  '⚙️ Abo verwalten / kündigen':'⚙️ Manage / cancel subscription',
+  // Dashboard / Sonstiges
+  'Willkommen zurück – hier dein Projektüberblick':'Welcome back – here is your project overview',
+  'Kategorien':'Categories', 'Buchungen':'Entries', 'Noch keine Buchungen':'No entries yet',
+  'zum Öffnen klicken':'click to open', '∑ Gesamt':'∑ Total',
+  'Keine Adresse':'No address', 'Kein Budget':'No budget',
+  'Nächste Fälligkeit':'Next due date', 'Gesamtausgaben (Brutto)':'Total expenses (gross)',
+  'Nettobetrag':'Net amount', 'Diesen Monat':'This month', 'Eigenleistung (Wert)':'Own work (value)',
+  'nicht im Budget':'not in budget', 'Meilensteine erledigt':'Milestones completed',
+  'Ausgabenliste':'Expense list', 'Tatsächliche Kosten':'Actual costs',
+  'Geplantes Budget':'Planned budget', 'Budget-Rest':'Remaining budget'
 };
 const _phrasesEN2DE = Object.fromEntries(Object.entries(PHRASES).map(([de,en]) => [en, de]));
 function _sweepPhrases(root) {
@@ -4507,8 +4549,8 @@ function _sweepPhrases(root) {
       const p = n.parentNode;
       if (!p) return NodeFilter.FILTER_REJECT;
       const tag = p.nodeName;
-      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
-      if (p.closest && p.closest('[data-i18n]')) return NodeFilter.FILTER_REJECT;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'OPTION' || tag === 'SELECT') return NodeFilter.FILTER_REJECT;
+      if (p.closest && (p.closest('[data-i18n]') || p.closest('select') || p.closest('[data-noi18n]'))) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
   });
