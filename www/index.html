@@ -4322,6 +4322,7 @@ function showPage(id) {
   if (id === 'wartung') renderWartung();
   if (id === 'settings') { loadSettings(); loadUserPlan(); }
   showPageHint(id);
+  if (_lang !== 'de') { try { _sweepPhrases(document.getElementById('page-' + id)); } catch(e){} }
 }
 
 // ──────────────── UTILS ────────────────
@@ -4399,9 +4400,68 @@ const I18N = {
 let _lang = localStorage.getItem('planoryLang')
   || (((navigator.language || 'de').toLowerCase().startsWith('de')) ? 'de' : 'en');
 function t(key) { return I18N[_lang]?.[key] ?? I18N.de[key] ?? key; }
+// Statische UI-Phrasen (Buttons, Titel, Labels). Nur EXAKTE Voll-Treffer
+// werden getauscht – Nutzerdaten (Projektnamen, Notizen ...) bleiben unberuehrt.
+const PHRASES = {
+  '+ Ausgabe erfassen':'+ Add expense', '+ Ausgabe hinzufügen':'+ Add expense',
+  '+ Eigenleistung':'+ Own work', '+ Aufgabe':'+ Task', '+ Kategorie':'+ Category',
+  '+ Angebot':'+ Quote', '+ Zahlung':'+ Payment', '+ Meilenstein':'+ Milestone',
+  '+ Notiz':'+ Note', '+ Kontakt':'+ Contact', '+ Mangel':'+ Defect',
+  '+ Wartung':'+ Maintenance', '+ Block hinzufügen':'+ Add block', '+ Eintrag':'+ Entry',
+  '+ Hinzufügen':'+ Add', '+ Neues Projekt anlegen':'+ Create new project',
+  '+ Neue Kategorie':'+ New category', '+ Erstes Stockwerk anlegen':'+ Add first floor',
+  '+ Neues Projekt':'+ New project',
+  'Speichern':'Save', 'Abbrechen':'Cancel', 'Schließen':'Close', 'Löschen':'Delete',
+  'Bearbeiten':'Edit', 'Hinzufügen':'Add', 'Zurück':'Back', 'Weiter':'Next',
+  'Ja':'Yes', 'Nein':'No', 'Fertig':'Done', 'Übernehmen':'Apply',
+  'Zum Login':'To login', 'Registrieren':'Sign up', 'Anmelden':'Log in',
+  'Abmelden':'Log out', 'Passwort vergessen?':'Forgot password?',
+  '⚙ Zu den Einstellungen':'⚙ Go to settings', '⚙ Einstellungen':'⚙ Settings',
+  '✅ Importieren':'✅ Import', '✅ Übernehmen':'✅ Apply', '✓ Bezahlt':'✓ Paid',
+  '✓ Einbuchen':'✓ Book', '✓ Erledigt':'✓ Done', '📸 Hochladen':'📸 Upload',
+  '🔔 Erlauben':'🔔 Allow', '📄 PDF':'📄 PDF', '🤖 Rechnung scannen':'🤖 Scan invoice',
+  '🤖 KI einlesen':'🤖 AI import', '🤖 Neue Rechnung scannen':'🤖 Scan new invoice',
+  'Bist du sicher?':'Are you sure?', 'Eingabe':'Input',
+  'Mein Plan':'My plan', 'Mein Konto':'My account', 'Synchronisation':'Sync',
+  'Mitteilungen':'Notifications', 'Projekt':'Project', 'Konto':'Account',
+  'Ausgaben':'Expenses', 'Eigenleistungen':'Own work',
+  'Willkommen zurück':'Welcome back', 'Kostenlos':'Free', 'Pro-Mitglied ⭐':'Pro member ⭐',
+  'Datum':'Date', 'Beschreibung':'Description', 'Betrag':'Amount', 'Status':'Status',
+  'Kategorie':'Category', 'Netto':'Net', 'Brutto':'Gross', 'Anbieter':'Vendor',
+  'Name':'Name', 'Notiz':'Note', 'Priorität':'Priority', 'Fälligkeit':'Due date',
+  'Geplant':'Planned', 'Ausgegeben':'Spent', 'Rest':'Remaining', 'Auslastung':'Usage',
+  'Zahlen ausblenden':'Hide numbers', '👁 Zahlen ausblenden':'👁 Hide numbers',
+  '🤖 KI ausblenden':'🤖 Hide AI', '📧 Statusbericht':'📧 Status report',
+  'Analysieren':'Analyse', 'Suchen...':'Search...', 'Suchen…':'Search…',
+  'Offene Aufgaben':'Open tasks', 'Letzte Ausgaben':'Recent expenses',
+  'Gesamtbudget':'Total budget', 'Verbleibend':'Remaining', 'Fortschritt':'Progress',
+  'Budgetverbrauch':'Budget used', 'Detailübersicht':'Detail overview',
+  'Aufgabe':'Task', 'Erledigt':'Done', 'Offen':'Open', 'In Arbeit':'In progress'
+};
+const _phrasesEN2DE = Object.fromEntries(Object.entries(PHRASES).map(([de,en]) => [en, de]));
+function _sweepPhrases(root) {
+  if (_lang === 'de') { var map = _phrasesEN2DE; } else { var map = PHRASES; }
+  const walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      const p = n.parentNode;
+      if (!p) return NodeFilter.FILTER_REJECT;
+      const tag = p.nodeName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
+      if (p.closest && p.closest('[data-i18n]')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let node;
+  while ((node = walker.nextNode())) {
+    const raw = node.nodeValue;
+    const key = raw.trim();
+    if (key && map[key]) node.nodeValue = raw.replace(key, map[key]);
+  }
+}
 function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
 }
 function setLang(lang, save = true) {
   _lang = (lang === 'en') ? 'en' : 'de';
