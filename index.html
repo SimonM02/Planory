@@ -4951,7 +4951,7 @@ function isNativeApp() {
 // Server-Adresse fuer /api-Aufrufe (KI, Stripe, Push): Im Web reichen
 // relative Pfade. Die native App laeuft unter capacitor://localhost –
 // dort MUSS die volle Domain stehen, sonst gehen KI & Co. ins Leere.
-const API_BASE = isNativeApp() ? 'https://planory.at' : '';
+const API_BASE = 'https://bauplan-weld.vercel.app';
 
 // In der nativen App (App Store) gibt es keinen externen Bezahl-Weg. Damit keine
 // gesperrten Funktionen ohne Kaufmöglichkeit gezeigt werden (Apple-Richtlinie 2.1
