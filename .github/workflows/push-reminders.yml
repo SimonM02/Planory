@@ -1,0 +1,51 @@
+name: Push-Erinnerungen versenden
+
+# Ruft regelmaessig die Vercel-Funktion push-cron.js auf, damit faellige
+# Erinnerungen (Zahlungen, Meilensteine, Wartung, Skonto-Fristen) auch dann
+# als Web-Push rausgehen, wenn der Browser/die PWA geschlossen ist.
+#
+# EINMALIGE EINRICHTUNG (vom Nutzer):
+#   GitHub -> Repo -> Settings -> Secrets and variables -> Actions -> New secret
+#     Name:  CRON_SECRET
+#     Wert:  derselbe Wert wie die Environment-Variable CRON_SECRET in Vercel
+#   (Wenn in Vercel KEIN CRON_SECRET gesetzt ist, laeuft es auch ohne Secret –
+#    dann ist der Endpunkt aber ungeschuetzt. Empfehlung: Secret setzen.)
+
+on:
+  schedule:
+    # Alle 15 Minuten. GitHub-Zeitplaene koennen sich um ein paar Minuten
+    # verzoegern – das ist ok, weil push-cron ALLE ueberfaelligen Erinnerungen
+    # nachholt (keine untere Zeitgrenze).
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}   # erlaubt manuelles Ausloesen zum Testen
+
+# Nicht mehrere Laeufe gleichzeitig – der letzte gewinnt.
+concurrency:
+  group: push-reminders
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: push-cron aufrufen
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "Rufe push-cron auf ..."
+          # -f: bei HTTP-Fehler (>=400) mit Fehlercode abbrechen, damit man es
+          #     im Actions-Log rot sieht. -s still, -S Fehler trotzdem zeigen.
+          http_code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            https://bauplan-weld.vercel.app/api/push-cron)
+          echo "HTTP-Status: ${http_code}"
+          echo "Antwort:"
+          cat /tmp/resp.json || true
+          echo ""
+          if [ "${http_code}" -ge 400 ]; then
+            echo "::error::push-cron lieferte HTTP ${http_code}"
+            exit 1
+          fi

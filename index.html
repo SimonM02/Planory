@@ -1492,6 +1492,32 @@
     table { min-width: 640px; }
   }
 
+  /* ── iPad im QUERFORMAT: dauerhafte Seitenleiste statt Hamburger ──
+     Nur Landscape + Tablet-Breite. Hochformat bleibt beim Schubladen-Menue
+     (dort ist der Platz schmaler). Final am iPad-Simulator pruefen. */
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    /* Seitenleiste dauerhaft sichtbar wie am Computer */
+    .sidebar,
+    body.sidebar-collapsed .sidebar {
+      position: sticky !important;
+      left: 0 !important;
+      top: 0;
+      width: 248px !important;
+      height: 100vh;
+      box-shadow: 2px 0 12px rgba(30,60,120,0.06) !important;
+      overflow-y: auto !important;
+    }
+    /* Mobile Kopfzeile + Abdunkelung ausblenden – nicht mehr noetig */
+    #mobile-topbar { display: none !important; }
+    #mobile-backdrop { display: none !important; }
+    #sidebar-show-btn { display: none !important; }
+    /* Inhalt ohne den Topbar-Abstand, mit angenehmem Rand */
+    .main {
+      padding: 24px 28px !important;
+      width: auto !important;
+    }
+  }
+
   /* ── PHONE (≤600px) ──────────────────────────────────────── */
   @media (max-width: 600px) {
     /* Single-column cards so numbers don't get clipped */

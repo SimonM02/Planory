@@ -62,13 +62,22 @@ auch bei geschlossener App. Nötig (in dieser Reihenfolge):
 8. **iPad-Support** (NÄCHSTER Build nach Build 6):
    - Grundlage ist DRIN: additive Tablet-CSS (601–1024px) – Karten 3-spaltig,
      mehr Rand, groessere Tabellenbreite. iPhone/Desktop unveraendert.
+   - Querformat-Seitenleiste ist DRIN: iPad im Querformat zeigt die
+     Seitenleiste dauerhaft (kein Hamburger). Hochformat bleibt bewusst
+     beim Schubladen-Menue.
    - OFFEN (braucht Test im iPad-Simulator am Mac):
      a) In Xcode „Supported Destinations" → **iPad** aktivieren
-     b) Dauerhafte Seitenleiste im **Querformat** statt Hamburger-Menue
-        (Drawer-Regeln im ≤1024-Block per orientation:landscape überschreiben)
-     c) Layout im iPad-Simulator (Hoch- + Querformat) durchklicken
-     d) **iPad-Screenshots** in App Store Connect hochladen (Pflicht!)
-     e) einreichen – Apple prueft dann zusaetzlich auf dem iPad
+     b) Layout im iPad-Simulator (Hoch- + Querformat) durchklicken,
+        ggf. Hochformat-Seitenleiste nachziehen
+     c) **iPad-Screenshots** in App Store Connect hochladen (Pflicht!)
+     d) einreichen – Apple prueft dann zusaetzlich auf dem iPad
+
+9b. **Web-Push-Cron ist EINGERICHTET** (`.github/workflows/push-reminders.yml`):
+    ruft alle 15 Min `push-cron.js` auf → Erinnerungen gehen auch bei
+    geschlossenem Browser raus. MANUELLER SCHRITT: In GitHub unter
+    Settings → Secrets and variables → Actions das Secret **CRON_SECRET**
+    anlegen (gleicher Wert wie in Vercel). Testen: Actions-Tab →
+    „Push-Erinnerungen versenden" → „Run workflow".
 9. **Web-Push-Cron** (GitHub Actions): Erinnerungen auch für Web/PWA bei
    geschlossenem Browser
 10. **App-Store-Badge** („Laden im App Store") prominent auf planory.at
