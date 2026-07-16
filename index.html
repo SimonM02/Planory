@@ -1478,6 +1478,20 @@
     .main { padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important; }
   }
 
+  /* ── TABLET / iPad (601–1024px): Bildschirmflaeche besser nutzen ──
+     Nur additiv: iPhone (<=600) und Computer (>=1025) bleiben unveraendert.
+     Der volle iPad-Feinschliff (dauerhafte Seitenleiste im Querformat)
+     kommt im naechsten Build nach Test im iPad-Simulator. */
+  @media (min-width: 601px) and (max-width: 1024px) {
+    /* Karten drei- statt zweispaltig -> nutzt die iPad-Breite */
+    .cards-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 14px !important; }
+    .two-col { grid-template-columns: 1fr 1fr !important; }
+    /* Etwas mehr Rand, damit Inhalte nicht am Bildschirmrand kleben */
+    .main { padding-left: 22px !important; padding-right: 22px !important; }
+    /* Groessere Tabellen-Mindestbreite als am Handy, aber ohne Karten-Umbau */
+    table { min-width: 640px; }
+  }
+
   /* ── PHONE (≤600px) ──────────────────────────────────────── */
   @media (max-width: 600px) {
     /* Single-column cards so numbers don't get clipped */
