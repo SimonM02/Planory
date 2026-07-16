@@ -82,7 +82,14 @@ auch bei geschlossener App. Nötig (in dieser Reihenfolge):
    geschlossenem Browser
 10. **App-Store-Badge** („Laden im App Store") prominent auf planory.at
 11. **ASO**: App-Store-Beschreibung, Untertitel, Keywords optimieren
-12. **Englische Version** – weitgehend FERTIG (Wellen 1-5): Fundament,
+12. **Englische Version** – Welle 6 ergaenzt ~230 fehlende Texte (Onboarding,
+    alle Modals/Formulare, Karten-Labels, Toasts, Bestaetigungsdialoge) +
+    Enum-Woerter, die als Buttons/Labels erscheinen (Ueberfaellig, In
+    Bearbeitung, Behoben, Angenommen, Gewerk-Tabs). PHRASES: 655 Eintraege.
+    OFFEN: interpolierte Texte (mit ${...}) und durch Inline-Tags zerteilte
+    Absaetze lassen sich per Exact-Match-Sweep NICHT uebersetzen – die
+    brauchen bei Bedarf t()/Umbau. Per Nutzer-Test gemeldete Reste nachziehen.
+    Frueherer Stand (Wellen 1-5): Fundament,
     Sprachwahl beim Start, Umschalter + Konto-Sync, Navigation, Seitentitel,
     Buttons, Formular-Labels, Platzhalter, Tooltips, Toasts, KI-Antworten,
     datensicherer Dropdown-Uebersetzer (value bleibt deutsch), Onboarding,
