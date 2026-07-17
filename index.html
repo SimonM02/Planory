@@ -12026,6 +12026,7 @@ function addMaengelPhotos(input) {
     const reader = new FileReader();
     reader.onload = e => {
       mgPendingPhotos.push({ data: e.target.result, name: file.name });
+      mgPendingFiles.push(file); // sonst wird das Foto beim Speichern nie hochgeladen
       renderMgPreviews();
     };
     reader.readAsDataURL(file);
@@ -12039,7 +12040,7 @@ function renderMgPreviews() {
   c.innerHTML = mgPendingPhotos.map((p,i) => `
     <div style="position:relative;display:inline-block">
       <img src="${p.url || p.data || ''}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border)">
-      <button onclick="mgPendingPhotos.splice(${i},1);renderMgPreviews()"
+      <button onclick="mgPendingPhotos.splice(${i},1);mgPendingFiles.splice(${i},1);renderMgPreviews()"
         style="position:absolute;top:-5px;right:-5px;background:var(--danger);border:none;color:white;border-radius:50%;width:17px;height:17px;font-size:0.6rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
     </div>`).join('');
 }
@@ -12048,6 +12049,7 @@ function resetMgModal() {
   document.getElementById('mg-edit-id').value = '';
   document.getElementById('mg-modal-title').textContent = 'Mangel erfassen';
   mgPendingPhotos = [];
+  mgPendingFiles  = [];
   const prev = document.getElementById('mg-photo-previews');
   if (prev) prev.innerHTML = '';
 }
@@ -12269,6 +12271,13 @@ function renderGescannteRechnungen() {
 async function deleteGescannteRechnung(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)'))) return;
+  // Verknuepfte Ausgabe entmarkieren, sonst wird der Eintrag beim naechsten
+  // Render automatisch neu erzeugt (aiScanned-Sync) und taucht sofort wieder auf.
+  const _gr = (state.gescannteRechnungen||[]).find(x => String(x.id) === String(id));
+  if (_gr && _gr.kostenId != null) {
+    const _k = state.kosten.find(k => String(k.id) === String(_gr.kostenId));
+    if (_k) _k.aiScanned = false;
+  }
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');
