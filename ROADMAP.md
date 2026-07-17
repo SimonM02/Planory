@@ -43,19 +43,22 @@ Stand: 11.07.2026 · App Store: Version 1.1 (Build 5) veröffentlicht
 7. Erst DANN die Abo-Sperre auch in der App aktivieren
    (aktuell ist die native App bewusst komplett frei – Apple 3.1.1!)
 
-## 🔔 Server-Push an ALLE Geräte eines Kontos (gewünscht)
+## 🔔 Server-Push an ALLE Geräte eines Kontos
 
 Ziel: Bei geteiltem Konto bekommen ALLE eingeloggten Handys die Push –
-auch bei geschlossener App. Nötig (in dieser Reihenfolge):
-1. Vercel-API erreichbar machen (siehe ganz oben) – Grundvoraussetzung
-2. Cron aktivieren, der `push-cron.js` regelmäßig aufruft
-   (kostenlos via GitHub Actions, oder Vercel Pro)
-3. **Native iOS-App braucht APNs** (Apple Push): @capacitor/push-notifications
-   installieren, Geräte-Token registrieren + pro Nutzer (mehrere!) in
-   Supabase speichern; APNs-Auth-Key (.p8) + Key-ID + Team-ID aus dem
-   Apple-Developer-Account als Vercel-Env; Server sendet an alle Tokens
-4. (Web/PWA-Teil läuft über Web-Push/VAPID – push-cron sendet bereits an
-   ALLE Geräte pro Nutzer, seit dem Multi-Device-Fix)
+auch bei geschlossener App.
+- ✅ Web/PWA: läuft (VAPID + GitHub-Actions-Cron alle 15 Min, Multi-Device).
+- ✅ Native APNs: CODE IST FERTIG (Client-Registrierung, `api/_apns.js`,
+  `api/native-token-register.js`, push-cron + push-test senden an web+native,
+  `@capacitor/push-notifications` in package.json).
+- 🔲 OFFEN = nur Konfiguration (siehe **NATIVE-PUSH-SETUP.md**):
+  1. Supabase-Tabelle `native_push_tokens` anlegen (SQL im Doc)
+  2. Apple: APNs-Auth-Key (.p8) + Key-ID + Team-ID erstellen
+  3. Vercel-Env: APNS_KEY / APNS_KEY_ID / APNS_TEAM_ID / APNS_BUNDLE_ID /
+     APNS_PRODUCTION → Redeploy
+  4. Build 7: `npm install` + in Xcode Capability „Push Notifications"
+  5. Testen über „Server-Push testen"
+  ⚠️ Sandbox vs. Produktion beachten (App-Store/TestFlight = Produktion).
 
 ## 🟡 Phase C – danach (Reihenfolge nach Bedarf)
 

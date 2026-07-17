@@ -1,4 +1,5 @@
 import webpush from 'web-push';
+import { makeApnsJwt, openApnsClient, sendApns } from './_apns.js';
 
 const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 
@@ -39,53 +40,69 @@ export default async function handler(req, res) {
     return res.status(200).json({ sent: 0, checked: 0 });
   }
 
-  // Fetch push subscriptions for affected users
   const userIds = [...new Set(notifications.map(n => n.user_id))];
+
+  // ── Web-Push-Abos (Browser/PWA) pro Nutzer sammeln ──
   const subsRes = await fetch(
     `${SUPA_URL}/rest/v1/push_subscriptions?user_id=in.(${userIds.join(',')})&select=*`,
     { headers: hdrs }
   );
   const subs = await subsRes.json();
-  // Alle Geraete pro Nutzer sammeln (geteiltes Konto = mehrere Handys) –
-  // nicht nur eines. Jede Subscription hat eine eigene endpoint-URL.
   const subsByUser = {};
   for (const s of (subs || [])) {
     (subsByUser[s.user_id] = subsByUser[s.user_id] || []).push(s.subscription);
   }
 
+  // ── Native APNs-Tokens (App-Store-App) pro Nutzer sammeln ──
+  // Kann fehlen (Tabelle noch nicht angelegt / keine Schluessel) -> dann still ohne Native-Push.
+  const tokensByUser = {};
+  let apnsJwt = null, apnsClient = null;
+  try {
+    const tRes = await fetch(
+      `${SUPA_URL}/rest/v1/native_push_tokens?user_id=in.(${userIds.join(',')})&select=user_id,token`,
+      { headers: hdrs }
+    );
+    const toks = await tRes.json();
+    if (Array.isArray(toks)) {
+      for (const t of toks) (tokensByUser[t.user_id] = tokensByUser[t.user_id] || []).push(t.token);
+    }
+    apnsJwt = makeApnsJwt();
+    if (apnsJwt && Object.values(tokensByUser).some(a => a.length)) apnsClient = openApnsClient();
+  } catch (e) { /* Native-Push optional */ }
+
   let sent = 0;
   let failed = 0;
   const results = [];
 
+  const markSent = (notif) => fetch(
+    `${SUPA_URL}/rest/v1/scheduled_notifications?user_id=eq.${notif.user_id}&notif_id=eq.${encodeURIComponent(notif.notif_id)}`,
+    { method: 'PATCH', headers: hdrs, body: JSON.stringify({ sent: true }) }
+  );
+
   for (const notif of notifications) {
-    const userSubs = subsByUser[notif.user_id] || [];
-    if (!userSubs.length) {
-      // Kein Geraet fuer diesen Nutzer — als gesendet markieren, damit es sich nicht anstaut
-      await fetch(
-        `${SUPA_URL}/rest/v1/scheduled_notifications?user_id=eq.${notif.user_id}&notif_id=eq.${encodeURIComponent(notif.notif_id)}`,
-        { method: 'PATCH', headers: hdrs, body: JSON.stringify({ sent: true }) }
-      );
+    const userSubs   = subsByUser[notif.user_id]   || [];
+    const userTokens = tokensByUser[notif.user_id] || [];
+
+    if (!userSubs.length && !userTokens.length) {
+      // Kein Geraet fuer diesen Nutzer -> als gesendet markieren, damit es sich nicht anstaut
+      await markSent(notif);
       results.push({ id: notif.notif_id, status: 'no_subscription' });
       continue;
     }
 
-    // An JEDES registrierte Geraet des Nutzers senden
     let anyOk = false;
+
+    // ── An JEDES Web-Geraet des Nutzers senden ──
     for (const sub of userSubs) {
       try {
         await webpush.sendNotification(sub, JSON.stringify({
-          title: notif.title,
-          body:  notif.body,
-          tag:   notif.notif_id
+          title: notif.title, body: notif.body, tag: notif.notif_id
         }));
-        anyOk = true;
-        sent++;
-        results.push({ id: notif.notif_id, status: 'sent' });
+        anyOk = true; sent++;
       } catch (e) {
         failed++;
-        results.push({ id: notif.notif_id, status: 'error', code: e.statusCode, msg: e.message });
+        results.push({ id: notif.notif_id, channel: 'web', status: 'error', code: e.statusCode });
         if (e.statusCode === 410 || e.statusCode === 404) {
-          // Nur DIESES abgelaufene Geraet entfernen (per endpoint), nicht alle des Nutzers
           try {
             await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${notif.user_id}&subscription->>endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
               { method: 'DELETE', headers: hdrs });
@@ -94,14 +111,29 @@ export default async function handler(req, res) {
       }
     }
 
-    // Als gesendet markieren, sobald mindestens ein Geraet erreicht wurde
-    if (anyOk) {
-      await fetch(
-        `${SUPA_URL}/rest/v1/scheduled_notifications?user_id=eq.${notif.user_id}&notif_id=eq.${encodeURIComponent(notif.notif_id)}`,
-        { method: 'PATCH', headers: hdrs, body: JSON.stringify({ sent: true }) }
-      );
+    // ── An JEDES native App-Store-Geraet des Nutzers senden (APNs) ──
+    if (apnsClient && apnsJwt) {
+      for (const dt of userTokens) {
+        const r = await sendApns(apnsClient, apnsJwt, dt, { title: notif.title, body: notif.body });
+        if (r.ok) { anyOk = true; sent++; }
+        else {
+          failed++;
+          results.push({ id: notif.notif_id, channel: 'apns', status: 'error', code: r.status, reason: r.reason });
+          // Ungueltiges/abgemeldetes Geraet entfernen
+          if (r.status === 410 || r.reason === 'BadDeviceToken' || r.reason === 'Unregistered') {
+            try {
+              await fetch(`${SUPA_URL}/rest/v1/native_push_tokens?token=eq.${encodeURIComponent(dt)}`,
+                { method: 'DELETE', headers: hdrs });
+            } catch (_) {}
+          }
+        }
+      }
     }
+
+    if (anyOk) { await markSent(notif); results.push({ id: notif.notif_id, status: 'sent' }); }
   }
+
+  if (apnsClient) { try { apnsClient.close(); } catch (_) {} }
 
   return res.status(200).json({ sent, failed, checked: notifications.length, results });
 }

@@ -1,4 +1,5 @@
 import webpush from 'web-push';
+import { makeApnsJwt, openApnsClient, sendApns } from './_apns.js';
 
 const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 
@@ -31,40 +32,58 @@ export default async function handler(req, res) {
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const diag = { userId, vapid_pub: !!pub, vapid_priv: !!priv, svc_key: !!svcKey };
-
-  if (!pub || !priv) return res.status(500).json({ error: 'VAPID keys missing', diag });
   if (!svcKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY missing', diag });
 
-  webpush.setVapidDetails(subj, pub, priv);
-
-  // Fetch subscription for this user
   const hdrs = { Authorization: `Bearer ${svcKey}`, apikey: svcKey };
-  const subRes = await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${userId}&select=*`, { headers: hdrs });
-  const subs = await subRes.json();
-  diag.subscriptions_found = Array.isArray(subs) ? subs.length : 'error';
+  const MSG = { title: '🔔 Planory Test', body: 'Server-Push funktioniert! ✅' };
 
-  if (!Array.isArray(subs) || subs.length === 0) {
-    return res.status(404).json({ error: 'No push subscription found for user – register device first', diag });
-  }
+  let webOk = 0, nativeOk = 0;
 
-  const sub = subs[0].subscription;
-  diag.endpoint_prefix = sub?.endpoint?.slice(0, 50);
-
-  try {
-    await webpush.sendNotification(sub, JSON.stringify({
-      title: '🔔 Planory Test',
-      body: 'Server-Push funktioniert! ✅',
-      tag: 'push-test-' + Date.now()
-    }));
-    return res.status(200).json({ ok: true, message: 'Push sent successfully', diag });
-  } catch(e) {
-    diag.webpush_error = e.message;
-    diag.webpush_status = e.statusCode;
-    if (e.statusCode === 410 || e.statusCode === 404) {
-      // Subscription expired, delete it
-      await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${userId}`, { method: 'DELETE', headers: hdrs });
-      diag.subscription_deleted = true;
+  // ── Web-Push (Browser/PWA) ──
+  if (pub && priv) {
+    webpush.setVapidDetails(subj, pub, priv);
+    const subRes = await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${userId}&select=*`, { headers: hdrs });
+    const subs = await subRes.json();
+    diag.web_subscriptions = Array.isArray(subs) ? subs.length : 'error';
+    for (const row of (Array.isArray(subs) ? subs : [])) {
+      try {
+        await webpush.sendNotification(row.subscription, JSON.stringify({ ...MSG, tag: 'push-test-' + Date.now() }));
+        webOk++;
+      } catch(e) {
+        diag.webpush_error = e.message; diag.webpush_status = e.statusCode;
+        if (e.statusCode === 410 || e.statusCode === 404) {
+          await fetch(`${SUPA_URL}/rest/v1/push_subscriptions?user_id=eq.${userId}&subscription->>endpoint=eq.${encodeURIComponent(row.subscription.endpoint)}`, { method: 'DELETE', headers: hdrs });
+        }
+      }
     }
-    return res.status(500).json({ error: 'webpush.sendNotification failed', diag });
   }
+
+  // ── Native Push (App-Store-App, APNs) ──
+  try {
+    const tRes = await fetch(`${SUPA_URL}/rest/v1/native_push_tokens?user_id=eq.${userId}&select=token`, { headers: hdrs });
+    const toks = await tRes.json();
+    diag.native_tokens = Array.isArray(toks) ? toks.length : 'n/a';
+    const apnsJwt = makeApnsJwt();
+    diag.apns_keys = !!apnsJwt;
+    if (apnsJwt && Array.isArray(toks) && toks.length) {
+      const client = openApnsClient();
+      for (const t of toks) {
+        const r = await sendApns(client, apnsJwt, t.token, MSG);
+        if (r.ok) nativeOk++;
+        else { diag.apns_error = `${r.status} ${r.reason}`;
+          if (r.status === 410 || r.reason === 'BadDeviceToken' || r.reason === 'Unregistered') {
+            await fetch(`${SUPA_URL}/rest/v1/native_push_tokens?token=eq.${encodeURIComponent(t.token)}`, { method: 'DELETE', headers: hdrs });
+          }
+        }
+      }
+      try { client.close(); } catch(_) {}
+    }
+  } catch(e) { diag.native_error = e.message; }
+
+  diag.web_sent = webOk; diag.native_sent = nativeOk;
+
+  if (webOk + nativeOk > 0) {
+    return res.status(200).json({ ok: true, message: `Push sent (web:${webOk}, native:${nativeOk})`, diag });
+  }
+  return res.status(404).json({ error: 'Kein registriertes Geraet gefunden – bitte zuerst „Dieses Geraet registrieren" bzw. Mitteilungen in der App erlauben', diag });
 }

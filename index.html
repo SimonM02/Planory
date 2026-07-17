@@ -6278,6 +6278,7 @@ function checkAllDeadlines() {
 async function requestNotifications() {
   if (isNativeApp()) {
     await _requestNativeNotifPermission();
+    _registerNativePush(); // APNs-Token registrieren -> Server-Push an dieses Geraet
     scheduleAllReminders();
     checkAllDeadlines();
     return;
@@ -6297,6 +6298,7 @@ async function enableNotifications() {
     const ok = await _requestNativeNotifPermission();
     loadNotificationStatus();
     if (ok) {
+      _registerNativePush(); // APNs-Token registrieren -> Server-Push an dieses Geraet
       showToast('🔔 Mitteilungen aktiviert', 'success');
       scheduleAllReminders();
       setTimeout(() => _showNotification('Planory', '✅ Erinnerungen sind jetzt aktiv', 'test'), 500);
@@ -12937,6 +12939,43 @@ async function _requestNativeNotifPermission() {
     if (st.display !== 'granted') st = await ln.requestPermissions();
     return st.display === 'granted';
   } catch(e) { console.warn('Native notif permission failed', e); return false; }
+}
+
+// ── Native Push (APNs) ─────────────────────────────────────────────
+// Damit die App-Store-App auch bei GESCHLOSSENER App Push bekommt – und bei
+// geteiltem Konto ALLE Handys. Braucht serverseitig APNs-Schluessel (Vercel)
+// und die Tabelle native_push_tokens. Ohne das passiert hier einfach nichts.
+let _nativePushListenersAdded = false;
+function _pushNotifPlugin() {
+  return isNativeApp() ? window.Capacitor?.Plugins?.PushNotifications : null;
+}
+async function _registerNativePush() {
+  const pn = _pushNotifPlugin();
+  if (!pn || !currentUser) return;
+  try {
+    let perm = await pn.checkPermissions();
+    if (perm.receive !== 'granted') perm = await pn.requestPermissions();
+    if (perm.receive !== 'granted') return;
+    if (!_nativePushListenersAdded) {
+      _nativePushListenersAdded = true;
+      pn.addListener('registration', (t) => { _saveNativeToken(t?.value); });
+      pn.addListener('registrationError', (e) => { console.warn('APNs registration error', e); });
+    }
+    await pn.register();
+  } catch(e) { console.warn('Native push register failed', e); }
+}
+async function _saveNativeToken(deviceToken) {
+  if (!deviceToken || !currentUser) return;
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    const jwt = session?.access_token;
+    if (!jwt) return;
+    await fetch(API_BASE + '/api/native-token-register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + jwt },
+      body: JSON.stringify({ token: deviceToken, platform: 'ios' })
+    });
+  } catch(e) { console.warn('native token save failed', e); }
 }
 
 // Plant die gesammelten Erinnerungen als lokale Benachrichtigungen.
