@@ -33,9 +33,17 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # Noch kein Secret gesetzt? Dann still ueberspringen (kein Fehler, keine
+          # Mail). Push wird erst aktiv, wenn CRON_SECRET als Repo-Secret gesetzt
+          # ist (gleicher Wert wie in Vercel).
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "CRON_SECRET nicht gesetzt – Push-Zeitplan wird uebersprungen."
+            echo "Zum Aktivieren: GitHub -> Settings -> Secrets and variables ->"
+            echo "Actions -> New repository secret -> Name CRON_SECRET (Wert wie in Vercel)."
+            exit 0
+          fi
           echo "Rufe push-cron auf ..."
-          # -f: bei HTTP-Fehler (>=400) mit Fehlercode abbrechen, damit man es
-          #     im Actions-Log rot sieht. -s still, -S Fehler trotzdem zeigen.
+          # -s still, -S Fehler trotzdem zeigen.
           http_code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
             -X POST \
             -H "Authorization: Bearer ${CRON_SECRET}" \
