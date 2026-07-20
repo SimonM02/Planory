@@ -25,6 +25,21 @@ Kurze, feste Merkliste dessen, was noch von dir zu erledigen ist (Code ist jewei
 
 - [ ] Formatierungs-Fehler als Screenshots sammeln → an Claude (kommen in Build 7 mit)
 
+## 🔴 Wichtig: Cloud-Sync absichern (mit Test!)
+
+- [ ] Datenintegritäts-Fixes im Sync umsetzen (Details: `SYNC-FINDINGS.md`)
+      → nur MIT anschließendem Zwei-Fenster-Test (gleicher Account), weil ein
+      falscher Sync-Fix selbst Daten kosten kann. Wichtig, bevor viele Leute
+      gleichzeitig am selben Konto arbeiten.
+
+## 🟠 Folgeaufgabe: echte Datei-Ablage (Supabase Storage)
+
+- [ ] Anhänge (Angebot-PDFs, Dokumente) landen aktuell als Base64 im lokalen
+      Speicher → grosse Dateien sprengen das Limit. Sofort-Fix ist drin (Bilder
+      werden komprimiert, grosse PDFs abgelehnt statt Datenverlust), ABER die
+      saubere Lösung ist ein echter Supabase-Storage-Upload (Bucket + URL statt
+      Base64). Dann sind auch grosse PDFs möglich. Betrifft Angebote/Dokumente.
+
 ## ✅ Nach Build 7 testen
 
 - [ ] App: Mitteilungen erlauben → „Server-Push testen" → echte Push kommt an?

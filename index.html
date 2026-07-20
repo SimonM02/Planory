@@ -3750,7 +3750,7 @@
     <p style="font-size:0.82rem;color:var(--text3);margin-bottom:16px">Füge den Angebotstext ein oder lade ein Foto hoch – die KI erkennt die wichtigsten Daten automatisch. Kategorie und Status kannst du danach noch setzen.</p>
     <div id="ang-ki-input-area">
       <div class="form-row"><label>Angebotstext einfügen</label><textarea id="ang-ki-text" rows="5" placeholder="Text des Angebots hier einfügen (z.B. aus PDF kopiert)…"></textarea></div>
-      <div class="form-row"><label>oder Foto / Scan hochladen</label><input type="file" id="ang-ki-file" accept="image/*" onchange="previewAngKiFile()"></div>
+      <div class="form-row"><label>oder Foto / Scan hochladen</label><input type="file" id="ang-ki-file" accept="image/*,application/pdf,.pdf" onchange="previewAngKiFile()"></div>
       <div id="ang-ki-preview" style="display:none;margin-top:8px"><img id="ang-ki-preview-img" style="max-height:100px;border-radius:8px;border:1px solid var(--border)"></div>
     </div>
     <div id="ang-ki-loading" style="display:none;text-align:center;padding:24px;color:var(--text3)">
@@ -4894,7 +4894,11 @@ const PHRASES = {
   'Jahresabo sichern':'Get the yearly plan', 'Monatsabo wählen':'Choose monthly plan',
   'Ohne Abo bleibt Ansehen & Aufgaben abhaken immer gratis.':'Without a subscription, viewing & ticking off tasks stays free.',
   'Du kannst auch erst den Gratismonat testen und später upgraden – dann unten auf „Loslegen".':'You can also try the free month first and upgrade later – then tap "Get started" below.',
-  '🚀 Loslegen':'🚀 Get started'
+  '🚀 Loslegen':'🚀 Get started',
+  // Angebot-Anhang / KI-Hinweise
+  '⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert':'⚠️ File too large for attachment (max ~1 MB) – quote saved without attachment',
+  '⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert':'⚠️ Attachment could not be processed – quote saved without attachment',
+  '⚠️ PDF wird für die KI noch nicht unterstützt – bitte den Angebotstext einfügen oder ein Foto verwenden':'⚠️ PDF is not supported by the AI yet – please paste the quote text or use a photo'
 };
 const _phrasesEN2DE = Object.fromEntries(Object.entries(PHRASES).map(([de,en]) => [en, de]));
 function _sweepPhrases(root) {
@@ -11635,14 +11639,26 @@ async function saveAngebot() {
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
-  // Handle file attachment
+  // Dateianhang – WICHTIG: grosse Roh-Base64-Blobs sprengen den lokalen
+  // Speicher, wodurch das ganze Angebot nicht mehr gespeichert wird und
+  // verschwindet. Daher: Bilder komprimieren, kleine PDFs inline behalten,
+  // zu grosse Dateien verwerfen – aber das Angebot IMMER speichern.
   const fileInput = document.getElementById('ang-datei-input');
   if (fileInput?.files?.[0]) {
     const f = fileInput.files[0];
-    if (f.size <= 5*1024*1024) {
-      item.datei = await new Promise((res,rej) => {
-        const r = new FileReader(); r.onload = e => res({ name: f.name, type: f.type, data: e.target.result }); r.onerror = rej; r.readAsDataURL(f);
-      });
+    try {
+      if (f.type.startsWith('image/')) {
+        const { dataUrl } = await compressImage(f, 1600, 0.8);
+        item.datei = { name: f.name, type: 'image/jpeg', data: dataUrl };
+      } else if (f.size <= 1200 * 1024) {
+        item.datei = await new Promise((res, rej) => {
+          const r = new FileReader(); r.onload = e => res({ name: f.name, type: f.type, data: e.target.result }); r.onerror = rej; r.readAsDataURL(f);
+        });
+      } else {
+        showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert', 'warning', 6000);
+      }
+    } catch (e) {
+      showToast('⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert', 'warning', 5000);
     }
     fileInput.value = '';
   }
@@ -11826,6 +11842,11 @@ async function scanAngKI() {
   const text = document.getElementById('ang-ki-text').value.trim();
   const file = document.getElementById('ang-ki-file').files[0];
   if (!text && !file) { showToast('Bitte Text einfügen oder Foto hochladen', 'error'); return; }
+  // Die KI kann Bilder oder eingefuegten Text lesen – PDFs (noch) nicht.
+  if (file && !file.type.startsWith('image/') && !text) {
+    showToast('⚠️ PDF wird für die KI noch nicht unterstützt – bitte den Angebotstext einfügen oder ein Foto verwenden', 'warning', 7000);
+    return;
+  }
   document.getElementById('ang-ki-loading').style.display = '';
   document.getElementById('ang-ki-result').style.display  = 'none';
   document.getElementById('ang-ki-save-btn').style.display = 'none';
