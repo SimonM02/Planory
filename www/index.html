@@ -11653,15 +11653,19 @@ async function saveAngebot() {
   if (fileInput?.files?.[0]) {
     const f = fileInput.files[0];
     try {
-      if (f.type.startsWith('image/')) {
-        const { dataUrl } = await compressImage(f, 1600, 0.8);
-        item.datei = { name: f.name, type: 'image/jpeg', data: dataUrl };
-      } else if (f.size <= 1200 * 1024) {
-        item.datei = await new Promise((res, rej) => {
-          const r = new FileReader(); r.onload = e => res({ name: f.name, type: f.type, data: e.target.result }); r.onerror = rej; r.readAsDataURL(f);
-        });
+      const up = await uploadFileToStorage(f, 'angebote');
+      if (up.path) {
+        // Echter Storage-Upload -> nur die kurze URL speichern (egal wie groß)
+        item.datei = { name: f.name, type: f.type, url: up.url, path: up.path };
       } else {
-        showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert', 'warning', 6000);
+        // Base64-Fallback (Bucket noch nicht aktiv): nur kleine Dateien inline,
+        // sonst wuerde der Blob den lokalen Speicher sprengen.
+        const approxBytes = (up.url?.length || 0) * 0.75;
+        if (approxBytes <= 1200 * 1024) {
+          item.datei = { name: f.name, type: f.type, url: up.url };
+        } else {
+          showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert', 'warning', 6000);
+        }
       }
     } catch (e) {
       showToast('⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert', 'warning', 5000);
@@ -11702,6 +11706,8 @@ function editAngebot(id) {
 async function deleteAngebot(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Angebot löschen?'))) return;
+  const _a = (state.angebote||[]).find(a => String(a.id) === String(id));
+  if (_a?.datei?.path) deletePhotoFromStorage(_a.datei.path);
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
   save(); renderAngebote();
@@ -11796,15 +11802,16 @@ function renderAngVergleich() {
 function openAngebotDatei(id) {
   const a = (state.angebote||[]).find(a => String(a.id) === String(id));
   if (!a?.datei) return;
+  const src = a.datei.url || a.datei.data; // neu: Storage-URL, alt: Base64
   const viewable = ['application/pdf','image/jpeg','image/jpg','image/png','image/gif'];
   if (viewable.includes(a.datei.type) || a.datei.type?.startsWith('image/')) {
     const win = window.open('', '_blank');
     if (win) {
-      win.document.write(`<html><head><title>${a.datei.name}</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}iframe{width:100vw;height:100vh;border:none}</style></head><body>${a.datei.type==='application/pdf'?`<iframe src="${a.datei.data}"></iframe>`:`<img src="${a.datei.data}">`}</body></html>`);
+      win.document.write(`<html><head><title>${a.datei.name}</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}iframe{width:100vw;height:100vh;border:none}</style></head><body>${a.datei.type==='application/pdf'?`<iframe src="${src}"></iframe>`:`<img src="${src}">`}</body></html>`);
       win.document.close();
     }
   } else {
-    const el = document.createElement('a'); el.href = a.datei.data; el.download = a.datei.name; el.click();
+    const el = document.createElement('a'); el.href = src; el.download = a.datei.name; el.click();
   }
 }
 

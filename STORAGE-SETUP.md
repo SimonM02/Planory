@@ -43,12 +43,12 @@ create policy "uploads_read" on storage.objects
   Meldung mehr.
 
 ## Was schon umgestellt ist
-- **Fotos** (Galerie, Dokumentation, Mängel) laufen über `uploadPhotoToStorage`
-  → zentrale Ablage `uploadFileToStorage` (Storage + Base64-Fallback).
-- **Dokumente** nutzen bereits einen eigenen `dokumente`-Bucket (unverändert).
+- **Fotos** (Galerie, Dokumentation, Mängel) → zentrale Ablage
+  `uploadFileToStorage` (Storage + Base64-Fallback).
+- **Angebot-Anhänge** → laufen jetzt über Storage; die „Anhang öffnen"-Ansicht
+  zeigt alte (Base64) UND neue (URL) Einträge, Löschen räumt Storage auf.
+- **Rechnungs-Scan** → speichert die Scan-URL im Storage (kein Base64 mehr).
+- **Dokumente** → eigener `dokumente`-Bucket (unverändert, bereits Storage).
 
-## Offen / Folgeaufschritt
-- **Angebot-Anhänge** und der **Rechnungs-Scan** könnten ebenfalls voll über
-  `uploadFileToStorage` laufen (aktuell: Angebot komprimiert/kappt Base64 sicher).
-  Dafür müssen die jeweiligen Ansichten (Anhang öffnen) sowohl alte Base64- als
-  auch neue URL-Einträge unterstützen – kleiner Folge-Schritt.
+→ Alle großen Datei-Stellen liegen jetzt in der Cloud-Ablage (sobald der
+  `uploads`-Bucket existiert). Ohne Bucket: sicherer Base64-Fallback wie bisher.
