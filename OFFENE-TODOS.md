@@ -32,13 +32,15 @@ Kurze, feste Merkliste dessen, was noch von dir zu erledigen ist (Code ist jewei
       falscher Sync-Fix selbst Daten kosten kann. Wichtig, bevor viele Leute
       gleichzeitig am selben Konto arbeiten.
 
-## 🟠 Folgeaufgabe: echte Datei-Ablage (Supabase Storage)
+## 🟠 Echte Datei-Ablage (Supabase Storage) – Bucket anlegen!
 
-- [ ] Anhänge (Angebot-PDFs, Dokumente) landen aktuell als Base64 im lokalen
-      Speicher → grosse Dateien sprengen das Limit. Sofort-Fix ist drin (Bilder
-      werden komprimiert, grosse PDFs abgelehnt statt Datenverlust), ABER die
-      saubere Lösung ist ein echter Supabase-Storage-Upload (Bucket + URL statt
-      Base64). Dann sind auch grosse PDFs möglich. Betrifft Angebote/Dokumente.
+- [ ] **Supabase-Bucket `uploads` (public) anlegen + Policies** → Anleitung:
+      `STORAGE-SETUP.md`. Der Code lädt Fotos jetzt dorthin hoch (mit
+      Base64-Fallback, solange der Bucket fehlt). ERST mit Bucket wandern
+      Uploads wirklich in die Cloud und der lokale Speicher läuft nicht voll.
+- [ ] Danach testen: Foto hochladen → erscheint in Supabase Storage `uploads`.
+- [ ] Folge-Schritt (später): auch Angebot-Anhänge + Rechnungs-Scan komplett
+      über Storage (Ansichten müssen alte Base64- UND neue URL-Einträge zeigen).
 
 ## ✅ Nach Build 7 testen
 
