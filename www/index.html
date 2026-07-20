@@ -4995,7 +4995,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => {
     if (e.target !== o) return;
     const cancel = [...o.querySelectorAll('.modal-actions button')]
-      .find(b => /abbrechen|schlie/i.test(b.textContent));
+      .find(b => /abbrechen|schlie|cancel|close/i.test(b.textContent));
     if (cancel) cancel.click();
     else o.classList.remove('open');
   });
@@ -6219,41 +6219,48 @@ function updateSkontoPreview(prefix) {
   }
 }
 
+// Ganze-Tage-Differenz zwischen einem Datum (YYYY-MM-DD) und HEUTE, in LOKALER
+// Zeit. Wichtig: new Date('YYYY-MM-DD') waere UTC-Mitternacht und wuerde in
+// DE/AT (UTC+1/+2) jeden Wert um einen Tag verschieben (Fristen zu spaet!).
+function _daysUntilDateStr(str) {
+  if (!str) return NaN;
+  const t0 = new Date(); t0.setHours(0,0,0,0);
+  const s = /^\d{4}-\d{2}-\d{2}$/.test(str) ? str + 'T00:00' : str;
+  return Math.round((new Date(s) - t0) / 86400000);
+}
+
 function checkSkontoDeadlines() {
-  const today0 = new Date(); today0.setHours(0,0,0,0);
   const urgent = (state.kosten||[]).filter(k =>
     k.skontoProz > 0 && k.skontoBis && k.status === 'Ausstehend' &&
-    Math.ceil((new Date(k.skontoBis) - today0) / 86400000) <= 3 &&
-    Math.ceil((new Date(k.skontoBis) - today0) / 86400000) >= 0
+    _daysUntilDateStr(k.skontoBis) <= 3 && _daysUntilDateStr(k.skontoBis) >= 0
   );
   urgent.forEach(k => {
-    const diff = Math.ceil((new Date(k.skontoBis) - today0) / 86400000);
+    const diff = _daysUntilDateStr(k.skontoBis);
     const ersparnis = fmt(k.betrag * k.skontoProz / 100);
     showToast(`💰 Skonto bei „${k.beschr}": ${ersparnis} sparen – noch ${diff} Tag${diff===1?'':'e'}!`, 'warning', 6000);
   });
 }
 
 function checkAllDeadlines() {
-  const today0 = new Date(); today0.setHours(0,0,0,0);
   const msgs = [];
 
   // Fällige Zahlungen in 3 Tagen
   (state.zahlungen||[]).filter(z => z.status !== 'Bezahlt' && z.faellig).forEach(z => {
-    const diff = Math.ceil((new Date(z.faellig) - today0) / 86400000);
+    const diff = _daysUntilDateStr(z.faellig);
     if (diff >= 0 && diff <= 3) msgs.push(`💳 Zahlung fällig in ${diff}d: ${z.beschr||'Zahlung'} (${fmt(z.betrag)})`);
     else if (diff < 0) msgs.push(`⚠️ Zahlung überfällig (${Math.abs(diff)}d): ${z.beschr||'Zahlung'} (${fmt(z.betrag)})`);
   });
 
-  // Überfällige Meilensteine
-  (state.meilensteine||[]).filter(m => !m.done && m.end).forEach(m => {
-    const diff = Math.ceil((new Date(m.end) - today0) / 86400000);
-    if (diff < 0) msgs.push(`🚩 Meilenstein überfällig: ${m.title}`);
-    else if (diff <= 3) msgs.push(`⏰ Meilenstein in ${diff}d fällig: ${m.title}`);
+  // Überfällige Meilensteine (gespeichert als name/datum, nicht title/end!)
+  (state.meilensteine||[]).filter(m => !m.done && m.datum).forEach(m => {
+    const diff = _daysUntilDateStr(m.datum);
+    if (diff < 0) msgs.push(`🚩 Meilenstein überfällig: ${m.name}`);
+    else if (diff <= 3) msgs.push(`⏰ Meilenstein in ${diff}d fällig: ${m.name}`);
   });
 
   // Skonto
   (state.kosten||[]).filter(k => k.skontoProz > 0 && k.skontoBis && k.status === 'Ausstehend').forEach(k => {
-    const diff = Math.ceil((new Date(k.skontoBis) - today0) / 86400000);
+    const diff = _daysUntilDateStr(k.skontoBis);
     if (diff >= 0 && diff <= 3) msgs.push(`💰 Skonto läuft ab in ${diff}d: ${k.beschr} (${fmt(k.betrag * k.skontoProz / 100)} sparen)`);
   });
 
@@ -6572,7 +6579,7 @@ function sendStatusReport() {
   const allMil = state.meilensteine.length;
   const offeneZahl = state.zahlungen.filter(z=>z.status!=='Bezahlt').reduce((s,z)=>s+(parseFloat(z.betrag)||0),0);
   const offeneMaengel = state.maengel.filter(m=>m.status!=='Behoben').length;
-  const nextMil = [...state.meilensteine].filter(m=>!m.done&&m.end).sort((a,b)=>new Date(a.end)-new Date(b.end))[0];
+  const nextMil = [...state.meilensteine].filter(m=>!m.done&&m.datum).sort((a,b)=>new Date(a.datum)-new Date(b.datum))[0];
   const nextZahl = [...state.zahlungen].filter(z=>z.status!=='Bezahlt'&&z.faellig).sort((a,b)=>new Date(a.faellig)-new Date(b.faellig))[0];
 
   const lines = [
@@ -6586,7 +6593,7 @@ function sendStatusReport() {
     ``,
     `MEILENSTEINE`,
     `  Abgeschlossen: ${doneMil} von ${allMil}`,
-    nextMil ? `  Nächster:      ${nextMil.title} (${new Date(nextMil.end).toLocaleDateString('de-AT')})` : `  Nächster:      –`,
+    nextMil ? `  Nächster:      ${nextMil.name} (${new Date(nextMil.datum).toLocaleDateString('de-AT')})` : `  Nächster:      –`,
     ``,
     `ZAHLUNGSPLAN`,
     `  Noch offen: ${fmt(offeneZahl)}`,
