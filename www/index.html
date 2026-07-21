@@ -11890,11 +11890,6 @@ async function scanAngKI() {
   const text = document.getElementById('ang-ki-text').value.trim();
   const file = document.getElementById('ang-ki-file').files[0];
   if (!text && !file) { showToast('Bitte Text einfügen oder Foto hochladen', 'error'); return; }
-  // Die KI kann Bilder oder eingefuegten Text lesen – PDFs (noch) nicht.
-  if (file && !file.type.startsWith('image/') && !text) {
-    showToast('⚠️ PDF wird für die KI noch nicht unterstützt – bitte den Angebotstext einfügen oder ein Foto verwenden', 'warning', 7000);
-    return;
-  }
   document.getElementById('ang-ki-loading').style.display = '';
   document.getElementById('ang-ki-result').style.display  = 'none';
   document.getElementById('ang-ki-save-btn').style.display = 'none';
@@ -11902,14 +11897,21 @@ async function scanAngKI() {
   try {
     const today_str = new Date().toISOString().split('T')[0];
     const prompt = `Lies dieses Angebot aus und extrahiere folgende Daten als reines JSON-Objekt (kein Text davor/danach):\n{"beschr":"Beschreibung/Gewerk","anbieter":"Firmenname","betrag":12345.00,"datum":"YYYY-MM-DD oder null","gueltig":"YYYY-MM-DD oder null","notiz":"Wichtige Details, Leistungsumfang in 1-2 Sätzen"}\nHeute ist ${today_str}. Betrag als Zahl ohne Währungssymbol. Falls Wert fehlt: null.`;
-    let messages;
+    let messages, model = 'claude-haiku-4-5-20251001';
+    const isPdf = file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
     if (file && file.type.startsWith('image/')) {
       const { dataUrl, mediaType } = await compressImage(file);
+      model = 'claude-sonnet-4-6';
       messages = [{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type: mediaType, data: dataUrl.split(',')[1] }},{ type:'text', text:prompt }]}];
+    } else if (isPdf) {
+      // PDF direkt an die KI (wie beim Rechnungs-Scan) – Claude liest PDFs nativ.
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+      model = 'claude-sonnet-4-6';
+      messages = [{ role:'user', content:[{ type:'document', source:{ type:'base64', media_type:'application/pdf', data: b64 }},{ type:'text', text:prompt }]}];
     } else {
       messages = [{ role:'user', content:`${prompt}\n\nAngebotstext:\n${text}` }];
     }
-    const resp = await fetch(API_BASE + '/api/ki', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:512, messages }) });
+    const resp = await fetch(API_BASE + '/api/ki', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model, max_tokens:512, messages }) });
     const respText = await resp.text();
     let data;
     try { data = JSON.parse(respText); } catch { throw new Error('Server-Fehler: ' + respText.slice(0,80)); }
