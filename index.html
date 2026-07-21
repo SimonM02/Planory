@@ -8444,6 +8444,25 @@ async function deletePhotoFromStorage(path) {
   try { await supa.storage.from(STORAGE_BUCKET).remove([path]); } catch(_) {}
 }
 
+// Laedt einen bereits komprimierten Base64-DataURL (z.B. Grundriss-Plan) in den
+// Storage und gibt { url, path } zurueck. Fallback: DataURL unveraendert behalten.
+async function uploadDataUrlToStorage(dataUrl, folder = 'misc', name = 'bild.jpg') {
+  if (!dataUrl) return { url: null, path: null };
+  if (currentUser && !_demoMode && dataUrl.startsWith('data:')) {
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const safe = name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${currentUser.id}/${folder}/${Date.now()}_${safe}`;
+      const { error } = await supa.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: false });
+      if (!error) {
+        const { data } = supa.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        if (data?.publicUrl) return { url: data.publicUrl, path };
+      }
+    } catch(_) { /* Fallback unten */ }
+  }
+  return { url: dataUrl, path: null };
+}
+
 // ── FOTO-GALERIE ─────────────────────────────────
 const FOTO_KAT = ['Rohbau','Fundament','Keller','Dach','Fassade','Fenster & Türen','Innenausbau','Elektro','Sanitär','Heizung','Estrich & Böden','Maler & Tapete','Außenanlagen','Garage','Sonstiges'];
 
@@ -9468,14 +9487,20 @@ function grPdfChangePage(delta) {
   _grRenderPdfPage(input, _grPdfPage + delta);
 }
 
-function saveGrundrissModal() {
+async function saveGrundrissModal() {
   if (!requireSub()) return;
   const editId = parseInt(document.getElementById('gr-edit-id').value) || null;
   const name   = document.getElementById('gr-name').value.trim();
   if (!name) { showToast('⚠️ Bitte eine Bezeichnung eingeben', 'error'); return; }
 
-  const fileInput = document.getElementById('gr-bild-input');
-  const newBild   = fileInput._compressed || null;
+  const fileInput  = document.getElementById('gr-bild-input');
+  const newBildRaw = fileInput._compressed || null;
+  // Neuen Plan (grosses Base64) in Storage auslagern -> nur URL speichern.
+  let newBild = newBildRaw, newBildPath = null;
+  if (newBildRaw && newBildRaw.startsWith('data:')) {
+    const up = await uploadDataUrlToStorage(newBildRaw, 'grundrisse', name + '.jpg');
+    newBild = up.url; newBildPath = up.path;
+  }
 
   state.grundrisse = state.grundrisse || [];
 
@@ -9483,11 +9508,14 @@ function saveGrundrissModal() {
     const g = state.grundrisse.find(x => String(x.id) === String(editId));
     if (g) {
       g.name = name;
-      if (newBild) g.bild = newBild;
+      if (newBildRaw) {
+        if (g.bildPath) deletePhotoFromStorage(g.bildPath); // alten Plan aufraeumen
+        g.bild = newBild; g.bildPath = newBildPath;
+      }
     }
     showToast('✅ Stockwerk aktualisiert', 'success');
   } else {
-    state.grundrisse.push({ id: Date.now(), name, bild: newBild || null, pins: [] });
+    state.grundrisse.push({ id: Date.now(), name, bild: newBild || null, bildPath: newBildPath, pins: [] });
     _grActiveId = state.grundrisse[state.grundrisse.length - 1].id;
     showToast('✅ Stockwerk angelegt', 'success');
   }
@@ -9503,6 +9531,7 @@ async function deleteGrundriss(id) {
   const g = (state.grundrisse||[]).find(x => String(x.id) === String(id));
   if (!g) return;
   if (!(await showConfirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`))) return;
+  if (g.bildPath) deletePhotoFromStorage(g.bildPath);
   state.grundrisse = state.grundrisse.filter(x => String(x.id) !== String(id));
   _grActiveId = state.grundrisse[0]?.id || null;
   save();

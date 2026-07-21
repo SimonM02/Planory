@@ -48,7 +48,14 @@ create policy "uploads_read" on storage.objects
 - **Angebot-Anhänge** → laufen jetzt über Storage; die „Anhang öffnen"-Ansicht
   zeigt alte (Base64) UND neue (URL) Einträge, Löschen räumt Storage auf.
 - **Rechnungs-Scan** → speichert die Scan-URL im Storage (kein Base64 mehr).
+- **Grundriss-Pläne** (auch aus PDF gerendert) → jetzt Storage statt Base64.
+- **Grundriss-Pin-Fotos** → Storage (war schon `uploadPhotoToStorage`).
 - **Dokumente** → eigener `dokumente`-Bucket (unverändert, bereits Storage).
+
+**Geprüft:** Alle Datei-Upload-Stellen (Galerie, Alben, Dokumentation, Mängel,
+Grundrisse + Pins, Angebot-Anhänge, Rechnungs-Scan, Dokumente) laufen jetzt über
+die Cloud-Ablage – nur Vorschauen im Formular nutzen kurzzeitig Base64 (wird
+nicht gespeichert).
 
 → Alle großen Datei-Stellen liegen jetzt in der Cloud-Ablage (sobald der
   `uploads`-Bucket existiert). Ohne Bucket: sicherer Base64-Fallback wie bisher.
