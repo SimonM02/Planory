@@ -38,9 +38,11 @@ Kurze, feste Merkliste dessen, was noch von dir zu erledigen ist (Code ist jewei
       `STORAGE-SETUP.md`. Der Code lädt Fotos jetzt dorthin hoch (mit
       Base64-Fallback, solange der Bucket fehlt). ERST mit Bucket wandern
       Uploads wirklich in die Cloud und der lokale Speicher läuft nicht voll.
-- [ ] Danach testen: Foto hochladen → erscheint in Supabase Storage `uploads`.
-- [ ] Folge-Schritt (später): auch Angebot-Anhänge + Rechnungs-Scan komplett
-      über Storage (Ansichten müssen alte Base64- UND neue URL-Einträge zeigen).
+- [ ] Danach testen: Foto/Angebot-PDF/Grundriss hochladen → erscheint in
+      Supabase Storage `uploads` (unter `<user-id>/…`).
+- ✅ Erledigt (Code): ALLE Upload-Stellen laufen über Storage – Galerie, Alben,
+      Dokumentation, Mängel, Grundriss-Pläne + Pins, Angebot-Anhänge,
+      Rechnungs-Scan, Dokumente. Es fehlt nur noch der Bucket oben.
 
 ## ✅ Nach Build 7 testen
 
