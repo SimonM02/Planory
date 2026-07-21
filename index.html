@@ -11681,6 +11681,10 @@ async function saveAngebot() {
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
+  // Bestehenden Anhang beim Bearbeiten BEHALTEN, wenn keine neue Datei gewaehlt
+  // wird (sonst wuerde er beim Speichern verschwinden).
+  const existingAng = editId ? state.angebote.find(a => String(a.id) === String(editId)) : null;
+  if (existingAng?.datei) item.datei = existingAng.datei;
   // Dateianhang – WICHTIG: grosse Roh-Base64-Blobs sprengen den lokalen
   // Speicher, wodurch das ganze Angebot nicht mehr gespeichert wird und
   // verschwindet. Daher: Bilder komprimieren, kleine PDFs inline behalten,
@@ -11691,13 +11695,15 @@ async function saveAngebot() {
     try {
       const up = await uploadFileToStorage(f, 'angebote');
       if (up.path) {
-        // Echter Storage-Upload -> nur die kurze URL speichern (egal wie groß)
+        // Neue Datei ersetzt die alte -> altes Storage-Objekt aufraeumen
+        if (existingAng?.datei?.path) deletePhotoFromStorage(existingAng.datei.path);
         item.datei = { name: f.name, type: f.type, url: up.url, path: up.path };
       } else {
         // Base64-Fallback (Bucket noch nicht aktiv): nur kleine Dateien inline,
         // sonst wuerde der Blob den lokalen Speicher sprengen.
         const approxBytes = (up.url?.length || 0) * 0.75;
         if (approxBytes <= 1200 * 1024) {
+          if (existingAng?.datei?.path) deletePhotoFromStorage(existingAng.datei.path);
           item.datei = { name: f.name, type: f.type, url: up.url };
         } else {
           showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert', 'warning', 6000);

@@ -57,5 +57,11 @@ Grundrisse + Pins, Angebot-Anhänge, Rechnungs-Scan, Dokumente) laufen jetzt üb
 die Cloud-Ablage – nur Vorschauen im Formular nutzen kurzzeitig Base64 (wird
 nicht gespeichert).
 
+**Bekannte Kleinigkeit (unkritisch):** Grundriss-**Pin-Fotos** speichern nur die
+URL (nicht den Storage-Pfad). Beim Löschen eines Pins/Stockwerks bleiben deren
+Fotos daher als „Waise" im Bucket liegen (nur Speicherplatz, kein Fehler, kein
+Datenverlust). Aufräumen = kleiner Folge-Schritt (Pin-Fotos als {url,path}
+speichern + Render/Lightbox anpassen).
+
 → Alle großen Datei-Stellen liegen jetzt in der Cloud-Ablage (sobald der
   `uploads`-Bucket existiert). Ohne Bucket: sicherer Base64-Fallback wie bisher.
