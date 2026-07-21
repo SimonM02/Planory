@@ -1492,10 +1492,10 @@
     table { min-width: 640px; }
   }
 
-  /* ── iPad im QUERFORMAT: dauerhafte Seitenleiste statt Hamburger ──
-     Nur Landscape + Tablet-Breite. Hochformat bleibt beim Schubladen-Menue
-     (dort ist der Platz schmaler). Final am iPad-Simulator pruefen. */
-  @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  /* ── iPad: dauerhafte Seitenleiste statt Hamburger (Hoch- + Querformat) ──
+     Gilt fuer Tablet-Breiten 768–1024px. Im Hochformat bleiben ~500px fuer den
+     Inhalt (ok, Tabellen scrollen). Final am iPad-Simulator pruefen. */
+  @media (min-width: 768px) and (max-width: 1024px) {
     /* Seitenleiste dauerhaft sichtbar wie am Computer */
     .sidebar,
     body.sidebar-collapsed .sidebar {
