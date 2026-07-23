@@ -6043,6 +6043,7 @@ function editBudgetKat(id) {
 async function deleteBudgetKat(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Kategorie löschen?'))) return;
+  _trackDeletion(id, 'budgetKat'); // Grabstein -> darf beim Merge nicht wiederkommen
   state.budgetKat = state.budgetKat.filter(k => String(k.id) !== String(id));
   // Re-stamp _order after deletion so positions stay clean
   state.budgetKat.forEach((k, i) => { k._order = i; });
@@ -10605,7 +10606,7 @@ function _mergeProjects(localProjects, cloudProjects) {
                 'angebote','zahlungsplan','kontakte','gewerke','personen','dokumente','fotos',
                 'meilensteine','gantt','abhaengigkeiten','wartungen','tagebuch'];
   const result = cloudProjects.map(cp => {
-    const lp = localProjects.find(p => p.id === cp.id);
+    const lp = localProjects.find(p => String(p.id) === String(cp.id));
     if (!lp) return cp;
     // Merge tombstone maps: union of both, keep the latest deletion timestamp per id
     const mergedDeleted = { ...(cp._deletedIds || {}) };
@@ -10622,7 +10623,7 @@ function _mergeProjects(localProjects, cloudProjects) {
   });
   // Add projects that only exist locally
   for (const lp of localProjects) {
-    if (!cloudProjects.find(cp => cp.id === lp.id)) result.push(lp);
+    if (!cloudProjects.find(cp => String(cp.id) === String(lp.id))) result.push(lp);
   }
   return result;
 }
@@ -11044,7 +11045,15 @@ async function loadFromCloud() {
     finalProjects.forEach(_deduplicateProject);
 
     // ── Apply to app ───────────────────────────────────────────────
-    projects = finalProjects;
+    // Cloud in den lokalen Stand MERGEN statt ihn zu ersetzen – sonst gehen
+    // noch nicht synchronisierte lokale Eintraege (z.B. gerade angelegte
+    // Budget-Kategorien) verloren, sobald ein anderes Geraet etwas aendert.
+    // Nur mergen, wenn die lokalen Daten DEMSELBEN Konto gehoeren UND echte
+    // Daten sind (sonst Cloud pur – kein Konten-Mix, kein leeres Default-Projekt).
+    const _localOwner = localStorage.getItem('bauplan_user_id') || '';
+    const _canMerge   = _localOwner === currentUser.id && _hasData(projects);
+    projects = _canMerge ? _mergeProjects(projects, finalProjects) : finalProjects;
+    finalProjects = projects; // nachfolgende Zeilen nutzen finalProjects
     const savedId = cloudMeta?.currentProjectId;
     const found   = savedId && projects.find(p => String(p.id) === String(savedId));
     currentProjectId = found ? found.id : projects[0]?.id;

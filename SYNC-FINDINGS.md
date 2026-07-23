@@ -52,6 +52,20 @@ Zeile 4168 bei jeder budgetKat-Änderung bumpen.
 - Kompletter Leer-Überschreiber des Kontos ist durch die Sicherheitsprüfung in
   syncToCloud (~10757) abgefangen.
 
+## STATUS 21.07.2026 – Kern-Fix umgesetzt (nach echtem Datenverlust)
+Ein Nutzer hat Budget-Kategorien verloren → Fix nicht mehr aufschiebbar.
+Umgesetzt (Web live, App mit Build 7):
+- ✅ **loadFromCloud MERGT jetzt** (statt zu ersetzen) via `_mergeProjects` –
+  nur wenn lokale Daten demselben Konto gehoeren UND echt sind (Guard gegen
+  Konten-Mix / leeres Default-Projekt). Behebt #2 (frisch Angelegtes weg) und
+  das Budget-Kategorien-Verschwinden.
+- ✅ **budgetKat bekommt Grabsteine** (`_trackDeletion` in deleteBudgetKat) →
+  keine Wiederauferstehung geloeschter Kategorien nach dem Merge (#4).
+- ✅ `_mergeProjects` vergleicht Projekt-IDs jetzt als String → keine Doppel-Projekte.
+- 🔲 OFFEN (weniger kritisch, = Wiederauferstehung, nicht Verlust): Tombstone-
+  Union beim Schreiben von projektdaten (#1) und `_updatedAt`-bedingter Upsert (#3).
+- ⚠️ NOCH NICHT mit Zwei-Geraete-Test bestaetigt → Test siehe unten.
+
 ## Fix-Plan (mit Test!)
 1. Fixes umsetzen (Load-Merge aktivieren, Tombstone-Union, budgetKat-Tombstones).
 2. Auf Web deployen.
