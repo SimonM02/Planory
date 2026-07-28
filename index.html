@@ -4895,6 +4895,7 @@ const PHRASES = {
   'Ohne Abo bleibt Ansehen & Aufgaben abhaken immer gratis.':'Without a subscription, viewing & ticking off tasks stays free.',
   'Du kannst auch erst den Gratismonat testen und später upgraden – dann unten auf „Loslegen".':'You can also try the free month first and upgrade later – then tap "Get started" below.',
   '🚀 Loslegen':'🚀 Get started',
+  '⚠️ Gerätespeicher voll – deine Daten sind sicher in der Cloud':'⚠️ Device storage full – your data is safe in the cloud',
   // Angebot-Anhang / KI-Hinweise
   '⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert':'⚠️ File too large for attachment (max ~1 MB) – quote saved without attachment',
   '⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert':'⚠️ Attachment could not be processed – quote saved without attachment',
@@ -10929,6 +10930,7 @@ async function loadFromCloud() {
   if (new URLSearchParams(location.search).get('nocloud') === '1') {
     _loadFromLocalStorage(); return null;
   }
+  let cloudApplied = false; // true, sobald die Cloud-Daten aktiv sind
   try {
     // ── Load metadata + items in parallel ──────────────────────────
     const [metaResult, itemsResult] = await Promise.all([
@@ -11056,13 +11058,25 @@ async function loadFromCloud() {
     const found   = savedId && projects.find(p => String(p.id) === String(savedId));
     currentProjectId = found ? found.id : projects[0]?.id;
     loadProject(currentProjectId, false);
+    // Ab hier sind die Cloud-Daten aktiv. Sie duerfen NIE mehr durch den
+    // (aelteren) lokalen Stand ersetzt werden – siehe catch unten.
+    cloudApplied = true;
 
+    // Lokaler Zwischenspeicher ist nur eine Kopie fuer den Offline-Start.
+    // Ist er voll (alte Fotos/Plaene als Base64), darf das NICHT dazu fuehren,
+    // dass die geladenen Cloud-Daten verworfen werden – sonst sieht der Nutzer
+    // trotz vollstaendiger Cloud einen leeren/alten Stand.
     const cloudTs = cloudMeta?.updated_at || new Date().toISOString();
-    localStorage.setItem('bauplan_projects',      JSON.stringify(projects));
-    localStorage.setItem('bauplan_current',       String(currentProjectId));
-    localStorage.setItem('bauplan_user_id',       currentUser.id);
-    localStorage.setItem('bauplan_updated_at',    cloudTs);
-    localStorage.setItem('bauplan_last_synced_at', cloudTs);
+    try {
+      localStorage.setItem('bauplan_projects',      JSON.stringify(projects));
+      localStorage.setItem('bauplan_current',       String(currentProjectId));
+      localStorage.setItem('bauplan_user_id',       currentUser.id);
+      localStorage.setItem('bauplan_updated_at',    cloudTs);
+      localStorage.setItem('bauplan_last_synced_at', cloudTs);
+    } catch(e) {
+      console.warn('Lokaler Zwischenspeicher nicht beschreibbar:', e?.message);
+      showToast('⚠️ Gerätespeicher voll – deine Daten sind sicher in der Cloud', 'warning', 6000);
+    }
 
     // Dark mode preference
     if (cloudMeta?.prefs?.lang && !localStorage.getItem('planoryLang')) {
@@ -11085,7 +11099,10 @@ async function loadFromCloud() {
 
   } catch(e) {
     console.error('Load exception:', e.message);
-    _loadFromLocalStorage();
+    // Nur zurueckfallen, wenn die Cloud-Daten noch NICHT angewendet wurden.
+    // Sonst wuerde ein Fehler nach dem Laden (z.B. voller Speicher) die
+    // korrekten Cloud-Daten durch einen alten lokalen Stand ersetzen.
+    if (!cloudApplied) _loadFromLocalStorage();
     return null;
   }
 }
