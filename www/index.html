@@ -10944,6 +10944,81 @@ function _loadFromLocalStorage() {
   loadProject(currentProjectId, false);
 }
 
+// ── Einmalige Umstellung: eingebettete Dateien in die Cloud-Ablage ──────────
+// Frueher wurden Fotos/PDFs als riesige Textbloecke DIREKT im Datensatz
+// gespeichert (es gab keine Dateiablage). Ein einziges PDF kann so 4 MB
+// belegen -> der Geraetespeicher laeuft ueber und die App kann die
+// Cloud-Daten nicht mehr zwischenspeichern.
+// Diese Funktion laeuft automatisch im Hintergrund, verschiebt solche
+// Dateien in den Storage-Bucket und laesst im Datensatz nur den Verweis.
+// Laeuft still: kein Knopf, keine Rueckfrage. Bei Fehlern passiert nichts.
+let _fileMigrationDone = false;
+
+function _isEmbeddedFile(v) {
+  // Nur echte, grosse Einbettungen anfassen (> ~40 KB), keine Mini-Icons.
+  return typeof v === 'string' && v.startsWith('data:') && v.length > 55000;
+}
+
+async function _migrateEmbeddedFiles() {
+  if (_fileMigrationDone || !currentUser || _demoMode) return;
+  _fileMigrationDone = true;
+  try {
+    let moved = 0;
+
+    // Fotolisten (Galerie, Dokumentation, Maengel) einheitlich behandeln
+    const migratePhotoList = async (list, ordner) => {
+      for (const f of (list || [])) {
+        if (!f) continue;
+        const src = f.url || f.data;
+        if (!_isEmbeddedFile(src)) continue;
+        const up = await uploadDataUrlToStorage(src, ordner, f.name || 'foto.jpg');
+        if (up.path) { f.url = up.url; f.path = up.path; delete f.data; delete f.preview; moved++; }
+      }
+    };
+
+    for (const proj of projects) {
+      // 1) Angebots-Anhaenge (haeufig grosse PDFs)
+      for (const a of (proj.angebote || [])) {
+        const d = a.datei;
+        const src = d && (d.url || d.data);
+        if (!_isEmbeddedFile(src)) continue;
+        const up = await uploadDataUrlToStorage(src, 'angebote', d.name || 'angebot');
+        if (up.path) {
+          a.datei = { name: d.name, type: d.type, url: up.url, path: up.path };
+          a._updatedAt = Date.now(); moved++;
+        }
+      }
+      // 2) Grundriss-Plaene (aus PDF gerendert, oft > 1 MB)
+      for (const g of (proj.grundrisse || [])) {
+        if (_isEmbeddedFile(g.bild)) {
+          const up = await uploadDataUrlToStorage(g.bild, 'grundrisse', (g.name || 'plan') + '.jpg');
+          if (up.path) { g.bild = up.url; g.bildPath = up.path; moved++; }
+        }
+        for (const p of (g.pins || [])) await migratePhotoList(p.fotos, 'grundrisse');
+      }
+      // 3) Fotos
+      await migratePhotoList(proj.fotos, 'galerie');
+      for (const d of (proj.dokumentation || [])) await migratePhotoList(d.fotos, 'dokumentation');
+      for (const m of (proj.maengel || []))      await migratePhotoList(m.fotos, 'maengel');
+      // 4) Alte Dokumente (Base64 statt Storage-Pfad)
+      for (const dat of (proj.dateien || [])) {
+        if (!_isEmbeddedFile(dat.data)) continue;
+        const up = await uploadDataUrlToStorage(dat.data, 'dokumente', dat.name || 'dokument');
+        if (up.path) { dat.url = up.url; dat.path = up.path; delete dat.data; moved++; }
+      }
+    }
+
+    if (moved > 0) {
+      const cur = projects.find(p => String(p.id) === String(currentProjectId));
+      if (cur) state = cur;
+      save();                       // schreibt lokal + stoesst Cloud-Sync an
+      console.log('[Migration] ' + moved + ' Datei(en) in die Ablage verschoben');
+    }
+  } catch (e) {
+    console.warn('[Migration] abgebrochen:', e?.message);
+  }
+}
+
 async function loadFromCloud() {
   if (!currentUser) return null;
   if (_demoMode) return null;
@@ -11114,6 +11189,9 @@ async function loadFromCloud() {
         _updateDarkModeToggle(cloudDark);
       }
     }
+
+    // Altlasten (eingebettete Dateien) im Hintergrund umziehen
+    setTimeout(() => { try { _migrateEmbeddedFiles(); } catch(_) {} }, 2500);
 
     return cloudMeta;
 
