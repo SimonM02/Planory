@@ -4322,7 +4322,34 @@ const PAGE_HINTS = {
   settings:       'Projektdaten anpassen, Budget-Kategorien verwalten, Module ein-/ausblenden und zwischen mehreren Projekten wechseln – Klick auf das Logo oben links.'
 };
 
-let _seenHints = new Set(JSON.parse(localStorage.getItem('bauplan_seen_hints') || '[]'));
+// Englische Fassung der Seiten-Hinweise (Auswahl ueber _pageHint)
+const PAGE_HINTS_EN = {
+  dashboard:      'Your project at a glance – budget, progress, open tasks. The AI construction advisor analyses everything at the touch of a button.',
+  kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
+  budget:         'Split your budget across trades and see at a glance where you are over or under.',
+  meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
+  aufgaben:       'Your site to-do list – tasks with priority, due date and status.',
+  tagebuch:       'Daily reports with crew and hours. The current weather is loaded automatically when you add an entry (address required in settings).',
+  dokumente:      'Notes for quick reminders, plus document storage for plans, permits and contracts (max. 5 MB per file).',
+  kontakte:       'All tradespeople and contacts – with trade, phone, email and status.',
+  angebote:       'Compare quotes from tradespeople and turn the best one into an invoice with a single click.',
+  zahlungsplan:   'Plan instalments with due dates. When you tick off a payment, the matching invoice is automatically set to "Paid".',
+  maengel:        'Document defects with photos, responsible person and fix date – important for warranty claims.',
+  fotos:          'Photo documentation by date and trade – ideal as evidence at handover or in disputes.',
+  rechnungen:     'Here you will find all invoices scanned by the AI in one overview.',
+  kostenchart:    'Graphical analysis of expenses by month and category.',
+  kostenaufteilung: 'Shows how the budget is split across the individual cost centres.',
+  gantt:          'Timeline of all trades and milestones as a Gantt chart. Bars can be moved by drag & drop.',
+  dokumentation:  'Technical documentation for installations, materials and systems – useful for later maintenance.',
+  wartung:        'Maintenance calendar for regular checks (heating, lift, etc.) with intervals and reminders.',
+  settings:       'Adjust project details, manage budget categories, show/hide modules and switch between projects – click the logo at the top left.'
+};
+function _pageHint(pageId) {
+  if (typeof _lang !== 'undefined' && _lang === 'en' && PAGE_HINTS_EN[pageId]) return PAGE_HINTS_EN[pageId];
+  return PAGE_HINTS[pageId];
+}
+
+let _seenHints =  new Set(JSON.parse(localStorage.getItem('bauplan_seen_hints') || '[]'));
 
 function dismissHint(pageId) {
   _seenHints.add(pageId);
@@ -4339,7 +4366,7 @@ function showPageHint(pageId) {
   const bar = document.createElement('div');
   bar.id = 'page-hint-' + pageId;
   bar.style.cssText = 'display:flex;align-items:flex-start;gap:10px;background:var(--accent-light);border:1.5px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:20px;font-size:0.82rem;color:var(--text2);line-height:1.5;transition:opacity 0.2s,transform 0.2s;opacity:0;transform:translateY(-8px)';
-  bar.innerHTML = `<span style="font-size:1rem;flex-shrink:0;margin-top:1px">💡</span><span style="flex:1">${PAGE_HINTS[pageId]}</span><button onclick="dismissHint('${pageId}')" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text3);padding:0;line-height:1;flex-shrink:0" title="Schließen">×</button>`;
+  bar.innerHTML = `<span style="font-size:1rem;flex-shrink:0;margin-top:1px">💡</span><span style="flex:1">${_pageHint(pageId)}</span><button onclick="dismissHint('${pageId}')" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text3);padding:0;line-height:1;flex-shrink:0" title="Schließen">×</button>`;
   const header = page.querySelector('.page-header');
   if (header) header.insertAdjacentElement('afterend', bar);
   else page.insertAdjacentElement('afterbegin', bar);
