@@ -1483,13 +1483,26 @@
      Der volle iPad-Feinschliff (dauerhafte Seitenleiste im Querformat)
      kommt im naechsten Build nach Test im iPad-Simulator. */
   @media (min-width: 601px) and (max-width: 1024px) {
-    /* Karten drei- statt zweispaltig -> nutzt die iPad-Breite */
-    .cards-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 14px !important; }
+    /* Karten wachsen automatisch mit der verfuegbaren Breite:
+       Querformat -> 3 Spalten, Hochformat -> 2 Spalten. So wird nie
+       etwas gequetscht oder abgeschnitten. */
+    .cards-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important; gap: 14px !important; }
     .two-col { grid-template-columns: 1fr 1fr !important; }
     /* Etwas mehr Rand, damit Inhalte nicht am Bildschirmrand kleben */
     .main { padding-left: 22px !important; padding-right: 22px !important; }
     /* Groessere Tabellen-Mindestbreite als am Handy, aber ohne Karten-Umbau */
     table { min-width: 640px; }
+  }
+
+  /* ── iPad HOCHFORMAT: schmaler Inhalt neben der festen Seitenleiste ──
+     Nur ~470px Platz -> Formulare/breite Raster einspaltig, damit nichts
+     verschoben oder abgeschnitten wird. Querformat bleibt unveraendert. */
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+    .two-col { grid-template-columns: 1fr !important; }
+    table { min-width: 480px; }
+    /* Seiten-Kopf darf umbrechen statt seitlich ueberzulaufen */
+    .page-header { flex-wrap: wrap; gap: 12px; }
+    .page-header > div { flex-wrap: wrap; max-width: 100%; }
   }
 
   /* ── iPad: dauerhafte Seitenleiste statt Hamburger (Hoch- + Querformat) ──
