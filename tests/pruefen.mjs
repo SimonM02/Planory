@@ -184,6 +184,41 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 }
 
 // ───────────────────────────────────────────────────────────────────
+// 4b. SICHERHEITSNETZ SYNC (nach dem Vorfall vom 29.07.)
+// ───────────────────────────────────────────────────────────────────
+for (const [label, src] of [['Web', web], ['App', app]]) {
+  check(`${label}: Upload ist gesperrt, bis die Cloud geladen wurde`, () => {
+    const f = extractFn(src, 'syncToCloud');
+    if (!f) return 'syncToCloud nicht gefunden';
+    if (!f.includes('_cloudLoadedOk')) return 'Sicherheitsnetz fehlt in syncToCloud!';
+    const idxGate = f.indexOf('_cloudLoadedOk');
+    const idxWork = f.indexOf('projektdaten');
+    if (idxWork > -1 && idxGate > idxWork) return 'Sperre kommt zu spät (nach dem Schreiben)';
+  });
+  check(`${label}: Cloud-Laden setzt die Freigabe erst nach BEIDEN Abfragen`, () => {
+    const f = extractFn(src, 'loadFromCloud');
+    if (!f) return 'loadFromCloud nicht gefunden';
+    if (!f.includes('itemsResult.error')) return 'itemsResult.error wird nicht geprüft';
+    const ok = f.indexOf('_cloudLoadedOk = true');
+    if (ok < 0) return 'Freigabe wird nie gesetzt';
+    if (ok < f.indexOf('itemsResult.error')) return 'Freigabe kommt vor der Fehlerprüfung';
+  });
+  check(`${label}: gefährliche Sync-Knöpfe sind entfernt`, () => {
+    for (const fn of ['forceCloudOverwrite', 'forceSyncFromCloud', 'forceSyncToCloud']) {
+      if (src.includes(fn)) return `${fn} existiert noch`;
+    }
+    if (src.includes('sync-info-output')) return 'Diagnose-Feld existiert noch';
+  });
+  check(`${label}: Dokument-Anzeige unterstützt alte UND neue Ablage`, () => {
+    const f = extractFn(src, '_getDokumentUrl');
+    if (!f) return '_getDokumentUrl nicht gefunden';
+    if (!f.includes('d.storage')) return 'alter Storage-Pfad wird nicht mehr unterstützt';
+    if (!f.includes('d.url')) return 'neue Storage-URL wird nicht unterstützt';
+    if (!f.includes('d.data')) return 'alte Base64-Einträge werden nicht mehr unterstützt';
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────
 // 5. KLEINKRAM, der schon mal Ärger gemacht hat
 // ───────────────────────────────────────────────────────────────────
 for (const [label, src] of [['Web', web], ['App', app]]) {

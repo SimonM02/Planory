@@ -2814,12 +2814,6 @@
               Daten werden automatisch zwischen allen Geräten synchronisiert.<br>
               <span style="color:var(--text3);font-size:0.75rem">Wichtig: Die App muss auf allen Geräten mit <strong>demselben Konto</strong> eingeloggt sein.</span>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button onclick="forceSyncFromCloud()" class="btn btn-ghost" style="font-size:0.8rem">☁️ Von Cloud laden</button>
-              <button onclick="forceSyncToCloud()" class="btn btn-ghost" style="font-size:0.8rem">⬆️ Zur Cloud speichern</button>
-              <button onclick="forceCloudOverwrite()" class="btn btn-ghost" style="font-size:0.8rem;color:var(--danger)">🔄 Cloud überschreibt alles</button>
-            </div>
-            <div id="sync-info-output" style="display:none;font-size:0.73rem;font-family:monospace;background:var(--surface2);border-radius:8px;padding:8px 12px;line-height:1.7;white-space:pre-wrap;color:var(--text2)"></div>
           </div>
         </div>
 
@@ -6478,70 +6472,6 @@ async function loadNotificationStatus() {
 
 // Hard reset: throw away ALL local data and replace with whatever is in the cloud.
 // Use this to fix duplicate/desync issues on a specific device.
-async function forceCloudOverwrite() {
-  if (!(await showConfirm('⚠️ Alle lokalen Daten auf diesem Gerät werden durch die Cloud-Version ersetzt. Fortfahren?'))) return;
-  const out = document.getElementById('sync-info-output');
-  if (out) { out.style.display = 'block'; out.textContent = '⏳ Lade Cloud-Daten…'; }
-  try {
-    if (!currentUser) throw new Error('Nicht eingeloggt');
-    const svcKey = null; // use user session
-    const res = await supa.from('projektdaten').select('daten').eq('user_id', currentUser.id).single();
-    if (res.error || !res.data?.daten) throw new Error('Keine Cloud-Daten gefunden');
-    const cloudData = res.data.daten;
-    // Overwrite local — no merge
-    projects = cloudData.projects || [];
-    currentProjectId = cloudData.currentProjectId || (projects[0]?.id ?? null);
-    if (currentProjectId) state = projects.find(p => String(p.id) === String(currentProjectId)) || EMPTY_PROJECT();
-    localStorage.setItem('bauplan_projects', JSON.stringify(projects));
-    localStorage.setItem('bauplan_current_project', String(currentProjectId));
-    localStorage.setItem('bauplan_user_id', currentUser.id);
-    applyModuleVisibility();
-    renderDashboard();
-    if (out) out.textContent = `✅ Cloud-Daten übernommen!\nProjekte: ${projects.length}\nKonto: ${currentUser.email}`;
-    showToast('✅ Lokale Daten durch Cloud ersetzt', 'success');
-  } catch(e) {
-    if (out) out.textContent = '❌ Fehler: ' + e.message;
-    showToast('❌ ' + e.message, 'error');
-  }
-}
-
-async function forceSyncFromCloud() {
-  const out = document.getElementById('sync-info-output');
-  if (out) { out.style.display = 'block'; out.textContent = '⏳ Lade Daten von Cloud…'; }
-  try {
-    await loadFromCloud();
-    applyModuleVisibility();
-    const active = document.querySelector('.page.active');
-    if (active) {
-      const pid = active.id.replace('page-', '');
-      if (pid === 'aufgaben') renderTasks();
-      else if (pid === 'kosten') renderKosten();
-      else if (pid === 'dashboard') renderDashboard();
-    }
-    const ts = localStorage.getItem('bauplan_updated_at') || '–';
-    const count = projects.reduce((s,p)=>s+(p.aufgaben?.length||0),0);
-    if (out) out.textContent = `✅ Geladen!\nProjekte: ${projects.length}\nAufgaben gesamt: ${count}\nLetztes Update: ${ts ? new Date(ts).toLocaleString('de') : '–'}\nKonto: ${currentUser?.email||'–'}`;
-    showToast('✅ Cloud-Daten geladen', 'success');
-  } catch(e) {
-    if (out) out.textContent = '❌ Fehler: ' + e.message;
-    showToast('❌ ' + e.message, 'error');
-  }
-}
-
-async function forceSyncToCloud() {
-  const out = document.getElementById('sync-info-output');
-  if (out) { out.style.display = 'block'; out.textContent = '⏳ Speichere zur Cloud…'; }
-  try {
-    await syncToCloud();
-    const count = projects.reduce((s,p)=>s+(p.aufgaben?.length||0),0);
-    if (out) out.textContent = `✅ Gespeichert!\nProjekte: ${projects.length}\nAufgaben gesamt: ${count}\nKonto: ${currentUser?.email||'–'}`;
-    showToast('✅ Zur Cloud gespeichert', 'success');
-  } catch(e) {
-    if (out) out.textContent = '❌ Fehler: ' + e.message;
-    showToast('❌ ' + e.message, 'error');
-  }
-}
-
 function toggleSidebar() {
   const collapsed = document.body.classList.toggle('sidebar-collapsed');
   localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
@@ -7944,7 +7874,7 @@ async function _getDokumentUrl(d) {
     const { data } = await supa.storage.from('dokumente').createSignedUrl(d.storage, 3600);
     return data?.signedUrl || null;
   }
-  return d.data || null; // legacy base64
+  return d.url || d.data || null; // neu: Storage-URL, alt: Base64
 }
 
 async function downloadDokument(id) {
@@ -10810,9 +10740,28 @@ function exitDemo() {
   showAuthOverlay();
 }
 
+// Wurde die Cloud in dieser Sitzung erfolgreich geladen? Solange nicht,
+// ist jeder Upload gesperrt (Schutz vor Ueberschreiben mit altem Stand).
+let _cloudLoadedOk = false;
+let _syncBlockWarnedAt = 0;
+
 async function syncToCloud() {
   if (!currentUser) return;
   if (_demoMode) return; // demo: no cloud sync
+  // ── SICHERHEITSNETZ ────────────────────────────────────────────────
+  // Ein Geraet, das die Cloud-Daten in dieser Sitzung noch nicht
+  // erfolgreich geladen hat, darf NICHTS hochladen. Sonst wuerde ein
+  // alter lokaler Stand die aktuellen Daten der anderen ueberschreiben
+  // (genau das ist am 29.07. mit den Budget-Kategorien passiert).
+  if (!_cloudLoadedOk) {
+    console.warn('[SYNC] blockiert: Cloud-Daten wurden auf diesem Geraet noch nicht geladen');
+    if (Date.now() - _syncBlockWarnedAt > 60000) {
+      _syncBlockWarnedAt = Date.now();
+      showToast('⚠️ Änderung nicht synchronisiert – bitte Verbindung prüfen und neu laden', 'warning', 6000);
+    }
+    setSyncStatus('err');
+    return;
+  }
   // Block realtime from triggering a reload while we're syncing our own changes
   _realtimeLoading = true;
   _holdRealtime(500); // immediate guard while we work
@@ -11043,6 +10992,10 @@ async function loadFromCloud() {
     ]);
 
     if (metaResult.error) { _loadFromLocalStorage(); return null; }
+    if (itemsResult.error) { _loadFromLocalStorage(); return null; }
+    // Beide Cloud-Abfragen erfolgreich -> dieses Geraet arbeitet ab jetzt
+    // mit dem echten Cloud-Stand und darf wieder synchronisieren.
+    _cloudLoadedOk = true;
 
     const cloudMeta    = metaResult.data?.daten;
     const itemRows     = itemsResult.data || [];
