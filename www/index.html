@@ -5364,6 +5364,13 @@ async function loadUserPlan() {
     if (!loadingEl || !freeEl || !proEl) return;
 
     loadingEl.style.display = 'none';
+
+    // Plan wegen Netzwerk-/DB-Fehler NICHT pruefbar? Dann NICHT sperren – sonst
+    // landen zahlende Nutzer bei einer kurzen Stoerung ploetzlich im Nur-Lese-
+    // Modus. Die Sperre ist eine sanfte Bezahlschranke, keine Sicherheitsgrenze:
+    // im Zweifel Zugriff lassen (bereits ermittelten 'pro'-Status nie abwerten).
+    if (error) { if (!_subActive()) window._userPlan = 'trial'; return; }
+
     const isPro = data && data.plan === 'pro' && ['active','trialing'].includes(data.status);
 
     if (isPro) {

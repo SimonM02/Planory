@@ -85,6 +85,18 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 // 2. WEB und APP im Gleichstand – der häufigste Flüchtigkeitsfehler
 //    (Änderung nur in einer der beiden Dateien gemacht)
 // ───────────────────────────────────────────────────────────────────
+// Staerkste Pruefung zuerst: die App-Datei ist eine exakte Kopie der Web-Datei.
+// Jede Abweichung heisst: eine Aenderung wurde nur in einer Datei gemacht.
+check('Gleichstand: Web- und App-Datei sind Byte für Byte identisch', () => {
+  if (web !== app) {
+    const wl = web.split('\n'), al = app.split('\n');
+    for (let i = 0; i < Math.max(wl.length, al.length); i++) {
+      if (wl[i] !== al[i]) return `erste Abweichung in Zeile ${i + 1}`;
+    }
+    return 'Dateien unterschiedlich lang';
+  }
+});
+
 const KRITISCH = ['syncToCloud', 'loadFromCloud', '_mergeArr', '_mergeProjects',
                   'saveAll', '_trackDeletion', 'requireSub', '_subActive'];
 for (const fn of KRITISCH) {
@@ -159,6 +171,62 @@ if (typeof mergeArr === 'function') {
     const cloud = [{ id: 1, name: 'aktuell' }];
     const r = mergeArr(uralt, cloud, {});
     if (r.length > 1) return `${r.length} statt 1 Einträge – deshalb darf beim Sync-Umbau nicht blind gemergt werden (Merkzettel, kein Fehler)`;
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────
+// 3b. FRISTEN & TERMINE – Zeitzonen-Fehler kosteten schon mal Skonto
+// ───────────────────────────────────────────────────────────────────
+{
+  const dctx = {};
+  vm.createContext(dctx);
+  vm.runInContext(extractFn(web, '_daysUntilDateStr') || ';', dctx);
+  vm.runInContext(extractFn(web, 'getNextDate') || ';', dctx);
+
+  const lokalDatum = (verschiebungTage) => {
+    const d = new Date(); d.setHours(12, 0, 0, 0); // Mittag: DST-sicher
+    d.setDate(d.getDate() + verschiebungTage);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  check('Fristen: heute fällig = 0 Tage (kein Zeitzonen-Verschieber)', () => {
+    if (typeof dctx._daysUntilDateStr !== 'function') return '_daysUntilDateStr fehlt';
+    const r = dctx._daysUntilDateStr(lokalDatum(0));
+    if (r !== 0) return `heute ergibt ${r} statt 0 – Fristen wären falsch!`;
+  });
+  check('Fristen: morgen = 1, gestern = -1', () => {
+    const m = dctx._daysUntilDateStr(lokalDatum(1));
+    const g = dctx._daysUntilDateStr(lokalDatum(-1));
+    if (m !== 1) return `morgen ergibt ${m} statt 1`;
+    if (g !== -1) return `gestern ergibt ${g} statt -1 (überfällig würde verschluckt)`;
+  });
+  check('Wartung: Intervalle Wochen/Monate/Jahre rechnen korrekt', () => {
+    if (typeof dctx.getNextDate !== 'function') return 'getNextDate fehlt';
+    const w = dctx.getNextDate('2026-01-01', 2, 'Wochen');
+    const m = dctx.getNextDate('2026-01-31', 1, 'Monate');
+    const j = dctx.getNextDate('2026-01-01', 1, 'Jahre');
+    if (w.getDate() !== 15) return `2 Wochen ab 1.1. ergibt Tag ${w.getDate()} statt 15`;
+    if (j.getFullYear() !== 2027) return `1 Jahr ab 2026 ergibt ${j.getFullYear()}`;
+    if (isNaN(m.getTime())) return '1 Monat ab 31.1. ergibt ungültiges Datum';
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────
+// 3c. GRABSTEIN-VEREINIGUNG – gelöschte Kategorien dürfen nie zurück
+// ───────────────────────────────────────────────────────────────────
+{
+  const mctx = {};
+  vm.createContext(mctx);
+  vm.runInContext((extractFn(web, '_mergeArr') || ';') + '\n' + (extractFn(web, '_mergeProjects') || ';'), mctx);
+  check('Merge: Grabsteine beider Seiten werden vereinigt', () => {
+    if (typeof mctx._mergeProjects !== 'function') return '_mergeProjects fehlt';
+    const lokal = [{ id: 1, _deletedIds: { 'a': { ts: 100 } }, kosten: [] }];
+    const cloud = [{ id: 1, _deletedIds: { 'b': { ts: 200 } }, kosten: [{ id: 'a', name: 'Geist' }, { id: 'c', name: 'Echt' }] }];
+    const r = mctx._mergeProjects(lokal, cloud);
+    const del = r[0]._deletedIds || {};
+    if (!del['a'] || !del['b']) return 'Vereinigung unvollständig – Gelöschtes käme zurück';
+    if (r[0].kosten.some(k => String(k.id) === 'a')) return 'Grabstein-Eintrag überlebte den Merge';
+    if (!r[0].kosten.some(k => String(k.id) === 'c')) return 'echter Eintrag ging verloren';
   });
 }
 

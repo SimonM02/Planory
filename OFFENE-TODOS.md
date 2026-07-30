@@ -1,51 +1,63 @@
 # Offene To-dos für Simon
 
-Kurze, feste Merkliste dessen, was noch von dir zu erledigen ist (Code ist jeweils fertig).
+Stand: 30.07.2026 (nach dem Sync-Vorfall und dessen Aufarbeitung)
 
-## 🖥️ Am Laptop (jederzeit, ohne Mac)
+## ✅ Diese Woche erledigt (zur Übersicht)
 
-- [ ] **Native Push aktivieren – Teil 1–3** (Anleitung: `NATIVE-PUSH-SETUP.md`)
-  - [ ] Supabase: Tabelle `native_push_tokens` anlegen (SQL im Doc)
-  - [ ] Apple Developer: APNs-Schlüssel **.p8** erstellen + Key-ID & Team-ID notieren (.p8 nur EINMAL ladbar!)
-  - [ ] Vercel: `APNS_KEY`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID` eintragen → Redeploy
-- [ ] *Optional:* App-Store-Text einpflegen (aus `APPSTORE-TEXT.md`, ohne neue Prüfung)
-- [ ] *Optional:* Stripe-Kundenportal-Name auf „Planory" (Einstellungen → Geschäftsdaten)
-- [ ] *Optional:* sauberes `CRON_SECRET` in Vercel **und** GitHub setzen (aktuell offen, harmlos)
+- Sync-Vorfall aufgeklärt: Ursache war Speicher-Überlauf durch eingebettete
+  Dateien (4,3-MB-PDF im Datensatz) + fehlende Dateiablage (Buckets existierten nie)
+- Kundendaten waren nie verloren (119 Einträge durchgehend in der Cloud)
+- Storage-Buckets `uploads` + `dokumente` angelegt, Upload getestet ✅
+- Automatische Datei-Umräumung eingebaut (läuft im Hintergrund beim Laden)
+- **Sync-Sicherheitsnetz:** Gerät ohne frisch geladene Cloud-Daten kann nichts
+  mehr hochladen → Überschreiben durch alte Stände technisch unmöglich
+- Die 3 gefährlichen Cloud-Knöpfe entfernt (Web; App mit Build 7)
+- Offline-Meldung + Auto-Neuladen bei Verbindungs-Rückkehr
+- Abmelde-Schutz (löscht nichts mehr ungesichert)
+- Prüfprogramm `tests/pruefen.mjs`: **47 automatische Checks** vor jedem Upload
+- Web/App-Datei Byte für Byte identisch (wird jetzt dauerhaft geprüft)
 
-## 🍎 Am Mac (nächster Build 7 / Version 1.3)
+## 🍎 WICHTIGSTER OFFENER PUNKT: Build 7 (Version 1.3) am Mac
+
+Die App läuft noch auf Build 6 – **ohne** Sicherheitsnetz, **mit** den
+gefährlichen Knöpfen, **mit** dem Speicher-Fehler. Bis Build 7 draußen ist:
+Kunden sollen in der App die Cloud-Knöpfe nicht anfassen.
 
 - [ ] `cd planory && git pull && npm install && npx cap sync ios && npx cap open ios`
-- [ ] Xcode: Capability **„Push Notifications"** hinzufügen (für Native Push)
-- [ ] Xcode: **iPad** als Zielgerät aktivieren („Supported Destinations")
-- [ ] iPad-Layout im Simulator durchklicken (Hoch- + Querformat)
-- [ ] Version **1.3**, Build **7** → Archive → hochladen → einreichen
-- [ ] **Screenshots** neu: iPhone + **iPad** (für App Store Connect Pflicht)
+- [ ] Xcode: Capability **„Push Notifications"** hinzufügen
+- [ ] Xcode: **iPad** als Zielgerät aktivieren (Supported Destinations)
+- [ ] iPad-Simulator: Hoch- + Querformat kurz durchklicken
+- [ ] Version **1.3**, Build **7** → Archive → Upload
+- [ ] **Empfehlung:** erst TestFlight (interne Tester = sofort, ohne Review) selbst testen
+- [ ] App Store Connect: Version 1.3 anlegen, Release-Notes (siehe APPSTORE-TEXT.md),
+      **Screenshots iPhone + iPad** (iPad ist Pflicht!), einreichen
+
+## 🔴 Vor dem öffentlichen Start: Sync-Umbau Phase 2+4
+
+- [ ] **Testumgebung** anlegen (~15 Min): zweites, kostenloses Supabase-Projekt
+      als Spielwiese – Voraussetzung für alles Weitere
+- [ ] Phase 2: Budget-Kategorien + Projekteinstellungen **zeilenweise** speichern
+      (wie Rechnungen) → „letzter gewinnt" strukturell beseitigt
+- [ ] Phase 4: Versionsprüfung beim Schreiben (Server weist veraltete Stände ab)
+- [ ] Danach Zwei-Fenster-Test gemeinsam (Checkliste in SYNC-FINDINGS.md)
+
+## 🖥️ Am Laptop (jederzeit)
+
+- [ ] **Native Push (APNs)** aktivieren – Anleitung `NATIVE-PUSH-SETUP.md`:
+  - [ ] Supabase-Tabelle `native_push_tokens` (SQL im Doc)
+  - [ ] Apple .p8-Schlüssel + Key-ID + Team-ID (.p8 nur EINMAL ladbar!)
+  - [ ] Vercel: APNS_KEY / APNS_KEY_ID / APNS_TEAM_ID / APNS_BUNDLE_ID → Redeploy
+- [ ] *Optional:* App-Store-Texte einpflegen (`APPSTORE-TEXT.md`)
+- [ ] *Optional:* Stripe-Portal-Name auf „Planory"
+- [ ] *Optional:* CRON_SECRET sauber in Vercel + GitHub setzen
 
 ## 📱 Vom Handy
 
-- [ ] Formatierungs-Fehler als Screenshots sammeln → an Claude (kommen in Build 7 mit)
+- [ ] Formatierungs-Fehler als Screenshots sammeln → an Claude
 
-## 🔴 Wichtig: Cloud-Sync absichern (mit Test!)
+## 💬 Offene Entscheidungen an Claude
 
-- [ ] Datenintegritäts-Fixes im Sync umsetzen (Details: `SYNC-FINDINGS.md`)
-      → nur MIT anschließendem Zwei-Fenster-Test (gleicher Account), weil ein
-      falscher Sync-Fix selbst Daten kosten kann. Wichtig, bevor viele Leute
-      gleichzeitig am selben Konto arbeiten.
-
-## 🟠 Echte Datei-Ablage (Supabase Storage) – Bucket anlegen!
-
-- [ ] **Supabase-Bucket `uploads` (public) anlegen + Policies** → Anleitung:
-      `STORAGE-SETUP.md`. Der Code lädt Fotos jetzt dorthin hoch (mit
-      Base64-Fallback, solange der Bucket fehlt). ERST mit Bucket wandern
-      Uploads wirklich in die Cloud und der lokale Speicher läuft nicht voll.
-- [ ] Danach testen: Foto/Angebot-PDF/Grundriss hochladen → erscheint in
-      Supabase Storage `uploads` (unter `<user-id>/…`).
-- ✅ Erledigt (Code): ALLE Upload-Stellen laufen über Storage – Galerie, Alben,
-      Dokumentation, Mängel, Grundriss-Pläne + Pins, Angebot-Anhänge,
-      Rechnungs-Scan, Dokumente. Es fehlt nur noch der Bucket oben.
-
-## ✅ Nach Build 7 testen
-
-- [ ] App: Mitteilungen erlauben → „Server-Push testen" → echte Push kommt an?
-- [ ] Erinnerung auf einem Gerät anlegen → kommt sie auf allen Geräten an?
-- [ ] Diagnose-Infos vom Test-Knopf an Claude, falls etwas hakt (Sandbox vs. Produktion!)
+- [ ] Menü-Umbau: Rückmeldung zur Vorschau geben (Gruppen ok? nur eine offen?
+      auch am Computer eingeklappt?) → dann baue ich es
+- [ ] Geld-Dokumente (Angebots-PDFs, Rechnungs-Scans) in den privaten Bucket
+      verschieben (statt public) – kleiner Folge-Schritt, braucht signierte Links

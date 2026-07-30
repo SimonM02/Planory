@@ -130,3 +130,40 @@ Try Planory free – all features free for one month. After that you can always 
 - **Beschreibung/Keywords/Werbetext** pro Sprach-Lokalisierung eintragen. Für Englisch ggf. zuerst die Lokalisierung „English" hinzufügen.
 - **Werbetext** und **Keywords** kannst du jederzeit ohne neuen Build/keine neue Prüfung ändern – gut zum Optimieren.
 - Screenshots bleiben Pflicht pro Gerätegröße (iPhone; iPad kommt mit dem iPad-Build).
+
+
+---
+
+## 📦 Release-Notes Version 1.3 (Build 7)
+
+**Deutsch – „Neues in dieser Version":**
+```
+In diesem Update:
+• Zuverlässigere Synchronisation: Geräte können sich nicht mehr gegenseitig
+  ältere Stände überschreiben
+• Fotos und Anhänge werden jetzt in der Cloud-Ablage gespeichert – kein
+  „Speicher voll" mehr, auch bei großen PDF-Angeboten
+• Klare Meldung, wenn keine Internetverbindung besteht; bei Rückkehr der
+  Verbindung werden die Daten automatisch aktualisiert
+• KI liest jetzt auch PDF-Angebote direkt ein
+• iPad-Unterstützung mit fester Seitenleiste
+• Erinnerungen erscheinen zuverlässig auf dem Sperrbildschirm
+• Neue englische Sprachversion (umschaltbar in den Einstellungen)
+• Viele weitere Verbesserungen und Fehlerbehebungen
+```
+
+**English:**
+```
+In this update:
+• More reliable sync: devices can no longer overwrite each other with
+  older data
+• Photos and attachments are now stored in the cloud – no more
+  "storage full" messages, even with large PDF quotes
+• Clear message when there is no internet connection; data refreshes
+  automatically when the connection returns
+• The AI can now read PDF quotes directly
+• iPad support with a fixed sidebar
+• Reminders reliably appear on the lock screen
+• New English language version (switchable in settings)
+• Many more improvements and bug fixes
+```
