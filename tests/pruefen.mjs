@@ -209,6 +209,28 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     }
     if (src.includes('sync-info-output')) return 'Diagnose-Feld existiert noch';
   });
+  check(`${label}: Offline-Hinweis an allen drei Fehlstellen beim Laden`, () => {
+    const f = extractFn(src, 'loadFromCloud');
+    if (!f) return 'loadFromCloud nicht gefunden';
+    const n = (f.match(/_notifyOffline\(\)/g) || []).length;
+    if (n < 3) return `nur ${n} von 3 Fehlstellen melden Offline`;
+  });
+  check(`${label}: Abmelden gesperrt, wenn Änderungen nicht gesichert werden können`, () => {
+    const f = extractFn(src, 'doLogout');
+    if (!f) return 'doLogout nicht gefunden';
+    const guard = f.indexOf('_cloudLoadedOk');
+    const clear = f.indexOf('removeItem');
+    if (guard < 0) return 'Abmelde-Schutz fehlt – lokaler Speicher würde ungesichert geleert';
+    if (clear > -1 && guard > clear) return 'Schutz kommt erst NACH dem Leeren des Speichers';
+  });
+  check(`${label}: Bei Rückkehr der Verbindung wird automatisch neu geladen`, () => {
+    if (!src.includes("addEventListener('online'")) return 'online-Listener fehlt';
+  });
+  check(`${label}: Wiederherstellen-Banner meldet keinen falschen Erfolg`, () => {
+    const f = extractFn(src, '_confirmRestoreToCloud');
+    if (!f) return '_confirmRestoreToCloud nicht gefunden';
+    if (!f.includes('_cloudLoadedOk')) return 'zeigt Erfolg auch bei gesperrtem Sync';
+  });
   check(`${label}: Dokument-Anzeige unterstützt alte UND neue Ablage`, () => {
     const f = extractFn(src, '_getDokumentUrl');
     if (!f) return '_getDokumentUrl nicht gefunden';

@@ -4916,6 +4916,12 @@ const PHRASES = {
   'Ohne Abo bleibt Ansehen & Aufgaben abhaken immer gratis.':'Without a subscription, viewing & ticking off tasks stays free.',
   'Du kannst auch erst den Gratismonat testen und später upgraden – dann unten auf „Loslegen".':'You can also try the free month first and upgrade later – then tap "Get started" below.',
   '🚀 Loslegen':'🚀 Get started',
+  '📡 Keine Internetverbindung – deine Daten werden angezeigt, aber Änderungen nicht gespeichert':'📡 No internet connection – your data is shown, but changes are not saved',
+  '⚠️ Verbindung zum Server fehlgeschlagen – Änderungen werden vorerst nicht gespeichert':'⚠️ Could not reach the server – changes are not saved for now',
+  '✅ Verbindung wieder da – aktuelle Daten werden geladen…':'✅ Back online – loading the latest data…',
+  '⚠️ Änderung nicht synchronisiert – bitte Verbindung prüfen und neu laden':'⚠️ Change not synced – please check your connection and reload',
+  '⚠️ Abmelden gerade nicht möglich – deine Änderungen konnten noch nicht gesichert werden. Bitte Verbindung prüfen und neu laden.':'⚠️ Logout not possible right now – your changes could not be saved yet. Please check your connection and reload.',
+  '⚠️ Keine Verbindung zur Cloud – bitte zuerst neu laden':'⚠️ No connection to the cloud – please reload first',
   '⚠️ Gerätespeicher voll – deine Daten sind sicher in der Cloud':'⚠️ Device storage full – your data is safe in the cloud',
   // Angebot-Anhang / KI-Hinweise
   '⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert':'⚠️ File too large for attachment (max ~1 MB) – quote saved without attachment',
@@ -5450,6 +5456,12 @@ async function openStripePortal() {
 
 async function doLogout() {
   if (!(await showConfirm('Wirklich abmelden? Deine Daten werden vorher gespeichert.'))) return;
+  // Beim Abmelden wird der lokale Speicher geleert. Ohne erfolgreiche
+  // Cloud-Verbindung wuerden ungesicherte Aenderungen verloren gehen -> stoppen.
+  if (!_cloudLoadedOk) {
+    showToast('⚠️ Abmelden gerade nicht möglich – deine Änderungen konnten noch nicht gesichert werden. Bitte Verbindung prüfen und neu laden.', 'error', 7000);
+    return;
+  }
   await syncToCloud();
   await supa.auth.signOut();
   currentUser = null;
@@ -10968,6 +10980,18 @@ async function _migrateEmbeddedFiles() {
   }
 }
 
+// Hinweis bei fehlender Verbindung (max. alle 30 s, ehrliche Unterscheidung)
+let _offlineWarnedAt = 0;
+function _notifyOffline() {
+  if (Date.now() - _offlineWarnedAt < 30000) return;
+  _offlineWarnedAt = Date.now();
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    showToast('📡 Keine Internetverbindung – deine Daten werden angezeigt, aber Änderungen nicht gespeichert', 'warning', 7000);
+  } else {
+    showToast('⚠️ Verbindung zum Server fehlgeschlagen – Änderungen werden vorerst nicht gespeichert', 'warning', 7000);
+  }
+}
+
 async function loadFromCloud() {
   if (!currentUser) return null;
   if (_demoMode) return null;
@@ -10984,8 +11008,8 @@ async function loadFromCloud() {
            .order('updated_at', { ascending: true })  // stable insertion order
     ]);
 
-    if (metaResult.error) { _loadFromLocalStorage(); return null; }
-    if (itemsResult.error) { _loadFromLocalStorage(); return null; }
+    if (metaResult.error) { _notifyOffline(); _loadFromLocalStorage(); return null; }
+    if (itemsResult.error) { _notifyOffline(); _loadFromLocalStorage(); return null; }
     // Beide Cloud-Abfragen erfolgreich -> dieses Geraet arbeitet ab jetzt
     // mit dem echten Cloud-Stand und darf wieder synchronisieren.
     _cloudLoadedOk = true;
@@ -11153,7 +11177,7 @@ async function loadFromCloud() {
     // Nur zurueckfallen, wenn die Cloud-Daten noch NICHT angewendet wurden.
     // Sonst wuerde ein Fehler nach dem Laden (z.B. voller Speicher) die
     // korrekten Cloud-Daten durch einen alten lokalen Stand ersetzen.
-    if (!cloudApplied) _loadFromLocalStorage();
+    if (!cloudApplied) { _notifyOffline(); _loadFromLocalStorage(); }
     return null;
   }
 }
@@ -12813,6 +12837,7 @@ function _showRestorePrompt() {
 }
 
 async function _confirmRestoreToCloud() {
+  if (!_cloudLoadedOk) { showToast('⚠️ Keine Verbindung zur Cloud – bitte zuerst neu laden', 'error'); return; }
   const btn = document.querySelector('#recovery-banner button');
   if (btn) { btn.textContent = '⏳ Speichern...'; btn.disabled = true; }
   await syncToCloud();
@@ -13477,6 +13502,14 @@ async function _syncAndRender() {
   else if (pageId === 'grundrisse') renderGrundrisse();
   else if (pageId === 'zeitplan') renderZeitplan?.();
 }
+
+// Verbindung kommt zurueck: frische Cloud-Daten holen (hebt die Sync-Sperre auf)
+window.addEventListener('online', () => {
+  if (currentUser && !_demoMode && !_cloudLoadedOk) {
+    showToast('✅ Verbindung wieder da – aktuelle Daten werden geladen…', 'success');
+    _syncAndRender();
+  }
+});
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
