@@ -10944,7 +10944,13 @@ async function _migrateEmbeddedFiles() {
       }
     };
 
-    for (const proj of projects) {
+    // Fuer das offene Projekt ist `state` massgeblich: saveAll kopiert bei
+    // jedem Speichern state ueber projects. Wuerden wir hier projects
+    // bearbeiten, machte ein Speichern des Nutzers waehrend der Umraeumung
+    // alles rueckgaengig (und hinterliesse Datei-Waisen im Storage).
+    const ziele = projects.map(p =>
+      state && String(p.id) === String(currentProjectId) && String(state.id) === String(p.id) ? state : p);
+    for (const proj of ziele) {
       // 1) Angebots-Anhaenge (haeufig grosse PDFs)
       for (const a of (proj.angebote || [])) {
         const d = a.datei;
@@ -10977,8 +10983,6 @@ async function _migrateEmbeddedFiles() {
     }
 
     if (moved > 0) {
-      const cur = projects.find(p => String(p.id) === String(currentProjectId));
-      if (cur) state = cur;
       save();                       // schreibt lokal + stoesst Cloud-Sync an
       console.log('[Migration] ' + moved + ' Datei(en) in die Ablage verschoben');
     }
@@ -11608,7 +11612,10 @@ async function finishOnboarding() {
 
   document.getElementById('onboarding-overlay').style.display = 'none';
 
-  // syncToCloud saves onboarded:true flag inside the data
+  // Erst LOKAL sichern (ueberlebt einen Reload auch ohne Verbindung),
+  // dann in die Cloud (speichert dort auch onboarded:true).
+  saveAll();
+  clearTimeout(syncTimeout);
   await syncToCloud();
   updateProjectHeader();
   applyModuleVisibility();

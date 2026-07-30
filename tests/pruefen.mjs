@@ -299,6 +299,19 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (!f) return '_confirmRestoreToCloud nicht gefunden';
     if (!f.includes('_cloudLoadedOk')) return 'zeigt Erfolg auch bei gesperrtem Sync';
   });
+  check(`${label}: Datei-Umräumung bearbeitet das maßgebliche state-Objekt`, () => {
+    const f = extractFn(src, '_migrateEmbeddedFiles');
+    if (!f) return '_migrateEmbeddedFiles nicht gefunden';
+    if (!f.includes('String(state.id) === String(p.id)')) return 'nutzt state nicht – Speichern während der Umräumung würde sie rückgängig machen';
+    if (f.includes('state = cur')) return 'alte state-Ersetzung noch vorhanden (Verlust-Risiko)';
+  });
+  check(`${label}: Ersteinrichtung wird zuerst lokal gesichert`, () => {
+    const f = extractFn(src, 'finishOnboarding');
+    if (!f) return 'finishOnboarding nicht gefunden';
+    const a = f.indexOf('saveAll()'), b = f.indexOf('syncToCloud()');
+    if (a < 0) return 'saveAll fehlt – Onboarding ginge bei Reload ohne Verbindung verloren';
+    if (b > -1 && a > b) return 'lokales Sichern kommt erst NACH dem Cloud-Versuch';
+  });
   check(`${label}: Dokument-Anzeige unterstützt alte UND neue Ablage`, () => {
     const f = extractFn(src, '_getDokumentUrl');
     if (!f) return '_getDokumentUrl nicht gefunden';
