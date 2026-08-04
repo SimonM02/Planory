@@ -35,17 +35,23 @@ freigegeben ist, laufen Kunden noch auf Build 6 (ohne Sicherheitsnetz).
 - [ ] **„Neues in dieser Version"** einfügen (Text in `APPSTORE-TEXT.md`)
 - [ ] Speichern → **Zur Prüfung einreichen**
 
-## 2️⃣ VOR dem öffentlichen Start: Sync-Umbau Phase 2+4
+## 2️⃣ ✅ ERLEDIGT & LIVE: Sync-Umbau Phase 2 (Budget-Kategorien)
 
-Das ist der wichtigste Punkt, damit ein Vorfall wie zuletzt technisch
-unmöglich wird, bevor echte Kunden alle Rechnungen etc. drin haben.
+Der wichtigste Punkt, damit der Budget-Vorfall technisch unmöglich wird.
 
-- [ ] **Testumgebung** anlegen (~15 Min): zweites, kostenloses Supabase-Projekt
-      als Spielwiese – Voraussetzung für alles Weitere (URL + anon-Key an Claude)
-- [ ] Phase 2: Budget-Kategorien + Projekteinstellungen **zeilenweise** speichern
-      (wie Rechnungen) → „letzter gewinnt" strukturell beseitigt
+- [x] **Testumgebung** angelegt (Supabase `planory-test`)
+- [x] Phase 2: Budget-Kategorien **zeilenweise** speichern (wie Rechnungen)
+      → „letzter gewinnt" bei den Kategorien strukturell beseitigt
+- [x] Löschen mit Grabstein (gelöschte Kategorie kommt nicht zurück)
+- [x] An der **echten App** gegen die Testumgebung bewiesen (Anlegen + Löschen),
+      dann live geschaltet (Web). Bearbeiten/Löschen-Knopf zuverlässig klickbar.
+
+Rest-Härtung (kann später, nicht dringend – Sicherheitsnetz greift schon):
 - [ ] Phase 4: Versionsprüfung beim Schreiben (Server weist veraltete Stände ab)
-- [ ] Danach Zwei-Fenster-Test gemeinsam (Checkliste in SYNC-FINDINGS.md)
+- [ ] Projekteinstellungen ebenfalls zeilenweise (aktuell noch im Block, aber
+      unkritisch – ändert sich selten)
+- [ ] Finding #2 aus SYNC-FINDINGS.md: ungesicherte lokale Änderung kann bei
+      Realtime-Neuladen im 500ms-Fenster verworfen werden (schmaler Fall)
 
 ## 3️⃣ Erinnerungen zuverlässig auf ALLEN Geräten: Server-Push (APNs)
 
