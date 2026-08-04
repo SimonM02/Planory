@@ -319,6 +319,32 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (!f.includes('d.url')) return 'neue Storage-URL wird nicht unterstützt';
     if (!f.includes('d.data')) return 'alte Base64-Einträge werden nicht mehr unterstützt';
   });
+  check(`${label}: Budget-Kategorien werden ZEILENWEISE gespeichert (Umbau)`, () => {
+    // Der eigentliche Fix gegen den Budget-Vorfall: jede Kategorie ist eine eigene
+    // Zeile in projekt_items (wie Rechnungen), kein "ganzer Block" mehr.
+    const sc = extractFn(src, 'syncToCloud');
+    if (!sc) return 'syncToCloud nicht gefunden';
+    if (/typ === 'budgetKat'\s*\)\s*continue/.test(sc))
+      return 'syncToCloud überspringt budgetKat noch – Kategorien landen nicht als Zeilen';
+    if (!sc.includes('_budgetKatV2'))
+      return 'Umbau-Merker _budgetKatV2 fehlt in syncToCloud';
+  });
+  check(`${label}: Budget-Kategorie löschen setzt einen Grabstein`, () => {
+    // Ohne Grabstein (_trackDeletion) konnte eine gelöschte Kategorie von einem
+    // anderen Gerät wieder hochgeladen werden.
+    const f = extractFn(src, 'deleteBudgetKat');
+    if (!f) return 'deleteBudgetKat nicht gefunden';
+    if (!f.includes('_trackDeletion'))
+      return 'deleteBudgetKat setzt keinen Grabstein – gelöschte Kategorie kann zurückkommen';
+  });
+  check(`${label}: Budget-Kategorien werden aus den Zeilen geladen`, () => {
+    const lf = extractFn(src, 'loadFromCloud');
+    if (!lf) return 'loadFromCloud nicht gefunden';
+    if (/hasBudgetKatInMeta/.test(lf))
+      return 'loadFromCloud bevorzugt noch den alten Block statt der Zeilen';
+    if (!lf.includes('_budgetKatV2'))
+      return 'loadFromCloud kennt den Umbau-Merker _budgetKatV2 nicht (Rückfall/Migration fehlt)';
+  });
 }
 
 // ───────────────────────────────────────────────────────────────────

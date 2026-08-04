@@ -4165,16 +4165,18 @@ function _trackDeletion(id, type = '') {
 }
 
 function saveAll() {
-  // Stamp _updatedAt on all items so the merge always knows which version is newer
+  // budgetKat wird jetzt ZEILENWEISE gespeichert (jede Kategorie eine eigene Zeile
+  // in projekt_items – wie Rechnungen/Aufgaben). Deshalb bekommt jede Kategorie
+  // einen _updatedAt-Stempel wie alle anderen Eintraege. Kein Block-Stempel
+  // (_budgetKatTs) mehr noetig – das war nur fuer die alte Snapshot-Speicherung.
   const STAMP_FIELDS = ['kosten','aufgaben','notizen','maengel','angebote','zahlungen',
-                        'kontakte','dokumentation','meilensteine','wartungen','tagebuch'];
+                        'kontakte','dokumentation','meilensteine','wartungen','tagebuch','budgetKat'];
   STAMP_FIELDS.forEach(f => { if (Array.isArray(state[f])) state[f] = _stampUpdatedAt(state[f]); });
 
-  // Stamp _order on budgetKat so position survives cloud sync & multi-device reload
-  // Also stamp _budgetKatTs so loadFromCloud() knows local state is authoritative
+  // _order auf budgetKat stempeln, damit die vom Nutzer gewaehlte Reihenfolge
+  // ueber den Cloud-Abgleich und ein Neuladen erhalten bleibt.
   if (Array.isArray(state.budgetKat)) {
     state.budgetKat.forEach((k, i) => { k._order = i; });
-    state._budgetKatTs = state._budgetKatTs || Date.now();
   }
 
   const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
@@ -6105,17 +6107,16 @@ async function deleteBudgetKat(id) {
   state.budgetKat = state.budgetKat.filter(k => String(k.id) !== String(id));
   // Re-stamp _order after deletion so positions stay clean
   state.budgetKat.forEach((k, i) => { k._order = i; });
-  // Timestamp so loadFromCloud() knows our local state is authoritative
-  state._budgetKatTs = Date.now();
+  // Grabstein setzen + die Zeile sofort aus der Cloud loeschen (wie bei jedem
+  // anderen Eintrag) – so kann die Kategorie auf keinem Geraet wieder auftauchen.
+  _trackDeletion(id, 'budgetKat');
   renderBudget();
   showToast('🗑 Kategorie gelöscht', 'success');
   // Update localStorage + projects array immediately
   const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
   localStorage.setItem('bauplan_projects', JSON.stringify(projects));
-  // Sync immediately — projektdaten is written FIRST in syncToCloud so by the
-  // time Realtime fires from projekt_items upserts, the cloud already has the
-  // correct (post-deletion) budgetKat
+  // Sync immediately — Tombstone + zeilenweiser Upsert schreiben den korrekten Stand
   clearTimeout(syncTimeout);
   await syncToCloud();
 }
@@ -10831,8 +10832,13 @@ async function syncToCloud() {
     const metaProjects = projects.map(p => ({
       id: p.id,
       settings: p.settings,
+      // budgetKat liegt jetzt ZEILENWEISE in projekt_items (Schritt 3). Wir
+      // schreiben den Block hier zusaetzlich als RUECKFALL mit, damit eine noch
+      // nicht aktualisierte App (die den Block liest) die Kategorien weiter sieht.
+      // Der Merker _budgetKatV2 sagt neuen Versionen: "lies die Zeilen, nicht den
+      // Block" – so kann Loeschen aller Kategorien nicht aus dem Block zurueckkommen.
       budgetKat: (p.budgetKat || []).map((k, i) => ({ ...k, _order: i })),
-      _budgetKatTs: p._budgetKatTs || 0,
+      _budgetKatV2: true,
       _deletedIds: p._deletedIds || {}
     }));
     const daten = {
@@ -10871,13 +10877,12 @@ async function syncToCloud() {
     }
 
     // ── 3. Upsert remaining items into projekt_items ────────────────
-    // Note: budgetKat is stored in projektdaten (step 1), not here
+    // budgetKat wird jetzt wie jeder andere Eintrag zeilenweise gespeichert.
     const rows = [];
     for (const proj of projects) {
       const pid = String(proj.id);
       const deleted = proj._deletedIds || {};
       for (const typ of ITEM_TYPES) {
-        if (typ === 'budgetKat') continue; // stored in projektdaten, not projekt_items
         for (const item of (proj[typ] || [])) {
           if (item?.id == null) continue;
           if (deleted[String(item.id)]) continue; // never re-upsert tombstoned items
@@ -11081,33 +11086,27 @@ async function loadFromCloud() {
       finalProjects = cloudMeta.projects.map(meta => {
         const proj = { ...EMPTY_PROJECT(), ...meta };
         const del  = proj._deletedIds || {};
-        // budgetKat comes from projektdaten (meta.budgetKat), clear all other arrays
-        const hasBudgetKatInMeta = Array.isArray(meta.budgetKat) && meta.budgetKat.length > 0;
-        ITEM_TYPES.forEach(t => {
-          if (t === 'budgetKat' && hasBudgetKatInMeta) return; // keep from meta
-          proj[t] = [];
-        });
-        // Reconstruct items from projekt_items rows
-        // budgetKat: use meta version if available, else fall back to projekt_items (migration)
+        // Alle Listen leeren – auch budgetKat: die Kategorien kommen jetzt ZEILENWEISE
+        // aus projekt_items (wie Rechnungen), nicht mehr aus dem Block.
+        ITEM_TYPES.forEach(t => { proj[t] = []; });
+        // Eintraege aus den Zeilen wieder aufbauen (inkl. budgetKat)
         itemRows.filter(r => r.project_id === String(meta.id)).forEach(r => {
           if (!ITEM_TYPES.includes(r.item_type)) return;
-          if (r.item_type === 'budgetKat' && hasBudgetKatInMeta) return; // prefer meta version
-          if (del[r.item_id]) return; // skip tombstoned items
+          if (del[r.item_id]) return; // getilgte Eintraege ueberspringen
           proj[r.item_type].push(r.payload);
         });
-        // Sort budgetKat by _order to preserve user-defined position
+        // Migrations-Rueckfall: NUR wenn dieses Projekt noch nicht auf Zeilen
+        // umgestellt ist (_budgetKatV2 fehlt) UND es keine budgetKat-Zeilen gibt,
+        // die alten Kategorien aus dem Block uebernehmen. Beim naechsten Speichern
+        // werden sie automatisch als Zeilen geschrieben. Ist V2 gesetzt, gilt der
+        // Zeilen-Stand (auch leer) – so kommt "alle geloescht" nicht zurueck.
+        if (meta._budgetKatV2 !== true && proj.budgetKat.length === 0 &&
+            Array.isArray(meta.budgetKat) && meta.budgetKat.length > 0) {
+          proj.budgetKat = meta.budgetKat.map(k => ({ ...k }));
+        }
+        // Nach _order sortieren, damit die Reihenfolge des Nutzers erhalten bleibt
         if (Array.isArray(proj.budgetKat)) {
           proj.budgetKat.sort((a, b) => (a._order ?? 9999) - (b._order ?? 9999));
-        }
-        // Safety net: if local state for this project has a NEWER budgetKat timestamp
-        // (e.g. a delete happened locally but syncToCloud is still running),
-        // keep the local version instead of overwriting with potentially stale cloud data.
-        const localProj = projects.find(p => String(p.id) === String(meta.id));
-        const localTs  = localProj?._budgetKatTs || 0;
-        const cloudTs2 = meta._budgetKatTs || 0;
-        if (localTs > cloudTs2 && localProj?.budgetKat) {
-          proj.budgetKat   = localProj.budgetKat;
-          proj._budgetKatTs = localTs;
         }
         return proj;
       });

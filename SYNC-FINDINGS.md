@@ -1,8 +1,15 @@
 # Cloud-Sync – gefundene Schwachstellen (Datenintegrität)
 
-Stand: Review vom 20.07.2026. **Noch NICHT behoben** – bewusst, weil eine
-ungetestete Änderung am Sync selbst Datenverlust verursachen könnte. Fix nur
+Stand: Review vom 20.07.2026, erneut geprüft 03.08.2026 – die Findings gelten
+weiterhin (nichts Neues/Schlimmeres). **Noch NICHT live behoben** – bewusst, weil
+eine ungetestete Änderung am Sync selbst Datenverlust verursachen könnte. Fix nur
 mit anschließendem Zwei-Geräte-Test (siehe unten).
+
+> AKTUELLER FORTSCHRITT (03.08.2026): Der Budget-Zeitstempel-Teil aus Finding 4
+> (`_budgetKatTs` bei jeder Änderung bumpen) ist **umgesetzt und getestet auf dem
+> Entwicklungs-Branch**, aber bewusst **noch nicht live** – wartet auf den
+> Zwei-Fenster-Test in der Testumgebung. Der Rest der Findings ist die Agenda
+> für die gemeinsame Test-Session.
 
 ## Kernproblem
 `_mergeProjects` / `_mergeArr` (die „neuere Version gewinnt"-Zusammenführung,
@@ -38,12 +45,17 @@ Fix: Schreiben/Lesen `_updatedAt`-bewusst machen (per-Row-Guard oder `_mergeArr`
 
 ### 4) Gelöschte Budget-Kategorie taucht wieder auf (MEDIUM) — syncToCloud ~10781
 `budgetKat` liegt nur im vollen `projektdaten`-Snapshot, `deleteBudgetKat` nutzt
-kein `_trackDeletion`. Stale Gerät schreibt Kategorie zurück. Zusätzlich bumpt
+kein `_trackDeletion`. Stale Gerät schreibt Kategorie zurück. Zusätzlich bumpte
 `saveAll` (Zeile ~4168, `_budgetKatTs = _budgetKatTs || Date.now()`) den
 Zeitstempel bei normalen Änderungen nicht.
 Fix: echte Tombstones für budgetKat (oder id-Merge mit `_deletedIds`); in
 syncToCloud Cloud-budgetKat nur bei neuerem lokalen `_budgetKatTs` überschreiben;
 Zeile 4168 bei jeder budgetKat-Änderung bumpen.
+  → TEILWEISE ERLEDIGT (Entwicklungs-Branch, noch nicht live): Der Zeitstempel
+    wird jetzt bei JEDER echten budgetKat-Änderung erneuert (Signatur-Vergleich
+    in saveAll + Ausgangs-Signatur in loadProject; Automatik-Test in pruefen.mjs).
+    OFFEN bleibt: echte Tombstones für gelöschte Kategorien + der Snapshot-Schutz
+    beim Schreiben (Phase 2). Alles zusammen in der Testumgebung prüfen.
 
 ## Was NICHT betroffen ist (sound)
 - Reine ADDs anderer Geräte werden nicht durch einen Snapshot überschrieben
