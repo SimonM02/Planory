@@ -6183,11 +6183,11 @@ function renderBudget() {
     const count = state.kosten.filter(k => k.kat === kat.name && k.status !== 'Storniert').length;
     const pct   = kat.budget > 0 ? Math.min(100, Math.round(spent / kat.budget * 100)) : 0;
     const color = kat.color || BG_COLORS[i % BG_COLORS.length];
-    return `<div class="budget-bar-row" draggable="true"
-      ondragstart="_budgDragStart(event,${i})" ondragover="_budgDragOver(event,${i})" ondrop="_budgDrop(event,${i})" ondragend="_budgDragEnd(event)"
+    return `<div class="budget-bar-row"
+      ondragover="_budgDragOver(event,${i})" ondrop="_budgDrop(event,${i})" ondragend="_budgDragEnd(event)"
       style="cursor:pointer;border-radius:8px;padding:4px 6px;margin:-4px -6px;transition:background 0.15s;display:flex;align-items:center;"
       onmouseover="if(!event.target.closest('[data-drag]'))this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
-      <span data-drag="1" title="Verschieben" style="cursor:grab;color:var(--text3);font-size:1rem;padding:0 6px 0 2px;flex-shrink:0;user-select:none" onclick="event.stopPropagation()">⠿</span>
+      <span data-drag="1" draggable="true" ondragstart="_budgDragStart(event,${i})" title="Zum Verschieben ziehen" style="cursor:grab;color:var(--text3);font-size:1rem;padding:0 6px 0 2px;flex-shrink:0;user-select:none" onclick="event.stopPropagation()">⠿</span>
       <div class="budget-bar-label" style="display:flex;align-items:center;gap:6px">
         <span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0"></span>
         <span onclick="openBudgetDrilldown('${kat.name.replace(/'/g,"\\'")}') ">${kat.name}</span>
@@ -6207,11 +6207,11 @@ function renderBudget() {
       const pct     = kat.budget > 0 ? Math.round(spent / kat.budget * 100) : 0;
       const share   = totalBudget > 0 ? (kat.budget / totalBudget * 100).toFixed(1) : 0;
       const color   = kat.color || BG_COLORS[i % BG_COLORS.length];
-      return `<tr draggable="true"
-        ondragstart="_budgDragStart(event,${i})" ondragover="_budgDragOver(event,${i})" ondrop="_budgDrop(event,${i})" ondragend="_budgDragEnd(event)"
+      return `<tr class="budg-row"
+        ondragover="_budgDragOver(event,${i})" ondrop="_budgDrop(event,${i})" ondragend="_budgDragEnd(event)"
         style="cursor:pointer" onclick="openBudgetDrilldown('${kat.name.replace(/'/g,"\\'")}')"
         onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-        <td onclick="event.stopPropagation()" style="cursor:grab;color:var(--text3);font-size:1rem;text-align:center;user-select:none">⠿</td>
+        <td draggable="true" ondragstart="_budgDragStart(event,${i})" onclick="event.stopPropagation()" title="Zum Verschieben ziehen" style="cursor:grab;color:var(--text3);font-size:1rem;text-align:center;user-select:none">⠿</td>
         <td>
           <span style="display:inline-flex;align-items:center;gap:8px;font-weight:700">
             <span style="width:10px;height:10px;border-radius:3px;background:${color};flex-shrink:0;display:inline-block"></span>
@@ -6256,20 +6256,23 @@ let _budgDragIdx = null;
 function _budgDragStart(e, idx) {
   _budgDragIdx = idx;
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => { if (e.target) e.target.style.opacity = '0.4'; }, 0);
+  // Nur der Griff ist ziehbar – die ganze Zeile optisch abblenden
+  const row = e.target.closest('tr, .budget-bar-row');
+  setTimeout(() => { if (row) row.style.opacity = '0.4'; }, 0);
 }
 
 function _budgDragOver(e, idx) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   // Highlight drop target
-  const rows = document.querySelectorAll('#budget-bars .budget-bar-row, #budget-table tr[draggable]');
+  const rows = document.querySelectorAll('#budget-bars .budget-bar-row, #budget-table tr.budg-row');
   rows.forEach((r, i) => r.style.outline = i === idx && _budgDragIdx !== idx ? '2px dashed var(--accent)' : '');
 }
 
 function _budgDragEnd(e) {
-  if (e.target) e.target.style.opacity = '';
-  document.querySelectorAll('#budget-bars .budget-bar-row, #budget-table tr[draggable]').forEach(r => r.style.outline = '');
+  const row = e.target.closest('tr, .budget-bar-row');
+  if (row) row.style.opacity = '';
+  document.querySelectorAll('#budget-bars .budget-bar-row, #budget-table tr.budg-row').forEach(r => r.style.outline = '');
   _budgDragIdx = null;
 }
 
@@ -11102,7 +11105,8 @@ async function loadFromCloud() {
         // Zeilen-Stand (auch leer) – so kommt "alle geloescht" nicht zurueck.
         if (meta._budgetKatV2 !== true && proj.budgetKat.length === 0 &&
             Array.isArray(meta.budgetKat) && meta.budgetKat.length > 0) {
-          proj.budgetKat = meta.budgetKat.map(k => ({ ...k }));
+          // Getilgte Kategorien (Grabsteine) beim Rueckfall NICHT wiederbeleben
+          proj.budgetKat = meta.budgetKat.filter(k => !del[String(k.id)]).map(k => ({ ...k }));
         }
         // Nach _order sortieren, damit die Reihenfolge des Nutzers erhalten bleibt
         if (Array.isArray(proj.budgetKat)) {
