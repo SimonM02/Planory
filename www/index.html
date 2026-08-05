@@ -2106,7 +2106,7 @@
           </div>
           <div style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:14px 16px;border:1.5px solid var(--border);box-shadow:var(--shadow)">
             <span style="font-size:1.4rem;flex-shrink:0">🔧</span>
-            <div><div style="font-weight:700;font-size:0.88rem;color:var(--text)">Wartungsplan</div><div style="font-size:0.76rem;color:var(--text3)">Nie wieder einen Wartungstermin vergessen</div></div>
+            <div><div style="font-weight:700;font-size:0.88rem;color:var(--text)">Wartung</div><div style="font-size:0.76rem;color:var(--text3)">Nie wieder einen Wartungstermin vergessen</div></div>
           </div>
         </div>
       </div>
@@ -2332,16 +2332,16 @@
 
     <div class="nav-section" data-module="finanzen" data-i18n="sec_finanzen">Finanzen</div>
     <div class="nav-item" onclick="showPage('kosten')" data-module="kosten" data-page="kosten">
-      <span class="icon">💶</span><span data-i18n="nav_kosten">Kostenverfolgung</span>
+      <span class="icon">💶</span><span data-i18n="nav_kosten">Rechnungen &amp; Ausgaben</span>
     </div>
     <div class="nav-item" onclick="showPage('angebote')" data-module="angebote" data-page="angebote">
       <span class="icon">📋</span><span data-i18n="nav_angebote">Angebote</span>
     </div>
     <div class="nav-item" onclick="showPage('rechnungen')" data-module="rechnungen" data-page="rechnungen">
-      <span class="icon">🗂️</span><span data-i18n="nav_rechnungen">Rechnungsübersicht</span>
+      <span class="icon">🗂️</span><span data-i18n="nav_rechnungen">Gescannte Rechnungen</span>
     </div>
     <div class="nav-item" onclick="showPage('zahlungsplan')" data-module="zahlungsplan" data-page="zahlungsplan">
-      <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungsplan</span>
+      <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungstermine</span>
     </div>
     <div class="nav-item" onclick="showPage('kostenchart')" data-module="kostenchart" data-page="kostenchart">
       <span class="icon">📈</span><span data-i18n="nav_kostenchart">Kostenentwicklung</span>
@@ -2350,12 +2350,12 @@
       <span class="icon">👥</span><span data-i18n="nav_kostenaufteilung">Kostenaufteilung</span>
     </div>
     <div class="nav-item" onclick="showPage('budget')" data-module="budget" data-page="budget">
-      <span class="icon">📊</span><span data-i18n="nav_budget">Budgetplan</span>
+      <span class="icon">📊</span><span data-i18n="nav_budget">Budget</span>
     </div>
 
     <div class="nav-section" data-module="planung" data-i18n="sec_planung">Planung</div>
     <div class="nav-item" onclick="showPage('planung')" data-module="planung" data-page="planung">
-      <span class="icon">📅</span><span data-i18n="nav_planung">Planung</span>
+      <span class="icon">📆</span><span data-i18n="nav_planung">Zeitplan</span>
     </div>
     <div class="nav-item" onclick="showPage('aufgaben')" data-module="aufgaben" data-page="aufgaben">
       <span class="icon">✅</span><span data-i18n="nav_aufgaben">Aufgaben</span>
@@ -2363,10 +2363,10 @@
 
     <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Tagebuch</div>
     <div class="nav-item" onclick="showPage('maengel')" data-module="maengel" data-page="maengel">
-      <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängelliste</span>
+      <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängel</span>
     </div>
     <div class="nav-item" onclick="showPage('fotos')" data-module="fotos" data-page="fotos">
-      <span class="icon">📸</span><span data-i18n="nav_fotos">Foto-Galerie</span>
+      <span class="icon">📸</span><span data-i18n="nav_fotos">Fotos</span>
     </div>
     <div class="nav-item" onclick="showPage('tagebuch')" data-module="tagebuch" data-page="tagebuch">
       <span class="icon">📓</span><span data-i18n="nav_tagebuch">Bautagebuch</span>
@@ -2385,10 +2385,10 @@
       <span class="icon">🗺️</span><span data-i18n="nav_grundrisse">Grundrisse</span>
     </div>
     <div class="nav-item" onclick="showPage('dokumentation')" data-module="dokumentation" data-page="dokumentation">
-      <span class="icon">📐</span><span data-i18n="nav_doku">Dokumentation</span>
+      <span class="icon">📐</span><span data-i18n="nav_doku">Leitungen &amp; Rohre</span>
     </div>
     <div class="nav-item" onclick="showPage('wartung')" data-module="wartung" data-page="wartung">
-      <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartungsplan</span>
+      <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartung</span>
     </div>
   </nav>
   <div style="padding:10px 10px 0">
@@ -2540,7 +2540,7 @@
   <!-- KOSTENVERFOLGUNG -->
   <div class="page" id="page-kosten">
     <div class="page-header">
-      <div><h2 data-i18n="ph_kosten_t">Kostenverfolgung</h2><p data-i18n="ph_kosten_s">Ausgaben und Eigenleistungen</p></div>
+      <div><h2 data-i18n="ph_kosten_t">Rechnungen &amp; Ausgaben</h2><p data-i18n="ph_kosten_s">Ausgaben erfassen oder Rechnungen scannen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportKostenPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-ghost" onclick="openModal('modal-eigenleistung')">+ Eigenleistung</button>
@@ -2604,7 +2604,7 @@
   <!-- BUDGETPLAN -->
   <div class="page" id="page-budget">
     <div class="page-header">
-      <div><h2 data-i18n="ph_budget_t">Budgetplan</h2><p data-i18n="ph_budget_s">Kategorien-Budget mit Gesamtübersicht</p></div>
+      <div><h2 data-i18n="ph_budget_t">Budget</h2><p data-i18n="ph_budget_s">Kategorien-Budget mit Gesamtübersicht</p></div>
       <button class="btn btn-primary" onclick="openModal('modal-budget-kat')">+ Kategorie</button>
     </div>
 
@@ -2888,7 +2888,7 @@
               </div>
               <div style="padding:14px 18px;background:var(--surface);display:flex;flex-direction:column;gap:10px">
                 <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">
-                  ✅ Kostenverfolgung &amp; Budget<br>
+                  ✅ Rechnungen, Ausgaben &amp; Budget<br>
                   ✅ Planung &amp; To-do-Listen<br>
                   ✅ Notizen &amp; Dokumente<br>
                   🔒 KI-Bauberater (Pro)<br>
@@ -3078,7 +3078,7 @@
   <!-- FOTO GALERIE -->
   <div class="page" id="page-fotos">
     <div class="page-header">
-      <div><h2 data-i18n="ph_fotos_t">Foto-Galerie</h2><p data-i18n="ph_fotos_s">Baufortschritt dokumentieren</p></div>
+      <div><h2 data-i18n="ph_fotos_t">Fotos</h2><p data-i18n="ph_fotos_s">Baufortschritt dokumentieren</p></div>
     </div>
     <div class="photo-upload-area" onclick="document.getElementById('foto-input').click()">
       <input type="file" id="foto-input" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
@@ -3162,7 +3162,7 @@
   <!-- WARTUNGSPLAN -->
   <div class="page" id="page-wartung">
     <div class="page-header">
-      <div><h2 data-i18n="ph_wartung_t">Wartungsplan</h2><p data-i18n="ph_wartung_s">Wiederkehrende Wartungsaufgaben &amp; Intervalle</p></div>
+      <div><h2 data-i18n="ph_wartung_t">Wartung</h2><p data-i18n="ph_wartung_s">Wiederkehrende Wartungsaufgaben &amp; Intervalle</p></div>
       <button class="btn btn-primary" onclick="resetWartungModal();openModal('modal-wartung')">+ Wartung</button>
     </div>
 
@@ -3236,7 +3236,7 @@
   <!-- MÄNGELLISTE -->
   <div class="page" id="page-maengel">
     <div class="page-header">
-      <div><h2 data-i18n="ph_maengel_t">Mängelliste</h2><p data-i18n="ph_maengel_s">Mängel dokumentieren, fotografieren &amp; nachverfolgen</p></div>
+      <div><h2 data-i18n="ph_maengel_t">Mängel</h2><p data-i18n="ph_maengel_s">Mängel dokumentieren, fotografieren &amp; nachverfolgen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportMaengelPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-primary" onclick="openModal('modal-mangel')">+ Mangel</button>
@@ -3260,7 +3260,7 @@
   <!-- KI-RECHNUNGEN -->
   <div class="page" id="page-rechnungen">
     <div class="page-header">
-      <div><h2 data-i18n="ph_rechnungen_t">Rechnungsübersicht</h2><p data-i18n="ph_rechnungen_s">Alle automatisch eingescannten Rechnungen</p></div>
+      <div><h2 data-i18n="ph_rechnungen_t">Gescannte Rechnungen</h2><p data-i18n="ph_rechnungen_s">Alle automatisch eingescannten Rechnungen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportRechnungenPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9">🤖 Neue Rechnung scannen</button>
@@ -4450,62 +4450,62 @@ const today = () => new Date().toISOString().split('T')[0];
 // (Renderfunktionen, Toasts) werden in Welle 2 auf t() umgestellt.
 const I18N = {
   de: {
-    nav_dashboard:'Dashboard', nav_kosten:'Kostenverfolgung', nav_angebote:'Angebote',
-    nav_rechnungen:'Rechnungsübersicht', nav_zahlungsplan:'Zahlungsplan',
+    nav_dashboard:'Dashboard', nav_kosten:'Rechnungen & Ausgaben', nav_angebote:'Angebote',
+    nav_rechnungen:'Gescannte Rechnungen', nav_zahlungsplan:'Zahlungstermine',
     nav_kostenchart:'Kostenentwicklung', nav_kostenaufteilung:'Kostenaufteilung',
-    nav_budget:'Budgetplan', nav_planung:'Planung', nav_aufgaben:'Aufgaben',
-    nav_maengel:'Mängelliste', nav_fotos:'Foto-Galerie', nav_tagebuch:'Bautagebuch',
+    nav_budget:'Budget', nav_planung:'Zeitplan', nav_aufgaben:'Aufgaben',
+    nav_maengel:'Mängel', nav_fotos:'Fotos', nav_tagebuch:'Bautagebuch',
     nav_notizen:'Notizen', nav_handwerker:'Handwerker', nav_grundrisse:'Grundrisse',
-    nav_doku:'Dokumentation', nav_wartung:'Wartungsplan',
+    nav_doku:'Leitungen & Rohre', nav_wartung:'Wartung',
     sec_uebersicht:'Übersicht', sec_finanzen:'Finanzen', sec_planung:'Planung',
     sec_tagebuch:'Tagebuch', sec_kontakte:'Kontakte',
-    ph_kosten_t:'Kostenverfolgung', ph_kosten_s:'Ausgaben und Eigenleistungen',
-    ph_budget_t:'Budgetplan', ph_budget_s:'Kategorien-Budget mit Gesamtübersicht',
+    ph_kosten_t:'Rechnungen & Ausgaben', ph_kosten_s:'Ausgaben erfassen oder Rechnungen scannen',
+    ph_budget_t:'Budget', ph_budget_s:'Kategorien-Budget mit Gesamtübersicht',
     ph_aufgaben_t:'Aufgaben', ph_aufgaben_s:'To-Dos und offene Punkte',
     ph_tagebuch_t:'Bautagebuch', ph_tagebuch_s:'Tagesberichte, Arbeitszeiten & Mannschaft',
     ph_notizen_t:'Notizen & Dokumente', ph_notizen_s:'Notizen, Baupläne, Verträge und Genehmigungen',
     ph_handwerker_t:'Handwerker & Kontakte', ph_handwerker_s:'Deine Gewerke und Ansprechpartner',
     ph_settings_t:'Einstellungen', ph_settings_s:'Projekt & Konto verwalten',
-    ph_planung_t:'Planung', ph_planung_s:'Zeitplan, Meilensteine & Ablaufplan',
-    ph_fotos_t:'Foto-Galerie', ph_fotos_s:'Baufortschritt dokumentieren',
+    ph_planung_t:'Zeitplan', ph_planung_s:'Zeitplan, Meilensteine & Ablaufplan',
+    ph_fotos_t:'Fotos', ph_fotos_s:'Baufortschritt dokumentieren',
     ph_kostenchart_t:'Kostenentwicklung', ph_kostenchart_s:'Ausgaben über die Zeit visualisiert',
     ph_grundrisse_t:'Grundrisse', ph_grundrisse_s:'Pläne mit Markierungen, Leitungen & Notizen',
-    ph_doku_t:'Dokumentation', ph_doku_s:'Leitungsführung, versteckte Installationen & wichtige Hinweise',
-    ph_wartung_t:'Wartungsplan', ph_wartung_s:'Wiederkehrende Wartungsaufgaben & Intervalle',
+    ph_doku_t:'Leitungen & Rohre', ph_doku_s:'Leitungsführung, versteckte Installationen & wichtige Hinweise',
+    ph_wartung_t:'Wartung', ph_wartung_s:'Wiederkehrende Wartungsaufgaben & Intervalle',
     ph_angebote_t:'Angebote', ph_angebote_s:'Angebote erfassen, vergleichen und zu Rechnungen umwandeln',
-    ph_zahlungsplan_t:'Zahlungsplan', ph_zahlungsplan_s:'Fälligkeiten, Abschlagszahlungen & offene Rechnungen',
-    ph_maengel_t:'Mängelliste', ph_maengel_s:'Mängel dokumentieren, fotografieren & nachverfolgen',
-    ph_rechnungen_t:'Rechnungsübersicht', ph_rechnungen_s:'Alle automatisch eingescannten Rechnungen',
+    ph_zahlungsplan_t:'Zahlungstermine', ph_zahlungsplan_s:'Fälligkeiten, Abschlagszahlungen & offene Rechnungen',
+    ph_maengel_t:'Mängel', ph_maengel_s:'Mängel dokumentieren, fotografieren & nachverfolgen',
+    ph_rechnungen_t:'Gescannte Rechnungen', ph_rechnungen_s:'Alle automatisch eingescannten Rechnungen',
     ph_kostenaufteilung_t:'Kostenaufteilung', ph_kostenaufteilung_s:'Wer hat wie viel bezahlt?',
     set_language:'🌐 Sprache', set_language_hint:'Sprache der App – gilt für dieses Gerät und wird in deinem Konto gespeichert.'
   },
   en: {
-    nav_dashboard:'Dashboard', nav_kosten:'Cost Tracking', nav_angebote:'Quotes',
-    nav_rechnungen:'Invoices', nav_zahlungsplan:'Payment Schedule',
+    nav_dashboard:'Dashboard', nav_kosten:'Invoices & Expenses', nav_angebote:'Quotes',
+    nav_rechnungen:'Scanned Invoices', nav_zahlungsplan:'Payment Dates',
     nav_kostenchart:'Cost Trend', nav_kostenaufteilung:'Cost Split',
-    nav_budget:'Budget Plan', nav_planung:'Planning', nav_aufgaben:'Tasks',
-    nav_maengel:'Defects List', nav_fotos:'Photo Gallery', nav_tagebuch:'Site Diary',
+    nav_budget:'Budget', nav_planung:'Schedule', nav_aufgaben:'Tasks',
+    nav_maengel:'Defects', nav_fotos:'Photos', nav_tagebuch:'Site Diary',
     nav_notizen:'Notes', nav_handwerker:'Contractors', nav_grundrisse:'Floor Plans',
-    nav_doku:'Documentation', nav_wartung:'Maintenance Plan',
+    nav_doku:'Pipes & Cables', nav_wartung:'Maintenance',
     sec_uebersicht:'Overview', sec_finanzen:'Finances', sec_planung:'Planning',
     sec_tagebuch:'Diary', sec_kontakte:'Contacts',
-    ph_kosten_t:'Cost Tracking', ph_kosten_s:'Expenses and own work',
-    ph_budget_t:'Budget Plan', ph_budget_s:'Category budgets with overall view',
+    ph_kosten_t:'Invoices & Expenses', ph_kosten_s:'Log expenses or scan invoices',
+    ph_budget_t:'Budget', ph_budget_s:'Category budgets with overall view',
     ph_aufgaben_t:'Tasks', ph_aufgaben_s:'To-dos and open items',
     ph_tagebuch_t:'Site Diary', ph_tagebuch_s:'Daily reports, working hours & crew',
     ph_notizen_t:'Notes & Documents', ph_notizen_s:'Notes, plans, contracts and permits',
     ph_handwerker_t:'Contractors & Contacts', ph_handwerker_s:'Your trades and contacts',
     ph_settings_t:'Settings', ph_settings_s:'Manage project & account',
-    ph_planung_t:'Planning', ph_planung_s:'Schedule, milestones & sequence',
-    ph_fotos_t:'Photo Gallery', ph_fotos_s:'Document construction progress',
+    ph_planung_t:'Schedule', ph_planung_s:'Schedule, milestones & sequence',
+    ph_fotos_t:'Photos', ph_fotos_s:'Document construction progress',
     ph_kostenchart_t:'Cost Trend', ph_kostenchart_s:'Spending visualised over time',
     ph_grundrisse_t:'Floor Plans', ph_grundrisse_s:'Plans with markers, lines & notes',
-    ph_doku_t:'Documentation', ph_doku_s:'Utility routing, hidden installations & key notes',
-    ph_wartung_t:'Maintenance Plan', ph_wartung_s:'Recurring maintenance tasks & intervals',
+    ph_doku_t:'Pipes & Cables', ph_doku_s:'Utility routing, hidden installations & key notes',
+    ph_wartung_t:'Maintenance', ph_wartung_s:'Recurring maintenance tasks & intervals',
     ph_angebote_t:'Quotes', ph_angebote_s:'Capture and compare quotes, convert them to invoices',
-    ph_zahlungsplan_t:'Payment Schedule', ph_zahlungsplan_s:'Due dates, instalments & open invoices',
-    ph_maengel_t:'Defects List', ph_maengel_s:'Document, photograph & track defects',
-    ph_rechnungen_t:'Invoices', ph_rechnungen_s:'All automatically scanned invoices',
+    ph_zahlungsplan_t:'Payment Dates', ph_zahlungsplan_s:'Due dates, instalments & open invoices',
+    ph_maengel_t:'Defects', ph_maengel_s:'Document, photograph & track defects',
+    ph_rechnungen_t:'Scanned Invoices', ph_rechnungen_s:'All automatically scanned invoices',
     ph_kostenaufteilung_t:'Cost Split', ph_kostenaufteilung_s:'Who paid how much?',
     set_language:'🌐 Language', set_language_hint:'App language – applies to this device and is saved to your account.'
   }
@@ -4736,7 +4736,7 @@ const PHRASES = {
   'Projektdaten':'Project details', '🔄 Synchronisation':'🔄 Sync',
   '☁️ Von Cloud laden':'☁️ Load from cloud', 'Status wird geladen…':'Loading status…',
   '⭐ Mein Plan':'⭐ My plan', 'Grundfunktionen inklusive':'Basic features included',
-  '✅ Kostenverfolgung & Budget':'✅ Cost tracking & budget',
+  '✅ Rechnungen, Ausgaben & Budget':'✅ Invoices, expenses & budget',
   '✅ Planung & To-do-Listen':'✅ Planning & to-do lists',
   '✅ Notizen & Dokumente':'✅ Notes & documents',
   '🔒 KI-Bauberater (Pro)':'🔒 AI construction advisor (Pro)',
@@ -4898,7 +4898,7 @@ const PHRASES = {
   '✅ Daten übernommen – bitte Kategorie und Status noch setzen':'✅ Data applied – please still set category and status',
   'Zahlung löschen?':'Delete payment?', '🗑 Zahlung gelöscht':'🗑 Payment deleted',
   'Mangel löschen?':'Delete defect?', '🗑 Mangel gelöscht':'🗑 Defect deleted',
-  'Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)':'Remove entry from the invoice list?\n(The expense in cost tracking is kept.)',
+  'Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in „Rechnungen & Ausgaben" bleibt erhalten.)':'Remove entry from the invoice list?\n(The expense in Invoices & Expenses is kept.)',
   '🗑 Rechnung gelöscht':'🗑 Invoice deleted',
   'Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.':'Delete person? Existing assignments in invoices will be removed.',
   '🗑 Person gelöscht':'🗑 Person deleted', '✅ Daten wiederhergestellt!':'✅ Data restored!',
@@ -4907,9 +4907,9 @@ const PHRASES = {
   '❌ Benachrichtigungen blockiert – bitte in den Einstellungen freigeben':'❌ Notifications blocked – please enable them in settings',
   'PDF-Bibliothek lädt noch…':'PDF library still loading…',
   '📄 Bautagebuch als PDF gespeichert':'📄 Construction diary saved as PDF',
-  '📄 Mängelliste als PDF gespeichert':'📄 Defect list saved as PDF',
-  '📄 Kostenverfolgung als PDF gespeichert':'📄 Cost tracking saved as PDF',
-  '📄 Rechnungsübersicht als PDF gespeichert':'📄 Invoice overview saved as PDF',
+  '📄 Mängel als PDF gespeichert':'📄 Defects saved as PDF',
+  '📄 Rechnungen & Ausgaben als PDF gespeichert':'📄 Invoices & expenses saved as PDF',
+  '📄 Gescannte Rechnungen als PDF gespeichert':'📄 Scanned invoices saved as PDF',
   'Du kannst das jederzeit in den Einstellungen ändern.':'You can change this anytime in settings.',
   'Mit dem Planory-Abo kannst du weiter eintragen, Rechnungen scannen und die KI nutzen. Deine bisherigen Daten bleiben immer sichtbar – auch ohne Abo.':'With the Planory subscription you can keep adding entries, scan invoices and use the AI. Your existing data always stays visible – even without a subscription.',
   'Jederzeit kündbar · Aufgaben abhaken bleibt immer gratis':'Cancel anytime · Ticking off tasks is always free',
@@ -5193,22 +5193,22 @@ function _applyFreePlan(freeEl) {
 // ──────────────── SETTINGS ────────────────
 // ──────────────── MODULES ────────────────
 const MODULES = [
-  { id: 'kosten',           label: 'Kostenverfolgung',    icon: '💶', group: 'Finanzen',   default: true },
+  { id: 'kosten',           label: 'Rechnungen & Ausgaben', icon: '💶', group: 'Finanzen',   default: true },
   { id: 'angebote',         label: 'Angebote',            icon: '📋', group: 'Finanzen',   default: true },
-  { id: 'rechnungen',       label: 'Rechnungsübersicht',  icon: '🗂️', group: 'Finanzen',   default: true },
-  { id: 'zahlungsplan',     label: 'Zahlungsplan',        icon: '📅', group: 'Finanzen',   default: true },
+  { id: 'rechnungen',       label: 'Gescannte Rechnungen', icon: '🗂️', group: 'Finanzen',   default: true },
+  { id: 'zahlungsplan',     label: 'Zahlungstermine',     icon: '📅', group: 'Finanzen',   default: true },
   { id: 'kostenchart',      label: 'Kostenentwicklung',   icon: '📈', group: 'Finanzen',   default: true },
   { id: 'kostenaufteilung', label: 'Kostenaufteilung',    icon: '👥', group: 'Finanzen',   default: true },
-  { id: 'budget',           label: 'Budgetplan',          icon: '📊', group: 'Finanzen',   default: true },
-  { id: 'planung',          label: 'Planung',             icon: '📅', group: 'Planung',    default: true },
+  { id: 'budget',           label: 'Budget',              icon: '📊', group: 'Finanzen',   default: true },
+  { id: 'planung',          label: 'Zeitplan',            icon: '📆', group: 'Planung',    default: true },
   { id: 'aufgaben',         label: 'Aufgaben',            icon: '✅', group: 'Planung',    default: true },
-  { id: 'maengel',          label: 'Mängelliste',         icon: '⚠️', group: 'Tagebuch',   default: true },
-  { id: 'fotos',            label: 'Foto-Galerie',        icon: '📸', group: 'Tagebuch',   default: true },
+  { id: 'maengel',          label: 'Mängel',              icon: '⚠️', group: 'Tagebuch',   default: true },
+  { id: 'fotos',            label: 'Fotos',               icon: '📸', group: 'Tagebuch',   default: true },
   { id: 'tagebuch',         label: 'Bautagebuch',         icon: '📓', group: 'Tagebuch',   default: true },
   { id: 'notizen',          label: 'Notizen',             icon: '📎', group: 'Tagebuch',   default: true },
   { id: 'kontakte',         label: 'Handwerker',          icon: '👷', group: 'Kontakte',   default: true },
-  { id: 'dokumentation',    label: 'Dokumentation',       icon: '📐', group: 'Gebäude',    default: true },
-  { id: 'wartung',          label: 'Wartungsplan',        icon: '🔧', group: 'Gebäude',    default: true },
+  { id: 'dokumentation',    label: 'Leitungen & Rohre',   icon: '📐', group: 'Gebäude',    default: true },
+  { id: 'wartung',          label: 'Wartung',             icon: '🔧', group: 'Gebäude',    default: true },
 ];
 
 function getModules() {
@@ -12543,7 +12543,7 @@ function renderGescannteRechnungen() {
 
 async function deleteGescannteRechnung(id) {
   if (!requireSub()) return;
-  if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in der Kostenverfolgung bleibt erhalten.)'))) return;
+  if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in „Rechnungen & Ausgaben" bleibt erhalten.)'))) return;
   // Verknuepfte Ausgabe entmarkieren, sonst wird der Eintrag beim naechsten
   // Render automatisch neu erzeugt (aiScanned-Sync) und taucht sofort wieder auf.
   const _gr = (state.gescannteRechnungen||[]).find(x => String(x.id) === String(id));
@@ -13651,7 +13651,7 @@ function exportMaengelPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const projName = state.settings?.name || 'Bauvorhaben';
-  pdfHeader(doc, 'Mängelliste', projName);
+  pdfHeader(doc, 'Mängel', projName);
 
   const rows = state.maengel.map(m => [
     fmtDate(m.datum),
@@ -13680,7 +13680,7 @@ function exportMaengelPDF() {
     }
   });
   doc.save(`Maengelliste_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Mängelliste als PDF gespeichert', 'success');
+  showToast('📄 Mängel als PDF gespeichert', 'success');
 }
 
 function exportKostenPDF() {
@@ -13688,7 +13688,7 @@ function exportKostenPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const projName = state.settings?.name || 'Bauvorhaben';
-  pdfHeader(doc, 'Kostenverfolgung', projName);
+  pdfHeader(doc, 'Rechnungen & Ausgaben', projName);
 
   const active = state.kosten.filter(k => k.status !== 'Storniert');
   const rows = state.kosten.map(k => {
@@ -13733,8 +13733,8 @@ function exportKostenPDF() {
     foot: [['', '', '', 'Gesamt (ohne Storniert)', fmt(totalNetto), '', fmt(totalBrutto), '']],
     footStyles: { fillColor: [240, 244, 255], fontStyle: 'bold', textColor: [41, 98, 255], fontSize: 7.5 }
   });
-  doc.save(`Kostenverfolgung_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Kostenverfolgung als PDF gespeichert', 'success');
+  doc.save(`Rechnungen-Ausgaben_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
+  showToast('📄 Rechnungen & Ausgaben als PDF gespeichert', 'success');
 }
 
 function exportRechnungenPDF() {
@@ -13742,7 +13742,7 @@ function exportRechnungenPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const projName = state.settings?.name || 'Bauvorhaben';
-  pdfHeader(doc, 'Rechnungsübersicht', projName);
+  pdfHeader(doc, 'Gescannte Rechnungen', projName);
 
   const rows = state.gescannteRechnungen.map(r => [
     fmtDate(r.datum),
@@ -13775,7 +13775,7 @@ function exportRechnungenPDF() {
     footStyles: { fillColor: [243, 240, 255], fontStyle: 'bold', textColor: [109, 40, 217], fontSize: 7.5 }
   });
   doc.save(`Rechnungen_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Rechnungsübersicht als PDF gespeichert', 'success');
+  showToast('📄 Gescannte Rechnungen als PDF gespeichert', 'success');
 }
 </script>
 
