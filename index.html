@@ -12844,6 +12844,12 @@ function renderKostenaufteilung() {
 
 // ── REFRESH & BEFOREUNLOAD ──────────────────────────────────────────────────
 function _showRecoveryBanner() {
+  // Fehlalarm vermeiden: Der Balken wird 1,2 s nach dem Login geplant. Wenn die
+  // Daten bis dahin (oder per Realtime kurz danach) geladen sind, NICHT anzeigen.
+  const _hasData = !!(state?.kosten?.length || state?.aufgaben?.length || state?.notizen?.length ||
+                      state?.dokumentation?.length || state?.budgetKat?.length ||
+                      (Array.isArray(projects) && projects.some(p => ITEM_TYPES.some(t => (p?.[t]?.length || 0) > 0))));
+  if (_hasData) return;
   if (document.getElementById('recovery-banner')) return;
   const banner = document.createElement('div');
   banner.id = 'recovery-banner';
