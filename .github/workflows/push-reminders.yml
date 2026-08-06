@@ -12,12 +12,13 @@ name: Push-Erinnerungen versenden
 #    dann ist der Endpunkt aber ungeschuetzt. Empfehlung: Secret setzen.)
 
 on:
-  schedule:
-    # Alle 15 Minuten. GitHub-Zeitplaene koennen sich um ein paar Minuten
-    # verzoegern – das ist ok, weil push-cron ALLE ueberfaelligen Erinnerungen
-    # nachholt (keine untere Zeitgrenze).
-    - cron: '*/15 * * * *'
-  workflow_dispatch: {}   # erlaubt manuelles Ausloesen zum Testen
+  # PAUSIERT (03.08.2026): Der 15-Minuten-Zeitplan ist deaktiviert, bis der
+  # Server-Push (APNs / Web-Push) wirklich eingerichtet ist. Vorher lief er ins
+  # Leere und hat Fehler-/Abbruch-Mails verursacht. ZUM REAKTIVIEREN einfach die
+  # beiden schedule-Zeilen unten wieder einkommentieren.
+  # schedule:
+  #   - cron: '*/15 * * * *'
+  workflow_dispatch: {}   # nur noch manuelles Ausloesen zum Testen
 
 # Nicht mehrere Laeufe gleichzeitig – der letzte gewinnt.
 concurrency:
