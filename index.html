@@ -296,6 +296,11 @@
   .nav-item.active { background: var(--accent-light); color: var(--accent-deep); font-weight: 600; }
   .nav-item .icon { font-size: 0.95rem; width: 18px; text-align: center; flex-shrink: 0; opacity: 0.85; }
 
+  /* Einklappbare Menü-Gruppen */
+  .nav-chevron { margin-left: auto; font-size: 0.68rem; color: var(--text3); flex-shrink: 0; }
+  .nav-sub .nav-item { padding-left: 30px; font-size: 0.82rem; }
+  .nav-sub .nav-item .icon { font-size: 0.85rem; }
+
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -2334,37 +2339,36 @@
     <div class="nav-item" onclick="showPage('kosten')" data-module="kosten" data-page="kosten">
       <span class="icon">💶</span><span data-i18n="nav_kosten">Rechnungen &amp; Ausgaben</span>
     </div>
-    <div class="nav-item" onclick="showPage('angebote')" data-module="angebote" data-page="angebote">
-      <span class="icon">📋</span><span data-i18n="nav_angebote">Angebote</span>
-    </div>
-    <div class="nav-item" onclick="showPage('rechnungen')" data-module="rechnungen" data-page="rechnungen">
-      <span class="icon">🗂️</span><span data-i18n="nav_rechnungen">Gescannte Rechnungen</span>
-    </div>
-    <div class="nav-item" onclick="showPage('zahlungsplan')" data-module="zahlungsplan" data-page="zahlungsplan">
-      <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungstermine</span>
-    </div>
-    <div class="nav-item" onclick="showPage('kostenchart')" data-module="kostenchart" data-page="kostenchart">
-      <span class="icon">📈</span><span data-i18n="nav_kostenchart">Kostenentwicklung</span>
-    </div>
-    <div class="nav-item" onclick="showPage('kostenaufteilung')" data-module="kostenaufteilung" data-page="kostenaufteilung">
-      <span class="icon">👥</span><span data-i18n="nav_kostenaufteilung">Kostenaufteilung</span>
-    </div>
     <div class="nav-item" onclick="showPage('budget')" data-module="budget" data-page="budget">
       <span class="icon">📊</span><span data-i18n="nav_budget">Budget</span>
+    </div>
+    <div class="nav-item nav-group" onclick="toggleNavGroup('grp-fin', this)">
+      <span class="icon">📈</span><span data-i18n="nav_grp_finanzen">Zahlungen &amp; Auswertungen</span><span class="nav-chevron">▸</span>
+    </div>
+    <div id="grp-fin" class="nav-sub" style="display:none">
+      <div class="nav-item" onclick="showPage('zahlungsplan')" data-module="zahlungsplan" data-page="zahlungsplan">
+        <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungstermine</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kostenchart')" data-module="kostenchart" data-page="kostenchart">
+        <span class="icon">📈</span><span data-i18n="nav_kostenchart">Kostenentwicklung</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kostenaufteilung')" data-module="kostenaufteilung" data-page="kostenaufteilung">
+        <span class="icon">👥</span><span data-i18n="nav_kostenaufteilung">Kostenaufteilung</span>
+      </div>
     </div>
 
     <div class="nav-section" data-module="planung" data-i18n="sec_planung">Planung</div>
     <div class="nav-item" onclick="showPage('planung')" data-module="planung" data-page="planung">
       <span class="icon">📆</span><span data-i18n="nav_planung">Zeitplan</span>
     </div>
+    <div class="nav-item" onclick="showPage('angebote')" data-module="angebote" data-page="angebote">
+      <span class="icon">📋</span><span data-i18n="nav_angebote">Angebote</span>
+    </div>
     <div class="nav-item" onclick="showPage('aufgaben')" data-module="aufgaben" data-page="aufgaben">
       <span class="icon">✅</span><span data-i18n="nav_aufgaben">Aufgaben</span>
     </div>
 
-    <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Tagebuch</div>
-    <div class="nav-item" onclick="showPage('maengel')" data-module="maengel" data-page="maengel">
-      <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängel</span>
-    </div>
+    <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Doku &amp; Fotos</div>
     <div class="nav-item" onclick="showPage('fotos')" data-module="fotos" data-page="fotos">
       <span class="icon">📸</span><span data-i18n="nav_fotos">Fotos</span>
     </div>
@@ -2375,20 +2379,25 @@
       <span class="icon">📎</span><span data-i18n="nav_notizen">Notizen</span>
     </div>
 
-    <div class="nav-section" data-module="kontakte_gruppe" data-i18n="sec_kontakte">Kontakte</div>
-    <div class="nav-item" onclick="showPage('kontakte')" data-module="kontakte" data-page="kontakte">
-      <span class="icon">👷</span><span data-i18n="nav_handwerker">Handwerker</span>
+    <div class="nav-item nav-group" onclick="toggleNavGroup('grp-mehr', this)" style="margin-top:6px">
+      <span class="icon">⋯</span><span data-i18n="nav_grp_mehr">Mehr</span><span class="nav-chevron">▸</span>
     </div>
-
-    <div class="nav-section" data-module="gebaeude">Gebäude</div>
-    <div class="nav-item" onclick="showPage('grundrisse')" data-module="grundrisse" data-page="grundrisse">
-      <span class="icon">🗺️</span><span data-i18n="nav_grundrisse">Grundrisse</span>
-    </div>
-    <div class="nav-item" onclick="showPage('dokumentation')" data-module="dokumentation" data-page="dokumentation">
-      <span class="icon">📐</span><span data-i18n="nav_doku">Leitungen &amp; Rohre</span>
-    </div>
-    <div class="nav-item" onclick="showPage('wartung')" data-module="wartung" data-page="wartung">
-      <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartung</span>
+    <div id="grp-mehr" class="nav-sub" style="display:none">
+      <div class="nav-item" onclick="showPage('maengel')" data-module="maengel" data-page="maengel">
+        <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängel</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kontakte')" data-module="kontakte" data-page="kontakte">
+        <span class="icon">👷</span><span data-i18n="nav_handwerker">Handwerker</span>
+      </div>
+      <div class="nav-item" onclick="showPage('grundrisse')" data-module="grundrisse" data-page="grundrisse">
+        <span class="icon">🗺️</span><span data-i18n="nav_grundrisse">Grundrisse</span>
+      </div>
+      <div class="nav-item" onclick="showPage('dokumentation')" data-module="dokumentation" data-page="dokumentation">
+        <span class="icon">📐</span><span data-i18n="nav_doku">Leitungen &amp; Rohre</span>
+      </div>
+      <div class="nav-item" onclick="showPage('wartung')" data-module="wartung" data-page="wartung">
+        <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartung</span>
+      </div>
     </div>
   </nav>
   <div style="padding:10px 10px 0">
@@ -4413,7 +4422,17 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
-  event && event.currentTarget && event.currentTarget.classList.add('active');
+  // Passenden Menüpunkt hervorheben (unabhängig davon, ob per Menü, Schnellzugriff
+  // oder programmatisch aufgerufen). Liegt er in einer eingeklappten Gruppe → aufklappen.
+  const _navEl = document.querySelector('.nav-item[data-page="' + id + '"]');
+  if (_navEl) {
+    _navEl.classList.add('active');
+    const _sub = _navEl.closest('.nav-sub');
+    if (_sub && _sub.style.display === 'none') {
+      const _hdr = _sub.previousElementSibling;
+      if (_hdr && _hdr.classList.contains('nav-group')) toggleNavGroup(_sub.id, _hdr);
+    }
+  }
   // re-render
   if (id === 'dashboard') renderDashboard();
   if (id === 'kosten') renderKosten();
@@ -4458,7 +4477,8 @@ const I18N = {
     nav_notizen:'Notizen', nav_handwerker:'Handwerker', nav_grundrisse:'Grundrisse',
     nav_doku:'Leitungen & Rohre', nav_wartung:'Wartung',
     sec_uebersicht:'Übersicht', sec_finanzen:'Finanzen', sec_planung:'Planung',
-    sec_tagebuch:'Tagebuch', sec_kontakte:'Kontakte',
+    sec_tagebuch:'Doku & Fotos', sec_kontakte:'Kontakte',
+    nav_grp_finanzen:'Zahlungen & Auswertungen', nav_grp_mehr:'Mehr',
     ph_kosten_t:'Rechnungen & Ausgaben', ph_kosten_s:'Ausgaben erfassen oder Rechnungen scannen',
     ph_budget_t:'Budget', ph_budget_s:'Kategorien-Budget mit Gesamtübersicht',
     ph_aufgaben_t:'Aufgaben', ph_aufgaben_s:'To-Dos und offene Punkte',
@@ -4488,7 +4508,8 @@ const I18N = {
     nav_notizen:'Notes', nav_handwerker:'Contractors', nav_grundrisse:'Floor Plans',
     nav_doku:'Pipes & Cables', nav_wartung:'Maintenance',
     sec_uebersicht:'Overview', sec_finanzen:'Finances', sec_planung:'Planning',
-    sec_tagebuch:'Diary', sec_kontakte:'Contacts',
+    sec_tagebuch:'Docs & Photos', sec_kontakte:'Contacts',
+    nav_grp_finanzen:'Payments & Reports', nav_grp_mehr:'More',
     ph_kosten_t:'Invoices & Expenses', ph_kosten_s:'Log expenses or scan invoices',
     ph_budget_t:'Budget', ph_budget_s:'Category budgets with overall view',
     ph_aufgaben_t:'Tasks', ph_aufgaben_s:'To-dos and open items',
@@ -6509,6 +6530,25 @@ async function loadNotificationStatus() {
 function toggleSidebar() {
   const collapsed = document.body.classList.toggle('sidebar-collapsed');
   localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+}
+
+// Menü-Gruppe (z.B. "Zahlungen & Auswertungen", "Mehr") auf-/zuklappen.
+function toggleNavGroup(id, el) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const willOpen = (box.style.display === 'none' || !box.style.display);
+  box.style.display = willOpen ? 'block' : 'none';
+  const chev = el && el.querySelector('.nav-chevron');
+  if (chev) chev.textContent = willOpen ? '▾' : '▸';
+  try { localStorage.setItem('navgrp_' + id, willOpen ? '1' : '0'); } catch(e) {}
+}
+// Beim Laden den zuletzt gewählten Zustand der Gruppen wiederherstellen.
+function _restoreNavGroups() {
+  document.querySelectorAll('.nav-group').forEach(hdr => {
+    const box = hdr.nextElementSibling;
+    if (!box || !box.classList.contains('nav-sub')) return;
+    if (localStorage.getItem('navgrp_' + box.id) === '1') toggleNavGroup(box.id, hdr);
+  });
 }
 
 function toggleMobileSidebar() {
