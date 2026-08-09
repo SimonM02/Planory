@@ -301,6 +301,14 @@
   .nav-sub .nav-item { padding-left: 30px; font-size: 0.82rem; }
   .nav-sub .nav-item .icon { font-size: 0.85rem; }
 
+  /* Schnellzugriff-Kacheln auf dem Dashboard */
+  .quick-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 10px;
+    cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600; color:var(--text2);
+    transition:all 0.15s; text-align:center; line-height:1.2; }
+  .quick-tile:hover { border-color:var(--accent); color:var(--text); background:var(--surface2); transform:translateY(-1px); }
+  .quick-tile .qt-ic { font-size:1.4rem; }
+
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -2433,6 +2441,18 @@
       </div>
     </div>
 
+    <!-- Schnellzugriff: die häufigsten Aktionen mit einem Tipp -->
+    <div id="quick-access" style="margin-bottom:22px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px" data-i18n="qa_title">⚡ Schnellzugriff</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px">
+        <button class="quick-tile" onclick="openModal('modal-rechnung-scan')"><span class="qt-ic">🤖</span><span data-i18n="qa_scan">Rechnung scannen</span></button>
+        <button class="quick-tile" onclick="openModal('modal-kosten')"><span class="qt-ic">💶</span><span data-i18n="qa_expense">Ausgabe erfassen</span></button>
+        <button class="quick-tile" onclick="_populateTaskPersonList();openModal('modal-task')"><span class="qt-ic">✅</span><span data-i18n="qa_task">Aufgabe</span></button>
+        <button class="quick-tile" onclick="showPage('budget')"><span class="qt-ic">📊</span><span data-i18n="qa_budget">Budget</span></button>
+        <button class="quick-tile" onclick="showPage('fotos')"><span class="qt-ic">📸</span><span data-i18n="qa_photo">Foto</span></button>
+      </div>
+    </div>
+
     <div class="cards-grid" id="dash-cards">
       <div class="card">
         <div class="card-label">Gesamtbudget</div>
@@ -2552,6 +2572,7 @@
       <div><h2 data-i18n="ph_kosten_t">Rechnungen &amp; Ausgaben</h2><p data-i18n="ph_kosten_s">Ausgaben erfassen oder Rechnungen scannen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportKostenPDF()" title="Als PDF exportieren">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="showPage('rechnungen')" title="Nur die eingescannten Rechnungen (Belege) anzeigen">🗂️ Gescannte Rechnungen</button>
         <button class="btn btn-ghost" onclick="openModal('modal-eigenleistung')">+ Eigenleistung</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9">🤖 Rechnung scannen</button>
         <button class="btn btn-primary" onclick="openModal('modal-kosten')">+ Ausgabe erfassen</button>
@@ -3271,6 +3292,7 @@
     <div class="page-header">
       <div><h2 data-i18n="ph_rechnungen_t">Gescannte Rechnungen</h2><p data-i18n="ph_rechnungen_s">Alle automatisch eingescannten Rechnungen</p></div>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="showPage('kosten')" title="Zurück zu Rechnungen &amp; Ausgaben">← Zurück</button>
         <button class="btn btn-ghost" onclick="exportRechnungenPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9">🤖 Neue Rechnung scannen</button>
       </div>
@@ -4479,6 +4501,8 @@ const I18N = {
     sec_uebersicht:'Übersicht', sec_finanzen:'Finanzen', sec_planung:'Planung',
     sec_tagebuch:'Doku & Fotos', sec_kontakte:'Kontakte',
     nav_grp_finanzen:'Zahlungen & Auswertungen', nav_grp_mehr:'Mehr',
+    qa_title:'⚡ Schnellzugriff', qa_scan:'Rechnung scannen', qa_expense:'Ausgabe erfassen',
+    qa_task:'Aufgabe', qa_budget:'Budget', qa_photo:'Foto',
     ph_kosten_t:'Rechnungen & Ausgaben', ph_kosten_s:'Ausgaben erfassen oder Rechnungen scannen',
     ph_budget_t:'Budget', ph_budget_s:'Kategorien-Budget mit Gesamtübersicht',
     ph_aufgaben_t:'Aufgaben', ph_aufgaben_s:'To-Dos und offene Punkte',
@@ -4510,6 +4534,8 @@ const I18N = {
     sec_uebersicht:'Overview', sec_finanzen:'Finances', sec_planung:'Planning',
     sec_tagebuch:'Docs & Photos', sec_kontakte:'Contacts',
     nav_grp_finanzen:'Payments & Reports', nav_grp_mehr:'More',
+    qa_title:'⚡ Quick access', qa_scan:'Scan invoice', qa_expense:'Add expense',
+    qa_task:'Task', qa_budget:'Budget', qa_photo:'Photo',
     ph_kosten_t:'Invoices & Expenses', ph_kosten_s:'Log expenses or scan invoices',
     ph_budget_t:'Budget', ph_budget_s:'Category budgets with overall view',
     ph_aufgaben_t:'Tasks', ph_aufgaben_s:'To-dos and open items',
@@ -6620,6 +6646,8 @@ function _updateDarkModeToggle(on) {
   if (localStorage.getItem('sidebarCollapsed') === '1') {
     document.body.classList.add('sidebar-collapsed');
   }
+  // Zuletzt gewählten Auf-/Zu-Zustand der Menü-Gruppen wiederherstellen
+  try { _restoreNavGroups(); } catch(e) {}
   // Dark mode: prefer saved setting, fall back to system preference
   const saved = localStorage.getItem('darkMode');
   const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
