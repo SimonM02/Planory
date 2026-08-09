@@ -2796,12 +2796,12 @@
   <!-- HANDWERKER -->
   <div class="page" id="page-kontakte">
     <div class="page-header">
-      <div><h2 data-i18n="ph_handwerker_t">Handwerker & Kontakte</h2><p data-i18n="ph_handwerker_s">Deine Gewerke und Ansprechpartner</p></div>
+      <div><h2 data-i18n="ph_handwerker_t">Handwerker & Kontakte</h2></div>
       <button class="btn btn-primary" onclick="openModal('modal-kontakt')">+ Kontakt</button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap mobile-cards">
       <table>
-        <thead><tr><th>Name</th><th class="hide-mobile">Gewerk</th><th>Telefon</th><th class="hide-mobile">E-Mail</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Gewerk</th><th>Telefon</th><th>E-Mail</th><th>Status</th><th></th></tr></thead>
         <tbody id="kontakt-table"></tbody>
       </table>
     </div>
@@ -8108,11 +8108,11 @@ function renderKontakte() {
   }
   tbody.innerHTML = state.kontakte.map(k => `
     <tr>
-      <td><strong>${k.name}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${k.notiz}</span>`:''}</td>
-      <td class="hide-mobile"><span class="badge badge-gray">${k.gewerk}</span></td>
-      <td>${k.tel?`<a href="tel:${k.tel}" style="color:var(--accent);text-decoration:none">${k.tel}</a>`:'–'}</td>
-      <td class="hide-mobile">${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
-      <td><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
+      <td data-title><strong>${k.name}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${k.notiz}</span>`:''}</td>
+      <td data-label="Gewerk"><span class="badge badge-gray">${k.gewerk}</span></td>
+      <td data-label="Telefon">${k.tel?`<a href="tel:${k.tel}" style="color:var(--accent);text-decoration:none">${k.tel}</a>`:'–'}</td>
+      <td data-label="E-Mail">${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
+      <td data-label="Status"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteKontakt(${k.id})">🗑</button>
