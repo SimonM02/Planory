@@ -309,6 +309,20 @@
   .quick-tile:hover { border-color:var(--accent); color:var(--text); background:var(--surface2); transform:translateY(-1px); }
   .quick-tile .qt-ic { font-size:1.4rem; }
 
+  /* Planung: vertikale Zeitleiste */
+  .tl { position:relative; }
+  .tl-row { position:relative; display:flex; gap:14px; padding-bottom:14px; cursor:pointer; }
+  .tl-row::before { content:''; position:absolute; left:15px; top:30px; bottom:-4px; width:2px; background:var(--border); }
+  .tl-row:last-child::before { display:none; }
+  .tl-marker { flex-shrink:0; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.9rem; box-shadow:0 2px 6px rgba(0,0,0,0.18); z-index:1; cursor:pointer; }
+  .tl-card { flex:1; min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:11px 14px; transition:border-color 0.15s; }
+  .tl-row:hover .tl-card { border-color:var(--accent); }
+  .tl-title { font-weight:700; font-size:0.9rem; color:var(--text); }
+  .tl-title.tl-done { text-decoration:line-through; color:var(--text3); }
+  .tl-meta { font-size:0.76rem; color:var(--text3); margin-top:2px; }
+  .tl-note { font-size:0.78rem; color:var(--text2); margin-top:5px; line-height:1.4; }
+  .tl-undated { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 12px; }
+
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -3063,46 +3077,7 @@
       <div id="plan-header-btns" style="display:flex;gap:8px"></div>
     </div>
 
-    <div class="chart-tabs" style="margin-bottom:20px">
-      <button class="chart-tab active" id="plan-tab-zeitplan" onclick="showPlanTab('zeitplan',this)">📅 Zeitplan</button>
-      <button class="chart-tab" id="plan-tab-meilensteine" onclick="showPlanTab('meilensteine',this)">🏁 Meilensteine</button>
-      <button class="chart-tab" id="plan-tab-ablauf" onclick="showPlanTab('ablauf',this)">🔗 Ablaufplan</button>
-    </div>
-
-    <!-- Tab: Zeitplan -->
-    <div id="plan-sec-zeitplan">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:10px 14px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text2)">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:var(--accent);display:inline-block"></span>Phase</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:#7c3aed;display:inline-block"></span>Aufgabe</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:var(--success);display:inline-block"></span>Erledigt</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:2px;height:12px;background:var(--danger);display:inline-block"></span>Heute</span>
-        <span style="color:var(--text3);font-weight:400">💡 Balken ziehen zum Verschieben · rechten Rand ziehen zum Verlängern</span>
-      </div>
-      <div id="gantt-interactive"></div>
-    </div>
-
-    <!-- Tab: Meilensteine -->
-    <div id="plan-sec-meilensteine" style="display:none">
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn btn-ghost" style="border-color:#7c3aed;color:#7c3aed;display:flex;align-items:center;gap:6px" onclick="generateKIMeilensteine()">
-          🤖 KI-Zeitplan generieren
-        </button>
-      </div>
-      <div class="milestone-list" id="milestone-list"></div>
-    </div>
-
-    <!-- Tab: Ablaufplan -->
-    <div id="plan-sec-ablauf" style="display:none">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:var(--surface);border-radius:12px;border:1.5px solid var(--border);font-size:0.8rem;font-weight:600;color:var(--text2)">
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#64748b;display:inline-block"></span>Phase / Hauptblock</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#22c55e;display:inline-block"></span>Erledigt</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;display:inline-block"></span>In Arbeit</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#e2e8f4;display:inline-block"></span>Offen</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:14px;background:var(--accent);display:inline-block"></span>Abhängigkeit (A → B)</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:14px;background:#22c55e;border-left:2px dashed #22c55e;display:inline-block"></span>Parallel möglich</span>
-      </div>
-      <div id="abh-matrix"></div>
-    </div>
+    <div id="plan-timeline"></div>
   </div>
 
   <!-- FOTO GALERIE -->
@@ -4443,22 +4418,63 @@ function showPageHint(pageId) {
 }
 
 // ──────────────── NAVIGATION ────────────────
+// Planung ist jetzt EINE vertikale Zeitleiste (Phasen + Meilensteine chronologisch).
+// showPlanTab bleibt als Einstieg bestehen (aeltere Aufrufe), rendert aber die Zeitleiste.
 function showPlanTab(tab, btn) {
-  ['zeitplan','meilensteine','ablauf'].forEach(t => {
-    document.getElementById('plan-sec-' + t).style.display = t === tab ? '' : 'none';
-    document.getElementById('plan-tab-' + t)?.classList.toggle('active', t === tab);
-  });
   const btns = document.getElementById('plan-header-btns');
-  if (tab === 'zeitplan') {
-    btns.innerHTML = `<button class="btn btn-ghost" onclick="ganttScrollToday()" title="Zum heutigen Datum springen">📍 Heute</button><button class="btn btn-ghost" onclick="ganttZoom(-1)">− Zoom</button><button class="btn btn-ghost" onclick="ganttZoom(1)">+ Zoom</button><button class="btn btn-primary" onclick="openModal('modal-gantt')">+ Eintrag</button>`;
-    renderGantt();
-  } else if (tab === 'meilensteine') {
-    btns.innerHTML = `<button class="btn btn-primary" onclick="openModal('modal-milestone')">+ Meilenstein</button>`;
-    renderMilestones();
-  } else {
-    btns.innerHTML = `<button class="btn btn-primary" onclick="openModal('modal-abh-block')">+ Block hinzufügen</button>`;
-    renderAbhaengigkeiten();
+  if (btns) btns.innerHTML =
+    `<button class="btn btn-ghost" onclick="generateKIMeilensteine()" style="border-color:#7c3aed;color:#7c3aed">🤖 KI-Zeitplan</button>`
+    + `<button class="btn btn-ghost" onclick="resetGanttModal();openModal('modal-gantt')">+ Phase</button>`
+    + `<button class="btn btn-primary" onclick="openModal('modal-milestone')">+ Meilenstein</button>`;
+  renderZeitplan();
+}
+
+function renderZeitplan() {
+  const el = document.getElementById('plan-timeline');
+  if (!el) return;
+  const phases = (state.gantt || []).map(g => ({ kind:'phase', id:g.id, name:g.name, date:g.start||g.end, start:g.start, end:g.end, status:g.status, notiz:g.notiz }));
+  const miles  = (state.meilensteine || []).map(m => ({ kind:'mile', id:m.id, name:m.name, date:m.datum, done:m.done, text:m.text }));
+  const all = [...phases, ...miles];
+  const dated   = all.filter(x => x.date).sort((a,b) => new Date(a.date) - new Date(b.date));
+  const undated = all.filter(x => !x.date);
+  if (!dated.length && !undated.length) {
+    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch nichts geplant.<br>Lege oben eine <strong>Phase</strong> oder einen <strong>Meilenstein</strong> an.</p></div>`;
+    return;
   }
+  const t = today();
+  const esc = s => (s==null?'':String(s));
+  const row = (x) => {
+    if (x.kind === 'mile') {
+      const overdue = x.date && x.date < t && !x.done;
+      const col = x.done ? 'var(--success)' : overdue ? 'var(--danger)' : 'var(--accent)';
+      return `<div class="tl-row" onclick="editMilestone(${x.id})">
+        <div class="tl-marker" style="background:${col}" title="Abhaken" onclick="event.stopPropagation();toggleMilestone(${x.id});renderZeitplan()">${x.done?'✓':'◆'}</div>
+        <div class="tl-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div class="tl-title ${x.done?'tl-done':''}">🏁 ${esc(x.name)}</div>
+            <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteMilestone(${x.id})" title="Löschen">🗑</button>
+          </div>
+          <div class="tl-meta">${x.date?fmtDate(x.date):'kein Datum'}${x.done?' · erledigt':overdue?' · überfällig':''}</div>
+          ${x.text?`<div class="tl-note">${esc(x.text)}</div>`:''}
+        </div>
+      </div>`;
+    }
+    const col = x.status==='Erledigt' ? 'var(--success)' : x.status==='In Arbeit' ? 'var(--warning)' : 'var(--text3)';
+    return `<div class="tl-row" onclick="editGanttItem(${x.id})">
+      <div class="tl-marker" style="background:${col}">●</div>
+      <div class="tl-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="tl-title">${esc(x.name)}</div>
+          <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteGanttItem(${x.id})" title="Löschen">🗑</button>
+        </div>
+        <div class="tl-meta">${x.start?fmtDate(x.start):'?'} – ${x.end?fmtDate(x.end):'?'} · ${esc(x.status)||'Offen'}</div>
+        ${x.notiz?`<div class="tl-note">${esc(x.notiz)}</div>`:''}
+      </div>
+    </div>`;
+  };
+  el.innerHTML = `<div class="tl">${dated.map(row).join('')}`
+    + (undated.length ? `<div class="tl-undated">Ohne Datum</div>${undated.map(row).join('')}` : '')
+    + `</div>`;
 }
 
 function showPage(id) {
@@ -7171,6 +7187,7 @@ function importKIZeitplan() {
 
 function renderMilestones() {
   const el = document.getElementById('milestone-list');
+  if (!el) { if (typeof renderZeitplan === 'function') renderZeitplan(); return; }
   if (state.meilensteine.length === 0) {
     el.innerHTML = `<div class="empty"><div class="icon">🏁</div><p>Noch keine Meilensteine – fang mit deinen Bauphasen an!</p></div>`;
     return;
@@ -8236,7 +8253,7 @@ function daysBetween(a, b) {
 
 function renderGantt() {
   const container = document.getElementById('gantt-interactive');
-  if (!container) return;
+  if (!container) { if (typeof renderZeitplan === 'function') renderZeitplan(); return; }
 
   if (state.gantt.length === 0) {
     container.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Einträge – füge deine erste Phase hinzu!</p></div>`;
@@ -11900,6 +11917,7 @@ function toggleAbhStatus(id) {
 function renderAbhaengigkeiten() {
   state.abhaengigkeiten = state.abhaengigkeiten || [];
   const el = document.getElementById('abh-matrix');
+  if (!el) return;
   if (!el) return;
 
   if (state.abhaengigkeiten.length === 0) {
