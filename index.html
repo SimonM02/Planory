@@ -2457,14 +2457,11 @@
 
     <!-- Schnellzugriff: die häufigsten Aktionen mit einem Tipp -->
     <div id="quick-access" style="margin-bottom:22px">
-      <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px" data-i18n="qa_title">⚡ Schnellzugriff</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px">
-        <button class="quick-tile" onclick="openModal('modal-rechnung-scan')"><span class="qt-ic">🤖</span><span data-i18n="qa_scan">Rechnung scannen</span></button>
-        <button class="quick-tile" onclick="openModal('modal-kosten')"><span class="qt-ic">💶</span><span data-i18n="qa_expense">Ausgabe erfassen</span></button>
-        <button class="quick-tile" onclick="_populateTaskPersonList();openModal('modal-task')"><span class="qt-ic">✅</span><span data-i18n="qa_task">Aufgabe</span></button>
-        <button class="quick-tile" onclick="showPage('budget')"><span class="qt-ic">📊</span><span data-i18n="qa_budget">Budget</span></button>
-        <button class="quick-tile" onclick="showPage('fotos')"><span class="qt-ic">📸</span><span data-i18n="qa_photo">Foto</span></button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em" data-i18n="qa_title">⚡ Schnellzugriff</div>
+        <button onclick="openQuickAccessEdit()" title="Schnellzugriff anpassen" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:0.78rem;font-weight:600;display:flex;align-items:center;gap:4px">✏️ Anpassen</button>
       </div>
+      <div id="qa-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px"></div>
     </div>
 
     <div class="cards-grid" id="dash-cards">
@@ -4134,6 +4131,19 @@
   </div>
 </div>
 
+<!-- Schnellzugriff anpassen -->
+<div class="modal-overlay" id="modal-qa-edit">
+  <div class="modal">
+    <h3>⚡ Schnellzugriff anpassen</h3>
+    <p style="font-size:0.82rem;color:var(--text3);margin:-4px 0 10px">Wähle, welche Knöpfe oben im Dashboard erscheinen sollen.</p>
+    <div id="qa-edit-list" style="max-height:50vh;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-qa-edit')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveQuickAccessEdit()">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ──────────────── STATE ────────────────
@@ -5323,21 +5333,27 @@ function applyModuleVisibility() {
   const mods = getModules();
   MODULES.forEach(m => {
     const isOn = mods[m.id];
-    // nav items
     document.querySelectorAll(`[data-module="${m.id}"]`).forEach(el => {
       el.style.display = isOn ? '' : 'none';
     });
   });
-  // Hide section headers if all items in group hidden
-  const groups = ['finanzen','planung','tagebuch_gruppe','kontakte_gruppe','gebaeude'];
-  groups.forEach(g => {
-    const header = document.querySelector(`[data-module="${g}"]`);
-    if (!header) return;
-    // check sibling nav items until next section
-    let el = header.nextElementSibling;
-    let anyVisible = false;
+  // Einklappbare Gruppen ("Zahlungen & Auswertungen", "Mehr"): Kopf + Inhalt
+  // ausblenden, wenn ALLE enthaltenen Punkte ausgeblendet sind.
+  document.querySelectorAll('.nav-sub').forEach(sub => {
+    const anyVisible = [...sub.querySelectorAll('.nav-item')].some(it => it.style.display !== 'none');
+    const hdr = sub.previousElementSibling;
+    if (!anyVisible) {
+      sub.style.display = 'none';
+      if (hdr && hdr.classList.contains('nav-group')) hdr.style.display = 'none';
+    } else if (hdr && hdr.classList.contains('nav-group')) {
+      hdr.style.display = '';   // Auf-/Zu-Zustand des Inhalts bleibt wie gewählt
+    }
+  });
+  // Abschnitts-Überschriften ausblenden, wenn nichts Sichtbares folgt
+  document.querySelectorAll('.nav-section').forEach(header => {
+    let el = header.nextElementSibling, anyVisible = false;
     while (el && !el.classList.contains('nav-section')) {
-      if (el.style.display !== 'none') anyVisible = true;
+      if ((el.classList.contains('nav-item') || el.classList.contains('nav-group')) && el.style.display !== 'none') anyVisible = true;
       el = el.nextElementSibling;
     }
     header.style.display = anyVisible ? '' : 'none';
@@ -5665,7 +5681,53 @@ async function deleteAccount() {
 }
 
 // ──────────────── DASHBOARD ────────────────
+// ── Schnellzugriff (auf dem Dashboard, vom Nutzer selbst zusammenstellbar) ────
+const QUICK_ACTIONS = [
+  { key:'scan',      icon:'🤖', label:'Rechnung scannen', run:"openModal('modal-rechnung-scan')" },
+  { key:'expense',   icon:'💶', label:'Ausgabe erfassen',  run:"openModal('modal-kosten')" },
+  { key:'task',      icon:'✅', label:'Aufgabe',            run:"_populateTaskPersonList();openModal('modal-task')" },
+  { key:'budget',    icon:'📊', label:'Budget',             run:"showPage('budget')" },
+  { key:'photo',     icon:'📸', label:'Foto',               run:"showPage('fotos')" },
+  { key:'angebot',   icon:'📋', label:'Angebote',           run:"showPage('angebote')" },
+  { key:'milestone', icon:'🏁', label:'Meilenstein',        run:"openModal('modal-milestone')" },
+  { key:'diary',     icon:'📓', label:'Bautagebuch',        run:"showPage('tagebuch')" },
+  { key:'kontakt',   icon:'👷', label:'Kontakt',            run:"openModal('modal-kontakt')" },
+  { key:'maengel',   icon:'⚠️', label:'Mangel',             run:"showPage('maengel')" },
+  { key:'zahlung',   icon:'📅', label:'Zahlungstermine',    run:"showPage('zahlungsplan')" }
+];
+const QA_DEFAULT = ['scan','expense','task','budget','photo'];
+function _qaEnabled() {
+  try { const s = JSON.parse(localStorage.getItem('quickAccess')); if (Array.isArray(s)) return s; } catch(e) {}
+  return QA_DEFAULT.slice();
+}
+function renderQuickAccess() {
+  const el = document.getElementById('qa-tiles');
+  if (!el) return;
+  const tiles = _qaEnabled().map(k => QUICK_ACTIONS.find(a => a.key === k)).filter(Boolean);
+  el.innerHTML = tiles.length
+    ? tiles.map(a => `<button class="quick-tile" onclick="${a.run}"><span class="qt-ic">${a.icon}</span><span>${a.label}</span></button>`).join('')
+    : `<div style="font-size:0.82rem;color:var(--text3)">Kein Schnellzugriff gewählt – tippe oben auf „✏️ Anpassen".</div>`;
+}
+function openQuickAccessEdit() {
+  const enabled = _qaEnabled();
+  const list = document.getElementById('qa-edit-list');
+  if (list) list.innerHTML = QUICK_ACTIONS.map(a => `
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" value="${a.key}" ${enabled.includes(a.key) ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0">
+      <span style="font-size:1.15rem">${a.icon}</span><span style="font-weight:600">${a.label}</span>
+    </label>`).join('');
+  openModal('modal-qa-edit');
+}
+function saveQuickAccessEdit() {
+  const keys = [...document.querySelectorAll('#qa-edit-list input:checked')].map(i => i.value);
+  localStorage.setItem('quickAccess', JSON.stringify(keys));
+  closeModal('modal-qa-edit');
+  renderQuickAccess();
+  showToast('✅ Schnellzugriff angepasst', 'success');
+}
+
 function renderDashboard() {
+  renderQuickAccess();
   const total = state.kosten.reduce((s, k) => s + (k.status !== 'Storniert' ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
   const budget = state.budgetKat && state.budgetKat.length > 0
