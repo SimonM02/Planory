@@ -5702,19 +5702,22 @@ async function deleteAccount() {
 // ──────────────── DASHBOARD ────────────────
 // ── Schnellzugriff (auf dem Dashboard, vom Nutzer selbst zusammenstellbar) ────
 const QUICK_ACTIONS = [
-  { key:'scan',      icon:'🤖', label:'Rechnung scannen', run:"openModal('modal-rechnung-scan')" },
-  { key:'expense',   icon:'💶', label:'Ausgabe erfassen',  run:"openModal('modal-kosten')" },
-  { key:'task',      icon:'✅', label:'Aufgabe',            run:"_populateTaskPersonList();openModal('modal-task')" },
-  { key:'budget',    icon:'📊', label:'Budget',             run:"showPage('budget')" },
-  { key:'photo',     icon:'📸', label:'Foto',               run:"showPage('fotos')" },
-  { key:'angebot',   icon:'📋', label:'Angebote',           run:"showPage('angebote')" },
-  { key:'milestone', icon:'🏁', label:'Meilenstein',        run:"openModal('modal-milestone')" },
-  { key:'diary',     icon:'📓', label:'Bautagebuch',        run:"showPage('tagebuch')" },
-  { key:'kontakt',   icon:'👷', label:'Kontakt',            run:"openModal('modal-kontakt')" },
-  { key:'maengel',   icon:'⚠️', label:'Mangel',             run:"showPage('maengel')" },
-  { key:'zahlung',   icon:'📅', label:'Zahlungstermine',    run:"showPage('zahlungsplan')" }
+  { key:'scan',          icon:'🤖', label:'Rechnung scannen',   run:"openModal('modal-rechnung-scan')" },
+  { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    run:"openModal('modal-kosten')" },
+  { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       run:"openModal('modal-eigenleistung')" },
+  { key:'task',          icon:'✅', label:'Aufgabe',             run:"_populateTaskPersonList();openModal('modal-task')" },
+  { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', run:"openModal('modal-tagebuch')" },
+  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     run:"(document.getElementById('foto-input')||{click:function(){showPage('fotos')}}).click()" },
+  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    run:"openModal('modal-angebot')" },
+  { key:'milestone',     icon:'🏁', label:'Meilenstein',         run:"openModal('modal-milestone')" },
+  { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    run:"openModal('modal-zahlung')" },
+  { key:'wartung',       icon:'🔧', label:'Wartung anlegen',     run:"resetWartungModal();openModal('modal-wartung')" },
+  { key:'maengel',       icon:'⚠️', label:'Mangel erfassen',     run:"openModal('modal-mangel')" },
+  { key:'kontakt',       icon:'👷', label:'Kontakt',             run:"openModal('modal-kontakt')" },
+  { key:'notiz',         icon:'📝', label:'Notiz',               run:"openModal('modal-notiz')" },
+  { key:'budget',        icon:'📊', label:'Budget ansehen',      run:"showPage('budget')" }
 ];
-const QA_DEFAULT = ['scan','expense','task','budget','photo'];
+const QA_DEFAULT = ['scan','expense','task','diary','photo','budget'];
 function _qaEnabled() {
   try { const s = JSON.parse(localStorage.getItem('quickAccess')); if (Array.isArray(s)) return s; } catch(e) {}
   return QA_DEFAULT.slice();
