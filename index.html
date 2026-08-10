@@ -2149,8 +2149,8 @@
       <h1>Behalte <span>Budget, Kosten &amp; Termine</span> deines Bauprojekts im Griff.</h1>
       <p>Planory ist dein digitaler Bauassistent: Budget, Baukosten, Rechnungen scannen, Bautagebuch, Wartungsplan und ein KI-Bauberater – alles an einem Ort, auf dem Handy und im Web.</p>
       <div class="lp-cta">
-        <button class="lp-btn lp-btn-primary" onclick="enterApp()">Kostenlos starten</button>
-        <button class="lp-btn lp-btn-ghost" onclick="enterApp()">Anmelden</button>
+        <button class="lp-btn lp-btn-primary" onclick="enterApp('register')">Kostenlos starten</button>
+        <button class="lp-btn lp-btn-ghost" onclick="enterApp('login')">Anmelden</button>
       </div>
     </section>
 
@@ -2191,7 +2191,7 @@
         <div style="color:var(--lp-text2)">Einen Monat</div>
         <div class="lp-big">Kostenlos testen</div>
         <p style="color:var(--lp-text2);margin-bottom:20px">Alle Funktionen einen Monat gratis. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
-        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp()">Jetzt kostenlos starten</button>
+        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')">Jetzt kostenlos starten</button>
       </div>
     </section>
 
@@ -10860,10 +10860,12 @@ function showLanding() {
   document.getElementById('auth-overlay').style.display = 'none';
   lp.style.display = 'block';
 }
-function enterApp() {
+function enterApp(tab) {
   const lp = document.getElementById('landing-overlay');
   if (lp) lp.style.display = 'none';
   showAuthOverlay();
+  // "Kostenlos starten" -> Registrieren, "Anmelden" -> Login
+  try { switchAuthTab(tab === 'register' ? 'register' : 'login'); } catch(e) {}
 }
 
 function switchAuthTab(tab) {
