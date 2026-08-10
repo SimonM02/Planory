@@ -313,6 +313,33 @@
   .nav-item.active { background: var(--accent-light); color: var(--accent-deep); font-weight: 600; }
   .nav-item .icon { font-size: 0.95rem; width: 18px; text-align: center; flex-shrink: 0; opacity: 0.85; }
 
+  /* Einklappbare Menü-Gruppen */
+  .nav-chevron { margin-left: auto; font-size: 1.05rem; color: var(--text2); flex-shrink: 0; line-height: 1; }
+  .nav-sub .nav-item { padding-left: 30px; font-size: 0.82rem; }
+  .nav-sub .nav-item .icon { font-size: 0.85rem; }
+
+  /* Schnellzugriff-Kacheln auf dem Dashboard */
+  .quick-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 10px;
+    cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600; color:var(--text2);
+    transition:all 0.15s; text-align:center; line-height:1.2; }
+  .quick-tile:hover { border-color:var(--accent); color:var(--text); background:var(--surface2); transform:translateY(-1px); }
+  .quick-tile .qt-ic { font-size:1.4rem; }
+
+  /* Planung: vertikale Zeitleiste */
+  .tl { position:relative; }
+  .tl-row { position:relative; display:flex; gap:14px; padding-bottom:14px; cursor:pointer; }
+  .tl-row::before { content:''; position:absolute; left:15px; top:30px; bottom:-4px; width:2px; background:var(--border); }
+  .tl-row:last-child::before { display:none; }
+  .tl-marker { flex-shrink:0; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.9rem; box-shadow:0 2px 6px rgba(0,0,0,0.18); z-index:1; cursor:pointer; }
+  .tl-card { flex:1; min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:11px 14px; transition:border-color 0.15s; }
+  .tl-row:hover .tl-card { border-color:var(--accent); }
+  .tl-title { font-weight:700; font-size:0.9rem; color:var(--text); }
+  .tl-title.tl-done { text-decoration:line-through; color:var(--text3); }
+  .tl-meta { font-size:0.76rem; color:var(--text3); margin-top:2px; }
+  .tl-note { font-size:0.78rem; color:var(--text2); margin-top:5px; line-height:1.4; }
+  .tl-undated { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 12px; }
+
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -2351,37 +2378,36 @@
     <div class="nav-item" onclick="showPage('kosten')" data-module="kosten" data-page="kosten">
       <span class="icon">💶</span><span data-i18n="nav_kosten">Rechnungen &amp; Ausgaben</span>
     </div>
-    <div class="nav-item" onclick="showPage('angebote')" data-module="angebote" data-page="angebote">
-      <span class="icon">📋</span><span data-i18n="nav_angebote">Angebote</span>
-    </div>
-    <div class="nav-item" onclick="showPage('rechnungen')" data-module="rechnungen" data-page="rechnungen">
-      <span class="icon">🗂️</span><span data-i18n="nav_rechnungen">Gescannte Rechnungen</span>
-    </div>
-    <div class="nav-item" onclick="showPage('zahlungsplan')" data-module="zahlungsplan" data-page="zahlungsplan">
-      <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungstermine</span>
-    </div>
-    <div class="nav-item" onclick="showPage('kostenchart')" data-module="kostenchart" data-page="kostenchart">
-      <span class="icon">📈</span><span data-i18n="nav_kostenchart">Kostenentwicklung</span>
-    </div>
-    <div class="nav-item" onclick="showPage('kostenaufteilung')" data-module="kostenaufteilung" data-page="kostenaufteilung">
-      <span class="icon">👥</span><span data-i18n="nav_kostenaufteilung">Kostenaufteilung</span>
-    </div>
     <div class="nav-item" onclick="showPage('budget')" data-module="budget" data-page="budget">
       <span class="icon">📊</span><span data-i18n="nav_budget">Budget</span>
+    </div>
+    <div class="nav-item nav-group" onclick="toggleNavGroup('grp-fin', this)">
+      <span class="icon">📈</span><span data-i18n="nav_grp_finanzen">Zahlungen &amp; Auswertungen</span><span class="nav-chevron">▸</span>
+    </div>
+    <div id="grp-fin" class="nav-sub" style="display:none">
+      <div class="nav-item" onclick="showPage('zahlungsplan')" data-module="zahlungsplan" data-page="zahlungsplan">
+        <span class="icon">📅</span><span data-i18n="nav_zahlungsplan">Zahlungstermine</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kostenchart')" data-module="kostenchart" data-page="kostenchart">
+        <span class="icon">📈</span><span data-i18n="nav_kostenchart">Kostenentwicklung</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kostenaufteilung')" data-module="kostenaufteilung" data-page="kostenaufteilung">
+        <span class="icon">👥</span><span data-i18n="nav_kostenaufteilung">Kostenaufteilung</span>
+      </div>
     </div>
 
     <div class="nav-section" data-module="planung" data-i18n="sec_planung">Planung</div>
     <div class="nav-item" onclick="showPage('planung')" data-module="planung" data-page="planung">
       <span class="icon">📆</span><span data-i18n="nav_planung">Zeitplan</span>
     </div>
+    <div class="nav-item" onclick="showPage('angebote')" data-module="angebote" data-page="angebote">
+      <span class="icon">📋</span><span data-i18n="nav_angebote">Angebote</span>
+    </div>
     <div class="nav-item" onclick="showPage('aufgaben')" data-module="aufgaben" data-page="aufgaben">
       <span class="icon">✅</span><span data-i18n="nav_aufgaben">Aufgaben</span>
     </div>
 
-    <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Tagebuch</div>
-    <div class="nav-item" onclick="showPage('maengel')" data-module="maengel" data-page="maengel">
-      <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängel</span>
-    </div>
+    <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Doku &amp; Fotos</div>
     <div class="nav-item" onclick="showPage('fotos')" data-module="fotos" data-page="fotos">
       <span class="icon">📸</span><span data-i18n="nav_fotos">Fotos</span>
     </div>
@@ -2392,20 +2418,25 @@
       <span class="icon">📎</span><span data-i18n="nav_notizen">Notizen</span>
     </div>
 
-    <div class="nav-section" data-module="kontakte_gruppe" data-i18n="sec_kontakte">Kontakte</div>
-    <div class="nav-item" onclick="showPage('kontakte')" data-module="kontakte" data-page="kontakte">
-      <span class="icon">👷</span><span data-i18n="nav_handwerker">Handwerker</span>
+    <div class="nav-item nav-group" onclick="toggleNavGroup('grp-mehr', this)" style="margin-top:6px">
+      <span class="icon">⋯</span><span data-i18n="nav_grp_mehr">Mehr</span><span class="nav-chevron">▸</span>
     </div>
-
-    <div class="nav-section" data-module="gebaeude">Gebäude</div>
-    <div class="nav-item" onclick="showPage('grundrisse')" data-module="grundrisse" data-page="grundrisse">
-      <span class="icon">🗺️</span><span data-i18n="nav_grundrisse">Grundrisse</span>
-    </div>
-    <div class="nav-item" onclick="showPage('dokumentation')" data-module="dokumentation" data-page="dokumentation">
-      <span class="icon">📐</span><span data-i18n="nav_doku">Leitungen &amp; Rohre</span>
-    </div>
-    <div class="nav-item" onclick="showPage('wartung')" data-module="wartung" data-page="wartung">
-      <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartung</span>
+    <div id="grp-mehr" class="nav-sub" style="display:none">
+      <div class="nav-item" onclick="showPage('maengel')" data-module="maengel" data-page="maengel">
+        <span class="icon">⚠️</span><span data-i18n="nav_maengel">Mängel</span>
+      </div>
+      <div class="nav-item" onclick="showPage('kontakte')" data-module="kontakte" data-page="kontakte">
+        <span class="icon">👷</span><span data-i18n="nav_handwerker">Handwerker</span>
+      </div>
+      <div class="nav-item" onclick="showPage('grundrisse')" data-module="grundrisse" data-page="grundrisse">
+        <span class="icon">🗺️</span><span data-i18n="nav_grundrisse">Grundrisse</span>
+      </div>
+      <div class="nav-item" onclick="showPage('dokumentation')" data-module="dokumentation" data-page="dokumentation">
+        <span class="icon">📐</span><span data-i18n="nav_doku">Leitungen &amp; Rohre</span>
+      </div>
+      <div class="nav-item" onclick="showPage('wartung')" data-module="wartung" data-page="wartung">
+        <span class="icon">🔧</span><span data-i18n="nav_wartung">Wartung</span>
+      </div>
     </div>
   </nav>
   <div style="padding:10px 10px 0">
@@ -2440,6 +2471,17 @@
         <button class="btn btn-ghost" onclick="showPage('settings')">⚙ Einstellungen</button>
       </div>
     </div>
+
+    <!-- Schnellzugriff: die häufigsten Aktionen mit einem Tipp -->
+    <div id="quick-access" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em" data-i18n="qa_title">⚡ Schnellzugriff</div>
+        <button onclick="openQuickAccessEdit()" title="Schnellzugriff anpassen" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:0.78rem;font-weight:600;display:flex;align-items:center;gap:4px">✏️ Anpassen</button>
+      </div>
+      <div id="qa-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px"></div>
+    </div>
+
+    <div id="dash-reminders" style="margin-bottom:22px"></div>
 
     <div class="cards-grid" id="dash-cards">
       <div class="card">
@@ -2560,6 +2602,7 @@
       <div><h2 data-i18n="ph_kosten_t">Rechnungen &amp; Ausgaben</h2><p data-i18n="ph_kosten_s">Ausgaben erfassen oder Rechnungen scannen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportKostenPDF()" title="Als PDF exportieren">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="showPage('rechnungen')" title="Nur die eingescannten Rechnungen (Belege) anzeigen">🗂️ Gescannte Rechnungen</button>
         <button class="btn btn-ghost" onclick="openModal('modal-eigenleistung')">+ Eigenleistung</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9">🤖 Rechnung scannen</button>
         <button class="btn btn-primary" onclick="openModal('modal-kosten')">+ Ausgabe erfassen</button>
@@ -2783,12 +2826,12 @@
   <!-- HANDWERKER -->
   <div class="page" id="page-kontakte">
     <div class="page-header">
-      <div><h2 data-i18n="ph_handwerker_t">Handwerker & Kontakte</h2><p data-i18n="ph_handwerker_s">Deine Gewerke und Ansprechpartner</p></div>
+      <div><h2 data-i18n="ph_handwerker_t">Handwerker & Kontakte</h2></div>
       <button class="btn btn-primary" onclick="openModal('modal-kontakt')">+ Kontakt</button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap mobile-cards">
       <table>
-        <thead><tr><th>Name</th><th class="hide-mobile">Gewerk</th><th>Telefon</th><th class="hide-mobile">E-Mail</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Gewerk</th><th>Telefon</th><th>E-Mail</th><th>Status</th><th></th></tr></thead>
         <tbody id="kontakt-table"></tbody>
       </table>
     </div>
@@ -3050,46 +3093,7 @@
       <div id="plan-header-btns" style="display:flex;gap:8px"></div>
     </div>
 
-    <div class="chart-tabs" style="margin-bottom:20px">
-      <button class="chart-tab active" id="plan-tab-zeitplan" onclick="showPlanTab('zeitplan',this)">📅 Zeitplan</button>
-      <button class="chart-tab" id="plan-tab-meilensteine" onclick="showPlanTab('meilensteine',this)">🏁 Meilensteine</button>
-      <button class="chart-tab" id="plan-tab-ablauf" onclick="showPlanTab('ablauf',this)">🔗 Ablaufplan</button>
-    </div>
-
-    <!-- Tab: Zeitplan -->
-    <div id="plan-sec-zeitplan">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:10px 14px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text2)">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:var(--accent);display:inline-block"></span>Phase</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:#7c3aed;display:inline-block"></span>Aufgabe</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:var(--success);display:inline-block"></span>Erledigt</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:2px;height:12px;background:var(--danger);display:inline-block"></span>Heute</span>
-        <span style="color:var(--text3);font-weight:400">💡 Balken ziehen zum Verschieben · rechten Rand ziehen zum Verlängern</span>
-      </div>
-      <div id="gantt-interactive"></div>
-    </div>
-
-    <!-- Tab: Meilensteine -->
-    <div id="plan-sec-meilensteine" style="display:none">
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn btn-ghost" style="border-color:#7c3aed;color:#7c3aed;display:flex;align-items:center;gap:6px" onclick="generateKIMeilensteine()">
-          🤖 KI-Zeitplan generieren
-        </button>
-      </div>
-      <div class="milestone-list" id="milestone-list"></div>
-    </div>
-
-    <!-- Tab: Ablaufplan -->
-    <div id="plan-sec-ablauf" style="display:none">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:var(--surface);border-radius:12px;border:1.5px solid var(--border);font-size:0.8rem;font-weight:600;color:var(--text2)">
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#64748b;display:inline-block"></span>Phase / Hauptblock</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#22c55e;display:inline-block"></span>Erledigt</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;display:inline-block"></span>In Arbeit</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#e2e8f4;display:inline-block"></span>Offen</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:14px;background:var(--accent);display:inline-block"></span>Abhängigkeit (A → B)</span>
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:14px;background:#22c55e;border-left:2px dashed #22c55e;display:inline-block"></span>Parallel möglich</span>
-      </div>
-      <div id="abh-matrix"></div>
-    </div>
+    <div id="plan-timeline"></div>
   </div>
 
   <!-- FOTO GALERIE -->
@@ -3279,6 +3283,7 @@
     <div class="page-header">
       <div><h2 data-i18n="ph_rechnungen_t">Gescannte Rechnungen</h2><p data-i18n="ph_rechnungen_s">Alle automatisch eingescannten Rechnungen</p></div>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="showPage('kosten')" title="Zurück zu Rechnungen &amp; Ausgaben">← Zurück</button>
         <button class="btn btn-ghost" onclick="exportRechnungenPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9">🤖 Neue Rechnung scannen</button>
       </div>
@@ -4021,6 +4026,20 @@
 <input type="file" id="doku-add-photo-input" accept="image/*" multiple style="display:none" onchange="handleAddDokuPhoto(this)">
 
 <!-- Lightbox -->
+<!-- Grundriss-Zoom: Bild + Pins groß, zum Rein-/Rauszoomen und Verschieben -->
+<div id="gr-zoom-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(10,14,22,0.96);align-items:center;justify-content:center;overflow:hidden;touch-action:none">
+  <div style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3">
+    <div style="display:flex;gap:8px">
+      <button onclick="grZoomBy(-0.5)" title="Verkleinern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">−</button>
+      <button onclick="grZoomBy(0.5)" title="Vergrößern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">+</button>
+      <button onclick="grZoomReset()" title="Zurücksetzen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(6px)">⟲</button>
+    </div>
+    <button onclick="closeGrundrissZoom()" title="Schließen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.2rem;cursor:pointer;backdrop-filter:blur(6px)">✕</button>
+  </div>
+  <div id="gr-zoom-stage" style="position:relative;transform-origin:center center;will-change:transform;cursor:grab;line-height:0"></div>
+  <div style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,0.6);font-size:0.75rem;pointer-events:none">Ziehen zum Verschieben · Zwei Finger oder +/− zum Zoomen</div>
+</div>
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
   <button onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
@@ -4094,26 +4113,52 @@
     <div class="form-row"><label>Beschreibung / Anleitung</label>
       <textarea id="wt-desc" placeholder="Was genau ist zu tun? Welches Material braucht man?"></textarea>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-row">
-        <label>Intervall (Zahl)</label>
-        <input type="number" id="wt-intervall" min="1" placeholder="1">
-      </div>
-      <div class="form-row">
-        <label>Einheit</label>
+    <div class="form-row"><label>Nächste Wartung am</label><input type="date" id="wt-next"></div>
+    <div class="form-row"><label>Wiederholen</label>
+      <select id="wt-repeat" onchange="_wtRepeatChange()">
+        <option value="none">Nicht wiederholen</option>
+        <option value="d1">Täglich</option>
+        <option value="d2">Alle 2 Tage</option>
+        <option value="d3">Alle 3 Tage</option>
+        <option value="w1">Wöchentlich</option>
+        <option value="w2">Alle 2 Wochen</option>
+        <option value="m1">Monatlich</option>
+        <option value="m3">Alle 3 Monate</option>
+        <option value="m6">Halbjährlich</option>
+        <option value="y1" selected>Jährlich</option>
+        <option value="y2">Alle 2 Jahre</option>
+        <option value="custom">Individuell…</option>
+      </select>
+    </div>
+    <div id="wt-custom-row" style="display:none;gap:12px">
+      <div class="form-row"><label>Alle</label><input type="number" id="wt-intervall" min="1" placeholder="1"></div>
+      <div class="form-row"><label>Einheit</label>
         <select id="wt-einheit">
+          <option value="Tage">Tage</option>
+          <option value="Wochen">Wochen</option>
           <option value="Monate">Monate</option>
           <option value="Jahre">Jahre</option>
-          <option value="Wochen">Wochen</option>
         </select>
       </div>
     </div>
-    <div class="form-row"><label>Letzte Durchführung</label><input type="date" id="wt-last"></div>
     <div class="form-row"><label>Zuständig / Gewerk</label><input type="text" id="wt-who" placeholder="z.B. Heizungsinstallateur, Eigenleistung"></div>
     <div class="form-row"><label>Ungefähre Kosten (€)</label><input type="number" id="wt-kosten" placeholder="0"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-wartung');resetWartungModal()">Abbrechen</button>
       <button class="btn btn-primary" onclick="addWartung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schnellzugriff anpassen -->
+<div class="modal-overlay" id="modal-qa-edit">
+  <div class="modal">
+    <h3>⚡ Schnellzugriff anpassen</h3>
+    <p style="font-size:0.82rem;color:var(--text3);margin:-4px 0 10px">Wähle, welche Knöpfe oben im Dashboard erscheinen sollen.</p>
+    <div id="qa-edit-list" style="max-height:50vh;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-qa-edit')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveQuickAccessEdit()">Speichern</button>
     </div>
   </div>
 </div>
@@ -4402,22 +4447,63 @@ function showPageHint(pageId) {
 }
 
 // ──────────────── NAVIGATION ────────────────
+// Planung ist jetzt EINE vertikale Zeitleiste (Phasen + Meilensteine chronologisch).
+// showPlanTab bleibt als Einstieg bestehen (aeltere Aufrufe), rendert aber die Zeitleiste.
 function showPlanTab(tab, btn) {
-  ['zeitplan','meilensteine','ablauf'].forEach(t => {
-    document.getElementById('plan-sec-' + t).style.display = t === tab ? '' : 'none';
-    document.getElementById('plan-tab-' + t)?.classList.toggle('active', t === tab);
-  });
   const btns = document.getElementById('plan-header-btns');
-  if (tab === 'zeitplan') {
-    btns.innerHTML = `<button class="btn btn-ghost" onclick="ganttScrollToday()" title="Zum heutigen Datum springen">📍 Heute</button><button class="btn btn-ghost" onclick="ganttZoom(-1)">− Zoom</button><button class="btn btn-ghost" onclick="ganttZoom(1)">+ Zoom</button><button class="btn btn-primary" onclick="openModal('modal-gantt')">+ Eintrag</button>`;
-    renderGantt();
-  } else if (tab === 'meilensteine') {
-    btns.innerHTML = `<button class="btn btn-primary" onclick="openModal('modal-milestone')">+ Meilenstein</button>`;
-    renderMilestones();
-  } else {
-    btns.innerHTML = `<button class="btn btn-primary" onclick="openModal('modal-abh-block')">+ Block hinzufügen</button>`;
-    renderAbhaengigkeiten();
+  if (btns) btns.innerHTML =
+    `<button class="btn btn-ghost" onclick="generateKIMeilensteine()" style="border-color:#7c3aed;color:#7c3aed">🤖 KI-Zeitplan</button>`
+    + `<button class="btn btn-ghost" onclick="resetGanttModal();openModal('modal-gantt')">+ Phase</button>`
+    + `<button class="btn btn-primary" onclick="openModal('modal-milestone')">+ Meilenstein</button>`;
+  renderZeitplan();
+}
+
+function renderZeitplan() {
+  const el = document.getElementById('plan-timeline');
+  if (!el) return;
+  const phases = (state.gantt || []).map(g => ({ kind:'phase', id:g.id, name:g.name, date:g.start||g.end, start:g.start, end:g.end, status:g.status, notiz:g.notiz }));
+  const miles  = (state.meilensteine || []).map(m => ({ kind:'mile', id:m.id, name:m.name, date:m.datum, done:m.done, text:m.text }));
+  const all = [...phases, ...miles];
+  const dated   = all.filter(x => x.date).sort((a,b) => new Date(a.date) - new Date(b.date));
+  const undated = all.filter(x => !x.date);
+  if (!dated.length && !undated.length) {
+    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch nichts geplant.<br>Lege oben eine <strong>Phase</strong> oder einen <strong>Meilenstein</strong> an.</p></div>`;
+    return;
   }
+  const t = today();
+  const esc = s => (s==null?'':String(s));
+  const row = (x) => {
+    if (x.kind === 'mile') {
+      const overdue = x.date && x.date < t && !x.done;
+      const col = x.done ? 'var(--success)' : overdue ? 'var(--danger)' : 'var(--accent)';
+      return `<div class="tl-row" onclick="editMilestone(${x.id})">
+        <div class="tl-marker" style="background:${col}" title="Abhaken" onclick="event.stopPropagation();toggleMilestone(${x.id});renderZeitplan()">${x.done?'✓':'◆'}</div>
+        <div class="tl-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div class="tl-title ${x.done?'tl-done':''}">🏁 ${esc(x.name)}</div>
+            <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteMilestone(${x.id})" title="Löschen">🗑</button>
+          </div>
+          <div class="tl-meta">${x.date?fmtDate(x.date):'kein Datum'}${x.done?' · erledigt':overdue?' · überfällig':''}</div>
+          ${x.text?`<div class="tl-note">${esc(x.text)}</div>`:''}
+        </div>
+      </div>`;
+    }
+    const col = x.status==='Erledigt' ? 'var(--success)' : x.status==='In Arbeit' ? 'var(--warning)' : 'var(--text3)';
+    return `<div class="tl-row" onclick="editGanttItem(${x.id})">
+      <div class="tl-marker" style="background:${col}">●</div>
+      <div class="tl-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="tl-title">${esc(x.name)}</div>
+          <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteGanttItem(${x.id})" title="Löschen">🗑</button>
+        </div>
+        <div class="tl-meta">${x.start?fmtDate(x.start):'?'} – ${x.end?fmtDate(x.end):'?'} · ${esc(x.status)||'Offen'}</div>
+        ${x.notiz?`<div class="tl-note">${esc(x.notiz)}</div>`:''}
+      </div>
+    </div>`;
+  };
+  el.innerHTML = `<div class="tl">${dated.map(row).join('')}`
+    + (undated.length ? `<div class="tl-undated">Ohne Datum</div>${undated.map(row).join('')}` : '')
+    + `</div>`;
 }
 
 function showPage(id) {
@@ -4430,7 +4516,17 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
-  event && event.currentTarget && event.currentTarget.classList.add('active');
+  // Passenden Menüpunkt hervorheben (unabhängig davon, ob per Menü, Schnellzugriff
+  // oder programmatisch aufgerufen). Liegt er in einer eingeklappten Gruppe → aufklappen.
+  const _navEl = document.querySelector('.nav-item[data-page="' + id + '"]');
+  if (_navEl) {
+    _navEl.classList.add('active');
+    const _sub = _navEl.closest('.nav-sub');
+    if (_sub && _sub.style.display === 'none') {
+      const _hdr = _sub.previousElementSibling;
+      if (_hdr && _hdr.classList.contains('nav-group')) toggleNavGroup(_sub.id, _hdr);
+    }
+  }
   // re-render
   if (id === 'dashboard') renderDashboard();
   if (id === 'kosten') renderKosten();
@@ -4475,7 +4571,10 @@ const I18N = {
     nav_notizen:'Notizen', nav_handwerker:'Handwerker', nav_grundrisse:'Grundrisse',
     nav_doku:'Leitungen & Rohre', nav_wartung:'Wartung',
     sec_uebersicht:'Übersicht', sec_finanzen:'Finanzen', sec_planung:'Planung',
-    sec_tagebuch:'Tagebuch', sec_kontakte:'Kontakte',
+    sec_tagebuch:'Doku & Fotos', sec_kontakte:'Kontakte',
+    nav_grp_finanzen:'Zahlungen & Auswertungen', nav_grp_mehr:'Mehr',
+    qa_title:'⚡ Schnellzugriff', qa_scan:'Rechnung scannen', qa_expense:'Ausgabe erfassen',
+    qa_task:'Aufgabe', qa_budget:'Budget', qa_photo:'Foto',
     ph_kosten_t:'Rechnungen & Ausgaben', ph_kosten_s:'Ausgaben erfassen oder Rechnungen scannen',
     ph_budget_t:'Budget', ph_budget_s:'Kategorien-Budget mit Gesamtübersicht',
     ph_aufgaben_t:'Aufgaben', ph_aufgaben_s:'To-Dos und offene Punkte',
@@ -4505,7 +4604,10 @@ const I18N = {
     nav_notizen:'Notes', nav_handwerker:'Contractors', nav_grundrisse:'Floor Plans',
     nav_doku:'Pipes & Cables', nav_wartung:'Maintenance',
     sec_uebersicht:'Overview', sec_finanzen:'Finances', sec_planung:'Planning',
-    sec_tagebuch:'Diary', sec_kontakte:'Contacts',
+    sec_tagebuch:'Docs & Photos', sec_kontakte:'Contacts',
+    nav_grp_finanzen:'Payments & Reports', nav_grp_mehr:'More',
+    qa_title:'⚡ Quick access', qa_scan:'Scan invoice', qa_expense:'Add expense',
+    qa_task:'Task', qa_budget:'Budget', qa_photo:'Photo',
     ph_kosten_t:'Invoices & Expenses', ph_kosten_s:'Log expenses or scan invoices',
     ph_budget_t:'Budget', ph_budget_s:'Category budgets with overall view',
     ph_aufgaben_t:'Tasks', ph_aufgaben_s:'To-dos and open items',
@@ -5250,21 +5352,27 @@ function applyModuleVisibility() {
   const mods = getModules();
   MODULES.forEach(m => {
     const isOn = mods[m.id];
-    // nav items
     document.querySelectorAll(`[data-module="${m.id}"]`).forEach(el => {
       el.style.display = isOn ? '' : 'none';
     });
   });
-  // Hide section headers if all items in group hidden
-  const groups = ['finanzen','planung','tagebuch_gruppe','kontakte_gruppe','gebaeude'];
-  groups.forEach(g => {
-    const header = document.querySelector(`[data-module="${g}"]`);
-    if (!header) return;
-    // check sibling nav items until next section
-    let el = header.nextElementSibling;
-    let anyVisible = false;
+  // Einklappbare Gruppen ("Zahlungen & Auswertungen", "Mehr"): Kopf + Inhalt
+  // ausblenden, wenn ALLE enthaltenen Punkte ausgeblendet sind.
+  document.querySelectorAll('.nav-sub').forEach(sub => {
+    const anyVisible = [...sub.querySelectorAll('.nav-item')].some(it => it.style.display !== 'none');
+    const hdr = sub.previousElementSibling;
+    if (!anyVisible) {
+      sub.style.display = 'none';
+      if (hdr && hdr.classList.contains('nav-group')) hdr.style.display = 'none';
+    } else if (hdr && hdr.classList.contains('nav-group')) {
+      hdr.style.display = '';   // Auf-/Zu-Zustand des Inhalts bleibt wie gewählt
+    }
+  });
+  // Abschnitts-Überschriften ausblenden, wenn nichts Sichtbares folgt
+  document.querySelectorAll('.nav-section').forEach(header => {
+    let el = header.nextElementSibling, anyVisible = false;
     while (el && !el.classList.contains('nav-section')) {
-      if (el.style.display !== 'none') anyVisible = true;
+      if ((el.classList.contains('nav-item') || el.classList.contains('nav-group')) && el.style.display !== 'none') anyVisible = true;
       el = el.nextElementSibling;
     }
     header.style.display = anyVisible ? '' : 'none';
@@ -5592,7 +5700,89 @@ async function deleteAccount() {
 }
 
 // ──────────────── DASHBOARD ────────────────
+// ── Schnellzugriff (auf dem Dashboard, vom Nutzer selbst zusammenstellbar) ────
+const QUICK_ACTIONS = [
+  { key:'scan',          icon:'🤖', label:'Rechnung scannen',   run:"openModal('modal-rechnung-scan')" },
+  { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    run:"openModal('modal-kosten')" },
+  { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       run:"openModal('modal-eigenleistung')" },
+  { key:'task',          icon:'✅', label:'Aufgabe',             run:"_populateTaskPersonList();openModal('modal-task')" },
+  { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', run:"openModal('modal-tagebuch')" },
+  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     run:"(document.getElementById('foto-input')||{click:function(){showPage('fotos')}}).click()" },
+  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    run:"openModal('modal-angebot')" },
+  { key:'milestone',     icon:'🏁', label:'Meilenstein',         run:"openModal('modal-milestone')" },
+  { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    run:"openModal('modal-zahlung')" },
+  { key:'wartung',       icon:'🔧', label:'Wartung anlegen',     run:"resetWartungModal();openModal('modal-wartung')" },
+  { key:'maengel',       icon:'⚠️', label:'Mangel erfassen',     run:"openModal('modal-mangel')" },
+  { key:'kontakt',       icon:'👷', label:'Kontakt',             run:"openModal('modal-kontakt')" },
+  { key:'notiz',         icon:'📝', label:'Notiz',               run:"openModal('modal-notiz')" },
+  { key:'budget',        icon:'📊', label:'Budget ansehen',      run:"showPage('budget')" }
+];
+const QA_DEFAULT = ['scan','expense','task','diary','photo','budget'];
+function _qaEnabled() {
+  try { const s = JSON.parse(localStorage.getItem('quickAccess')); if (Array.isArray(s)) return s; } catch(e) {}
+  return QA_DEFAULT.slice();
+}
+function renderQuickAccess() {
+  const el = document.getElementById('qa-tiles');
+  if (!el) return;
+  const tiles = _qaEnabled().map(k => QUICK_ACTIONS.find(a => a.key === k)).filter(Boolean);
+  el.innerHTML = tiles.length
+    ? tiles.map(a => `<button class="quick-tile" onclick="${a.run}"><span class="qt-ic">${a.icon}</span><span>${a.label}</span></button>`).join('')
+    : `<div style="font-size:0.82rem;color:var(--text3)">Kein Schnellzugriff gewählt – tippe oben auf „✏️ Anpassen".</div>`;
+}
+function openQuickAccessEdit() {
+  const enabled = _qaEnabled();
+  const list = document.getElementById('qa-edit-list');
+  if (list) list.innerHTML = QUICK_ACTIONS.map(a => `
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" value="${a.key}" ${enabled.includes(a.key) ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0">
+      <span style="font-size:1.15rem">${a.icon}</span><span style="font-weight:600">${a.label}</span>
+    </label>`).join('');
+  openModal('modal-qa-edit');
+}
+function saveQuickAccessEdit() {
+  const keys = [...document.querySelectorAll('#qa-edit-list input:checked')].map(i => i.value);
+  localStorage.setItem('quickAccess', JSON.stringify(keys));
+  closeModal('modal-qa-edit');
+  renderQuickAccess();
+  showToast('✅ Schnellzugriff angepasst', 'success');
+}
+
+// "Demnächst fällig" – nächste Wartung, Zahlung, Meilenstein auf dem Dashboard
+function renderDashReminders() {
+  const el = document.getElementById('dash-reminders');
+  if (!el) return;
+  const items = [];
+  const w = (state.wartungen || []).map(x => ({ x, d: _wartungNextDate(x) }))
+    .filter(o => o.d && !isNaN(o.d)).sort((a,b) => a.d - b.d)[0];
+  if (w) items.push({ icon:'🔧', label:'Nächste Wartung', name:w.x.name || 'Wartung', date:w.d.toISOString().slice(0,10) });
+  const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
+    .sort((a,b) => new Date(a.faellig) - new Date(b.faellig))[0];
+  if (z) items.push({ icon:'📅', label:'Nächste Zahlung', name:(z.beschr||z.empfaenger||'Zahlung') + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
+  const ms = (state.meilensteine || []).filter(m => !m.done && m.datum)
+    .sort((a,b) => new Date(a.datum) - new Date(b.datum))[0];
+  if (ms) items.push({ icon:'🏁', label:'Nächster Meilenstein', name:ms.name, date:ms.datum });
+  if (!items.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+    <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 Demnächst fällig</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${items.map(i => {
+        const d = _daysUntilDateStr(i.date), over = d < 0;
+        const col = over ? 'var(--danger)' : d <= 7 ? 'var(--warning)' : 'var(--text3)';
+        const when = over ? `${Math.abs(d)} Tage überfällig` : d === 0 ? 'heute' : d === 1 ? 'morgen' : `in ${d} Tagen`;
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:0.85rem">
+          <span style="font-size:1.05rem">${i.icon}</span>
+          <span style="flex:1;min-width:0"><b>${i.label}:</b> ${i.name}</span>
+          <span style="flex-shrink:0;font-size:0.76rem;font-weight:700;color:${col};text-align:right">${fmtDate(i.date)}<br>${when}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function renderDashboard() {
+  renderQuickAccess();
+  renderDashReminders();
   const total = state.kosten.reduce((s, k) => s + (k.status !== 'Storniert' ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
   const budget = state.budgetKat && state.budgetKat.length > 0
@@ -6528,6 +6718,25 @@ function toggleSidebar() {
   localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
 }
 
+// Menü-Gruppe (z.B. "Zahlungen & Auswertungen", "Mehr") auf-/zuklappen.
+function toggleNavGroup(id, el) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const willOpen = (box.style.display === 'none' || !box.style.display);
+  box.style.display = willOpen ? 'block' : 'none';
+  const chev = el && el.querySelector('.nav-chevron');
+  if (chev) chev.textContent = willOpen ? '▾' : '▸';
+  try { localStorage.setItem('navgrp_' + id, willOpen ? '1' : '0'); } catch(e) {}
+}
+// Beim Laden den zuletzt gewählten Zustand der Gruppen wiederherstellen.
+function _restoreNavGroups() {
+  document.querySelectorAll('.nav-group').forEach(hdr => {
+    const box = hdr.nextElementSibling;
+    if (!box || !box.classList.contains('nav-sub')) return;
+    if (localStorage.getItem('navgrp_' + box.id) === '1') toggleNavGroup(box.id, hdr);
+  });
+}
+
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const backdrop = document.getElementById('mobile-backdrop');
@@ -6597,6 +6806,8 @@ function _updateDarkModeToggle(on) {
   if (localStorage.getItem('sidebarCollapsed') === '1') {
     document.body.classList.add('sidebar-collapsed');
   }
+  // Zuletzt gewählten Auf-/Zu-Zustand der Menü-Gruppen wiederherstellen
+  try { _restoreNavGroups(); } catch(e) {}
   // Dark mode: prefer saved setting, fall back to system preference
   const saved = localStorage.getItem('darkMode');
   const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -7093,6 +7304,7 @@ function importKIZeitplan() {
 
 function renderMilestones() {
   const el = document.getElementById('milestone-list');
+  if (!el) { if (typeof renderZeitplan === 'function') renderZeitplan(); return; }
   if (state.meilensteine.length === 0) {
     el.innerHTML = `<div class="empty"><div class="icon">🏁</div><p>Noch keine Meilensteine – fang mit deinen Bauphasen an!</p></div>`;
     return;
@@ -7336,7 +7548,7 @@ function renderTasks() {
   if (!container) return;
 
   if (items.length === 0) {
-    container.innerHTML = `<div class="empty"><div class="icon">✅</div><p>${taskFilter === 'done' ? 'Noch keine erledigten Aufgaben' : 'Keine Aufgaben gefunden'}</p></div>`;
+    container.innerHTML = `<div class="empty"><div class="icon">✅</div><p>${taskFilter === 'done' ? 'Noch keine erledigten Aufgaben' : 'Noch keine Aufgaben'}</p>${taskFilter === 'done' ? '' : `<button class="btn btn-primary" style="margin-top:12px" onclick="_populateTaskPersonList();openModal('modal-task')">+ Aufgabe anlegen</button>`}</div>`;
     return;
   }
 
@@ -7537,7 +7749,7 @@ async function fetchWetter() {
 function renderDiary() {
   const el = document.getElementById('diary-list');
   if (state.tagebuch.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="icon">📓</div><p>Noch keine Einträge – starte dein Bautagebuch!</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">📓</div><p>Noch keine Einträge im Bautagebuch</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-tagebuch')">+ Eintrag</button></div>`;
     return;
   }
   el.innerHTML = [...state.tagebuch].reverse().map(e => {
@@ -7772,7 +7984,7 @@ async function deleteNotiz(id) {
 function renderNotizen() {
   const el = document.getElementById('notiz-list');
   if (state.notizen.length === 0) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📎</div><p>Keine Notizen</p></div>`;
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📎</div><p>Noch keine Notizen</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-notiz')">+ Notiz</button></div>`;
   } else {
     el.innerHTML = [...state.notizen].reverse().map(n => {
       const taskBadge = n.__taskId
@@ -8052,16 +8264,16 @@ async function deleteKontakt(id) {
 function renderKontakte() {
   const tbody = document.getElementById('kontakt-table');
   if (state.kontakte.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">👷</div><p>Noch keine Kontakte eingetragen</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">👷</div><p>Noch keine Kontakte</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-kontakt')">+ Kontakt anlegen</button></div></td></tr>`;
     return;
   }
   tbody.innerHTML = state.kontakte.map(k => `
     <tr>
-      <td><strong>${k.name}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${k.notiz}</span>`:''}</td>
-      <td class="hide-mobile"><span class="badge badge-gray">${k.gewerk}</span></td>
-      <td>${k.tel?`<a href="tel:${k.tel}" style="color:var(--accent);text-decoration:none">${k.tel}</a>`:'–'}</td>
-      <td class="hide-mobile">${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
-      <td><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
+      <td data-title><strong>${k.name}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${k.notiz}</span>`:''}</td>
+      <td data-label="Gewerk"><span class="badge badge-gray">${k.gewerk}</span></td>
+      <td data-label="Telefon">${k.tel?`<a href="tel:${k.tel}" style="color:var(--accent);text-decoration:none">${k.tel}</a>`:'–'}</td>
+      <td data-label="E-Mail">${k.mail?`<a href="mailto:${k.mail}" style="color:var(--accent);text-decoration:none">${k.mail}</a>`:'–'}</td>
+      <td data-label="Status"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteKontakt(${k.id})">🗑</button>
@@ -8158,7 +8370,7 @@ function daysBetween(a, b) {
 
 function renderGantt() {
   const container = document.getElementById('gantt-interactive');
-  if (!container) return;
+  if (!container) { if (typeof renderZeitplan === 'function') renderZeitplan(); return; }
 
   if (state.gantt.length === 0) {
     container.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Einträge – füge deine erste Phase hinzu!</p></div>`;
@@ -9310,6 +9522,58 @@ function setGrActive(id) {
   renderGrundrisse();
 }
 
+// ── Grundriss-Zoom: hochgeladenes Bild + bereits gesetzte Pins gross oeffnen ──
+let _grZ = { s:1, x:0, y:0, lx:0, ly:0 };
+const _grPtrs = new Map();
+let _grPinchDist = 0;
+function _grApply() {
+  const el = document.getElementById('gr-zoom-stage');
+  if (el) el.style.transform = `translate(${_grZ.x}px, ${_grZ.y}px) scale(${_grZ.s})`;
+}
+function openGrundrissZoom(grundrissId) {
+  const g = (state.grundrisse || []).find(x => x.id === grundrissId);
+  if (!g || !g.bild) return;
+  const pins = (g.pins || []).map(p => {
+    const t = GR_PIN_TYPEN[p.typ] || GR_PIN_TYPEN['Sonstiges'];
+    return `<div title="${(p.titel||p.typ)}${p.notiz ? ': '+p.notiz : ''}" style="position:absolute;left:calc(${p.x*100}% - 13px);top:calc(${p.y*100}% - 13px);width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;background:${t.color};color:#fff;font-size:0.78rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.45);pointer-events:none">${t.icon}</div>`;
+  }).join('');
+  const stage = document.getElementById('gr-zoom-stage');
+  stage.innerHTML = `<img src="${g.bild}" draggable="false" style="display:block;max-width:92vw;max-height:80vh;user-select:none;pointer-events:none;border-radius:6px">${pins}`;
+  _grZ = { s:1, x:0, y:0, lx:0, ly:0 };
+  _grPtrs.clear(); _grPinchDist = 0;
+  _grApply();
+  document.getElementById('gr-zoom-overlay').style.display = 'flex';
+}
+function closeGrundrissZoom() { document.getElementById('gr-zoom-overlay').style.display = 'none'; }
+function grZoomBy(d) {
+  _grZ.s = Math.min(6, Math.max(1, _grZ.s + d));
+  if (_grZ.s <= 1.001) { _grZ.x = 0; _grZ.y = 0; }
+  _grApply();
+}
+function grZoomReset() { _grZ = { s:1, x:0, y:0, lx:0, ly:0 }; _grApply(); }
+function _grDist() { const p = [..._grPtrs.values()]; return Math.hypot(p[0].clientX-p[1].clientX, p[0].clientY-p[1].clientY); }
+(function _grInitZoom(){
+  const ov = () => document.getElementById('gr-zoom-overlay');
+  document.addEventListener('pointerdown', e => {
+    const o = ov(); if (!o || o.style.display === 'none' || !o.contains(e.target) || e.target.closest('button')) return;
+    _grPtrs.set(e.pointerId, e); _grZ.lx = e.clientX; _grZ.ly = e.clientY;
+    if (_grPtrs.size === 2) _grPinchDist = _grDist();
+  });
+  document.addEventListener('pointermove', e => {
+    if (!_grPtrs.has(e.pointerId)) return;
+    _grPtrs.set(e.pointerId, e);
+    if (_grPtrs.size === 2) { const d = _grDist(); if (_grPinchDist) grZoomBy((d - _grPinchDist) * 0.007); _grPinchDist = d; return; }
+    _grZ.x += e.clientX - _grZ.lx; _grZ.y += e.clientY - _grZ.ly; _grZ.lx = e.clientX; _grZ.ly = e.clientY; _grApply();
+  });
+  const up = e => { _grPtrs.delete(e.pointerId); if (_grPtrs.size < 2) _grPinchDist = 0; };
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
+  document.addEventListener('wheel', e => {
+    const o = ov(); if (!o || o.style.display === 'none' || !o.contains(e.target)) return;
+    e.preventDefault(); grZoomBy(e.deltaY < 0 ? 0.3 : -0.3);
+  }, { passive:false });
+})();
+
 function renderGrundrissFloor(grundrissId) {
   const content = document.getElementById('gr-content');
   const g = (state.grundrisse || []).find(x => x.id === grundrissId);
@@ -9333,12 +9597,15 @@ function renderGrundrissFloor(grundrissId) {
   }).join('');
 
   const planHtml = g.bild
-    ? `<div id="gr-plan-wrap" style="position:relative;display:inline-block;max-width:100%;cursor:crosshair"
+    ? `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+         <button class="btn btn-ghost" onclick="openGrundrissZoom(${grundrissId})" style="font-size:0.82rem">🔍 Vergrößern</button>
+       </div>
+       <div id="gr-plan-wrap" style="position:relative;display:inline-block;max-width:100%;cursor:crosshair"
          onclick="handleGrundrissClick(event,${grundrissId})">
          <img src="${g.bild}" id="gr-plan-img" style="display:block;max-width:100%;border-radius:10px;user-select:none" draggable="false">
          ${pinsHtml}
        </div>
-       <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">💡 Klicke auf den Plan um eine Markierung hinzuzufügen · Klicke auf einen Pin um ihn zu bearbeiten</div>`
+       <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">💡 Klicke auf den Plan um eine Markierung hinzuzufügen · Klicke auf einen Pin um ihn zu bearbeiten · „🔍 Vergrößern" zum Reinzoomen</div>`
     : `<div style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;color:var(--text3)">
          <div style="font-size:2rem;margin-bottom:10px">🗺️</div>
          <div style="font-weight:600;margin-bottom:8px">Noch kein Plan hochgeladen</div>
@@ -9800,9 +10067,11 @@ function renderDoku() {
 // nach "Bearbeiten → Abbrechen → + Wartung" der neue Eintrag still den
 // zuletzt bearbeiteten ueberschreiben.
 function resetWartungModal() {
-  ['wt-name','wt-desc','wt-last','wt-who','wt-kosten','wt-intervall'].forEach(id => {
+  ['wt-name','wt-desc','wt-next','wt-who','wt-kosten','wt-intervall'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  const rep = document.getElementById('wt-repeat'); if (rep) rep.value = 'y1';
+  _wtRepeatChange();
   const editEl = document.getElementById('wt-edit-id');
   if (editEl) editEl.value = '';
 }
@@ -9811,44 +10080,58 @@ function addWartung() {
   if (!requireSub()) return;
   state.wartungen = state.wartungen || [];
   const editId = parseInt(document.getElementById('wt-edit-id')?.value) || null;
-  const intervall = parseInt(document.getElementById('wt-intervall').value) || 1;
-  const einheit   = document.getElementById('wt-einheit').value;
-  const last      = document.getElementById('wt-last').value || today();
+  const repeatKey = document.getElementById('wt-repeat').value;
+  let intervall, einheit;
+  if (repeatKey === 'custom') {
+    intervall = parseInt(document.getElementById('wt-intervall').value) || 1;
+    einheit   = document.getElementById('wt-einheit').value;
+  } else {
+    const r = WARTUNG_REPEATS[repeatKey] || WARTUNG_REPEATS.y1;
+    intervall = r.n; einheit = r.e;
+  }
+  const next = document.getElementById('wt-next').value || today();
   const item = {
     id: editId || Date.now(),
     name:      document.getElementById('wt-name').value || 'Wartung',
     kat:       document.getElementById('wt-kat').value,
     desc:      document.getElementById('wt-desc').value,
-    intervall, einheit, last,
+    intervall, einheit, next,
     who:       document.getElementById('wt-who').value,
     kosten:    parseFloat(document.getElementById('wt-kosten').value) || 0
   };
   if (editId) {
     const idx = state.wartungen.findIndex(w => String(w.id) === String(editId));
-    if (idx > -1) state.wartungen[idx] = item;
+    if (idx > -1) state.wartungen[idx] = { ...state.wartungen[idx], ...item };
   } else {
     state.wartungen.push(item);
   }
   save(); closeModal('modal-wartung');
   showToast(editId ? '✏️ Wartung aktualisiert' : '✅ Wartungsaufgabe gespeichert', 'success');
-  ['wt-name','wt-desc','wt-last','wt-who','wt-kosten','wt-intervall'].forEach(id => document.getElementById(id).value = '');
-  if (document.getElementById('wt-edit-id')) document.getElementById('wt-edit-id').value = '';
+  resetWartungModal();
   renderWartung();
 }
 
 function editWartung(id) {
   const w = (state.wartungen||[]).find(w => String(w.id) === String(id));
   if (!w) return;
-  document.getElementById('wt-name').value      = w.name      || '';
-  document.getElementById('wt-desc').value      = w.desc      || '';
-  document.getElementById('wt-last').value      = w.last      || '';
-  document.getElementById('wt-who').value       = w.who       || '';
-  document.getElementById('wt-kosten').value    = w.kosten    || '';
-  document.getElementById('wt-intervall').value = w.intervall || 1;
-  const eSel = document.getElementById('wt-einheit');
-  Array.from(eSel.options).forEach(o => { if (o.value === w.einheit) o.selected = true; });
+  document.getElementById('wt-name').value   = w.name   || '';
+  document.getElementById('wt-desc').value   = w.desc   || '';
+  document.getElementById('wt-who').value    = w.who    || '';
+  document.getElementById('wt-kosten').value = w.kosten || '';
+  // Nächstes Datum: aus w.next oder (Altbestand) aus w.last berechnet
+  const nd = _wartungNextDate(w);
+  document.getElementById('wt-next').value = (nd && !isNaN(nd)) ? nd.toISOString().slice(0,10) : '';
+  // Wiederhol-Preset erkennen
+  const key = _wtRepeatKey(w.intervall, w.einheit);
+  document.getElementById('wt-repeat').value = key;
+  if (key === 'custom') {
+    document.getElementById('wt-intervall').value = w.intervall || 1;
+    const eSel = document.getElementById('wt-einheit');
+    Array.from(eSel.options).forEach(o => { o.selected = (o.value === w.einheit); });
+  }
+  _wtRepeatChange();
   const kSel = document.getElementById('wt-kat');
-  Array.from(kSel.options).forEach(o => { if (o.value === w.kat) o.selected = true; });
+  Array.from(kSel.options).forEach(o => { o.selected = (o.value === w.kat); });
   if (document.getElementById('wt-edit-id')) document.getElementById('wt-edit-id').value = id;
   openModal('modal-wartung');
 }
@@ -9864,15 +10147,58 @@ async function deleteWartung(id) {
 
 function markWartungDone(id) {
   const w = (state.wartungen || []).find(w => String(w.id) === String(id));
-  if (w) { w.last = today(); save(); renderWartung(); }
+  if (!w) return;
+  w.last = today();
+  // Wiederholend: nächsten Termin ab heute weiterstellen
+  if (w.einheit && w.intervall) {
+    w.next = getNextDate(today(), w.intervall, w.einheit).toISOString().slice(0,10);
+  }
+  save(); renderWartung();
+  showToast('✓ Erledigt – nächster Termin gesetzt', 'success');
 }
 
 function getNextDate(last, intervall, einheit) {
   const d = new Date(last);
+  if (einheit === 'Tage')    d.setDate(d.getDate() + intervall);
   if (einheit === 'Wochen')  d.setDate(d.getDate() + intervall * 7);
   if (einheit === 'Monate')  d.setMonth(d.getMonth() + intervall);
   if (einheit === 'Jahre')   d.setFullYear(d.getFullYear() + intervall);
   return d;
+}
+
+// ── Wartungs-Wiederholung: Presets <-> (intervall, einheit) ──────────────────
+const WARTUNG_REPEATS = {
+  none:{n:0,e:''}, d1:{n:1,e:'Tage'}, d2:{n:2,e:'Tage'}, d3:{n:3,e:'Tage'},
+  w1:{n:1,e:'Wochen'}, w2:{n:2,e:'Wochen'}, m1:{n:1,e:'Monate'}, m3:{n:3,e:'Monate'},
+  m6:{n:6,e:'Monate'}, y1:{n:1,e:'Jahre'}, y2:{n:2,e:'Jahre'}
+};
+// (intervall,einheit) -> Preset-Key ('custom', wenn keiner passt)
+function _wtRepeatKey(n, e) {
+  if (!e || !n) return 'none';
+  for (const [k, v] of Object.entries(WARTUNG_REPEATS)) if (v.n === n && v.e === e) return k;
+  return 'custom';
+}
+// Blendet die Individuell-Felder ein/aus
+function _wtRepeatChange() {
+  const sel = document.getElementById('wt-repeat');
+  const row = document.getElementById('wt-custom-row');
+  if (row) row.style.display = (sel && sel.value === 'custom') ? 'grid' : 'none';
+}
+// Nächstes Fälligkeitsdatum: bevorzugt w.next, sonst aus w.last berechnet (Altbestand)
+function _wartungNextDate(w) {
+  if (w && w.next) return new Date(w.next);
+  return getNextDate(w.last, w.intervall, w.einheit);
+}
+// Lesbares Wiederhol-Label (z.B. "jährlich", "alle 3 Monate", "einmalig")
+const WARTUNG_REPEAT_LABELS = {
+  none:'einmalig', d1:'täglich', d2:'alle 2 Tage', d3:'alle 3 Tage',
+  w1:'wöchentlich', w2:'alle 2 Wochen', m1:'monatlich', m3:'alle 3 Monate',
+  m6:'halbjährlich', y1:'jährlich', y2:'alle 2 Jahre'
+};
+function _wtRepeatLabel(w) {
+  const k = _wtRepeatKey(w.intervall, w.einheit);
+  if (k === 'custom') return `alle ${w.intervall} ${w.einheit}`;
+  return WARTUNG_REPEAT_LABELS[k] || '';
 }
 
 function getDaysUntil(date) {
@@ -9896,12 +10222,12 @@ function renderWartung() {
 
   let overdue = 0, soon = 0, ok = 0;
   const sorted = [...state.wartungen].sort((a, b) => {
-    return getDaysUntil(getNextDate(a.last, a.intervall, a.einheit))
-         - getDaysUntil(getNextDate(b.last, b.intervall, b.einheit));
+    return getDaysUntil(_wartungNextDate(a))
+         - getDaysUntil(_wartungNextDate(b));
   });
 
   if (sorted.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="icon">🔧</div><p>Noch keine Wartungsaufgaben – lege z.B. Heizungsservice an!</p></div>`;
+    list.innerHTML = `<div class="empty"><div class="icon">🔧</div><p>Noch keine Wartungen – z.B. Heizungsservice</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetWartungModal();openModal('modal-wartung')">+ Wartung anlegen</button></div>`;
     document.getElementById('w-total').textContent = '0';
     document.getElementById('w-overdue').textContent = '0';
     document.getElementById('w-soon').textContent = '0';
@@ -9910,7 +10236,7 @@ function renderWartung() {
   }
 
   list.innerHTML = sorted.map(w => {
-    const nextDate = getNextDate(w.last, w.intervall, w.einheit);
+    const nextDate = _wartungNextDate(w);
     const days     = getDaysUntil(nextDate);
     let statusClass, statusText;
     if (days < 0)  { overdue++; statusClass = 'overdue'; statusText = `${Math.abs(days)} Tage überfällig`; }
@@ -9930,12 +10256,11 @@ function renderWartung() {
         ${w.desc ? `<div style="font-size:0.78rem;color:var(--text3);margin-top:3px;line-height:1.4">${w.desc}</div>` : ''}
         <div class="wartung-next ${statusClass}">
           ${days < 0 ? '🔴' : days <= 30 ? '🟡' : '🟢'} ${statusText}
-          · Zuletzt: ${fmtDate(w.last)}
+          · Fällig am ${fmtDate(nextDate.toISOString().split('T')[0])}${w.last ? ' · zuletzt ' + fmtDate(w.last) : ''}
         </div>
       </div>
       <div class="wartung-interval">
-        <div class="wartung-interval-val">${w.intervall}</div>
-        <div class="wartung-interval-unit">${w.einheit}</div>
+        <div class="wartung-interval-unit" style="font-size:0.72rem;text-transform:none;font-weight:600">🔁 ${_wtRepeatLabel(w)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         <button class="btn btn-primary" style="padding:6px 12px;font-size:0.75rem" onclick="markWartungDone(${w.id})" title="Als erledigt markieren">✓ Erledigt</button>
@@ -9989,11 +10314,11 @@ function buildProjectSnapshot() {
   // overdueWartungen
   const wartungen = state.wartungen || [];
   const overdueWartungen = wartungen.filter(w => {
-    const next = getNextDate(w.last, w.intervall, w.einheit);
+    const next = _wartungNextDate(w);
     return getDaysUntil(next) < 0;
   });
   const soonWartungen = wartungen.filter(w => {
-    const d = getDaysUntil(getNextDate(w.last, w.intervall, w.einheit));
+    const d = getDaysUntil(_wartungNextDate(w));
     return d >= 0 && d <= 30;
   });
 
@@ -11710,6 +12035,7 @@ function renderAbhaengigkeiten() {
   state.abhaengigkeiten = state.abhaengigkeiten || [];
   const el = document.getElementById('abh-matrix');
   if (!el) return;
+  if (!el) return;
 
   if (state.abhaengigkeiten.length === 0) {
     el.innerHTML = `<div class="empty"><div class="icon">🔗</div><p>Noch keine Blöcke – füge deine erste Phase hinzu!<br><span style="font-size:0.78rem">Beispiel: Fundament → Rohbau → Dach</span></p></div>`;
@@ -12124,7 +12450,7 @@ function renderAngebote() {
 
   const tbody = document.getElementById('angebot-table');
   if (state.angebote.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote – erfasse dein erstes Angebot!</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-angebot')">+ Angebot</button></div></td></tr>`;
     return;
   }
 
@@ -12247,7 +12573,7 @@ function renderZahlungsplan() {
 
   const el = document.getElementById('zp-timeline');
   if (state.zahlungen.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Zahlungen geplant</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Zahlungen geplant</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-zahlung')">+ Zahlung</button></div>`;
     return;
   }
 
