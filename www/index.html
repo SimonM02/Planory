@@ -2464,6 +2464,8 @@
       <div id="qa-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px"></div>
     </div>
 
+    <div id="dash-reminders" style="margin-bottom:22px"></div>
+
     <div class="cards-grid" id="dash-cards">
       <div class="card">
         <div class="card-label">Gesamtbudget</div>
@@ -5726,8 +5728,41 @@ function saveQuickAccessEdit() {
   showToast('✅ Schnellzugriff angepasst', 'success');
 }
 
+// "Demnächst fällig" – nächste Wartung, Zahlung, Meilenstein auf dem Dashboard
+function renderDashReminders() {
+  const el = document.getElementById('dash-reminders');
+  if (!el) return;
+  const items = [];
+  const w = (state.wartungen || []).map(x => ({ x, d: _wartungNextDate(x) }))
+    .filter(o => o.d && !isNaN(o.d)).sort((a,b) => a.d - b.d)[0];
+  if (w) items.push({ icon:'🔧', label:'Nächste Wartung', name:w.x.name || 'Wartung', date:w.d.toISOString().slice(0,10) });
+  const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
+    .sort((a,b) => new Date(a.faellig) - new Date(b.faellig))[0];
+  if (z) items.push({ icon:'📅', label:'Nächste Zahlung', name:(z.beschr||z.empfaenger||'Zahlung') + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
+  const ms = (state.meilensteine || []).filter(m => !m.done && m.datum)
+    .sort((a,b) => new Date(a.datum) - new Date(b.datum))[0];
+  if (ms) items.push({ icon:'🏁', label:'Nächster Meilenstein', name:ms.name, date:ms.datum });
+  if (!items.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+    <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 Demnächst fällig</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${items.map(i => {
+        const d = _daysUntilDateStr(i.date), over = d < 0;
+        const col = over ? 'var(--danger)' : d <= 7 ? 'var(--warning)' : 'var(--text3)';
+        const when = over ? `${Math.abs(d)} Tage überfällig` : d === 0 ? 'heute' : d === 1 ? 'morgen' : `in ${d} Tagen`;
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:0.85rem">
+          <span style="font-size:1.05rem">${i.icon}</span>
+          <span style="flex:1;min-width:0"><b>${i.label}:</b> ${i.name}</span>
+          <span style="flex-shrink:0;font-size:0.76rem;font-weight:700;color:${col};text-align:right">${fmtDate(i.date)}<br>${when}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function renderDashboard() {
   renderQuickAccess();
+  renderDashReminders();
   const total = state.kosten.reduce((s, k) => s + (k.status !== 'Storniert' ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
   const budget = state.budgetKat && state.budgetKat.length > 0
@@ -7493,7 +7528,7 @@ function renderTasks() {
   if (!container) return;
 
   if (items.length === 0) {
-    container.innerHTML = `<div class="empty"><div class="icon">✅</div><p>${taskFilter === 'done' ? 'Noch keine erledigten Aufgaben' : 'Keine Aufgaben gefunden'}</p></div>`;
+    container.innerHTML = `<div class="empty"><div class="icon">✅</div><p>${taskFilter === 'done' ? 'Noch keine erledigten Aufgaben' : 'Noch keine Aufgaben'}</p>${taskFilter === 'done' ? '' : `<button class="btn btn-primary" style="margin-top:12px" onclick="_populateTaskPersonList();openModal('modal-task')">+ Aufgabe anlegen</button>`}</div>`;
     return;
   }
 
@@ -7694,7 +7729,7 @@ async function fetchWetter() {
 function renderDiary() {
   const el = document.getElementById('diary-list');
   if (state.tagebuch.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="icon">📓</div><p>Noch keine Einträge – starte dein Bautagebuch!</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">📓</div><p>Noch keine Einträge im Bautagebuch</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-tagebuch')">+ Eintrag</button></div>`;
     return;
   }
   el.innerHTML = [...state.tagebuch].reverse().map(e => {
@@ -7929,7 +7964,7 @@ async function deleteNotiz(id) {
 function renderNotizen() {
   const el = document.getElementById('notiz-list');
   if (state.notizen.length === 0) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📎</div><p>Keine Notizen</p></div>`;
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📎</div><p>Noch keine Notizen</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-notiz')">+ Notiz</button></div>`;
   } else {
     el.innerHTML = [...state.notizen].reverse().map(n => {
       const taskBadge = n.__taskId
@@ -8209,7 +8244,7 @@ async function deleteKontakt(id) {
 function renderKontakte() {
   const tbody = document.getElementById('kontakt-table');
   if (state.kontakte.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">👷</div><p>Noch keine Kontakte eingetragen</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">👷</div><p>Noch keine Kontakte</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-kontakt')">+ Kontakt anlegen</button></div></td></tr>`;
     return;
   }
   tbody.innerHTML = state.kontakte.map(k => `
@@ -10172,7 +10207,7 @@ function renderWartung() {
   });
 
   if (sorted.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="icon">🔧</div><p>Noch keine Wartungsaufgaben – lege z.B. Heizungsservice an!</p></div>`;
+    list.innerHTML = `<div class="empty"><div class="icon">🔧</div><p>Noch keine Wartungen – z.B. Heizungsservice</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetWartungModal();openModal('modal-wartung')">+ Wartung anlegen</button></div>`;
     document.getElementById('w-total').textContent = '0';
     document.getElementById('w-overdue').textContent = '0';
     document.getElementById('w-soon').textContent = '0';
@@ -12395,7 +12430,7 @@ function renderAngebote() {
 
   const tbody = document.getElementById('angebot-table');
   if (state.angebote.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote – erfasse dein erstes Angebot!</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-angebot')">+ Angebot</button></div></td></tr>`;
     return;
   }
 
@@ -12518,7 +12553,7 @@ function renderZahlungsplan() {
 
   const el = document.getElementById('zp-timeline');
   if (state.zahlungen.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Zahlungen geplant</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch keine Zahlungen geplant</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-zahlung')">+ Zahlung</button></div>`;
     return;
   }
 
