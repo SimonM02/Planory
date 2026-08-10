@@ -4035,6 +4035,20 @@
 <input type="file" id="doku-add-photo-input" accept="image/*" multiple style="display:none" onchange="handleAddDokuPhoto(this)">
 
 <!-- Lightbox -->
+<!-- Grundriss-Zoom: Bild + Pins groß, zum Rein-/Rauszoomen und Verschieben -->
+<div id="gr-zoom-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(10,14,22,0.96);align-items:center;justify-content:center;overflow:hidden;touch-action:none">
+  <div style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3">
+    <div style="display:flex;gap:8px">
+      <button onclick="grZoomBy(-0.5)" title="Verkleinern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">−</button>
+      <button onclick="grZoomBy(0.5)" title="Vergrößern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">+</button>
+      <button onclick="grZoomReset()" title="Zurücksetzen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(6px)">⟲</button>
+    </div>
+    <button onclick="closeGrundrissZoom()" title="Schließen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.2rem;cursor:pointer;backdrop-filter:blur(6px)">✕</button>
+  </div>
+  <div id="gr-zoom-stage" style="position:relative;transform-origin:center center;will-change:transform;cursor:grab;line-height:0"></div>
+  <div style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,0.6);font-size:0.75rem;pointer-events:none">Ziehen zum Verschieben · Zwei Finger oder +/− zum Zoomen</div>
+</div>
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
   <button onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
@@ -9361,6 +9375,58 @@ function setGrActive(id) {
   renderGrundrisse();
 }
 
+// ── Grundriss-Zoom: hochgeladenes Bild + bereits gesetzte Pins gross oeffnen ──
+let _grZ = { s:1, x:0, y:0, lx:0, ly:0 };
+const _grPtrs = new Map();
+let _grPinchDist = 0;
+function _grApply() {
+  const el = document.getElementById('gr-zoom-stage');
+  if (el) el.style.transform = `translate(${_grZ.x}px, ${_grZ.y}px) scale(${_grZ.s})`;
+}
+function openGrundrissZoom(grundrissId) {
+  const g = (state.grundrisse || []).find(x => x.id === grundrissId);
+  if (!g || !g.bild) return;
+  const pins = (g.pins || []).map(p => {
+    const t = GR_PIN_TYPEN[p.typ] || GR_PIN_TYPEN['Sonstiges'];
+    return `<div title="${(p.titel||p.typ)}${p.notiz ? ': '+p.notiz : ''}" style="position:absolute;left:calc(${p.x*100}% - 13px);top:calc(${p.y*100}% - 13px);width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;background:${t.color};color:#fff;font-size:0.78rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.45);pointer-events:none">${t.icon}</div>`;
+  }).join('');
+  const stage = document.getElementById('gr-zoom-stage');
+  stage.innerHTML = `<img src="${g.bild}" draggable="false" style="display:block;max-width:92vw;max-height:80vh;user-select:none;pointer-events:none;border-radius:6px">${pins}`;
+  _grZ = { s:1, x:0, y:0, lx:0, ly:0 };
+  _grPtrs.clear(); _grPinchDist = 0;
+  _grApply();
+  document.getElementById('gr-zoom-overlay').style.display = 'flex';
+}
+function closeGrundrissZoom() { document.getElementById('gr-zoom-overlay').style.display = 'none'; }
+function grZoomBy(d) {
+  _grZ.s = Math.min(6, Math.max(1, _grZ.s + d));
+  if (_grZ.s <= 1.001) { _grZ.x = 0; _grZ.y = 0; }
+  _grApply();
+}
+function grZoomReset() { _grZ = { s:1, x:0, y:0, lx:0, ly:0 }; _grApply(); }
+function _grDist() { const p = [..._grPtrs.values()]; return Math.hypot(p[0].clientX-p[1].clientX, p[0].clientY-p[1].clientY); }
+(function _grInitZoom(){
+  const ov = () => document.getElementById('gr-zoom-overlay');
+  document.addEventListener('pointerdown', e => {
+    const o = ov(); if (!o || o.style.display === 'none' || !o.contains(e.target) || e.target.closest('button')) return;
+    _grPtrs.set(e.pointerId, e); _grZ.lx = e.clientX; _grZ.ly = e.clientY;
+    if (_grPtrs.size === 2) _grPinchDist = _grDist();
+  });
+  document.addEventListener('pointermove', e => {
+    if (!_grPtrs.has(e.pointerId)) return;
+    _grPtrs.set(e.pointerId, e);
+    if (_grPtrs.size === 2) { const d = _grDist(); if (_grPinchDist) grZoomBy((d - _grPinchDist) * 0.007); _grPinchDist = d; return; }
+    _grZ.x += e.clientX - _grZ.lx; _grZ.y += e.clientY - _grZ.ly; _grZ.lx = e.clientX; _grZ.ly = e.clientY; _grApply();
+  });
+  const up = e => { _grPtrs.delete(e.pointerId); if (_grPtrs.size < 2) _grPinchDist = 0; };
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
+  document.addEventListener('wheel', e => {
+    const o = ov(); if (!o || o.style.display === 'none' || !o.contains(e.target)) return;
+    e.preventDefault(); grZoomBy(e.deltaY < 0 ? 0.3 : -0.3);
+  }, { passive:false });
+})();
+
 function renderGrundrissFloor(grundrissId) {
   const content = document.getElementById('gr-content');
   const g = (state.grundrisse || []).find(x => x.id === grundrissId);
@@ -9384,12 +9450,15 @@ function renderGrundrissFloor(grundrissId) {
   }).join('');
 
   const planHtml = g.bild
-    ? `<div id="gr-plan-wrap" style="position:relative;display:inline-block;max-width:100%;cursor:crosshair"
+    ? `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+         <button class="btn btn-ghost" onclick="openGrundrissZoom(${grundrissId})" style="font-size:0.82rem">🔍 Vergrößern</button>
+       </div>
+       <div id="gr-plan-wrap" style="position:relative;display:inline-block;max-width:100%;cursor:crosshair"
          onclick="handleGrundrissClick(event,${grundrissId})">
          <img src="${g.bild}" id="gr-plan-img" style="display:block;max-width:100%;border-radius:10px;user-select:none" draggable="false">
          ${pinsHtml}
        </div>
-       <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">💡 Klicke auf den Plan um eine Markierung hinzuzufügen · Klicke auf einen Pin um ihn zu bearbeiten</div>`
+       <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">💡 Klicke auf den Plan um eine Markierung hinzuzufügen · Klicke auf einen Pin um ihn zu bearbeiten · „🔍 Vergrößern" zum Reinzoomen</div>`
     : `<div style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;color:var(--text3)">
          <div style="font-size:2rem;margin-bottom:10px">🗺️</div>
          <div style="font-weight:600;margin-bottom:8px">Noch kein Plan hochgeladen</div>
