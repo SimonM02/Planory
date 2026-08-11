@@ -10,6 +10,20 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 11.08.2026.
 - [ ] **„Im App Store laden"-Knopf** in der Landing ergänzen, sobald die App
       im App Store live ist und der App-Store-Link vorhanden ist.
 
+## Rechnung scannen – Foto/Absturz
+- [x] Bild wird beim Scannen gespeichert (Supabase) UND als Sicherheitsnetz direkt
+      beim Eintrag (`scanData`), falls der Upload scheitert. Beleg ist jetzt auch
+      aus der Kosten-Liste über 📎 öffenbar.
+- [x] Foto-Verarbeitung speicherschonender + fehlertolerant gemacht (kann den
+      Absturz bei großen Handy-Fotos verhindern). **Auf planory.at (Web) testbar;
+      in der App erst mit dem nächsten Build (8) enthalten.**
+- [ ] **Falls die Foto-Aufnahme in der iPhone-App weiter abstürzt:** Ursache ist
+      dann sehr wahrscheinlich, dass iOS den Webview während der Kamera schließt.
+      Lösung = natives **Capacitor Camera Plugin** in Build 8 (Claude baut den
+      Code, du machst `npm install @capacitor/camera && npx cap sync ios`).
+- [ ] Prüfen, dass der Supabase-Storage-Bucket **`uploads`** existiert und
+      **public** ist (sonst greift nur das Sicherheitsnetz `scanData`).
+
 ## Apple / App Store (App-Freigabe)
 - [ ] **App-KATEGORIE ändern** (Grund der 3. Ablehnung, Guideline 1.3 Kids).
       Nur am **Computer** möglich (Handy zeigt das Feld nicht):
