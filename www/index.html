@@ -4292,6 +4292,16 @@
         </select>
       </div>
     </div>
+    <div class="form-row"><label>Erinnerung (Push-Mitteilung)</label>
+      <select id="wt-erinnerung">
+        <option value="aus">Keine Erinnerung</option>
+        <option value="0">Nur am Fälligkeitstag</option>
+        <option value="1">1 Tag vorher (+ am Tag)</option>
+        <option value="3" selected>3 Tage vorher (+ am Tag)</option>
+        <option value="7">1 Woche vorher (+ am Tag)</option>
+        <option value="14">2 Wochen vorher (+ am Tag)</option>
+      </select>
+    </div>
     <div class="form-row"><label>Zuständig / Gewerk</label><input type="text" id="wt-who" placeholder="z.B. Heizungsinstallateur, Eigenleistung"></div>
     <div class="form-row"><label>Ungefähre Kosten (€)</label><input type="number" id="wt-kosten" placeholder="0"></div>
     <div class="modal-actions">
@@ -10255,6 +10265,7 @@ function resetWartungModal() {
   });
   const rep = document.getElementById('wt-repeat'); if (rep) rep.value = 'y1';
   _wtRepeatChange();
+  const rem = document.getElementById('wt-erinnerung'); if (rem) rem.value = '3';
   const editEl = document.getElementById('wt-edit-id');
   if (editEl) editEl.value = '';
 }
@@ -10279,6 +10290,7 @@ function addWartung() {
     kat:       document.getElementById('wt-kat').value,
     desc:      document.getElementById('wt-desc').value,
     intervall, einheit, next,
+    remind:    document.getElementById('wt-erinnerung')?.value || '3',
     who:       document.getElementById('wt-who').value,
     kosten:    parseFloat(document.getElementById('wt-kosten').value) || 0
   };
@@ -10313,6 +10325,8 @@ function editWartung(id) {
     Array.from(eSel.options).forEach(o => { o.selected = (o.value === w.einheit); });
   }
   _wtRepeatChange();
+  const remSel = document.getElementById('wt-erinnerung');
+  if (remSel) remSel.value = (w.remind == null) ? '3' : String(w.remind);
   const kSel = document.getElementById('wt-kat');
   Array.from(kSel.options).forEach(o => { o.selected = (o.value === w.kat); });
   if (document.getElementById('wt-edit-id')) document.getElementById('wt-edit-id').value = id;
@@ -10383,6 +10397,15 @@ function _wtRepeatLabel(w) {
   if (k === 'custom') return `alle ${w.intervall} ${w.einheit}`;
   return WARTUNG_REPEAT_LABELS[k] || '';
 }
+// Lesbares Erinnerungs-Label für die Wartungs-Karte
+const WARTUNG_REMIND_LABELS = {
+  aus:'🔕 keine Erinnerung', '0':'🔔 am Tag', '1':'🔔 1 Tag vorher',
+  '3':'🔔 3 Tage vorher', '7':'🔔 1 Woche vorher', '14':'🔔 2 Wochen vorher'
+};
+function _wtRemindLabel(w) {
+  const r = (w.remind == null) ? '3' : String(w.remind);
+  return WARTUNG_REMIND_LABELS[r] || '🔔 3 Tage vorher';
+}
 
 function getDaysUntil(date) {
   return Math.round((date - new Date()) / 86400000);
@@ -10444,6 +10467,7 @@ function renderWartung() {
       </div>
       <div class="wartung-interval">
         <div class="wartung-interval-unit" style="font-size:0.72rem;text-transform:none;font-weight:600">🔁 ${_wtRepeatLabel(w)}</div>
+        <div class="wartung-interval-unit" style="font-size:0.66rem;text-transform:none;font-weight:600;margin-top:3px;color:var(--text3)">${_wtRemindLabel(w)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         <button class="btn btn-primary" style="padding:6px 12px;font-size:0.75rem" onclick="markWartungDone(${w.id})" title="Als erledigt markieren">✓ Erledigt</button>
@@ -14010,6 +14034,25 @@ async function scheduleAllReminders() {
       '📅 Zahlung in 3 Tagen: ' + name, `${fmt(z.betrag)} fällig am ${fmtDate(z.faellig)}`);
     sched('zahlung-0-' + z.id, z.faellig, defT,
       '💶 Zahlung heute fällig: ' + name, `${fmt(z.betrag)} heute fällig`);
+  }
+
+  // ── Wartung (Push-Erinnerung, pro Wartung einstellbar)
+  for (const w of (state.wartungen || [])) {
+    const remind = (w.remind == null) ? '3' : String(w.remind); // Altbestand -> 3 Tage
+    if (remind === 'aus') continue;
+    const nd = _wartungNextDate(w);
+    if (!nd || isNaN(nd)) continue;
+    const dstr = nd.toISOString().slice(0, 10);
+    const name = w.name || 'Wartung';
+    // Am Fälligkeitstag
+    sched('wartung-0-' + w.id, dstr, defT,
+      '🔧 Wartung heute fällig: ' + name, (w.desc || '').slice(0, 100) || 'Wartung fällig');
+    // Vorlaufzeit (zusätzlich)
+    const lead = parseInt(remind, 10) || 0;
+    if (lead > 0) {
+      sched('wartung-pre-' + w.id, daysBefore(dstr, lead), defT,
+        `🔧 Wartung in ${lead} Tag${lead === 1 ? '' : 'en'}: ` + name, `Fällig am ${fmtDate(dstr)}`);
+    }
   }
 
   // ── Native App: direkt beim iOS-System einplanen (kein Server noetig)
