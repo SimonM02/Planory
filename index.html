@@ -189,8 +189,9 @@
   body.dark-mode .milestone-check  { background: var(--surface2) !important; border-color: var(--border) !important; }
 
   /* Action buttons */
-  body.dark-mode .action-btn       { background: var(--surface2) !important; color: var(--text2) !important; border-color: var(--border) !important; }
-  body.dark-mode .action-btn:hover { background: var(--surface3) !important; color: var(--text) !important; }
+  body.dark-mode .action-btn           { background: var(--surface3) !important; color: var(--text) !important; border-color: var(--border) !important; }
+  body.dark-mode .action-btn:hover     { background: var(--accent-light) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+  body.dark-mode .action-btn.del:hover { color: var(--danger) !important; border-color: var(--danger) !important; }
 
   /* Gantt */
   body.dark-mode .gantt-row        { border-color: var(--border) !important; }
@@ -1112,18 +1113,19 @@
   .badge-orange { background: #fff7ed; color: #c2410c; }
 
   .action-btn {
-    background: none;
-    border: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
     cursor: pointer;
-    color: var(--text3);
-    padding: 5px 7px;
-    border-radius: 7px;
-    font-size: 0.9rem;
+    color: var(--text2);
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1;
     transition: all 0.15s;
   }
 
-  .action-btn:hover { color: var(--accent); background: var(--accent-light); }
-  .action-btn.del:hover { color: var(--danger); background: var(--danger-light); }
+  .action-btn:hover { color: var(--accent); background: var(--accent-light); border-color: var(--accent); }
+  .action-btn.del:hover { color: var(--danger); background: var(--danger-light); border-color: var(--danger); }
 
   /* MODAL */
   .modal-overlay {
@@ -3559,8 +3561,18 @@
     <div id="k-skonto-preview" style="display:none;background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:8px 14px;margin-bottom:16px;font-size:0.8rem;color:#854d0e">
       💰 Bei Zahlung bis <strong id="k-skonto-date-txt">–</strong>: <strong id="k-skonto-save-txt">€ 0</strong> sparen → Zahlung nur <strong id="k-skonto-total-txt">€ 0</strong>
     </div>
+    <div class="form-row">
+      <label>Rechnungsbild / Beleg (optional)</label>
+      <div id="k-beleg-preview" style="display:none;margin-bottom:8px;align-items:center;gap:10px">
+        <img id="k-beleg-img" alt="Beleg" style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border);cursor:pointer"
+          onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox-title').textContent='Beleg';document.getElementById('lightbox-meta').textContent='';document.getElementById('lightbox').classList.add('open')">
+        <button type="button" class="btn btn-ghost" style="font-size:0.78rem;margin-top:8px" onclick="clearKostenBeleg()">🗑 Bild entfernen</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="k-beleg-btn" style="font-size:0.85rem" onclick="document.getElementById('k-beleg-input').click()">📎 Bild hinzufügen</button>
+      <input type="file" id="k-beleg-input" accept="image/*" style="display:none" onchange="onKostenBelegPick(this)">
+    </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-kosten');document.getElementById('k-edit-id').value=''">Abbrechen</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-kosten');document.getElementById('k-edit-id').value='';clearKostenBeleg()">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveKosten()">Speichern</button>
     </div>
   </div>
@@ -5464,6 +5476,7 @@ function openModal(id) {
   if (id === 'modal-kosten' || id === 'modal-eigenleistung' || id === 'modal-rechnung-scan') {
     const editId = document.getElementById('k-edit-id')?.value;
     if (!editId) { refreshAllKatSelects(_pendingKostenKat); _pendingKostenKat = ''; }
+    if (id === 'modal-kosten' && !editId) { _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){} }
   }
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
@@ -6177,7 +6190,46 @@ function refreshAllKatSelects(selectedVal = '', extraIds = []) {
 }
 
 // ──────────────── KOSTEN ADD / EDIT ────────────────
-function saveKosten() {
+// ── Beleg-Bild fuer Ausgaben (auch nachtraeglich hinzufuegbar) ───────────────
+let _kBeleg = null;         // aktuelles Belegbild im Modal (data:-URL oder http-URL)
+let _kBelegChanged = false; // wurde das Bild im Modal geaendert?
+function _showKBelegPreview(src) {
+  const wrap = document.getElementById('k-beleg-preview');
+  const img  = document.getElementById('k-beleg-img');
+  const btn  = document.getElementById('k-beleg-btn');
+  if (!wrap || !img) return;
+  if (src) { img.src = src; wrap.style.display = 'flex'; if (btn) btn.textContent = '📎 Bild ersetzen'; }
+  else     { img.src = '';  wrap.style.display = 'none'; if (btn) btn.textContent = '📎 Bild hinzufügen'; }
+}
+function clearKostenBeleg() { _kBeleg = null; _kBelegChanged = true; _showKBelegPreview(null); }
+async function onKostenBelegPick(input) {
+  const file = input.files[0]; input.value = '';
+  if (!file) return;
+  try {
+    const { dataUrl } = await compressImage(file, 1280, 0.72);
+    _kBeleg = dataUrl; _kBelegChanged = true;
+    _showKBelegPreview(dataUrl);
+  } catch (e) {
+    showToast('⚠️ Bild konnte nicht verarbeitet werden', 'error');
+  }
+}
+// Laedt ein Belegbild (base64) in den Supabase-Storage; gibt {scanUrl,scanPath} oder null.
+async function _uploadBeleg(base64) {
+  if (!base64 || !currentUser) return null;
+  try {
+    const byteStr = atob(base64);
+    const arr = new Uint8Array(byteStr.length);
+    for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([arr], { type: 'image/jpeg' });
+    const fileName = `${currentUser.id}/rechnungen/${Date.now()}.jpg`;
+    const { error } = await supa.storage.from(STORAGE_BUCKET).upload(fileName, blob, { cacheControl: '3600', upsert: false });
+    if (error) return null;
+    const { data: urlData } = supa.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+    return { scanUrl: urlData.publicUrl, scanPath: fileName };
+  } catch (e) { return null; }
+}
+
+async function saveKosten() {
   if (!requireSub()) return;
   const editId = parseInt(document.getElementById('k-edit-id').value) || null;
   const mwstRate = parseFloat(document.getElementById('k-mwst').value) || 0;
@@ -6185,6 +6237,21 @@ function saveKosten() {
   const netto    = mwstRate > 0 ? brutto / (1 + mwstRate / 100) : brutto;
   if (!document.getElementById('k-beschr').value.trim()) { showToast('⚠️ Bitte eine Beschreibung eingeben', 'error'); return; }
   if (brutto <= 0) { showToast('⚠️ Betrag muss größer als 0 sein', 'error'); return; }
+  const kOld = editId ? state.kosten.find(k => String(k.id) === String(editId)) : null;
+
+  // Belegbild: bestehendes uebernehmen (Bug-Fix: ging beim Bearbeiten verloren),
+  // oder – falls im Modal geaendert – neues hochladen bzw. direkt ablegen.
+  let scanUrl = kOld?.scanUrl || null, scanPath = kOld?.scanPath || null, scanData = kOld?.scanData || null;
+  if (_kBelegChanged) {
+    scanUrl = null; scanPath = null; scanData = null;
+    if (_kBeleg && _kBeleg.startsWith('data:')) {
+      const b64 = _kBeleg.split(',')[1];
+      const up = await _uploadBeleg(b64);
+      if (up) { scanUrl = up.scanUrl; scanPath = up.scanPath; }
+      else if (b64 && b64.length < 1200000) { scanData = _kBeleg; }   // Sicherheitsnetz
+    }
+  }
+
   const item = {
     id:      editId || Date.now(),
     datum:   document.getElementById('k-datum').value || today(),
@@ -6198,7 +6265,8 @@ function saveKosten() {
     anbieter: document.getElementById('k-anbieter').value,
     skontoProz: parseFloat(document.getElementById('k-skonto-proz').value) || 0,
     skontoBis:  document.getElementById('k-skonto-bis').value || '',
-    aiScanned:  editId ? (state.kosten.find(k => String(k.id) === String(editId))?.aiScanned || false) : false,
+    aiScanned:  kOld?.aiScanned || false,
+    scanUrl, scanPath, scanData,
     _updatedAt: Date.now()
   };
 
@@ -6208,6 +6276,7 @@ function saveKosten() {
   } else {
     state.kosten.push(item);
   }
+  _kBeleg = null; _kBelegChanged = false; _showKBelegPreview(null);
   if (_pendingAngebotId && !editId) {
     const ang = (state.angebote||[]).find(a => String(a.id) === String(_pendingAngebotId));
     if (ang) { ang.konvertiert = true; ang.status = 'Umgewandelt'; }
@@ -6246,6 +6315,9 @@ function editKosten(id) {
   if (bvSel) bvSel.value = k.bezahltVon || '';
   document.getElementById('k-skonto-proz').value = k.skontoProz || '';
   document.getElementById('k-skonto-bis').value  = k.skontoBis  || '';
+  _kBeleg = k.scanUrl || k.scanData || null;
+  _kBelegChanged = false;
+  _showKBelegPreview(_kBeleg);
   updateKostenBrutto();
   updateSkontoPreview('k');
   openModal('modal-kosten');
@@ -6425,16 +6497,15 @@ function renderKosten() {
       return `<tr>
         <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
-        <td data-title>${k.beschr}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem">🤖 KI</span>`:''}${skontoBadge}</td>
+        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${k.scanUrl||k.scanData}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem">🤖 KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
         <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
         <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
-        <td style="display:flex;gap:4px">
-          ${(k.scanUrl || k.scanData) ? `<button class="action-btn" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen">📎</button>` : ''}
+        <td><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
           <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
-        </td>
+        </div></td>
       </tr>`;
     }).join('');
   }
