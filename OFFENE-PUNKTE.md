@@ -24,6 +24,23 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 11.08.2026.
 - [ ] Prüfen, dass der Supabase-Storage-Bucket **`uploads`** existiert und
       **public** ist (sonst greift nur das Sicherheitsnetz `scanData`).
 
+## Zeitplan & Wartung (LIVE)
+- [x] **Neuer Zeitplan LIVE:** Abschnitte (Bauphasen mit Zeitspanne) mit
+      Unterpunkten; Status per Tipp (Offen/In Arbeit/Erledigt); inline anlegen;
+      🔔 Erinnerung pro Punkt mit Datum. Bestehende Meilensteine unter
+      „Weitere Punkte". Nichts migriert/gelöscht – Dashboard/KI/Erinnerungen
+      laufen unverändert.
+- [x] **Wartung-Erinnerungen LIVE:** pro Wartung einstellbar (am Tag +
+      Vorlaufzeit), am Push-System angeschlossen.
+
+## Ideen für später
+- [ ] **Todoist-Anbindung** (optional): Aufgaben/Wartungen automatisch auch in
+      Todoist spiegeln. Technisch möglich (Todoist-API/OAuth), aber eigenes
+      Projekt + Pflege. Nur sinnvoll, wenn du sowieso alles in Todoist führst –
+      Planory hat schon eigene Push-Erinnerungen.
+- [ ] Zeitplan-Feinschliff möglich: Standard-Zeitspanne für neue Abschnitte,
+      Punkte per Drag & Drop zwischen Abschnitten verschieben.
+
 ## Apple / App Store (App-Freigabe)
 - [ ] **App-KATEGORIE ändern** (Grund der 3. Ablehnung, Guideline 1.3 Kids).
       Nur am **Computer** möglich (Handy zeigt das Feld nicht):
