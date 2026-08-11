@@ -2109,6 +2109,10 @@
     #landing-overlay .lp-nav{display:flex;align-items:center;justify-content:space-between;height:64px}
     #landing-overlay .lp-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem}
     #landing-overlay .lp-logo .lp-mark{width:34px;height:34px;border-radius:9px;background:#11151f;border:1px solid var(--lp-border);display:flex;align-items:center;justify-content:center;color:var(--lp-accent);font-size:1rem}
+    #landing-overlay .lp-navlinks{display:flex;gap:26px;align-items:center}
+    #landing-overlay .lp-navlinks a{color:var(--lp-text2);font-weight:600;font-size:.92rem;cursor:pointer}
+    #landing-overlay .lp-navlinks a:hover{color:var(--lp-text)}
+    @media(max-width:720px){ #landing-overlay .lp-navlinks{display:none} }
     #landing-overlay .lp-hero{padding:70px 0 60px;text-align:center}
     #landing-overlay .lp-hero h1{font-size:2.6rem;line-height:1.15;letter-spacing:-.5px;font-weight:800;max-width:760px;margin:0 auto 16px}
     #landing-overlay .lp-hero h1 span{color:var(--lp-accent)}
@@ -2140,12 +2144,17 @@
 
   <header class="lp-header"><div class="lp-wrap lp-nav">
     <div class="lp-logo"><img alt="Planory" style="width:34px;height:34px;border-radius:9px" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2311151f'/><rect x='42' y='8.5' width='16' height='4' rx='2' fill='%23222b3c'/><rect x='40' y='90' width='20' height='2.6' rx='1.3' fill='%232a3446'/><rect x='20' y='56' width='30' height='28' fill='%23ffffff'/><rect x='50' y='69' width='20' height='15' fill='%23ffffff'/><rect x='48' y='66' width='24' height='3.5' rx='1' fill='%23ff9f1c'/><rect x='52.5' y='72' width='15' height='12' fill='%2311151f'/><path d='M15 56 L35 44 L55 56 Z' fill='%23ff9f1c'/><rect x='24' y='72' width='9' height='12' fill='%2311151f'/><rect x='38' y='62' width='8' height='8' fill='%23ff9f1c'/><g stroke='%23ff9f1c' stroke-width='1.25' fill='none' stroke-linecap='round' stroke-linejoin='round'><path d='M79.5 84 V26 M83 84 V26'/><path d='M79.5 82 L83 79 L79.5 76 L83 73 L79.5 70 L83 67 L79.5 64 L83 61 L79.5 58 L83 55 L79.5 52 L83 49 L79.5 46 L83 43 L79.5 40 L83 37 L79.5 34 L83 31 L79.5 28'/><path d='M76 84 H86.5'/><path d='M79.5 26 L81.25 19 L83 26'/><path d='M32 26 H83'/><path d='M37 29.5 H79.5'/><path d='M32 26 L37 29.5 L44 26 L51 29.5 L58 26 L65 29.5 L72 26 L79 29.5'/><path d='M81.25 19 L48 26 M81.25 19 L60 26 M81.25 19 L72 26 M81.25 19 L89 26'/><path d='M83 26 H90'/><path d='M48 29.5 V34'/></g><rect x='86.5' y='26.3' width='4.4' height='5.4' rx='.8' fill='%23ff9f1c'/><circle cx='48' cy='29.5' r='1.1' fill='%23ff9f1c'/></svg>"> Planory</div>
-    <button class="lp-btn lp-btn-ghost" style="padding:9px 16px" onclick="enterApp()">Anmelden</button>
+    <nav class="lp-navlinks">
+      <a onclick="lpScroll('lp-funktionen')">Funktionen</a>
+      <a onclick="lpScroll('lp-preise')">Preise</a>
+      <a onclick="lpScroll('lp-faq')">FAQ</a>
+    </nav>
+    <button class="lp-btn lp-btn-ghost" style="padding:9px 16px" onclick="enterApp('login')">Anmelden</button>
   </div></header>
 
   <div class="lp-wrap">
     <section class="lp-hero">
-      <span class="lp-badge">🏗️ Für Häuslbauer, Sanierer &amp; private Bauherren</span>
+      <span class="lp-badge">🏗️ Für alle, die bauen, sanieren oder umbauen</span>
       <h1>Behalte <span>Budget, Kosten &amp; Termine</span> deines Bauprojekts im Griff.</h1>
       <p>Planory ist dein digitaler Bauassistent: Budget, Baukosten, Rechnungen scannen, Bautagebuch, Wartungsplan und ein KI-Bauberater – alles an einem Ort, auf dem Handy und im Web.</p>
       <div class="lp-cta">
@@ -2154,7 +2163,7 @@
       </div>
     </section>
 
-    <section class="lp-section">
+    <section class="lp-section" id="lp-funktionen">
       <h2>Alles für dein Bauprojekt – an einem Ort</h2>
       <p class="lp-sub">Schluss mit Zettelwirtschaft und zehn Excel-Tabellen. Planory bündelt alles, was du beim Bauen oder Sanieren brauchst.</p>
       <div class="lp-grid">
@@ -2185,8 +2194,8 @@
       </div>
     </section>
 
-    <section class="lp-section">
-      <h2>Fair &amp; unkompliziert</h2>
+    <section class="lp-section" id="lp-preise">
+      <h2>Preise – fair &amp; unkompliziert</h2>
       <div class="lp-price">
         <div style="color:var(--lp-text2)">Einen Monat</div>
         <div class="lp-big">Kostenlos testen</div>
@@ -2195,11 +2204,11 @@
       </div>
     </section>
 
-    <section class="lp-section">
+    <section class="lp-section" id="lp-faq">
       <h2>Häufige Fragen</h2>
       <div class="lp-faq">
         <div class="lp-qa"><h3>Was ist Planory?</h3><p>Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung.</p></div>
-        <div class="lp-qa"><h3>Für wen ist Planory gedacht?</h3><p>Für private Bauherren, Häuslbauer und alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen.</p></div>
+        <div class="lp-qa"><h3>Für wen ist Planory gedacht?</h3><p>Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen.</p></div>
         <div class="lp-qa"><h3>Läuft Planory auf Handy und Computer?</h3><p>Ja. Planory gibt es als iPhone-/iPad-App und im Web – deine Daten sind auf allen Geräten synchron.</p></div>
         <div class="lp-qa"><h3>Was kostet Planory?</h3><p>Du kannst Planory einen Monat kostenlos testen. Danach gibt es ein faires Abo für neue Einträge und die KI-Funktionen.</p></div>
       </div>
@@ -10866,6 +10875,12 @@ function enterApp(tab) {
   showAuthOverlay();
   // "Kostenlos starten" -> Registrieren, "Anmelden" -> Login
   try { switchAuthTab(tab === 'register' ? 'register' : 'login'); } catch(e) {}
+}
+// Sanftes Scrollen zu einem Landing-Abschnitt (Menue oben). Der Scroll-Container
+// ist das Overlay selbst, daher scrollIntoView statt Anker-Links.
+function lpScroll(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function switchAuthTab(tab) {
