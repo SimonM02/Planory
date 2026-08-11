@@ -23,6 +23,20 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 11.08.2026.
       Preis = gleicher Preis wie im Web (Apple behält 15 % ein → etwas kleinere
       Marge, aber gleicher Kundenpreis).
 
-## SEO / Sonstiges (optional, später)
-- [ ] Google Search Console: Seite verifizieren & „Indexierung beantragen"
-      (HTML-Verifizierungsdatei an mich → ich lege sie ins Repo).
+## SEO / Google-Sichtbarkeit
+Schon erledigt (von Claude): Seiten-Metadaten, robots.txt, sitemap.xml,
+strukturierte Daten (SoftwareApplication + FAQ), **Vorschaubild og-image.png**
+(erscheint beim Teilen/Google), Landing-Page mit echtem Text.
+
+Noch von DIR zu tun (am Computer oder Handy, dauert ~10 Min):
+- [ ] **Google Search Console** einrichten – so kommt planory.at in den Index:
+      1. search.google.com/search-console → mit Google-Konto anmelden
+      2. „Property hinzufügen" → „URL-Präfix" → `https://planory.at`
+      3. Verifizierung „HTML-Tag" wählen → den `google-site-verification`-Code
+         **an Claude schicken** → Claude baut ihn ein → „Bestätigen"
+      4. In Search Console links „Sitemaps" → `sitemap.xml` → „Senden"
+      5. Oben `https://planory.at` eingeben → „Indexierung beantragen"
+- [ ] Backlinks setzen: planory.at in **Instagram-Bio** und im **App-Store-Eintrag**
+      als Website hinterlegen (hilft dem Google-Ranking).
+- Hinweis: Google braucht nach dem Einrichten einige Tage bis ~3 Wochen, bis
+  „planory" zuverlässig oben erscheint.
