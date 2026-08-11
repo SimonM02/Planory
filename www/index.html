@@ -345,6 +345,43 @@
   .tl-note { font-size:0.78rem; color:var(--text2); margin-top:5px; line-height:1.4; }
   .tl-undated { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 12px; }
 
+  /* ── Zeitplan: Abschnitte mit Unterpunkten ─────────────────────────── */
+  .pl-hint { font-size:0.8rem; color:var(--text3); margin-bottom:14px; line-height:1.5; }
+  .pl-sec { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .pl-sechead { padding:13px 16px 12px; user-select:none; }
+  .pl-sectop { display:flex; align-items:center; gap:10px; }
+  .pl-chev { font-size:0.85rem; color:var(--text3); transition:transform .15s; width:14px; flex-shrink:0; cursor:pointer; text-align:center; }
+  .pl-sec.pl-collapsed .pl-chev { transform:rotate(-90deg); }
+  .pl-secname { font-weight:800; font-size:1rem; flex:1; min-width:0; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; }
+  .pl-count { font-size:0.72rem; font-weight:700; color:var(--text3); background:var(--surface2); border-radius:99px; padding:3px 9px; white-space:nowrap; }
+  .pl-secdel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.9rem; opacity:.6; }
+  .pl-span { display:flex; align-items:center; gap:6px; margin:7px 0 0 24px; font-size:0.76rem; color:var(--text3); flex-wrap:wrap; }
+  .pl-span input { border:1px solid var(--border); background:var(--surface2); border-radius:7px; padding:3px 7px; font-size:0.74rem; color:var(--text2); font-family:inherit; width:130px; }
+  .pl-secbody { border-top:1px solid var(--border); }
+  .pl-sec.pl-collapsed .pl-secbody { display:none; }
+  .pl-item { display:flex; align-items:center; gap:11px; padding:10px 16px; border-bottom:1px solid var(--surface2); }
+  .pl-dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.8rem; font-weight:800; border:2px solid transparent; }
+  .pl-dot.offen { background:var(--surface); border-color:var(--text3); color:var(--text3); }
+  .pl-dot.arbeit { background:var(--warning); }
+  .pl-dot.erledigt { background:var(--success); }
+  .pl-imain { flex:1; min-width:0; }
+  .pl-iname { font-size:0.92rem; font-weight:600; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; width:100%; }
+  .pl-item.pl-erledigt .pl-iname { text-decoration:line-through; color:var(--text3); }
+  .pl-imeta { font-size:0.72rem; color:var(--text3); margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pl-stbadge { font-size:0.66rem; font-weight:800; padding:2px 8px; border-radius:99px; cursor:pointer; white-space:nowrap; }
+  .pl-st-offen { background:var(--surface2); color:var(--text3); }
+  .pl-st-arbeit { background:#fef3c7; color:#b45309; }
+  .pl-st-erledigt { background:#dcfce7; color:#15803d; }
+  .pl-idate { font-size:0.72rem; color:var(--text3); border:1px solid var(--border); background:var(--surface2); border-radius:6px; padding:2px 5px; font-family:inherit; }
+  .pl-bell { cursor:pointer; font-size:0.82rem; opacity:.5; }
+  .pl-bell.on { opacity:1; }
+  .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.85rem; opacity:.5; flex-shrink:0; }
+  .pl-addrow { display:flex; align-items:center; gap:10px; padding:10px 16px; }
+  .pl-addrow .pl-plus { width:22px; text-align:center; color:var(--accent); font-weight:800; font-size:1.1rem; flex-shrink:0; }
+  .pl-addrow input { flex:1; border:none; background:transparent; font-size:0.9rem; color:var(--text); font-family:inherit; outline:none; }
+  .pl-addsec { width:100%; border:1.5px dashed var(--border); background:transparent; border-radius:12px; padding:13px; color:var(--text3); font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit; }
+  .pl-addsec:hover { border-color:var(--accent); color:var(--accent); }
+
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -4616,58 +4653,139 @@ function showPlanTab(tab, btn) {
   const btns = document.getElementById('plan-header-btns');
   if (btns) btns.innerHTML =
     `<button class="btn btn-ghost" onclick="generateKIMeilensteine()" style="border-color:#7c3aed;color:#7c3aed">🤖 KI-Zeitplan</button>`
-    + `<button class="btn btn-ghost" onclick="resetGanttModal();openModal('modal-gantt')">+ Phase</button>`
-    + `<button class="btn btn-primary" onclick="openModal('modal-milestone')">+ Meilenstein</button>`;
+    + `<button class="btn btn-primary" onclick="planAddSection()">+ Abschnitt</button>`;
   renderZeitplan();
 }
+
+// ── Zeitplan: Abschnitte (= Bauphasen in state.gantt) mit Unterpunkten
+//    (= Meilensteine in state.meilensteine, per ganttId einem Abschnitt zugeordnet).
+//    Bewusst auf dem bestehenden Datenmodell aufgebaut, damit Dashboard, KI,
+//    Erinnerungen & Co. unveraendert weiterlaufen.
+const PL_STATES   = ['offen','arbeit','erledigt'];
+const PL_ST_LABEL = { offen:'Offen', arbeit:'In Arbeit', erledigt:'Erledigt' };
+const PL_ST_MARK  = { offen:'', arbeit:'●', erledigt:'✓' };
+function _plItemStatus(m){ return m.status || (m.done ? 'erledigt' : 'offen'); }
+function _plNewId(){ return Date.now() + Math.floor(Math.random() * 1000); }
+function _plSec(id){ return (state.gantt || []).find(g => String(g.id) === String(id)); }
+function _plItem(id){ return (state.meilensteine || []).find(m => String(m.id) === String(id)); }
 
 function renderZeitplan() {
   const el = document.getElementById('plan-timeline');
   if (!el) return;
-  const phases = (state.gantt || []).map(g => ({ kind:'phase', id:g.id, name:g.name, date:g.start||g.end, start:g.start, end:g.end, status:g.status, notiz:g.notiz }));
-  const miles  = (state.meilensteine || []).map(m => ({ kind:'mile', id:m.id, name:m.name, date:m.datum, done:m.done, text:m.text }));
-  const all = [...phases, ...miles];
-  const dated   = all.filter(x => x.date).sort((a,b) => new Date(a.date) - new Date(b.date));
-  const undated = all.filter(x => !x.date);
-  if (!dated.length && !undated.length) {
-    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>Noch nichts geplant.<br>Lege oben eine <strong>Phase</strong> oder einen <strong>Meilenstein</strong> an.</p></div>`;
-    return;
-  }
-  const t = today();
-  const esc = s => (s==null?'':String(s));
-  const row = (x) => {
-    if (x.kind === 'mile') {
-      const overdue = x.date && x.date < t && !x.done;
-      const col = x.done ? 'var(--success)' : overdue ? 'var(--danger)' : 'var(--accent)';
-      return `<div class="tl-row" onclick="editMilestone(${x.id})">
-        <div class="tl-marker" style="background:${col}" title="Abhaken" onclick="event.stopPropagation();toggleMilestone(${x.id});renderZeitplan()">${x.done?'✓':'◆'}</div>
-        <div class="tl-card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-            <div class="tl-title ${x.done?'tl-done':''}">🏁 ${esc(x.name)}</div>
-            <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteMilestone(${x.id})" title="Löschen">🗑</button>
-          </div>
-          <div class="tl-meta">${x.date?fmtDate(x.date):'kein Datum'}${x.done?' · erledigt':overdue?' · überfällig':''}</div>
-          ${x.text?`<div class="tl-note">${esc(x.text)}</div>`:''}
+  const secs  = state.gantt || [];
+  const miles = state.meilensteine || [];
+  const escA = s => (s==null?'':String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'));
+
+  const itemRow = (m) => {
+    const st = _plItemStatus(m);
+    const remOn = m.remind !== false && !!m.datum;
+    return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''}">
+      <div class="pl-dot ${st}" onclick="planCycle(${m.id})" title="Status ändern">${PL_ST_MARK[st]}</div>
+      <div class="pl-imain">
+        <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)">
+        <div class="pl-imeta">
+          <span class="pl-stbadge pl-st-${st}" onclick="planCycle(${m.id})">${PL_ST_LABEL[st]}</span>
+          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)">
+          <span class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="Erinnerung ${remOn?'an – tippen zum Ausschalten':'aus – tippen zum Einschalten'}">${remOn?'🔔':'🔕'}</span>
         </div>
-      </div>`;
-    }
-    const col = x.status==='Erledigt' ? 'var(--success)' : x.status==='In Arbeit' ? 'var(--warning)' : 'var(--text3)';
-    return `<div class="tl-row" onclick="editGanttItem(${x.id})">
-      <div class="tl-marker" style="background:${col}">●</div>
-      <div class="tl-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div class="tl-title">${esc(x.name)}</div>
-          <button class="action-btn del" style="flex-shrink:0" onclick="event.stopPropagation();deleteGanttItem(${x.id})" title="Löschen">🗑</button>
+      </div>
+      <button class="pl-idel" onclick="planDelItem(${m.id})" title="Löschen">🗑</button>
+    </div>`;
+  };
+
+  const addRow = (secId) => `<div class="pl-addrow">
+      <span class="pl-plus">+</span>
+      <input placeholder="Unterpunkt hinzufügen…" onkeydown="if(event.key==='Enter'){planAddItem('${secId}',this.value);this.value=''}">
+    </div>`;
+
+  const sectionCard = (s) => {
+    const items = miles.filter(m => String(m.ganttId||'') === String(s.id));
+    const done  = items.filter(m => _plItemStatus(m)==='erledigt').length;
+    return `<div class="pl-sec ${s.collapsed?'pl-collapsed':''}">
+      <div class="pl-sechead">
+        <div class="pl-sectop">
+          <span class="pl-chev" onclick="planToggleSection(${s.id})">▼</span>
+          <input class="pl-secname" value="${escA(s.name)}" onchange="planRenameSection(${s.id},this.value)">
+          <span class="pl-count">${done}/${items.length} ✓</span>
+          <button class="pl-secdel" onclick="planDelSection(${s.id})" title="Abschnitt löschen">🗑</button>
         </div>
-        <div class="tl-meta">${x.start?fmtDate(x.start):'?'} – ${x.end?fmtDate(x.end):'?'} · ${esc(x.status)||'Offen'}</div>
-        ${x.notiz?`<div class="tl-note">${esc(x.notiz)}</div>`:''}
+        <div class="pl-span">
+          📅 <input type="date" value="${s.start||''}" title="Beginn" onchange="planSetSecStart(${s.id},this.value)">
+          <span>–</span>
+          <input type="date" value="${s.end||''}" title="Ende" onchange="planSetSecEnd(${s.id},this.value)">
+        </div>
+      </div>
+      <div class="pl-secbody">
+        ${items.map(itemRow).join('')}
+        ${addRow(s.id)}
       </div>
     </div>`;
   };
-  el.innerHTML = `<div class="tl">${dated.map(row).join('')}`
-    + (undated.length ? `<div class="tl-undated">Ohne Datum</div>${undated.map(row).join('')}` : '')
-    + `</div>`;
+
+  const ungrouped = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId)));
+
+  let html = `<div class="pl-hint">Lege <b>Abschnitte</b> (Bauphasen mit Zeitspanne) an und darin <b>Unterpunkte</b>. Tippe den <b>Kreis</b> für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
+  html += secs.map(sectionCard).join('');
+  if (ungrouped.length) {
+    const done = ungrouped.filter(m => _plItemStatus(m)==='erledigt').length;
+    html += `<div class="pl-sec">
+      <div class="pl-sechead"><div class="pl-sectop">
+        <span class="pl-chev" style="visibility:hidden">▼</span>
+        <div class="pl-secname" style="font-weight:800">Weitere Punkte</div>
+        <span class="pl-count">${done}/${ungrouped.length} ✓</span>
+      </div></div>
+      <div class="pl-secbody">${ungrouped.map(itemRow).join('')}${addRow('')}</div>
+    </div>`;
+  }
+  html += `<button class="pl-addsec" onclick="planAddSection()">+ Abschnitt hinzufügen</button>`;
+  el.innerHTML = html;
 }
+
+function planAddSection() {
+  if (!requireSub()) return;
+  state.gantt = state.gantt || [];
+  state.gantt.push({ id:_plNewId(), name:'Neuer Abschnitt', start:'', end:'', status:'Offen', collapsed:false, _updatedAt:Date.now() });
+  save(); renderZeitplan();
+  setTimeout(() => { const els = document.querySelectorAll('#plan-timeline input.pl-secname'); const last = els[els.length-1]; if (last) { last.focus(); last.select(); } }, 30);
+}
+async function planDelSection(id) {
+  if (!requireSub()) return;
+  if (!(await showConfirm('Abschnitt inkl. seiner Unterpunkte löschen?'))) return;
+  (state.meilensteine || []).filter(m => String(m.ganttId) === String(id)).forEach(m => _trackDeletion(m.id, 'meilensteine'));
+  state.meilensteine = (state.meilensteine || []).filter(m => String(m.ganttId) !== String(id));
+  _trackDeletion(id, 'gantt');
+  state.gantt = (state.gantt || []).filter(g => String(g.id) !== String(id));
+  save(); renderZeitplan();
+  showToast('🗑 Abschnitt gelöscht', 'success');
+}
+function planRenameSection(id, val){ const s = _plSec(id); if (s) { s.name = val; s._updatedAt = Date.now(); save(); } }
+function planSetSecStart(id, val){ const s = _plSec(id); if (s) { s.start = val; s._updatedAt = Date.now(); save(); } }
+function planSetSecEnd(id, val){ const s = _plSec(id); if (s) { s.end = val; s._updatedAt = Date.now(); save(); } }
+function planToggleSection(id){ const s = _plSec(id); if (s) { s.collapsed = !s.collapsed; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
+
+function planAddItem(sectionId, name) {
+  if (!requireSub()) return;
+  if (!name || !name.trim()) return;
+  state.meilensteine = state.meilensteine || [];
+  state.meilensteine.push({ id:_plNewId(), name:name.trim(), ganttId: sectionId || '', status:'offen', done:false, datum:'', text:'', remind:true, _updatedAt:Date.now() });
+  save(); renderZeitplan();
+}
+async function planDelItem(id) {
+  if (!requireSub()) return;
+  if (!(await showConfirm('Diesen Unterpunkt löschen?'))) return;
+  _trackDeletion(id, 'meilensteine');
+  state.meilensteine = (state.meilensteine || []).filter(m => String(m.id) !== String(id));
+  save(); renderZeitplan();
+}
+function planRenameItem(id, val){ const m = _plItem(id); if (m) { m.name = val; m._updatedAt = Date.now(); save(); } }
+function planSetItemDate(id, val){ const m = _plItem(id); if (m) { m.datum = val; m._updatedAt = Date.now(); save(); renderZeitplan(); } }
+function planCycle(id) {
+  const m = _plItem(id); if (!m) return;
+  const nx = PL_STATES[(PL_STATES.indexOf(_plItemStatus(m)) + 1) % 3];
+  m.status = nx; m.done = (nx === 'erledigt'); m._updatedAt = Date.now();
+  save(); renderZeitplan();
+}
+function planToggleRemind(id){ const m = _plItem(id); if (!m) return; m.remind = (m.remind === false); m._updatedAt = Date.now(); save(); renderZeitplan(); }
 
 function showPage(id) {
   if (window.innerWidth <= 1024) closeMobileSidebar();
@@ -14006,7 +14124,7 @@ async function scheduleAllReminders() {
 
   // ── Meilensteine
   for (const m of (state.meilensteine || [])) {
-    if (!m.datum || m.done) continue;
+    if (!m.datum || m.done || m.remind === false) continue;
     sched('ms-' + m.id, m.datum, defT,
       '🏁 Meilenstein heute: ' + m.name, 'Fällig heute');
     sched('ms-pre-' + m.id, daysBefore(m.datum, 1), defT,
