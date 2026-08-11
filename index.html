@@ -4525,7 +4525,8 @@ function updateProjectHeader() {
 
 // ──────────────── EINMAL-HINWEISE ────────────────
 const PAGE_HINTS = {
-  dashboard:      'Dein Projektüberblick – Budget, Fortschritt, offene Aufgaben. Der KI-Bauberater analysiert alles auf Knopfdruck.',
+  dashboard:      'Dein Projektüberblick – Budget, Fortschritt, offene Aufgaben und „Demnächst fällig". Ganz oben der Schnellzugriff: die wichtigsten Aktionen mit einem Tipp – über „✏️ Anpassen" stellst du ihn selbst zusammen. Der KI-Bauberater analysiert alles auf Knopfdruck.',
+  planung:        'Alle Bauphasen und Meilensteine in einer Zeitleiste – nach Datum sortiert. Tippe einen Eintrag zum Bearbeiten an; über die Knöpfe oben legst du Phasen und Meilensteine an.',
   kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus.',
   budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest.',
   meilensteine:   'Definiere wichtige Bauphasen mit Terminen. Überfällige Meilensteine werden automatisch rot markiert.',
@@ -4540,7 +4541,7 @@ const PAGE_HINTS = {
   rechnungen:     'Hier findest du alle per KI eingescannten Rechnungen als Übersicht.',
   kostenchart:    'Grafische Auswertung der Ausgaben nach Monat und Kategorie.',
   kostenaufteilung: 'Zeigt wie das Budget auf die einzelnen Kostenstellen aufgeteilt ist.',
-  gantt:          'Zeitliche Übersicht aller Gewerke und Meilensteine als Gantt-Diagramm. Balken können per Drag & Drop verschoben werden.',
+  gantt:          'Alle Bauphasen und Meilensteine in einer Zeitleiste – nach Datum sortiert.',
   dokumentation:  'Technische Dokumentation für Einbauten, Materialien und Systeme – nützlich für spätere Wartungen.',
   wartung:        'Wartungskalender für regelmäßige Prüfungen (Heizung, Aufzug, etc.) mit Intervallen und Erinnerungen.',
   settings:       'Projektdaten anpassen, Budget-Kategorien verwalten, Module ein-/ausblenden und zwischen mehreren Projekten wechseln – Klick auf das Logo oben links.'
@@ -4548,7 +4549,8 @@ const PAGE_HINTS = {
 
 // Englische Fassung der Seiten-Hinweise (Auswahl ueber _pageHint)
 const PAGE_HINTS_EN = {
-  dashboard:      'Your project at a glance – budget, progress, open tasks. The AI construction advisor analyses everything at the touch of a button.',
+  dashboard:      'Your project at a glance – budget, progress, open tasks and "Due soon". At the top is Quick Access: your most-used actions – build your own with "✏️ Customise". The AI construction advisor analyses everything at the touch of a button.',
+  planung:        'All building phases and milestones in one timeline – sorted by date. Tap an entry to edit it; use the buttons at the top to add phases and milestones.',
   kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
   budget:         'Split your budget across trades and see at a glance where you are over or under.',
   meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
@@ -4563,7 +4565,7 @@ const PAGE_HINTS_EN = {
   rechnungen:     'Here you will find all invoices scanned by the AI in one overview.',
   kostenchart:    'Graphical analysis of expenses by month and category.',
   kostenaufteilung: 'Shows how the budget is split across the individual cost centres.',
-  gantt:          'Timeline of all trades and milestones as a Gantt chart. Bars can be moved by drag & drop.',
+  gantt:          'All building phases and milestones in one timeline – sorted by date.',
   dokumentation:  'Technical documentation for installations, materials and systems – useful for later maintenance.',
   wartung:        'Maintenance calendar for regular checks (heating, lift, etc.) with intervals and reminders.',
   settings:       'Adjust project details, manage budget categories, show/hide modules and switch between projects – click the logo at the top left.'
@@ -6301,6 +6303,7 @@ function renderKosten() {
         <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
         <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td style="display:flex;gap:4px">
+          ${(k.scanUrl || k.scanData) ? `<button class="action-btn" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen">📎</button>` : ''}
           <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
         </td>
@@ -7050,29 +7053,33 @@ async function handleRechnungScan(input) {
   document.getElementById('scan-error').style.display   = 'none';
   document.getElementById('scan-confirm-btn').style.display = 'none';
 
-  // Read file as base64; compress images first to avoid "Request Entity Too Large"
   const isImage = file.type.startsWith('image/');
-  let dataUrl;
-  if (isImage) {
-    const compressed = await compressImage(file, 1280, 0.75);
-    dataUrl = compressed.dataUrl; // compressImage already returns { dataUrl, mediaType }
-  } else {
-    dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  scanImageBase64 = dataUrl.split(',')[1];
-
-  if (isImage) {
-    document.getElementById('scan-preview-img').src = dataUrl;
-    document.getElementById('scan-preview').style.display = 'block';
-  }
 
   try {
+    // Datei einlesen. Bilder werden vorher verkleinert – grosse Handy-Fotos
+    // wuerden sonst den Upload sprengen bzw. (in der App) zu viel Speicher kosten.
+    // Wichtig: das Einlesen liegt IM try, damit ein Fehler eine Meldung zeigt
+    // statt die Seite haengen zu lassen.
+    let dataUrl;
+    if (isImage) {
+      const compressed = await compressImage(file, 1280, 0.75);
+      dataUrl = compressed.dataUrl; // { dataUrl, mediaType }
+    } else {
+      dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    scanImageBase64 = dataUrl.split(',')[1];
+
+    if (isImage) {
+      document.getElementById('scan-preview-img').src = dataUrl;
+      document.getElementById('scan-preview').style.display = 'block';
+    }
+
     const mediaType = file.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg';
 
     const response = await fetch(API_BASE + '/api/ki', {
@@ -7178,6 +7185,15 @@ async function confirmRechnungScan() {
     }
   }
 
+  // Sicherheitsnetz: Wenn der Upload NICHT klappte (z.B. Storage-Bucket fehlt),
+  // legen wir das (bereits verkleinerte) Bild direkt beim Eintrag ab, damit der
+  // Beleg nicht verloren geht. Nur wenn es klein genug ist, um Sync/Speicher
+  // nicht zu belasten.
+  let scanData = null;
+  if (!scanUrl && scanImageBase64 && scanImageBase64.length < 1200000) {
+    scanData = 'data:image/jpeg;base64,' + scanImageBase64;
+  }
+
   const kostenId = Date.now();
   const eintrag = {
     id:        kostenId,
@@ -7194,7 +7210,8 @@ async function confirmRechnungScan() {
     skontoBis:  document.getElementById('scan-skonto-bis').value || '',
     aiScanned: true,
     scanUrl,
-    scanPath
+    scanPath,
+    scanData
   };
 
   state.kosten.push(eintrag);
@@ -7214,6 +7231,7 @@ async function confirmRechnungScan() {
     status:      eintrag.status,
     scanUrl,
     scanPath,
+    scanData,
     gescannt:    new Date().toISOString()
   });
 
@@ -7223,6 +7241,22 @@ async function confirmRechnungScan() {
   btn.textContent = '✓ Einbuchen'; btn.disabled = false;
   renderKosten();
   showToast('✅ Rechnung eingebucht und gespeichert!', 'success');
+}
+
+// Beleg (gescanntes Rechnungsbild) einer Kostenzeile gross anzeigen. Nutzt das
+// vorhandene Lightbox-Fenster. Quelle: Cloud-Link (scanUrl) oder – falls der
+// Upload nicht klappte – das direkt gespeicherte Bild (scanData).
+function openKostenBeleg(id) {
+  const k = (state.kosten || []).find(x => x.id === id);
+  const src = k && (k.scanUrl || k.scanData);
+  if (!src) { showToast('Kein Beleg gespeichert', 'error'); return; }
+  const img   = document.getElementById('lightbox-img');
+  const title = document.getElementById('lightbox-title');
+  const meta  = document.getElementById('lightbox-meta');
+  if (img)   img.src = src;
+  if (title) title.textContent = k.beschr || 'Beleg';
+  if (meta)  meta.textContent  = 'Gescannte Rechnung' + (k.anbieter ? ' · ' + k.anbieter : '');
+  document.getElementById('lightbox')?.classList.add('open');
 }
 
 // ──────────────── MILESTONES ────────────────
@@ -12533,25 +12567,58 @@ function previewAngKiFile() {
   r.readAsDataURL(file);
 }
 
+function _blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Bild konnte nicht gelesen werden'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 async function compressImage(file, maxPx = 1280, quality = 0.75) {
+  const _scaled = (w, h) => {
+    if (w > maxPx || h > maxPx) {
+      if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+      else        { w = Math.round(w * maxPx / h); h = maxPx; }
+    }
+    return [w, h];
+  };
+
+  // Weg 1 (bevorzugt): createImageBitmap – dekodiert speicherschonender als ein
+  // <img>-Element. Wichtig fuer grosse Handy-Fotos: sonst kann in der App der
+  // Webview beim Verarbeiten abstuerzen. Bitmap wird sofort wieder freigegeben.
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bmp = await createImageBitmap(file);
+      const [w, h] = _scaled(bmp.width, bmp.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+      canvas.width = canvas.height = 0; // Speicher sofort freigeben
+      if (!blob) throw new Error('Komprimierung fehlgeschlagen');
+      return { dataUrl: await _blobToDataUrl(blob), mediaType: 'image/jpeg' };
+    } catch (e) {
+      // Faellt unten auf den klassischen Weg zurueck.
+    }
+  }
+
+  // Weg 2 (Fallback): klassisch ueber ein <img>-Element.
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (width > maxPx || height > maxPx) {
-        if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
-        else { width = Math.round(width * maxPx / height); height = maxPx; }
-      }
+      const [w, h] = _scaled(img.width, img.height);
       const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       canvas.toBlob(blob => {
+        canvas.width = canvas.height = 0;
         if (!blob) { reject(new Error('Komprimierung fehlgeschlagen')); return; }
-        const reader = new FileReader();
-        reader.onload = e => resolve({ dataUrl: e.target.result, mediaType: 'image/jpeg' });
-        reader.readAsDataURL(blob);
+        _blobToDataUrl(blob).then(dataUrl => resolve({ dataUrl, mediaType: 'image/jpeg' }), reject);
       }, 'image/jpeg', quality);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')); };
@@ -13003,6 +13070,7 @@ function renderGescannteRechnungen() {
         status:   k.status,
         scanUrl:  k.scanUrl  || null,
         scanPath: k.scanPath || null,
+        scanData: k.scanData || null,
         gescannt: k.datum
       });
     }
@@ -13049,9 +13117,9 @@ function renderGescannteRechnungen() {
     return `<tr>
       <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
-        ${r.scanUrl
-          ? `<img src="${r.scanUrl}" alt="Scan"
-               onclick="document.getElementById('lightbox-img').src='${r.scanUrl}';document.getElementById('lightbox-title').textContent='${r.beschr}';document.getElementById('lightbox-meta').textContent='Gescannte Rechnung';document.getElementById('lightbox').classList.add('open')"
+        ${(r.scanUrl || r.scanData)
+          ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${(r.beschr||'').replace(/"/g,'&quot;')}"
+               onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox-title').textContent=this.getAttribute('data-t')||'Beleg';document.getElementById('lightbox-meta').textContent='Gescannte Rechnung';document.getElementById('lightbox').classList.add('open')"
                style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform 0.15s"
                onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`
           : `<div style="width:48px;height:48px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--text3)">📄</div>`
