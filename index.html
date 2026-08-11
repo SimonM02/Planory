@@ -2100,7 +2100,7 @@
      Alle Stile sind unter #landing-overlay gekapselt (lp-*), damit sie
      NICHT mit der App-Oberflaeche kollidieren.
 ══════════════════════════════════════ -->
-<div id="landing-overlay" style="display:none;position:fixed;inset:0;z-index:1000;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#11151f;color:#e8eaf0">
+<div id="landing-overlay" data-noi18n style="display:none;position:fixed;inset:0;z-index:1000;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#11151f;color:#e8eaf0">
   <style>
     #landing-overlay{--lp-bg:#11151f;--lp-surface:#1a2030;--lp-surface2:#222a3d;--lp-border:#2e3852;--lp-accent:#ff9f1c;--lp-accent2:#ffb04a;--lp-text:#e8eaf0;--lp-text2:#9ba3b8;--lp-text3:#5d6880;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
     #landing-overlay *{box-sizing:border-box}
@@ -2118,6 +2118,11 @@
     #landing-overlay .lp-navlinks a{color:var(--lp-text2);font-weight:600;font-size:.92rem;cursor:pointer}
     #landing-overlay .lp-navlinks a:hover{color:var(--lp-text)}
     @media(max-width:720px){ #landing-overlay .lp-navlinks{display:none} }
+    #landing-overlay .lp-right{display:flex;align-items:center;gap:14px}
+    #landing-overlay .lp-lang{display:inline-flex;border:1px solid var(--lp-border);border-radius:9px;overflow:hidden}
+    #landing-overlay .lp-lang button{background:transparent;color:var(--lp-text2);border:none;padding:7px 11px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}
+    #landing-overlay .lp-lang button.active{background:var(--lp-accent);color:#1a1a2e}
+    @media(max-width:420px){ #landing-overlay .lp-right{gap:8px} #landing-overlay .lp-header .lp-btn{padding:8px 12px!important;font-size:.85rem} }
     #landing-overlay .lp-hero{padding:70px 0 60px;text-align:center}
     #landing-overlay .lp-hero h1{font-size:2.6rem;line-height:1.15;letter-spacing:-.5px;font-weight:800;max-width:760px;margin:0 auto 16px}
     #landing-overlay .lp-hero h1 span{color:var(--lp-accent)}
@@ -2150,78 +2155,84 @@
   <header class="lp-header"><div class="lp-wrap lp-nav">
     <div class="lp-logo"><img alt="Planory" style="width:34px;height:34px;border-radius:9px" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2311151f'/><rect x='42' y='8.5' width='16' height='4' rx='2' fill='%23222b3c'/><rect x='40' y='90' width='20' height='2.6' rx='1.3' fill='%232a3446'/><rect x='20' y='56' width='30' height='28' fill='%23ffffff'/><rect x='50' y='69' width='20' height='15' fill='%23ffffff'/><rect x='48' y='66' width='24' height='3.5' rx='1' fill='%23ff9f1c'/><rect x='52.5' y='72' width='15' height='12' fill='%2311151f'/><path d='M15 56 L35 44 L55 56 Z' fill='%23ff9f1c'/><rect x='24' y='72' width='9' height='12' fill='%2311151f'/><rect x='38' y='62' width='8' height='8' fill='%23ff9f1c'/><g stroke='%23ff9f1c' stroke-width='1.25' fill='none' stroke-linecap='round' stroke-linejoin='round'><path d='M79.5 84 V26 M83 84 V26'/><path d='M79.5 82 L83 79 L79.5 76 L83 73 L79.5 70 L83 67 L79.5 64 L83 61 L79.5 58 L83 55 L79.5 52 L83 49 L79.5 46 L83 43 L79.5 40 L83 37 L79.5 34 L83 31 L79.5 28'/><path d='M76 84 H86.5'/><path d='M79.5 26 L81.25 19 L83 26'/><path d='M32 26 H83'/><path d='M37 29.5 H79.5'/><path d='M32 26 L37 29.5 L44 26 L51 29.5 L58 26 L65 29.5 L72 26 L79 29.5'/><path d='M81.25 19 L48 26 M81.25 19 L60 26 M81.25 19 L72 26 M81.25 19 L89 26'/><path d='M83 26 H90'/><path d='M48 29.5 V34'/></g><rect x='86.5' y='26.3' width='4.4' height='5.4' rx='.8' fill='%23ff9f1c'/><circle cx='48' cy='29.5' r='1.1' fill='%23ff9f1c'/></svg>"> Planory</div>
     <nav class="lp-navlinks">
-      <a onclick="lpScroll('lp-funktionen')">Funktionen</a>
-      <a onclick="lpScroll('lp-preise')">Preise</a>
-      <a onclick="lpScroll('lp-faq')">FAQ</a>
+      <a onclick="lpScroll('lp-funktionen')" data-en="Features">Funktionen</a>
+      <a onclick="lpScroll('lp-preise')" data-en="Pricing">Preise</a>
+      <a onclick="lpScroll('lp-faq')" data-en="FAQ">FAQ</a>
     </nav>
-    <button class="lp-btn lp-btn-ghost" style="padding:9px 16px" onclick="enterApp('login')">Anmelden</button>
+    <div class="lp-right">
+      <div class="lp-lang" role="group" aria-label="Sprache / Language">
+        <button type="button" id="lp-lang-de" onclick="lpSetLang('de')">DE</button>
+        <button type="button" id="lp-lang-en" onclick="lpSetLang('en')">EN</button>
+      </div>
+      <button class="lp-btn lp-btn-ghost" style="padding:9px 16px" onclick="enterApp('login')" data-en="Sign in">Anmelden</button>
+    </div>
   </div></header>
 
   <div class="lp-wrap">
     <section class="lp-hero">
-      <span class="lp-badge">🏗️ Für alle, die bauen, sanieren oder umbauen</span>
-      <h1>Behalte <span>Budget, Kosten &amp; Termine</span> deines Bauprojekts im Griff.</h1>
-      <p>Planory ist dein digitaler Bauassistent: Budget, Baukosten, Rechnungen scannen, Bautagebuch, Wartungsplan und ein KI-Bauberater – alles an einem Ort, auf dem Handy und im Web.</p>
+      <span class="lp-badge" data-en="🏗️ For everyone building, renovating or remodelling">🏗️ Für alle, die bauen, sanieren oder umbauen</span>
+      <h1 data-en="Keep your project's <span>budget, costs &amp; deadlines</span> under control.">Behalte <span>Budget, Kosten &amp; Termine</span> deines Bauprojekts im Griff.</h1>
+      <p data-en="Planory is your digital construction assistant: budget, building costs, invoice scanning, a site diary, a maintenance plan and an AI construction advisor – all in one place, on your phone and on the web.">Planory ist dein digitaler Bauassistent: Budget, Baukosten, Rechnungen scannen, Bautagebuch, Wartungsplan und ein KI-Bauberater – alles an einem Ort, auf dem Handy und im Web.</p>
       <div class="lp-cta">
-        <button class="lp-btn lp-btn-primary" onclick="enterApp('register')">Kostenlos starten</button>
-        <button class="lp-btn lp-btn-ghost" onclick="enterApp('login')">Anmelden</button>
+        <button class="lp-btn lp-btn-primary" onclick="enterApp('register')" data-en="Start for free">Kostenlos starten</button>
+        <button class="lp-btn lp-btn-ghost" onclick="enterApp('login')" data-en="Sign in">Anmelden</button>
       </div>
     </section>
 
     <section class="lp-section" id="lp-funktionen">
-      <h2>Alles für dein Bauprojekt – an einem Ort</h2>
-      <p class="lp-sub">Schluss mit Zettelwirtschaft und zehn Excel-Tabellen. Planory bündelt alles, was du beim Bauen oder Sanieren brauchst.</p>
+      <h2 data-en="Everything for your building project – in one place">Alles für dein Bauprojekt – an einem Ort</h2>
+      <p class="lp-sub" data-en="No more paper chaos and ten spreadsheets. Planory bundles everything you need when building or renovating.">Schluss mit Zettelwirtschaft und zehn Excel-Tabellen. Planory bündelt alles, was du beim Bauen oder Sanieren brauchst.</p>
       <div class="lp-grid">
-        <div class="lp-card"><div class="lp-ic">📊</div><h3>Budget &amp; Kosten</h3><p>Gesamtbudget planen, auf Kategorien aufteilen und sofort sehen, was schon ausgegeben ist und was bleibt.</p></div>
-        <div class="lp-card"><div class="lp-ic">🤖</div><h3>KI-Bauberater</h3><p>Analysiert dein Projekt, warnt vor Kostenfallen und gibt konkrete Empfehlungen für die nächsten Schritte.</p></div>
-        <div class="lp-card"><div class="lp-ic">🧾</div><h3>Rechnungen scannen</h3><p>Foto oder PDF hochladen – die KI liest Betrag, Datum und Anbieter automatisch aus und bucht die Ausgabe ein.</p></div>
-        <div class="lp-card"><div class="lp-ic">📋</div><h3>Angebote vergleichen</h3><p>Angebote erfassen, gegenüberstellen und mit einem Klick in eine Rechnung umwandeln.</p></div>
-        <div class="lp-card"><div class="lp-ic">📸</div><h3>Bautagebuch &amp; Fotos</h3><p>Baufortschritt mit Notizen und Fotos dokumentieren – sortiert nach Alben und Bauphasen.</p></div>
-        <div class="lp-card"><div class="lp-ic">📅</div><h3>Zeitplan &amp; Aufgaben</h3><p>Meilensteine und To-dos im Blick. Erinnerungen sorgen dafür, dass du nichts vergisst.</p></div>
-        <div class="lp-card"><div class="lp-ic">🔧</div><h3>Wartungsplan</h3><p>Nie wieder eine Wartung für Heizung, Wasser oder Elektrik verpassen.</p></div>
-        <div class="lp-card"><div class="lp-ic">📐</div><h3>Leitungen &amp; Rohre</h3><p>Festhalten, wo Leitungen verlaufen – mit Fotos und Plänen, damit du beim nächsten Bohren sicher bist.</p></div>
+        <div class="lp-card"><div class="lp-ic">📊</div><h3 data-en="Budget &amp; costs">Budget &amp; Kosten</h3><p data-en="Plan your total budget, split it into categories and instantly see what has been spent and what's left.">Gesamtbudget planen, auf Kategorien aufteilen und sofort sehen, was schon ausgegeben ist und was bleibt.</p></div>
+        <div class="lp-card"><div class="lp-ic">🤖</div><h3 data-en="AI construction advisor">KI-Bauberater</h3><p data-en="Analyses your project, warns about cost traps and gives concrete recommendations for the next steps.">Analysiert dein Projekt, warnt vor Kostenfallen und gibt konkrete Empfehlungen für die nächsten Schritte.</p></div>
+        <div class="lp-card"><div class="lp-ic">🧾</div><h3 data-en="Scan invoices">Rechnungen scannen</h3><p data-en="Upload a photo or PDF – the AI reads amount, date and supplier automatically and books the expense.">Foto oder PDF hochladen – die KI liest Betrag, Datum und Anbieter automatisch aus und bucht die Ausgabe ein.</p></div>
+        <div class="lp-card"><div class="lp-ic">📋</div><h3 data-en="Compare quotes">Angebote vergleichen</h3><p data-en="Record quotes, compare them side by side and turn one into an invoice with a single click.">Angebote erfassen, gegenüberstellen und mit einem Klick in eine Rechnung umwandeln.</p></div>
+        <div class="lp-card"><div class="lp-ic">📸</div><h3 data-en="Site diary &amp; photos">Bautagebuch &amp; Fotos</h3><p data-en="Document progress with notes and photos – sorted into albums and building phases.">Baufortschritt mit Notizen und Fotos dokumentieren – sortiert nach Alben und Bauphasen.</p></div>
+        <div class="lp-card"><div class="lp-ic">📅</div><h3 data-en="Schedule &amp; tasks">Zeitplan &amp; Aufgaben</h3><p data-en="Keep milestones and to-dos in view. Reminders make sure you don't forget anything.">Meilensteine und To-dos im Blick. Erinnerungen sorgen dafür, dass du nichts vergisst.</p></div>
+        <div class="lp-card"><div class="lp-ic">🔧</div><h3 data-en="Maintenance plan">Wartungsplan</h3><p data-en="Never miss a service for heating, water or electrics again.">Nie wieder eine Wartung für Heizung, Wasser oder Elektrik verpassen.</p></div>
+        <div class="lp-card"><div class="lp-ic">📐</div><h3 data-en="Pipes &amp; wiring">Leitungen &amp; Rohre</h3><p data-en="Record where pipes and wiring run – with photos and plans, so you're safe the next time you drill.">Festhalten, wo Leitungen verlaufen – mit Fotos und Plänen, damit du beim nächsten Bohren sicher bist.</p></div>
       </div>
     </section>
 
     <section class="lp-section">
       <div class="lp-who">
-        <h2>Für wen ist Planory?</h2>
-        <p class="lp-sub" style="margin-bottom:0">Für alle, die ein <strong>Haus bauen, sanieren oder umbauen</strong> und dabei den Überblick über Kosten und Termine behalten wollen – ohne Bau-Software-Studium. Einfach, verständlich, auf Deutsch.</p>
+        <h2 data-en="Who is Planory for?">Für wen ist Planory?</h2>
+        <p class="lp-sub" style="margin-bottom:0" data-en="For everyone who is <strong>building, renovating or remodelling a home</strong> and wants to stay on top of costs and deadlines – without a degree in construction software. Simple and easy to understand.">Für alle, die ein <strong>Haus bauen, sanieren oder umbauen</strong> und dabei den Überblick über Kosten und Termine behalten wollen – ohne Bau-Software-Studium. Einfach, verständlich, auf Deutsch.</p>
       </div>
     </section>
 
     <section class="lp-section">
-      <h2>In 3 Schritten startklar</h2>
+      <h2 data-en="Ready in 3 steps">In 3 Schritten startklar</h2>
       <div class="lp-steps">
-        <div class="lp-step"><div class="lp-n">1</div><h3>Projekt anlegen</h3><p style="color:var(--lp-text2);font-size:.9rem">Name, Budget, Zeitraum – fertig.</p></div>
-        <div class="lp-step"><div class="lp-n">2</div><h3>Kosten erfassen</h3><p style="color:var(--lp-text2);font-size:.9rem">Tippen oder Rechnung scannen.</p></div>
-        <div class="lp-step"><div class="lp-n">3</div><h3>Überblick behalten</h3><p style="color:var(--lp-text2);font-size:.9rem">Budget, Termine &amp; Fotos immer dabei.</p></div>
+        <div class="lp-step"><div class="lp-n">1</div><h3 data-en="Create a project">Projekt anlegen</h3><p style="color:var(--lp-text2);font-size:.9rem" data-en="Name, budget, timeframe – done.">Name, Budget, Zeitraum – fertig.</p></div>
+        <div class="lp-step"><div class="lp-n">2</div><h3 data-en="Record costs">Kosten erfassen</h3><p style="color:var(--lp-text2);font-size:.9rem" data-en="Type them in or scan an invoice.">Tippen oder Rechnung scannen.</p></div>
+        <div class="lp-step"><div class="lp-n">3</div><h3 data-en="Stay in control">Überblick behalten</h3><p style="color:var(--lp-text2);font-size:.9rem" data-en="Budget, deadlines &amp; photos always with you.">Budget, Termine &amp; Fotos immer dabei.</p></div>
       </div>
     </section>
 
     <section class="lp-section" id="lp-preise">
-      <h2>Preise – fair &amp; unkompliziert</h2>
+      <h2 data-en="Pricing – fair &amp; simple">Preise – fair &amp; unkompliziert</h2>
       <div class="lp-price">
-        <div style="color:var(--lp-text2)">Einen Monat</div>
-        <div class="lp-big">Kostenlos testen</div>
-        <p style="color:var(--lp-text2);margin-bottom:20px">Alle Funktionen einen Monat gratis. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
-        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')">Jetzt kostenlos starten</button>
+        <div style="color:var(--lp-text2)" data-en="One month">Einen Monat</div>
+        <div class="lp-big" data-en="Free trial">Kostenlos testen</div>
+        <p style="color:var(--lp-text2);margin-bottom:20px" data-en="All features free for one month. After that you can still view your data; new entries and the AI require a fair subscription.">Alle Funktionen einen Monat gratis. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
+        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')" data-en="Start for free now">Jetzt kostenlos starten</button>
       </div>
     </section>
 
     <section class="lp-section" id="lp-faq">
-      <h2>Häufige Fragen</h2>
+      <h2 data-en="Frequently asked questions">Häufige Fragen</h2>
       <div class="lp-faq">
-        <div class="lp-qa"><h3>Was ist Planory?</h3><p>Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung.</p></div>
-        <div class="lp-qa"><h3>Für wen ist Planory gedacht?</h3><p>Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen.</p></div>
-        <div class="lp-qa"><h3>Läuft Planory auf Handy und Computer?</h3><p>Ja. Planory gibt es als iPhone-/iPad-App und im Web – deine Daten sind auf allen Geräten synchron.</p></div>
-        <div class="lp-qa"><h3>Was kostet Planory?</h3><p>Du kannst Planory einen Monat kostenlos testen. Danach gibt es ein faires Abo für neue Einträge und die KI-Funktionen.</p></div>
+        <div class="lp-qa"><h3 data-en="What is Planory?">Was ist Planory?</h3><p data-en="Planory is an app and web application for private building projects: it manages budget, building costs, invoices, quotes, schedule, site diary and maintenance – with AI support.">Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung.</p></div>
+        <div class="lp-qa"><h3 data-en="Who is Planory for?">Für wen ist Planory gedacht?</h3><p data-en="For everyone building, renovating or remodelling a home who wants to keep their costs under control themselves.">Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen.</p></div>
+        <div class="lp-qa"><h3 data-en="Does Planory run on phone and computer?">Läuft Planory auf Handy und Computer?</h3><p data-en="Yes. Planory is available as an iPhone/iPad app and on the web – your data stays in sync across all devices.">Ja. Planory gibt es als iPhone-/iPad-App und im Web – deine Daten sind auf allen Geräten synchron.</p></div>
+        <div class="lp-qa"><h3 data-en="What does Planory cost?">Was kostet Planory?</h3><p data-en="You can try Planory free for one month. After that there is a fair subscription for new entries and the AI features.">Du kannst Planory einen Monat kostenlos testen. Danach gibt es ein faires Abo für neue Einträge und die KI-Funktionen.</p></div>
       </div>
     </section>
   </div>
 
   <footer class="lp-footer"><div class="lp-wrap">
-    © Planory · <a href="#" onclick="enterApp();return false">Zur App</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a>
+    © Planory · <a href="#" onclick="enterApp();return false" data-en="To the app">Zur App</a> · <a href="impressum.html" data-en="Imprint">Impressum</a> · <a href="datenschutz.html" data-en="Privacy">Datenschutz</a>
   </div></footer>
 </div>
 
@@ -5292,11 +5303,9 @@ function _initI18n() {
   applyStaticTranslations();
   const sel = document.getElementById('lang-select');
   if (sel) sel.value = _lang;
-  // Erster Start: Sprache abfragen (einmalig, bis eine Wahl gespeichert ist)
-  if (!localStorage.getItem('planoryLang')) {
-    const m = document.getElementById('modal-lang-select');
-    if (m) m.classList.add('open');
-  }
+  // Kein aufdringliches Erst-Popup mehr: Die Sprache wird automatisch anhand
+  // der Browsersprache gesetzt (siehe _lang oben). Umschalten geht ueber den
+  // DE/EN-Schalter auf der Landing-Page bzw. in den Einstellungen.
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initI18n);
 else _initI18n();
@@ -10873,6 +10882,7 @@ function showLanding() {
   if (!lp) { showAuthOverlay(); return; }
   document.getElementById('auth-overlay').style.display = 'none';
   lp.style.display = 'block';
+  try { lpApplyLang(); } catch(e) {}
 }
 function enterApp(tab) {
   const lp = document.getElementById('landing-overlay');
@@ -10886,6 +10896,28 @@ function enterApp(tab) {
 function lpScroll(id) {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// Landing-Uebersetzung: Deutsch ist der sichtbare Standard; jedes Element mit
+// data-en traegt die englische Fassung. Beim ersten Aufruf sichern wir die
+// deutsche Fassung in _lpDe, danach kann beliebig hin- und hergeschaltet werden.
+function lpApplyLang() {
+  const lp = document.getElementById('landing-overlay');
+  if (!lp) return;
+  const en = (typeof _lang !== 'undefined' && _lang === 'en');
+  lp.querySelectorAll('[data-en]').forEach(el => {
+    if (el._lpDe === undefined) el._lpDe = el.innerHTML;   // deutsche Fassung merken
+    el.innerHTML = en ? el.getAttribute('data-en') : el._lpDe;
+  });
+  const dBtn = document.getElementById('lp-lang-de');
+  const eBtn = document.getElementById('lp-lang-en');
+  if (dBtn) dBtn.classList.toggle('active', !en);
+  if (eBtn) eBtn.classList.toggle('active', en);
+  try { document.documentElement.lang = en ? 'en' : 'de'; } catch(e) {}
+}
+// DE/EN-Schalter auf der Landing: App-weite Sprache setzen + Landing anwenden.
+function lpSetLang(lang) {
+  try { setLang(lang); } catch(e) { _lang = (lang === 'en') ? 'en' : 'de'; }
+  lpApplyLang();
 }
 
 function switchAuthTab(tab) {
