@@ -1560,6 +1560,9 @@
     /* Better table scrolling */
     .table-wrap { overflow-x: auto; }
     table { min-width: 500px; }
+    /* Dashboard-Mini-Tabellen sollen die Handy-Breite NICHT aufblähen
+       (sonst werden Schnellzugriff-Kacheln rechts abgeschnitten). */
+    #page-dashboard table { min-width: 0; }
 
     /* Larger touch targets */
     .btn { min-height: 40px; }
@@ -2195,7 +2198,9 @@
     #landing-overlay .lp-trust span{display:inline-flex;align-items:center;gap:6px}
     #landing-overlay .lp-shot{padding:6px 0 20px;text-align:center}
     #landing-overlay .lp-shot img{max-width:100%;width:920px;border-radius:14px;border:1px solid var(--lp-border);box-shadow:0 24px 70px rgba(0,0,0,.55)}
-    #landing-overlay .lp-shot .lp-cap{margin-top:12px;font-size:.85rem;color:var(--lp-text3)}
+    #landing-overlay .lp-shot .lp-cap{margin-top:14px;font-size:.85rem;color:var(--lp-text3)}
+    #landing-overlay .lp-phone{width:264px;max-width:80%;margin:0 auto;background:#0a0d16;border:1px solid #2e3852;border-radius:36px;padding:10px;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+    #landing-overlay .lp-phone img{width:100%;display:block;border-radius:27px}
     #landing-overlay .lp-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:12px}
     #landing-overlay .lp-shots figure{margin:0;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:14px;overflow:hidden}
     #landing-overlay .lp-shots img{width:100%;display:block;border-bottom:1px solid var(--lp-border)}
@@ -2244,6 +2249,11 @@
         <span data-en="🇪🇺 Servers in the EU">🇪🇺 Server in der EU</span>
         <span data-en="💳 1 month free, no payment details">💳 1 Monat gratis – ohne Zahlungsdaten</span>
       </div>
+    </section>
+
+    <section class="lp-shot">
+      <div class="lp-phone"><img src="shot-phone.png" alt="Planory App" loading="lazy"></div>
+      <div class="lp-cap" data-en="Your project at a glance – on your phone.">Dein Projekt auf einen Blick – direkt am Handy.</div>
     </section>
 
     <section class="lp-section" id="lp-funktionen">
