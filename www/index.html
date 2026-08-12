@@ -101,11 +101,12 @@
   body.dark-mode .logo             { background: linear-gradient(135deg,#1a2030,#222a3d) !important; }
   body.dark-mode .main             { background: var(--bg) !important; }
 
-  /* Cards & surfaces */
+  /* Cards & surfaces – etwas heller + kraeftigerer Rahmen + Schatten, damit sich
+     die Kaesten im Dunkelmodus klar vom Hintergrund abheben (mehr Uebersicht). */
   body.dark-mode .card,
   body.dark-mode .table-wrap,
   body.dark-mode .budget-visual,
-  body.dark-mode .chart-container  { background: var(--surface) !important; border-color: var(--border) !important; }
+  body.dark-mode .chart-container  { background: #1c2438 !important; border: 1px solid var(--border-strong) !important; box-shadow: 0 2px 12px rgba(0,0,0,0.45) !important; }
   body.dark-mode .page-header      { background: transparent !important; }
 
   /* Buttons */
@@ -2653,10 +2654,11 @@
   <div class="page active" id="page-dashboard">
     <div class="page-header">
       <div>
-        <h2>Dashboard</h2>
+        <h2 id="dash-greeting">Willkommen zurück</h2>
         <p id="dashboard-subtitle">Willkommen zurück – hier dein Projektüberblick</p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span id="dash-date" style="font-size:0.85rem;font-weight:600;color:var(--text3);margin-right:6px;white-space:nowrap"></span>
         <button id="privacy-btn" class="btn btn-ghost" onclick="togglePrivacy()" title="Alle Zahlen ausblenden">👁 Zahlen ausblenden</button>
         <button id="ki-panel-btn" class="btn btn-ghost" onclick="toggleKIPanel()" title="KI-Bauberater ein-/ausblenden">🤖 KI ausblenden</button>
         <button class="btn btn-ghost" onclick="sendStatusReport()" title="Wöchentlichen Statusbericht per E-Mail senden">📧 Statusbericht</button>
@@ -3041,6 +3043,10 @@
         <div class="table-wrap" style="margin-bottom:16px">
           <div class="table-header"><div class="table-title">Projektdaten</div></div>
           <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+            <div class="form-row">
+              <label>Dein Name (für die Begrüßung)</label>
+              <input id="s-username" type="text" placeholder="z.B. Simon" oninput="saveSettings();renderDashboard()">
+            </div>
             <div class="form-row">
               <label>Projektname</label>
               <input id="s-name" type="text" placeholder="z.B. Einfamilienhaus Musterhausen" oninput="saveSettings()">
@@ -5707,6 +5713,8 @@ function renderModuleToggles() {
 // ──────────────── SETTINGS ────────────────
 function saveSettings() {
   if (!requireSub()) return;
+  const _un = document.getElementById('s-username');
+  if (_un) { try { localStorage.setItem('planoryUserName', _un.value.trim()); } catch(e){} }
   state.settings.name    = document.getElementById('s-name').value;
   state.settings.start   = document.getElementById('s-start').value;
   state.settings.end     = document.getElementById('s-end').value;
@@ -5716,6 +5724,8 @@ function saveSettings() {
 }
 
 function loadSettings() {
+  const _un = document.getElementById('s-username');
+  if (_un) { try { _un.value = localStorage.getItem('planoryUserName') || ''; } catch(e){} }
   document.getElementById('s-name').value    = state.settings.name    || '';
   document.getElementById('s-start').value   = state.settings.start   || '';
   document.getElementById('s-end').value     = state.settings.end     || '';
@@ -6077,6 +6087,18 @@ function renderDashReminders() {
 function renderDashboard() {
   renderQuickAccess();
   renderDashReminders();
+  // Persoenliche Begruessung nach Tageszeit (+ Name, falls in Einstellungen gesetzt) + Datum
+  try {
+    const _h = new Date().getHours();
+    const _greet = _h < 5 ? 'Gute Nacht' : _h < 11 ? 'Guten Morgen'
+                 : _h < 17 ? 'Guten Tag' : _h < 22 ? 'Guten Abend' : 'Gute Nacht';
+    const _name = (localStorage.getItem('planoryUserName') || '').trim();
+    const _gEl = document.getElementById('dash-greeting');
+    if (_gEl) _gEl.textContent = _greet + (_name ? ', ' + _name : '') + ' 👋';
+    const _dEl = document.getElementById('dash-date');
+    if (_dEl) _dEl.textContent = new Date().toLocaleDateString(_lang === 'en' ? 'en-GB' : 'de-AT',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+  } catch(e) {}
   const total = state.kosten.reduce((s, k) => s + (k.status !== 'Storniert' ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
   const budget = state.budgetKat && state.budgetKat.length > 0
