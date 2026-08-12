@@ -2200,6 +2200,17 @@
     #landing-overlay .lp-shots figure{margin:0;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:14px;overflow:hidden}
     #landing-overlay .lp-shots img{width:100%;display:block;border-bottom:1px solid var(--lp-border)}
     #landing-overlay .lp-shots figcaption{padding:12px 14px;font-size:.85rem;color:var(--lp-text2)}
+    #landing-overlay .lp-cmp{max-width:720px;margin:0 auto;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:16px;overflow:hidden}
+    #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{display:grid;grid-template-columns:1.5fr 1fr 1fr}
+    #landing-overlay .lp-cmp-head>div{padding:13px 12px;font-weight:800;font-size:.82rem;border-bottom:1px solid var(--lp-border)}
+    #landing-overlay .lp-cmp-head .lp-cmp-p{color:var(--lp-accent)}
+    #landing-overlay .lp-cmp-head .lp-cmp-x{color:var(--lp-text3)}
+    #landing-overlay .lp-cmp-row>div{padding:12px;font-size:.82rem;border-bottom:1px solid var(--lp-border);line-height:1.35}
+    #landing-overlay .lp-cmp-row:last-child>div{border-bottom:none}
+    #landing-overlay .lp-cmp-feat{font-weight:600;color:var(--lp-text)}
+    #landing-overlay .lp-cmp-no{color:var(--lp-text3)}
+    #landing-overlay .lp-cmp-yes{color:#4ade80;font-weight:600;background:rgba(255,159,28,.05)}
+    #landing-overlay .lp-cmp-head .lp-cmp-p{background:rgba(255,159,28,.05)}
     @media(max-width:640px){ #landing-overlay .lp-hero h1{font-size:2rem} #landing-overlay .lp-hero{padding:48px 0 40px} }
   </style>
 
@@ -2252,6 +2263,53 @@
         <div class="lp-card"><div class="lp-ic">📅</div><h3 data-en="Schedule &amp; tasks">Zeitplan &amp; Aufgaben</h3><p data-en="Keep milestones and to-dos in view. Reminders make sure you don't forget anything.">Meilensteine und To-dos im Blick. Erinnerungen sorgen dafür, dass du nichts vergisst.</p></div>
         <div class="lp-card"><div class="lp-ic">🔧</div><h3 data-en="Maintenance plan">Wartungsplan</h3><p data-en="Never miss a service for heating, water or electrics again.">Nie wieder eine Wartung für Heizung, Wasser oder Elektrik verpassen.</p></div>
         <div class="lp-card"><div class="lp-ic">📐</div><h3 data-en="Pipes &amp; wiring">Leitungen &amp; Rohre</h3><p data-en="Record where pipes and wiring run – with photos and plans, so you're safe the next time you drill.">Festhalten, wo Leitungen verlaufen – mit Fotos und Plänen, damit du beim nächsten Bohren sicher bist.</p></div>
+      </div>
+    </section>
+
+    <section class="lp-section" id="lp-vergleich">
+      <h2 data-en="Planory instead of Excel chaos">Planory statt Excel-Chaos</h2>
+      <p class="lp-sub" data-en="Why one app beats ten spreadsheets.">Warum eine App besser ist als zehn Tabellen.</p>
+      <div class="lp-cmp">
+        <div class="lp-cmp-head">
+          <div></div>
+          <div class="lp-cmp-x">📊 Excel</div>
+          <div class="lp-cmp-p">◆ Planory</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="Recording invoices">Rechnungen erfassen</div>
+          <div class="lp-cmp-no" data-en="✗ type everything by hand">✗ alles abtippen</div>
+          <div class="lp-cmp-yes" data-en="✓ photo – AI books it in">✓ Foto – KI bucht ein</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="Always up to date">Immer aktuell</div>
+          <div class="lp-cmp-no" data-en="✗ files back and forth">✗ Dateien hin &amp; her</div>
+          <div class="lp-cmp-yes" data-en="✓ synced on all devices">✓ auf allen Geräten synchron</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="Reminders for dates &amp; maintenance">Erinnerungen für Termine &amp; Wartung</div>
+          <div class="lp-cmp-no" data-en="✗ none">✗ keine</div>
+          <div class="lp-cmp-yes" data-en="✓ push notification">✓ Push-Mitteilung</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="Photos &amp; site diary">Fotos &amp; Bautagebuch</div>
+          <div class="lp-cmp-no" data-en="✗ not possible">✗ geht nicht</div>
+          <div class="lp-cmp-yes" data-en="✓ built in">✓ integriert</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="Overview &amp; charts">Überblick &amp; Auswertungen</div>
+          <div class="lp-cmp-no" data-en="✗ build it yourself">✗ selbst bauen</div>
+          <div class="lp-cmp-yes" data-en="✓ automatic">✓ automatisch</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="AI construction advisor">KI-Bauberater</div>
+          <div class="lp-cmp-no" data-en="✗ —">✗ —</div>
+          <div class="lp-cmp-yes" data-en="✓ warns about cost traps">✓ warnt vor Kostenfallen</div>
+        </div>
+        <div class="lp-cmp-row">
+          <div class="lp-cmp-feat" data-en="On your phone">Am Handy</div>
+          <div class="lp-cmp-no" data-en="✗ cumbersome">✗ umständlich</div>
+          <div class="lp-cmp-yes" data-en="✓ made for mobile">✓ dafür gemacht</div>
+        </div>
       </div>
     </section>
 
