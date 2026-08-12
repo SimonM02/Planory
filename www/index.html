@@ -841,7 +841,9 @@
   }
 
   .logo {
-    padding: 22px 18px 18px;
+    /* Notch/Statusleiste: oben zusaetzlich den sicheren Bereich freihalten,
+       damit "Planory" auf iPhone/iPad nicht abgeschnitten wird (am Computer 0). */
+    padding: calc(22px + env(safe-area-inset-top)) 18px 18px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -1612,9 +1614,9 @@
     #mobile-topbar { display: none !important; }
     #mobile-backdrop { display: none !important; }
     #sidebar-show-btn { display: none !important; }
-    /* Inhalt ohne den Topbar-Abstand, mit angenehmem Rand */
+    /* Inhalt ohne den Topbar-Abstand, mit angenehmem Rand (oben Notch beachten) */
     .main {
-      padding: 24px 28px !important;
+      padding: calc(24px + env(safe-area-inset-top)) 28px 24px !important;
       width: auto !important;
     }
   }
