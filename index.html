@@ -2199,8 +2199,10 @@
     #landing-overlay .lp-shot{padding:6px 0 20px;text-align:center}
     #landing-overlay .lp-shot img{max-width:100%;width:920px;border-radius:14px;border:1px solid var(--lp-border);box-shadow:0 24px 70px rgba(0,0,0,.55)}
     #landing-overlay .lp-shot .lp-cap{margin-top:14px;font-size:.85rem;color:var(--lp-text3)}
-    #landing-overlay .lp-phone{width:264px;max-width:80%;margin:0 auto;background:#0a0d16;border:1px solid #2e3852;border-radius:36px;padding:10px;box-shadow:0 30px 70px rgba(0,0,0,.6)}
-    #landing-overlay .lp-phone img{width:100%;display:block;border-radius:27px}
+    #landing-overlay .lp-phone{position:relative;width:266px;max-width:82%;margin:0 auto;background:#0b0d12;border-radius:46px;padding:11px;box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 0 0 2px #2b3040}
+    #landing-overlay .lp-phone-top{height:30px;background:#1a2030;border-radius:35px 35px 0 0;position:relative}
+    #landing-overlay .lp-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:82px;height:17px;background:#000;border-radius:11px}
+    #landing-overlay .lp-phone img{width:100%;display:block;border-radius:0 0 35px 35px}
     #landing-overlay .lp-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:12px}
     #landing-overlay .lp-shots figure{margin:0;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:14px;overflow:hidden}
     #landing-overlay .lp-shots img{width:100%;display:block;border-bottom:1px solid var(--lp-border)}
@@ -2252,7 +2254,10 @@
     </section>
 
     <section class="lp-shot">
-      <div class="lp-phone"><img src="shot-phone.png" alt="Planory App" loading="lazy"></div>
+      <div class="lp-phone">
+        <div class="lp-phone-top"><span class="lp-island"></span></div>
+        <img src="shot-phone.png" data-en-src="shot-phone-en.png" alt="Planory App" loading="lazy">
+      </div>
       <div class="lp-cap" data-en="Your project at a glance – on your phone.">Dein Projekt auf einen Blick – direkt am Handy.</div>
     </section>
 
@@ -6088,20 +6093,20 @@ async function deleteAccount() {
 // ──────────────── DASHBOARD ────────────────
 // ── Schnellzugriff (auf dem Dashboard, vom Nutzer selbst zusammenstellbar) ────
 const QUICK_ACTIONS = [
-  { key:'scan',          icon:'🤖', label:'Rechnung scannen',   run:"openModal('modal-rechnung-scan')" },
-  { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    run:"openModal('modal-kosten')" },
-  { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       run:"openModal('modal-eigenleistung')" },
-  { key:'task',          icon:'✅', label:'Aufgabe',             run:"_populateTaskPersonList();openModal('modal-task')" },
-  { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', run:"openModal('modal-tagebuch')" },
-  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     run:"(document.getElementById('foto-input')||{click:function(){showPage('fotos')}}).click()" },
-  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    run:"openModal('modal-angebot')" },
-  { key:'milestone',     icon:'🏁', label:'Meilenstein',         run:"openModal('modal-milestone')" },
-  { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    run:"openModal('modal-zahlung')" },
-  { key:'wartung',       icon:'🔧', label:'Wartung anlegen',     run:"resetWartungModal();openModal('modal-wartung')" },
-  { key:'maengel',       icon:'⚠️', label:'Mangel erfassen',     run:"openModal('modal-mangel')" },
-  { key:'kontakt',       icon:'👷', label:'Kontakt',             run:"openModal('modal-kontakt')" },
-  { key:'notiz',         icon:'📝', label:'Notiz',               run:"openModal('modal-notiz')" },
-  { key:'budget',        icon:'📊', label:'Budget ansehen',      run:"showPage('budget')" }
+  { key:'scan',          icon:'🤖', label:'Rechnung scannen',   en:'Scan invoice',     run:"openModal('modal-rechnung-scan')" },
+  { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    en:'Add expense',      run:"openModal('modal-kosten')" },
+  { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       en:'Own work',         run:"openModal('modal-eigenleistung')" },
+  { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"_populateTaskPersonList();openModal('modal-task')" },
+  { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', en:'Site diary entry', run:"openModal('modal-tagebuch')" },
+  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"(document.getElementById('foto-input')||{click:function(){showPage('fotos')}}).click()" },
+  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    en:'Add quote',        run:"openModal('modal-angebot')" },
+  { key:'milestone',     icon:'🏁', label:'Meilenstein',         en:'Milestone',        run:"openModal('modal-milestone')" },
+  { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    en:'Add payment',      run:"openModal('modal-zahlung')" },
+  { key:'wartung',       icon:'🔧', label:'Wartung anlegen',     en:'Add maintenance',  run:"resetWartungModal();openModal('modal-wartung')" },
+  { key:'maengel',       icon:'⚠️', label:'Mangel erfassen',     en:'Log defect',       run:"openModal('modal-mangel')" },
+  { key:'kontakt',       icon:'👷', label:'Kontakt',             en:'Contact',          run:"openModal('modal-kontakt')" },
+  { key:'notiz',         icon:'📝', label:'Notiz',               en:'Note',             run:"openModal('modal-notiz')" },
+  { key:'budget',        icon:'📊', label:'Budget ansehen',      en:'View budget',      run:"showPage('budget')" }
 ];
 const QA_DEFAULT = ['scan','expense','task','diary','photo','budget'];
 function _qaEnabled() {
@@ -6113,8 +6118,8 @@ function renderQuickAccess() {
   if (!el) return;
   const tiles = _qaEnabled().map(k => QUICK_ACTIONS.find(a => a.key === k)).filter(Boolean);
   el.innerHTML = tiles.length
-    ? tiles.map(a => `<button class="quick-tile" onclick="${a.run}"><span class="qt-ic">${a.icon}</span><span>${a.label}</span></button>`).join('')
-    : `<div style="font-size:0.82rem;color:var(--text3)">Kein Schnellzugriff gewählt – tippe oben auf „✏️ Anpassen".</div>`;
+    ? tiles.map(a => `<button class="quick-tile" onclick="${a.run}"><span class="qt-ic">${a.icon}</span><span>${(_lang==='en'&&a.en)?a.en:a.label}</span></button>`).join('')
+    : `<div style="font-size:0.82rem;color:var(--text3)">${_lang==='en'?'No quick access selected – tap “✏️ Customise” above.':'Kein Schnellzugriff gewählt – tippe oben auf „✏️ Anpassen".'}</div>`;
 }
 function openQuickAccessEdit() {
   const enabled = _qaEnabled();
@@ -6138,24 +6143,25 @@ function saveQuickAccessEdit() {
 function renderDashReminders() {
   const el = document.getElementById('dash-reminders');
   if (!el) return;
+  const _en = (_lang === 'en');
   const items = [];
   const w = (state.wartungen || []).map(x => ({ x, d: _wartungNextDate(x) }))
     .filter(o => o.d && !isNaN(o.d)).sort((a,b) => a.d - b.d)[0];
-  if (w) items.push({ icon:'🔧', label:'Nächste Wartung', name:w.x.name || 'Wartung', date:w.d.toISOString().slice(0,10) });
+  if (w) items.push({ icon:'🔧', label:_en?'Next maintenance':'Nächste Wartung', name:w.x.name || (_en?'Maintenance':'Wartung'), date:w.d.toISOString().slice(0,10) });
   const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
     .sort((a,b) => new Date(a.faellig) - new Date(b.faellig))[0];
-  if (z) items.push({ icon:'📅', label:'Nächste Zahlung', name:(z.beschr||z.empfaenger||'Zahlung') + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
+  if (z) items.push({ icon:'📅', label:_en?'Next payment':'Nächste Zahlung', name:(z.beschr||z.empfaenger||(_en?'Payment':'Zahlung')) + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
   const ms = (state.meilensteine || []).filter(m => !m.done && m.datum)
     .sort((a,b) => new Date(a.datum) - new Date(b.datum))[0];
-  if (ms) items.push({ icon:'🏁', label:'Nächster Meilenstein', name:ms.name, date:ms.datum });
+  if (ms) items.push({ icon:'🏁', label:_en?'Next milestone':'Nächster Meilenstein', name:ms.name, date:ms.datum });
   if (!items.length) { el.innerHTML = ''; return; }
   el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
-    <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 Demnächst fällig</div>
+    <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 ${_en?'Due soon':'Demnächst fällig'}</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       ${items.map(i => {
         const d = _daysUntilDateStr(i.date), over = d < 0;
         const col = over ? 'var(--danger)' : d <= 7 ? 'var(--warning)' : 'var(--text3)';
-        const when = over ? `${Math.abs(d)} Tage überfällig` : d === 0 ? 'heute' : d === 1 ? 'morgen' : `in ${d} Tagen`;
+        const when = over ? (_en?`${Math.abs(d)} days overdue`:`${Math.abs(d)} Tage überfällig`) : d === 0 ? (_en?'today':'heute') : d === 1 ? (_en?'tomorrow':'morgen') : (_en?`in ${d} days`:`in ${d} Tagen`);
         return `<div style="display:flex;align-items:center;gap:8px;font-size:0.85rem">
           <span style="font-size:1.05rem">${i.icon}</span>
           <span style="flex:1;min-width:0"><b>${i.label}:</b> ${i.name}</span>
@@ -6172,8 +6178,10 @@ function renderDashboard() {
   // Persoenliche Begruessung nach Tageszeit (+ Name, falls in Einstellungen gesetzt) + Datum
   try {
     const _h = new Date().getHours();
-    const _greet = _h < 5 ? 'Gute Nacht' : _h < 11 ? 'Guten Morgen'
-                 : _h < 17 ? 'Guten Tag' : _h < 22 ? 'Guten Abend' : 'Gute Nacht';
+    const _en = (_lang === 'en');
+    const _greet = _en
+      ? (_h < 5 ? 'Good night' : _h < 12 ? 'Good morning' : _h < 18 ? 'Good afternoon' : _h < 22 ? 'Good evening' : 'Good night')
+      : (_h < 5 ? 'Gute Nacht' : _h < 11 ? 'Guten Morgen' : _h < 17 ? 'Guten Tag' : _h < 22 ? 'Guten Abend' : 'Gute Nacht');
     const _name = (localStorage.getItem('planoryUserName') || '').trim();
     const _gEl = document.getElementById('dash-greeting');
     if (_gEl) _gEl.textContent = _greet + (_name ? ', ' + _name : '') + ' 👋';
@@ -11265,6 +11273,11 @@ function lpApplyLang() {
   lp.querySelectorAll('[data-en]').forEach(el => {
     if (el._lpDe === undefined) el._lpDe = el.innerHTML;   // deutsche Fassung merken
     el.innerHTML = en ? el.getAttribute('data-en') : el._lpDe;
+  });
+  // Bilder mit sprachabhaengiger Quelle (z.B. deutscher/englischer Screenshot)
+  lp.querySelectorAll('[data-en-src]').forEach(el => {
+    if (el._lpDeSrc === undefined) el._lpDeSrc = el.getAttribute('src');
+    el.setAttribute('src', en ? el.getAttribute('data-en-src') : el._lpDeSrc);
   });
   const dBtn = document.getElementById('lp-lang-de');
   const eBtn = document.getElementById('lp-lang-en');
