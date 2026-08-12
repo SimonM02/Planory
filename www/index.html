@@ -2191,6 +2191,15 @@
     #landing-overlay .lp-qa p{color:var(--lp-text2);font-size:.92rem}
     #landing-overlay .lp-footer{border-top:1px solid var(--lp-border);padding:30px 0;color:var(--lp-text3);font-size:.85rem;text-align:center}
     #landing-overlay .lp-footer a{color:var(--lp-text2)}
+    #landing-overlay .lp-trust{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;margin-top:22px;font-size:.82rem;color:var(--lp-text2)}
+    #landing-overlay .lp-trust span{display:inline-flex;align-items:center;gap:6px}
+    #landing-overlay .lp-shot{padding:6px 0 20px;text-align:center}
+    #landing-overlay .lp-shot img{max-width:100%;width:920px;border-radius:14px;border:1px solid var(--lp-border);box-shadow:0 24px 70px rgba(0,0,0,.55)}
+    #landing-overlay .lp-shot .lp-cap{margin-top:12px;font-size:.85rem;color:var(--lp-text3)}
+    #landing-overlay .lp-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:12px}
+    #landing-overlay .lp-shots figure{margin:0;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:14px;overflow:hidden}
+    #landing-overlay .lp-shots img{width:100%;display:block;border-bottom:1px solid var(--lp-border)}
+    #landing-overlay .lp-shots figcaption{padding:12px 14px;font-size:.85rem;color:var(--lp-text2)}
     @media(max-width:640px){ #landing-overlay .lp-hero h1{font-size:2rem} #landing-overlay .lp-hero{padding:48px 0 40px} }
   </style>
 
@@ -2219,6 +2228,16 @@
         <button class="lp-btn lp-btn-primary" onclick="enterApp('register')" data-en="Start for free">Kostenlos starten</button>
         <button class="lp-btn lp-btn-ghost" onclick="enterApp('login')" data-en="Sign in">Anmelden</button>
       </div>
+      <div class="lp-trust">
+        <span data-en="🔒 GDPR-compliant">🔒 DSGVO-konform</span>
+        <span data-en="🇪🇺 Servers in the EU">🇪🇺 Server in der EU</span>
+        <span data-en="💳 1 month free, no payment details">💳 1 Monat gratis – ohne Zahlungsdaten</span>
+      </div>
+    </section>
+
+    <section class="lp-shot">
+      <img src="shot-dashboard.png" alt="Planory Dashboard" loading="lazy">
+      <div class="lp-cap" data-en="Your project at a glance – budget, costs and deadlines.">Dein Projekt auf einen Blick – Budget, Kosten &amp; Termine.</div>
     </section>
 
     <section class="lp-section" id="lp-funktionen">
@@ -2262,7 +2281,7 @@
       <div class="lp-price">
         <div style="color:var(--lp-text2)" data-en="One month">Einen Monat</div>
         <div class="lp-big" data-en="Free trial">Kostenlos testen</div>
-        <p style="color:var(--lp-text2);margin-bottom:20px" data-en="All features free for one month. After that you can still view your data; new entries and the AI require a fair subscription.">Alle Funktionen einen Monat gratis. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
+        <p style="color:var(--lp-text2);margin-bottom:20px" data-en="All features free for one month – no credit card, no payment details. After that you can still view your data; new entries and the AI require a fair subscription.">Alle Funktionen einen Monat gratis – keine Kreditkarte, keine Zahlungsdaten nötig. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
         <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')" data-en="Start for free now">Jetzt kostenlos starten</button>
       </div>
     </section>
