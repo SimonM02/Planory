@@ -5652,14 +5652,85 @@ function showPrompt(message, defaultValue = '', opts = {}) {
 // In der nativen iOS-App bleibt (bis der In-App-Kauf integriert ist) alles
 // frei – sonst wuerde Apple die App ablehnen (Guideline 3.1.1).
 function _subActive() { return window._userPlan === 'pro' || window._userPlan === 'trial'; }
+
+// ─── Apple In-App-Abo via RevenueCat ─────────────────────────────────────────
+// >>> HIER deine RevenueCat-Daten eintragen (aus dem RevenueCat-Dashboard):
+const RC_API_KEY     = '';      // Public SDK Key (Apple), beginnt mit "appl_".
+                                //  LEER lassen = Abo INAKTIV, App bleibt komplett gratis.
+const RC_ENTITLEMENT = 'plus';  // Name der Berechtigung in RevenueCat.
+// <<<
+let _rcReady = false, _rcOffering = null;
+function _rcActive() { return isNativeApp() && !!RC_API_KEY && _rcReady; }
+function _rcPlugin() {
+  if (!isNativeApp() || !RC_API_KEY) return null;
+  try { return window.Capacitor?.registerPlugin?.('Purchases') || window.Capacitor?.Plugins?.Purchases || null; }
+  catch(e) { return null; }
+}
+async function _rcInit() {
+  const P = _rcPlugin();
+  if (!P || !currentUser) return;
+  try {
+    await P.configure({ apiKey: RC_API_KEY, appUserID: String(currentUser.id) });
+    _rcReady = true;
+    await _rcRefresh();
+    try { const o = await P.getOfferings(); _rcOffering = o?.current || o?.offerings?.current || null; } catch(e) {}
+  } catch(e) { console.warn('RevenueCat init failed', e); _rcReady = false; }
+}
+async function _rcRefresh() {
+  const P = _rcPlugin();
+  if (!P || !_rcReady) return;
+  try {
+    const res = await P.getCustomerInfo();
+    const info = res?.customerInfo || res;
+    const active = info?.entitlements?.active || {};
+    if (active[RC_ENTITLEMENT]) { window._userPlan = 'pro'; }
+    else {
+      const created = new Date(currentUser?.created_at || Date.now());
+      window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+      const banner = document.getElementById('readonly-banner');
+      if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
+    }
+  } catch(e) { console.warn('RevenueCat refresh failed', e); }
+}
+async function rcPurchase() {
+  const P = _rcPlugin();
+  const pkg = _rcOffering?.availablePackages?.[0];
+  if (!P || !pkg) { showToast('Abo gerade nicht verfügbar – bitte später erneut versuchen', 'error'); return; }
+  try {
+    await P.purchasePackage({ aPackage: pkg });
+    await _rcRefresh();
+    if (_subActive()) { closeModal('modal-paywall'); showToast('✅ Abo aktiv – danke!', 'success'); }
+  } catch(e) { if (!/cancel/i.test(e?.message || '')) showToast('Kauf nicht abgeschlossen', 'error'); }
+}
+async function rcRestore() {
+  const P = _rcPlugin();
+  if (!P) return;
+  try {
+    await P.restorePurchases();
+    await _rcRefresh();
+    if (_subActive()) { closeModal('modal-paywall'); showToast('✅ Käufe wiederhergestellt', 'success'); }
+    else showToast('Keine aktiven Käufe gefunden', 'warning');
+  } catch(e) { showToast('Wiederherstellen fehlgeschlagen', 'error'); }
+}
+
 function requireSub() {
-  if (isNativeApp()) return true;
-  if (_demoMode || !currentUser) return true; // Demo & Vor-Login nie blocken
+  if (isNativeApp() && !_rcActive()) return true;  // Native ohne aktives Abo-System = gratis (unveraendert)
+  if (_demoMode || !currentUser) return true;      // Demo & Vor-Login nie blocken
   if (_subActive()) return true;
   openPaywall();
   return false;
 }
-function openPaywall() { openModal('modal-paywall'); }
+function openPaywall() {
+  const nativeAbo = _rcActive();
+  const nEl = document.getElementById('pw-native'), sEl = document.getElementById('pw-stripe');
+  if (nEl && sEl) { nEl.style.display = nativeAbo ? '' : 'none'; sEl.style.display = nativeAbo ? 'none' : ''; }
+  if (nativeAbo) {
+    const price = _rcOffering?.availablePackages?.[0]?.product?.priceString || '';
+    const btn = document.getElementById('pw-native-buy');
+    if (btn) btn.textContent = price ? ('Abo starten – ' + price) : 'Abo starten';
+  }
+  openModal('modal-paywall');
+}
 
 // Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
 function _applyFreePlan(freeEl) {
@@ -11394,6 +11465,7 @@ async function onAuthSuccess(user, isNewUser = false) {
   hideAuthOverlay();
   const emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = user.email;
+  try { _rcInit(); } catch(e) {}   // Apple-Abo (RevenueCat) initialisieren – no-op ohne Schluessel
 
   // Clear localStorage ONLY if it belongs to a different user
   const localOwner = localStorage.getItem('bauplan_user_id');
@@ -14801,10 +14873,18 @@ function exportRechnungenPDF() {
       Mit dem Planory-Abo kannst du weiter eintragen, Rechnungen scannen und die KI nutzen.
       Deine bisherigen Daten bleiben immer sichtbar – auch ohne Abo.
     </p>
-    <button onclick="startStripeCheckout('yearly')" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">
-      28,99 € / Jahr &nbsp;<span style="opacity:.8;font-size:0.8rem">statt 47,88 € – spare 40 %</span>
-    </button>
-    <button onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:12px">3,99 € / Monat</button>
+    <!-- Apple In-App-Abo (nur in der App, wenn RevenueCat konfiguriert ist) -->
+    <div id="pw-native" style="display:none">
+      <button onclick="rcPurchase()" id="pw-native-buy" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Abo starten</button>
+      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:11px">Käufe wiederherstellen</button>
+    </div>
+    <!-- Web-Abo (Stripe) -->
+    <div id="pw-stripe">
+      <button onclick="startStripeCheckout('yearly')" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">
+        28,99 € / Jahr &nbsp;<span style="opacity:.8;font-size:0.8rem">statt 47,88 € – spare 40 %</span>
+      </button>
+      <button onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:12px">3,99 € / Monat</button>
+    </div>
     <div style="font-size:0.72rem;color:var(--text3);margin-bottom:14px">Jederzeit kündbar · Aufgaben abhaken bleibt immer gratis</div>
     <button onclick="closeModal('modal-paywall')" style="background:none;border:none;color:var(--text3);font-size:0.8rem;cursor:pointer;text-decoration:underline">Weiter nur ansehen</button>
   </div>
