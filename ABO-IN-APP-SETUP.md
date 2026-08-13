@@ -1,14 +1,38 @@
 # App-Abo (In-App-Kauf) – Einrichtung Schritt für Schritt
 
 Ziel: In der iPhone-/iPad-App ein Abo per Apple-Bezahlsystem verkaufen.
-Web bleibt auf Stripe. Empfohlener Weg: **RevenueCat** (nimmt uns die ganze
-Apple-Technik ab, kostenlos bis ~2.500 $ Umsatz/Monat).
+Web bleibt auf Stripe. Weg: **RevenueCat** (nimmt uns die ganze Apple-Technik ab,
+kostenlos bis ~2.500 $ Umsatz/Monat).
 
-> Reihenfolge: erst diese Punkte (DU), dann baue ich den Code ein, dann testen
-> wir in der Sandbox, dann Build 8. **Nichts davon startet einen neuen Build –
-> das machen wir erst, wenn Build 7 durch ist.**
+## ✅ Der Code ist bereits eingebaut (fail-safe)
+Die komplette Abo-Logik steckt schon in `index.html` (RevenueCat: Kauf,
+„Käufe wiederherstellen", Entitlement-Prüfung, Paywall mit Apple-Kauf).
+**Solange der Schlüssel leer ist, bleibt die App zu 100 % gratis** – nichts
+ändert sich, bis du die Zugänge einträgst.
+
+### Was du am Ende nur noch eintragen musst (in `index.html`, ganz oben bei der
+### Abo-Logik – oder schick mir die Werte, ich trage sie ein):
+```
+const RC_API_KEY     = 'appl_XXXXXXXXXXXX';  // dein RevenueCat Public SDK Key (Apple)
+const RC_ENTITLEMENT = 'plus';               // Name deiner Berechtigung (falls anders)
+```
+
+### Und am Mac (einmalig, für die native App):
+```
+cd planory && git pull origin main
+npm install @revenuecat/purchases-capacitor
+npx cap sync ios
+```
+Dann **über TestFlight mit Sandbox-Test-Nutzern** einen Test-Kauf machen (kostenlos!).
+Erst wenn der Kauf sauber funktioniert → Build hochladen & einreichen.
+
+> ⚠️ Wichtig: Diesen Bezahl-Teil kann ich **nicht selbst testen** (keine Geräte/
+> Apple-Zugänge hier). Deshalb **unbedingt vorher in TestFlight/Sandbox testen** –
+> ggf. justiere ich dann noch 1–2 Kleinigkeiten.
 
 ---
+
+## Voraussetzungen, die DU noch erledigen musst (dafür sind die Schritte unten):
 
 ## 1) „Paid Apps"-Vertrag aktivieren (Voraussetzung für JEDEN Verkauf)
 App Store Connect → **Geschäft / Verträge (Agreements)** →
