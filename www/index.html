@@ -5676,21 +5676,34 @@ async function _rcInit() {
     try { const o = await P.getOfferings(); _rcOffering = o?.current || o?.offerings?.current || null; } catch(e) {}
   } catch(e) { console.warn('RevenueCat init failed', e); _rcReady = false; }
 }
+// Bestimmt den Abo-Status in der App: aktiv, wenn ENTWEDER ein Apple-Abo
+// (RevenueCat) ODER ein Web-Abo (Stripe -> Supabase-Tabelle) laeuft – sonst
+// Testphase. So gilt ein im Web abgeschlossenes Abo auch in der App.
 async function _rcRefresh() {
+  if (!_rcReady || !currentUser) return;
+  let isPro = false;
   const P = _rcPlugin();
-  if (!P || !_rcReady) return;
-  try {
-    const res = await P.getCustomerInfo();
-    const info = res?.customerInfo || res;
-    const active = info?.entitlements?.active || {};
-    if (active[RC_ENTITLEMENT]) { window._userPlan = 'pro'; }
-    else {
-      const created = new Date(currentUser?.created_at || Date.now());
-      window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
-      const banner = document.getElementById('readonly-banner');
-      if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
-    }
-  } catch(e) { console.warn('RevenueCat refresh failed', e); }
+  if (P) {
+    try {
+      const res = await P.getCustomerInfo();
+      const info = res?.customerInfo || res;
+      if ((info?.entitlements?.active || {})[RC_ENTITLEMENT]) isPro = true;
+    } catch(e) { console.warn('RevenueCat refresh failed', e); }
+  }
+  if (!isPro) {
+    // Web-Abo (Stripe) aus derselben Supabase-Tabelle pruefen, die die Web-App nutzt.
+    try {
+      const { data } = await supa.from('subscriptions').select('plan,status').eq('user_id', currentUser.id).maybeSingle();
+      if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) isPro = true;
+    } catch(e) {}
+  }
+  if (isPro) { window._userPlan = 'pro'; }
+  else {
+    const created = new Date(currentUser?.created_at || Date.now());
+    window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+  }
+  const banner = document.getElementById('readonly-banner');
+  if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
 }
 async function rcPurchase() {
   const P = _rcPlugin();
@@ -5950,9 +5963,11 @@ if (document.readyState === 'loading') {
 
 async function loadUserPlan() {
   if (!currentUser) return;
-  // Native App: alles freigeschaltet, keine Plan-/Bezahl-Karten anzeigen
+  // Native App:
+  //  - Abo INAKTIV (kein RevenueCat-Schluessel) -> alles gratis (wie bisher).
+  //  - Abo AKTIV -> Status aus Apple-Abo ODER Stripe-Web-Abo ODER Testphase.
   if (isNativeApp()) {
-    window._userPlan = 'pro';
+    if (_rcActive()) { await _rcRefresh(); } else { window._userPlan = 'pro'; }
     ['plan-loading-card','plan-free-card','plan-pro-card'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
