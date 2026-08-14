@@ -39,14 +39,41 @@ npx cap open ios
 - [ ] Erst wenn alles passt → **Archive → Distribute → Upload**.
 
 ## F) Einreichen
-- [ ] In App Store Connect: neue Version → **Build wählen** → **Abo-Produkt zur
-      Prüfung hinzufügen** → **„Neue Funktionen"** (Text aus `APP-STORE-TEXT.md`) →
+- [ ] In App Store Connect: neue Version → **Build wählen** → **beide Abo-Produkte
+      zur Prüfung hinzufügen** → **„Neue Funktionen"** (Text aus `APP-STORE-TEXT.md`) →
       **Einreichen**.
+- [ ] **Kids-Hinweis** (unten) in **„App-Review-Informationen → Anmerkungen"** kopieren.
+
+### Hinweis-Text für den Prüfer (gegen die wiederkehrende „Guideline 1.3 Kids"-Ablehnung)
+Bei jeder Einreichung in **App-Review-Informationen → Anmerkungen** einfügen
+(und, falls es doch wieder abgelehnt wird, als Antwort im **Resolution Center**):
+
+```
+Hello,
+
+Planory is a professional project-management app for people building or
+renovating a house — construction budgeting, scheduling, maintenance reminders
+and invoice scanning. It is intended for adults (homeowners and building
+professionals) and is not directed at or designed for children.
+
+The app was never intended for the Kids Category. The Primary Category is
+Productivity (Secondary: Finance) and the age rating is a standard 4+ with
+"Made for Kids" set to Not Applicable. Please review the app under the standard
+(non-Kids) guidelines.
+
+Thank you very much.
+```
+
+Hintergrund: Die App war ganz am Anfang einmal als Kinder-App markiert. Kategorie
+(Produktivität/Finanzen) und Altersfreigabe (4+, „Nicht anwendbar") sind längst
+korrekt – der Übergang aus der Kinder-Kategorie greift aber erst mit dem nächsten
+eingereichten Build. Der Hinweis-Text hilft dem Prüfer, die App endgültig aus der
+Kinder-Prüfung zu nehmen.
 
 ---
-**Wichtig:** Punkt **B (Altersfreigabe)** ist der eigentliche Ablehnungsgrund und
-muss auf jeden Fall gelöst sein – unabhängig vom Abo. Am besten parallel zu A/C
-schon mit Apple klären, damit der große Build dann sicher durchgeht.
+**Wichtig:** Punkt **B (Altersfreigabe)** ist bereits erledigt – Kategorie und
+Altersfreigabe stehen korrekt (kein „Kinder"). Es fehlt nur noch der Build (E)
+plus der Kids-Hinweis oben beim Einreichen.
 
 Der **Abo-Code ist bereits eingebaut** (schlafend, bis der Key da ist) – es fehlt
 also nur noch die Einrichtung oben, nicht die Programmierung.
