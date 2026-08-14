@@ -108,12 +108,12 @@ for (const fn of KRITISCH) {
   });
 }
 
-check('Gleichstand: Übersetzungen (PHRASES) in beiden Dateien gleich', () => {
+check('Gleichstand: Übersetzungen (TEXTE) in beiden Dateien gleich', () => {
   const keys = src => {
-    const s = src.indexOf('const PHRASES = {');
-    const e = src.indexOf('const _phrasesEN2DE');
+    const s = src.indexOf('const TEXTE = {');
+    const e = src.indexOf('const OPTIONEN');
     let b = src.slice(s, e); b = b.slice(0, b.lastIndexOf('}') + 1);
-    const obj = vm.runInNewContext('(' + b.replace('const PHRASES = ', '') + ')');
+    const obj = vm.runInNewContext('(' + b.replace('const TEXTE = ', '') + ')');
     return Object.keys(obj).sort();
   };
   const a = keys(web), b = keys(app);
