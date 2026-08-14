@@ -5705,9 +5705,19 @@ async function _rcRefresh() {
   const banner = document.getElementById('readonly-banner');
   if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
 }
-async function rcPurchase() {
+// Findet das passende Paket (Monat/Jahr) im aktuellen Offering – robust ueber
+// die RevenueCat-Kurzzugriffe (.monthly/.annual) mit Fallback auf die Liste.
+function _rcPkg(which) {
+  const o = _rcOffering;
+  if (!o) return null;
+  if (which === 'annual') {
+    return o.annual || (o.availablePackages || []).find(p => /ANNUAL|YEAR/i.test(p?.packageType || p?.identifier || '')) || null;
+  }
+  return o.monthly || (o.availablePackages || []).find(p => /MONTH/i.test(p?.packageType || p?.identifier || '')) || (o.availablePackages || [])[0] || null;
+}
+async function rcPurchase(which) {
   const P = _rcPlugin();
-  const pkg = _rcOffering?.availablePackages?.[0];
+  const pkg = _rcPkg(which === 'annual' ? 'annual' : 'monthly');
   if (!P || !pkg) { showToast('Abo gerade nicht verfügbar – bitte später erneut versuchen', 'error'); return; }
   try {
     await P.purchasePackage({ aPackage: pkg });
@@ -5738,9 +5748,19 @@ function openPaywall() {
   const nEl = document.getElementById('pw-native'), sEl = document.getElementById('pw-stripe');
   if (nEl && sEl) { nEl.style.display = nativeAbo ? '' : 'none'; sEl.style.display = nativeAbo ? 'none' : ''; }
   if (nativeAbo) {
-    const price = _rcOffering?.availablePackages?.[0]?.product?.priceString || '';
-    const btn = document.getElementById('pw-native-buy');
-    if (btn) btn.textContent = price ? ('Abo starten – ' + price) : 'Abo starten';
+    const mp = _rcPkg('monthly'), yp = _rcPkg('annual');
+    const yBtn = document.getElementById('pw-native-yearly');
+    const mBtn = document.getElementById('pw-native-monthly');
+    if (yBtn) {
+      const s = yp?.product?.priceString;
+      yBtn.textContent = s ? ('Jährlich – ' + s + ' / Jahr') : 'Jahres-Abo';
+      yBtn.style.display = yp ? '' : 'none';
+    }
+    if (mBtn) {
+      const s = mp?.product?.priceString;
+      mBtn.textContent = s ? ('Monatlich – ' + s + ' / Monat') : 'Monats-Abo';
+      mBtn.style.display = mp ? '' : 'none';
+    }
   }
   openModal('modal-paywall');
 }
@@ -14890,8 +14910,9 @@ function exportRechnungenPDF() {
     </p>
     <!-- Apple In-App-Abo (nur in der App, wenn RevenueCat konfiguriert ist) -->
     <div id="pw-native" style="display:none">
-      <button onclick="rcPurchase()" id="pw-native-buy" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Abo starten</button>
-      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:11px">Käufe wiederherstellen</button>
+      <button onclick="rcPurchase('annual')" id="pw-native-yearly" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Jahres-Abo</button>
+      <button onclick="rcPurchase('monthly')" id="pw-native-monthly" class="btn btn-ghost" style="width:100%;margin-bottom:8px;padding:12px">Monats-Abo</button>
+      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:10px;font-size:0.82rem">Käufe wiederherstellen</button>
     </div>
     <!-- Web-Abo (Stripe) -->
     <div id="pw-stripe">
