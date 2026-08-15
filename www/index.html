@@ -6136,7 +6136,9 @@ function requireSub() {
   return false;
 }
 function openPaywall() {
-  const nativeAbo = _rcActive();
+  // In der nativen App IMMER den Apple-Kauf zeigen (nie Web/Stripe – das waere
+  // ein Apple-Verstoss). Web nutzt weiterhin Stripe.
+  const nativeAbo = isNativeApp() && !!RC_API_KEY;
   const nEl = document.getElementById('pw-native'), sEl = document.getElementById('pw-stripe');
   if (nEl && sEl) { nEl.style.display = nativeAbo ? '' : 'none'; sEl.style.display = nativeAbo ? 'none' : ''; }
   if (nativeAbo) {
@@ -6190,6 +6192,56 @@ function _applyFreePlan(freeEl) {
       </button>
       <button id="btn-sub-monthly" onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;padding:10px;font-size:0.85rem">
         3,99 € / Monat
+      </button>
+    </div>`;
+}
+
+// Native-Abo-Karte: IMMER sichtbar (auch in der Testphase), damit Nutzer – und
+// die Apple-Pruefung – das Abo jederzeit finden und starten koennen. Zeigt
+// "Pro aktiv" bei laufendem Abo, sonst Testphase/abgelaufen + Knopf zur Paywall.
+function _applyNativePlan(freeEl) {
+  if (!freeEl) return;
+  const en = (_lang === 'en');
+  const created  = new Date(currentUser?.created_at || Date.now());
+  const trialEnd = new Date(created.getTime() + 30 * 86400000);
+  const inTrial  = Date.now() < trialEnd.getTime();
+  const isPro    = (window._userPlan === 'pro');
+  const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000));
+  freeEl.style.display = 'block';
+  if (isPro) {
+    freeEl.innerHTML = `
+    <div style="padding:16px 18px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${en ? 'Planory Pro active' : 'Planory Pro aktiv'}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${en ? 'All features unlocked. Thank you!' : 'Alle Funktionen freigeschaltet. Danke!'}</div>
+      </div>
+      <span style="background:#dcfce7;color:#166534;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap">PRO ✓</span>
+    </div>
+    <div style="padding:14px 18px;background:var(--surface)">
+      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;padding:10px;font-size:0.85rem">${en ? 'Restore purchases' : 'Käufe wiederherstellen'}</button>
+    </div>`;
+    return;
+  }
+  const title = inTrial ? (en ? 'Trial active' : 'Testphase aktiv') : (en ? 'View-only mode' : 'Nur-Lese-Modus');
+  const sub   = inTrial ? (en ? `${days} day${days===1?'':'s'} left · all free` : `Noch ${days} Tag${days===1?'':'e'} alles gratis`)
+                        : (en ? 'Viewing & ticking off free – adding needs a subscription' : 'Ansehen & Abhaken frei – Eintragen braucht ein Abo');
+  const badge = inTrial ? (en ? 'FREE MONTH' : 'GRATISMONAT') : (en ? 'EXPIRED' : 'ABGELAUFEN');
+  freeEl.innerHTML = `
+    <div style="padding:16px 18px;background:${inTrial ? 'var(--surface2)' : '#fff7ed'};display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${title}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${sub}</div>
+      </div>
+      <span style="background:${inTrial ? '#dbeafe' : '#fed7aa'};color:${inTrial ? '#1d4ed8' : '#9a3412'};font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap">${badge}</span>
+    </div>
+    <div style="padding:14px 18px;background:var(--surface);display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">
+        ✅ ${en ? 'Add &amp; edit everything' : 'Alles eintragen &amp; bearbeiten'}<br>
+        ✅ ${en ? 'AI advisor, AI schedule &amp; invoice scan' : 'KI-Bauberater, KI-Zeitplan &amp; Rechnungs-Scan'}<br>
+        ✅ ${en ? 'Unlimited projects' : 'Unbegrenzte Projekte'}
+      </div>
+      <button onclick="openPaywall()" style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:9px;padding:12px;font-family:'Hanken Grotesk',sans-serif;font-size:0.9rem;font-weight:700;color:white;cursor:pointer">
+        ${en ? 'View Planory Pro' : 'Planory Pro ansehen'}
       </button>
     </div>`;
 }
@@ -6380,11 +6432,16 @@ async function loadUserPlan() {
   //  - Abo INAKTIV (kein RevenueCat-Schluessel) -> alles gratis (wie bisher).
   //  - Abo AKTIV -> Status aus Apple-Abo ODER Stripe-Web-Abo ODER Testphase.
   if (isNativeApp()) {
-    if (_rcActive()) { await _rcRefresh(); } else { window._userPlan = 'pro'; }
-    ['plan-loading-card','plan-free-card','plan-pro-card'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
+    if (_rcActive()) { await _rcRefresh(); } else if (!RC_API_KEY) { window._userPlan = 'pro'; }
+    const loadingEl = document.getElementById('plan-loading-card');
+    const proEl     = document.getElementById('plan-pro-card');
+    const freeEl    = document.getElementById('plan-free-card');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (proEl) proEl.style.display = 'none';
+    // Mit konfiguriertem Abo (RC_API_KEY gesetzt) IMMER die Abo-Karte zeigen –
+    // sonst (ohne Key = alles gratis) ausblenden wie bisher.
+    if (RC_API_KEY && freeEl) { _applyNativePlan(freeEl); }
+    else if (freeEl) { freeEl.style.display = 'none'; }
     return;
   }
   try {
@@ -14940,7 +14997,7 @@ async function _fireOverdueNotifications() {
 }
 
 // Alias for backward compat
-const scheduleTaskReminders = scheduleAllReminders;
+function scheduleTaskReminders() { return scheduleAllReminders.apply(this, arguments); }
 
 // Called when user sets a time — ask for permission and update hint
 async function onTaskTimeChange() {
