@@ -38,13 +38,22 @@ npx cap open ios
       „Käufe wiederherstellen" müssen sauber funktionieren.
 - [ ] Erst wenn alles passt → **Archive → Distribute → Upload**.
 
-## F) Einreichen
-- [ ] In App Store Connect: neue Version → **Build wählen** → **beide Abo-Produkte
-      zur Prüfung hinzufügen** → **„Neue Funktionen"** (Text aus `APP-STORE-TEXT.md`) →
-      **Einreichen**.
-- [ ] **Kids-Hinweis** (unten) in **„App-Review-Informationen → Anmerkungen"** kopieren.
+## F) VOR dem Einreichen – Checkliste (Ablehnung vermeiden!)
+- [ ] **Demo-Login für den Prüfer** (SONST sichere Ablehnung!): Version →
+      **App-Review-Informationen → Anmeldeinformationen** → „Erforderlich" anhaken,
+      **funktionierende** E-Mail + Passwort eines Planory-Kontos eintragen. Vorher
+      testen, dass der Login klappt.
+- [ ] **Build 13** ausgewählt.
+- [ ] **Beide Abos** über „Zur Prüfung hinzufügen" an die Version angehängt.
+- [ ] Beide Abos haben einen **Prüf-Screenshot** (Prüfinformationen) + Preis + Lokalisierung.
+- [ ] **Altersfreigabe** „Nicht anwendbar" / 4+ (kein „Kinder") – bereits erledigt.
+- [ ] **Kategorie** Produktivität/Finanzen – bereits erledigt.
+- [ ] **Kids-Hinweis** (unten) in **App-Review-Informationen → Anmerkungen** einfügen.
+- [ ] **„Neue Funktionen"**-Text (aus `APP-STORE-TEXT.md`) eingetragen.
+- [ ] Export-Compliance (Verschlüsselung) = **Nein**.
+- [ ] Dann **Einreichen**.
 
-### Hinweis-Text für den Prüfer (gegen die wiederkehrende „Guideline 1.3 Kids"-Ablehnung)
+### Hinweis-Text für den Prüfer (Kids-Einstufung + Weg zum In-App-Kauf)
 Bei jeder Einreichung in **App-Review-Informationen → Anmerkungen** einfügen
 (und, falls es doch wieder abgelehnt wird, als Antwort im **Resolution Center**):
 
@@ -60,6 +69,10 @@ The app was never intended for the Kids Category. The Primary Category is
 Productivity (Secondary: Finance) and the age rating is a standard 4+ with
 "Made for Kids" set to Not Applicable. Please review the app under the standard
 (non-Kids) guidelines.
+
+How to test the subscription (Planory Pro): open the app and sign in with the
+demo account provided in the Sign-In Information. Then go to Settings → "My plan"
+(⭐) → tap "View Planory Pro" → choose the Monthly or Yearly plan.
 
 Thank you very much.
 ```
