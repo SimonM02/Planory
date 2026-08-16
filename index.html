@@ -6432,16 +6432,18 @@ async function loadUserPlan() {
   //  - Abo INAKTIV (kein RevenueCat-Schluessel) -> alles gratis (wie bisher).
   //  - Abo AKTIV -> Status aus Apple-Abo ODER Stripe-Web-Abo ODER Testphase.
   if (isNativeApp()) {
-    if (_rcActive()) { await _rcRefresh(); } else if (!RC_API_KEY) { window._userPlan = 'pro'; }
     const loadingEl = document.getElementById('plan-loading-card');
     const proEl     = document.getElementById('plan-pro-card');
     const freeEl    = document.getElementById('plan-free-card');
     if (loadingEl) loadingEl.style.display = 'none';
     if (proEl) proEl.style.display = 'none';
-    // Mit konfiguriertem Abo (RC_API_KEY gesetzt) IMMER die Abo-Karte zeigen –
-    // sonst (ohne Key = alles gratis) ausblenden wie bisher.
-    if (RC_API_KEY && freeEl) { _applyNativePlan(freeEl); }
-    else if (freeEl) { freeEl.style.display = 'none'; }
+    // Ohne konfiguriertes Abo (kein Key) alles gratis -> keine Abo-Karte.
+    if (!RC_API_KEY) { window._userPlan = 'pro'; if (freeEl) freeEl.style.display = 'none'; return; }
+    // Abo-Karte SOFORT zeigen (robust: unabhaengig davon, ob der RC-Status noch
+    // laedt – ein haengender Abgleich darf die Karte nicht verstecken).
+    if (freeEl) _applyNativePlan(freeEl);
+    // Status im Hintergrund aktualisieren, dann Karte auffrischen.
+    if (_rcActive()) { try { await _rcRefresh(); } catch(e){} if (freeEl) _applyNativePlan(freeEl); }
     return;
   }
   try {
