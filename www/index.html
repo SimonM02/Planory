@@ -6135,17 +6135,30 @@ function requireSub() {
   openPaywall();
   return false;
 }
-function openPaywall() {
+async function openPaywall() {
   // In der nativen App IMMER den Apple-Kauf zeigen (nie Web/Stripe – das waere
   // ein Apple-Verstoss). Web nutzt weiterhin Stripe.
   const nativeAbo = isNativeApp() && !!RC_API_KEY;
+  const en = (_lang === 'en');
   const nEl = document.getElementById('pw-native'), sEl = document.getElementById('pw-stripe');
   if (nEl && sEl) { nEl.style.display = nativeAbo ? '' : 'none'; sEl.style.display = nativeAbo ? 'none' : ''; }
+  // Titel passend zum Status – nicht "Gratismonat vorbei" waehrend der Testphase.
+  const titleEl = document.getElementById('pw-title');
+  if (titleEl) {
+    titleEl.textContent = (window._userPlan === 'expired')
+      ? (en ? 'Your free month is over' : 'Dein Gratismonat ist vorbei')
+      : (en ? 'Unlock Planory Pro' : 'Planory Pro freischalten');
+  }
+  openModal('modal-paywall');
   if (nativeAbo) {
+    // Angebote evtl. noch nicht geladen -> jetzt nachladen (einmalig).
+    if (!_rcOffering) {
+      try { const P = _rcPlugin(); if (P) { const o = await P.getOfferings(); _rcOffering = o?.current || o?.offerings?.current || _rcOffering; } } catch(e) {}
+    }
     const mp = _rcPkg('monthly'), yp = _rcPkg('annual');
     const yBtn = document.getElementById('pw-native-yearly');
     const mBtn = document.getElementById('pw-native-monthly');
-    const en = (_lang === 'en');
+    const note = document.getElementById('pw-native-note');
     if (yBtn) {
       const s = yp?.product?.priceString;
       yBtn.textContent = s ? ((en ? 'Yearly – ' : 'Jährlich – ') + s + (en ? ' / year' : ' / Jahr')) : (en ? 'Annual plan' : 'Jahres-Abo');
@@ -6156,8 +6169,10 @@ function openPaywall() {
       mBtn.textContent = s ? ((en ? 'Monthly – ' : 'Monatlich – ') + s + (en ? ' / month' : ' / Monat')) : (en ? 'Monthly plan' : 'Monats-Abo');
       mBtn.style.display = mp ? '' : 'none';
     }
+    // Kein Angebot ladbar (Apple hat die Produkte noch nicht bereitgestellt) ->
+    // klaren Hinweis zeigen statt einer leeren Paywall.
+    if (note) note.style.display = (!yp && !mp) ? '' : 'none';
   }
-  openModal('modal-paywall');
 }
 
 // Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
@@ -15364,6 +15379,7 @@ function exportRechnungenPDF() {
     </p>
     <!-- Apple In-App-Abo (nur in der App, wenn RevenueCat konfiguriert ist) -->
     <div id="pw-native" style="display:none">
+      <div id="pw-native-note" style="display:none;font-size:0.82rem;color:var(--text3);line-height:1.55;margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:9px">Die Abo-Optionen werden von Apple gerade noch bereitgestellt. Das kann nach dem Anlegen ein paar Stunden dauern. Bitte später erneut versuchen.</div>
       <button onclick="rcPurchase('annual')" id="pw-native-yearly" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Jahres-Abo</button>
       <button onclick="rcPurchase('monthly')" id="pw-native-monthly" class="btn btn-ghost" style="width:100%;margin-bottom:8px;padding:12px">Monats-Abo</button>
       <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:10px;font-size:0.82rem">Käufe wiederherstellen</button>
