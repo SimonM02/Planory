@@ -6403,17 +6403,19 @@ const STORAGE_BUCKET = 'uploads';
 // gesperrten Funktionen ohne Kaufmöglichkeit gezeigt werden (Apple-Richtlinie 2.1
 // & 3.1.1), sind in der App alle Funktionen freigeschaltet. Früher Default, damit
 // auch Feature-Checks vor dem Laden des Plans korrekt durchlaufen.
-if (isNativeApp()) window._userPlan = 'pro';
+if (isNativeApp() && !RC_API_KEY) window._userPlan = 'pro';
 
 // Blendet alle externen Bezahl-Elemente aus und schaltet in der nativen App
 // alle Funktionen frei.
 function applyNativePaymentPolicy() {
   if (!isNativeApp()) return;
-  // Alle Pro-Funktionen freischalten (kein Upgrade-Fenster, keine Sperren)
-  window._userPlan = 'pro';
-  // Externe Bezahl-/Plan-Elemente ausblenden
-  ['btn-stripe-upgrade','btn-stripe-portal','btn-modal-stripe',
-   'plan-section-header','plan-section-body'].forEach(id => {
+  // OHNE konfiguriertes Abo (kein RC-Key): alles gratis + Plan-Bereich komplett
+  // ausblenden (wie bisher). MIT Abo: echten Plan-Status zulassen und den
+  // Plan-Bereich SICHTBAR lassen, damit die native Abo-Karte erscheint.
+  if (!RC_API_KEY) window._userPlan = 'pro';
+  const hideIds = ['btn-stripe-upgrade','btn-stripe-portal','btn-modal-stripe'];
+  if (!RC_API_KEY) hideIds.push('plan-section-header','plan-section-body');
+  hideIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
