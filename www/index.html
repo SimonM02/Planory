@@ -4606,39 +4606,24 @@ function loadAll() {
 
 function load() { loadAll(); } // compatibility
 
-// Remove duplicate budgetKat entries by name (keep first occurrence).
-// Also deletes the orphaned rows from Supabase so they can never resurface.
-// Called on every project load so the dashboard always sees clean data.
+// Fuehrt NUR echte Doppel zusammen: dieselbe Kategorie (gleiche id), die durch
+// Sync/Realtime doppelt im Speicher gelandet ist. Rein im Speicher, fuer eine
+// saubere Anzeige. WICHTIG: Es wird NICHTS aus der Cloud geloescht und KEIN
+// Grabstein gesetzt – frueher wurde hier nach NAME dedupliziert und die "Kopie"
+// (mit derselben id wie das Original!) hart aus Supabase geloescht, was echte
+// Kategorien dauerhaft entfernt hat. Verschiedene Kategorien mit gleichem Namen
+// bleiben absichtlich erhalten – lieber ein sichtbares Doppel als Datenverlust.
 function _deduplicateProject(proj) {
   if (Array.isArray(proj.budgetKat)) {
-    const seen = new Set();
-    const kept    = [];
-    const removed = [];
+    const seenId = new Set();
+    const kept = [];
     for (const k of proj.budgetKat) {
-      if (!k?.name || seen.has(k.name)) removed.push(k);
-      else { seen.add(k.name); kept.push(k); }
+      const key = String(k?.id);
+      if (k && k.id != null && seenId.has(key)) continue; // exaktes Doppel (gleiche id)
+      if (k && k.id != null) seenId.add(key);
+      kept.push(k);
     }
-    // Always apply sorted kept list (preserves user-defined drag order)
     proj.budgetKat = kept.sort((a, b) => (a._order ?? 9999) - (b._order ?? 9999));
-
-    if (removed.length > 0) {
-      // Tombstone so syncToCloud also hard-deletes them
-      proj._deletedIds = proj._deletedIds || {};
-      removed.forEach(k => {
-        proj._deletedIds[String(k.id)] = { ts: Date.now(), type: 'budgetKat' };
-      });
-      // Immediately delete orphaned rows from Supabase (fire-and-forget)
-      if (currentUser && proj.id) {
-        const orphanIds = removed.map(k => String(k.id));
-        _holdRealtime(500);
-        supa.from('projekt_items').delete()
-          .eq('user_id', currentUser.id)
-          .eq('project_id', String(proj.id))
-          .in('item_id', orphanIds)
-          .then(() => { _holdRealtime(2000); })
-          .catch(() => {});
-      }
-    }
   }
   return proj;
 }
@@ -7375,14 +7360,16 @@ async function deleteBudgetKat(id) {
 const BG_COLORS = ['#3d6ff8','#7b5cfa','#0d9488','#ea6c19','#ef4444','#f59e0b','#22c55e','#e879f9','#06b6d4','#84cc16'];
 
 function renderBudget() {
-  // Auto-dedup: remove categories with duplicate names (keep first occurrence)
-  const seen = new Set();
-  const before = state.budgetKat.length;
+  // Anzeige-Bereinigung: NUR exakte Doppel (gleiche id) ausblenden. Kein Loeschen
+  // nach Namen und KEIN save() – sonst koennen echte Kategorien verloren gehen
+  // (siehe _deduplicateProject). Verschiedene Kategorien mit gleichem Namen bleiben.
+  const seenId = new Set();
   state.budgetKat = (state.budgetKat || []).filter(k => {
-    if (seen.has(k.name)) return false;
-    seen.add(k.name); return true;
+    const key = String(k?.id);
+    if (k && k.id != null && seenId.has(key)) return false;
+    if (k && k.id != null) seenId.add(key);
+    return true;
   });
-  if (state.budgetKat.length < before) save(); // persist the cleanup
 
   const totalBudget = state.budgetKat.reduce((s,k) => s + k.budget, 0);
   const totalSpent  = state.kosten.filter(k => k.status !== 'Storniert').reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
@@ -12348,6 +12335,23 @@ async function syncToCloud() {
       const { error } = await supa.from('projektdaten')
         .insert({ user_id: currentUser.id, typ: 'all_projects', daten, updated_at: ts });
       if (error) throw error;
+    }
+
+    // ── Sicherheitsnetz: Grabsteine fuer Eintraege entfernen, die noch ECHT
+    //    existieren. Ein vorhandener Eintrag darf niemals geloescht werden –
+    //    selbst wenn (z.B. durch einen alten Bug) faelschlich ein Grabstein
+    //    fuer seine id gesetzt wurde. Verhindert Datenverlust bei jedem Sync.
+    for (const proj of projects) {
+      if (!proj._deletedIds) continue;
+      const liveIds = new Set();
+      for (const typ of ITEM_TYPES) {
+        for (const item of (proj[typ] || [])) {
+          if (item?.id != null) liveIds.add(String(item.id));
+        }
+      }
+      for (const id of Object.keys(proj._deletedIds)) {
+        if (liveIds.has(id)) delete proj._deletedIds[id];
+      }
     }
 
     // ── 2. Hard-delete tombstoned items ────────────────────────────
