@@ -11968,6 +11968,19 @@ async function onAuthSuccess(user, isNewUser = false) {
     localStorage.removeItem('bauplan_updated_at');
   }
 
+  // LOCAL-FIRST: bereits gespeicherte Daten SOFORT anzeigen, damit sich die App
+  // sofort anfuehlt (kein Warten auf die Cloud fuer den ersten Anblick). Danach
+  // gleicht loadFromCloud() unten im Hintergrund ab und rendert neu. Aendert
+  // NICHTS an der Sync-/Speicher-Logik – nur der Zeitpunkt der ersten Anzeige.
+  try {
+    if (!_demoMode
+        && localStorage.getItem('bauplan_user_id') === user.id
+        && localStorage.getItem('bauplan_projects')) {
+      _loadFromLocalStorage();
+      if (projects.length) { applyModuleVisibility(); renderDashboard(); }
+    }
+  } catch(e) { /* Cache-Anzeige ist optional – im Zweifel einfach auf die Cloud warten */ }
+
   // Load data from cloud (with local timestamp comparison)
   const cloudData = await loadFromCloud();
 
