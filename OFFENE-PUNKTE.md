@@ -33,6 +33,19 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 11.08.2026.
 - [x] **Wartung-Erinnerungen LIVE:** pro Wartung einstellbar (am Tag +
       Vorlaufzeit), am Push-System angeschlossen.
 
+## Android-Version (Play Store) – strategisch wichtig, NACH iOS-Launch
+Marktrecherche (Aug 2026): Der Hauptkonkurrent POCASIO hat den Großteil seiner
+Nutzer auf **Android** (1.000+ Play-Downloads vs. nur 2 Apple-Bewertungen) –
+private Bauherren sind also überwiegend auf Android. iOS ist fast leer (Chance,
+dort schnell Nr. 1 zu werden). Deshalb lohnt sich eine Android-Version.
+- [ ] **Google-Play-Entwicklerkonto** anlegen (~25 € einmalig).
+- [ ] `npx cap add android` → Build aus derselben `www/index.html` (kein Neubau!).
+- [ ] Play-Store-Eintrag (Texte/Screenshots großteils vorhanden).
+- [ ] **Abo für Android:** Google Play Billing – Abos in der Play Console anlegen,
+      in RevenueCat als Google-Produkte ergänzen (RevenueCat kann beides).
+- [ ] Reihenfolge: **erst iOS stabil live**, dann Android als nächster Meilenstein
+      (nicht beides gleichzeitig).
+
 ## Ideen für später
 - [ ] **Todoist-Anbindung** (optional): Aufgaben/Wartungen automatisch auch in
       Todoist spiegeln. Technisch möglich (Todoist-API/OAuth), aber eigenes
