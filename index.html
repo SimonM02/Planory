@@ -2081,11 +2081,11 @@
       <div id="auth-form-login">
         <div class="form-row" style="margin-bottom:14px">
           <label>E-Mail</label>
-          <input type="email" id="auth-email" placeholder="deine@email.at" onkeydown="if(event.key==='Enter')doLogin()">
+          <input type="email" id="auth-email" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="deine@email.at" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <div class="form-row" style="margin-bottom:6px">
           <label>Passwort</label>
-          <input type="password" id="auth-password" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter')doLogin()">
+          <input type="password" id="auth-password" name="password" autocomplete="current-password" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <div style="text-align:right;margin-bottom:18px">
           <span onclick="showForgotPassword()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;font-weight:600">Passwort vergessen?</span>
@@ -2100,15 +2100,15 @@
       <div id="auth-form-register" style="display:none">
         <div class="form-row" style="margin-bottom:14px">
           <label>E-Mail</label>
-          <input type="email" id="reg-email" placeholder="deine@email.at">
+          <input type="email" id="reg-email" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="deine@email.at">
         </div>
         <div class="form-row" style="margin-bottom:14px">
           <label>Passwort</label>
-          <input type="password" id="reg-password" placeholder="Mindestens 6 Zeichen">
+          <input type="password" id="reg-password" name="new-password" autocomplete="new-password" placeholder="Mindestens 6 Zeichen">
         </div>
         <div class="form-row" style="margin-bottom:18px">
           <label>Passwort wiederholen</label>
-          <input type="password" id="reg-password2" placeholder="Passwort wiederholen" onkeydown="if(event.key==='Enter')doRegister()">
+          <input type="password" id="reg-password2" autocomplete="new-password" placeholder="Passwort wiederholen" onkeydown="if(event.key==='Enter')doRegister()">
         </div>
         <button onclick="doRegister()" id="btn-register"
           style="width:100%;background:var(--accent);color:var(--accent-text);border:none;padding:12px;border-radius:10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(255,159,28,0.3)">
@@ -6588,15 +6588,15 @@ async function doLogout() {
   if (card && !card.querySelector('#btn-login')) {
     card.innerHTML = `
       <div id="auth-form-login">
-        <div class="form-row" style="margin-bottom:14px"><label>E-Mail</label><input type="email" id="auth-email" placeholder="deine@email.at" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div class="form-row" style="margin-bottom:6px"><label>Passwort</label><input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-row" style="margin-bottom:14px"><label>E-Mail</label><input type="email" id="auth-email" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="deine@email.at" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-row" style="margin-bottom:6px"><label>Passwort</label><input type="password" id="auth-password" name="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <div style="text-align:right;margin-bottom:18px"><span onclick="showForgotPassword()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;font-weight:600">Passwort vergessen?</span></div>
         <button onclick="doLogin()" id="btn-login" style="width:100%;background:var(--accent);color:var(--accent-text);border:none;padding:12px;border-radius:10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(255,159,28,0.3)">Anmelden</button>
       </div>
       <div id="auth-form-register" style="display:none">
-        <div class="form-row" style="margin-bottom:14px"><label>E-Mail</label><input type="email" id="reg-email" placeholder="deine@email.at"></div>
-        <div class="form-row" style="margin-bottom:14px"><label>Passwort</label><input type="password" id="reg-password" placeholder="Mindestens 6 Zeichen"></div>
-        <div class="form-row" style="margin-bottom:18px"><label>Passwort wiederholen</label><input type="password" id="reg-password2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="form-row" style="margin-bottom:14px"><label>E-Mail</label><input type="email" id="reg-email" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="deine@email.at"></div>
+        <div class="form-row" style="margin-bottom:14px"><label>Passwort</label><input type="password" id="reg-password" name="new-password" autocomplete="new-password" placeholder="Mindestens 6 Zeichen"></div>
+        <div class="form-row" style="margin-bottom:18px"><label>Passwort wiederholen</label><input type="password" id="reg-password2" autocomplete="new-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"></div>
         <button onclick="doRegister()" id="btn-register" style="width:100%;background:var(--accent);color:var(--accent-text);border:none;padding:12px;border-radius:10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(255,159,28,0.3)">Konto erstellen</button>
       </div>
       <div id="auth-msg" style="display:none;margin-top:14px;padding:10px 14px;border-radius:9px;font-size:0.83rem;font-weight:600;text-align:center"></div>`;
