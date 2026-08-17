@@ -2,6 +2,14 @@
 
 Kurze Merkliste, damit wir nichts vergessen. Stand: 11.08.2026.
 
+## Authentifizierungs-E-Mails (Supabase) überarbeiten – WICHTIG
+- [ ] Die **Bestätigungs-/Anmelde-E-Mail** (und Passwort-zurücksetzen) ist derzeit
+      **falsch/schwammig** formuliert. Überarbeiten in **Supabase → Authentication →
+      Email Templates**: klarer deutscher Text, korrekter Absender/Name „Planory",
+      eindeutiger Button/Link, Planory-Branding. Betrifft: „Confirm signup",
+      „Reset password", ggf. „Magic Link". (Claude kann Textvorschläge liefern;
+      Einbau erfolgt im Supabase-Dashboard.)
+
 ## Landing-Page (ist LIVE auf planory.at) – noch nachzutragen
 - [ ] **Konkreten Preis eintragen.** Aktuell steht im Abschnitt „Preise – fair &
       unkompliziert" nur „1 Monat gratis, danach faires Abo" (ohne Betrag).
