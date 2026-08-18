@@ -31,21 +31,38 @@ Planory ist dein digitaler Bauassistent für private Bauprojekte – ob Hausbau,
 
 Mit Planory hast du alle Kosten mühelos beisammen und weißt jederzeit, wie du im Budget stehst – so bleibst du entspannt in Kontrolle und triffst jede Entscheidung mit einem guten Gefühl.
 
-WAS PLANORY KANN
+WAS PLANORY ALLES KANN
 
-• Budget & Kosten: Gesamtbudget planen, auf Kategorien aufteilen und sofort sehen, was schon ausgegeben ist und was übrig bleibt.
+💶 KOSTEN & BUDGET IM GRIFF
+• Gesamtbudget planen und auf Kategorien aufteilen – du siehst sofort, was ausgegeben ist und was übrig bleibt.
+• Ausgaben und Eigenleistungen erfassen – jede Position sauber und übersichtlich festgehalten.
+• Kostenentwicklung als klares Diagramm – erkenne früh, wohin dein Budget läuft.
+• Kostenaufteilung – behalte spielend den Überblick, wer wie viel beigetragen hat.
+• Zahlungstermine & Skonto-Fristen – zahle pünktlich und sichere dir bares Geld an Skonto.
+
+🤖 KI, DIE DIR ARBEIT ABNIMMT
 • Rechnungen scannen: Foto oder PDF hochladen – die KI liest Betrag, Datum und Anbieter automatisch aus und bucht die Ausgabe ein.
-• KI-Bauberater: Analysiert dein Projekt, warnt vor Kostenfallen und gibt konkrete Empfehlungen für die nächsten Schritte.
-• Angebote vergleichen: Angebote erfassen, gegenüberstellen und mit einem Klick in eine Rechnung umwandeln.
-• Bautagebuch & Fotos: Baufortschritt mit Notizen und Fotos dokumentieren – sortiert nach Alben und Bauphasen.
-• Zeitplan & Aufgaben: Meilensteine und To-dos im Blick, mit Erinnerungen für wichtige Termine.
-• Wartungsplan: Nie wieder eine Wartung für Heizung, Wasser oder Elektrik verpassen.
-• Leitungen & Rohre: Festhalten, wo Leitungen verlaufen – mit Fotos und Plänen, damit du beim nächsten Bohren sicher bist.
-• Kontakte & Handwerker: Alle Ansprechpartner deines Bauprojekts an einem Ort.
+• KI-Bauberater: analysiert dein Projekt, erkennt Kostenfallen und gibt dir konkrete Empfehlungen für die nächsten Schritte.
+• KI-Zeitplan: erstellt dir auf Wunsch in Sekunden einen strukturierten Ablaufplan.
+
+📅 PLANUNG & ORGANISATION
+• Zeitplan mit Bauphasen und Unterpunkten – dein Projekt klar Schritt für Schritt.
+• Aufgaben & To-dos mit Erinnerungen – nichts geht mehr unter.
+• Angebote erfassen, vergleichen und mit einem Klick in eine Rechnung umwandeln.
+• Wartungsplan: nie wieder einen Service für Heizung, Wasser oder Elektrik verpassen.
+
+📸 DOKUMENTATION & GEBÄUDE
+• Bautagebuch & Fotos: halte den Baufortschritt fest – sortiert nach Alben und Bauphasen.
+• Grundrisse mit Markierungen – wichtige Stellen direkt im Plan festhalten.
+• Leitungen & Rohre dokumentieren – mit Fotos und Plänen weißt du beim nächsten Bohren genau Bescheid.
+• Notizen, Verträge & Genehmigungen – alle wichtigen Unterlagen sicher an einem Ort.
+
+👷 ALLE KONTAKTE AN EINEM ORT
+• Handwerker und Ansprechpartner deines Projekts übersichtlich verwaltet – jederzeit griffbereit.
 
 FÜR WEN?
 
-Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen – einfach und verständlich, ohne Bau-Software-Studium.
+Für alle, die ein Haus bauen, sanieren oder umbauen und ihr Projekt selbst im Griff behalten wollen – einfach und verständlich, ohne Bau-Software-Studium.
 
 ÜBERALL DABEI
 
