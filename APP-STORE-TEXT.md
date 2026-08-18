@@ -29,7 +29,7 @@ Budget, Baukosten, Rechnungen scannen, Bautagebuch & KI-Bauberater – alles fü
 ```
 Planory ist dein digitaler Bauassistent für private Bauprojekte – ob Hausbau, Sanierung oder Umbau. Behalte Budget, Kosten und Termine im Griff, ganz ohne Zettelwirtschaft und zehn Excel-Tabellen.
 
-Denn was du nicht sauber erfasst, ist trotzdem ausgegeben. Mit Planory rutscht dir keine Ausgabe mehr durch – du siehst jederzeit, wo dein Geld wirklich hingeht, und wirst am Ende nicht von den Gesamtkosten überrascht.
+Mit Planory hast du alle Kosten mühelos beisammen und weißt jederzeit, wie du im Budget stehst – so bleibst du entspannt in Kontrolle und triffst jede Entscheidung mit einem guten Gefühl.
 
 WAS PLANORY KANN
 
