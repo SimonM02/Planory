@@ -175,6 +175,24 @@ if (typeof mergeArr === 'function') {
 }
 
 // ───────────────────────────────────────────────────────────────────
+// 3a. DATENVERLUST-SCHUTZ – der Fix, der Budgetkategorien gerettet hat.
+//     Diese Prüfungen verhindern, dass der gefährliche Code je zurückkommt.
+// ───────────────────────────────────────────────────────────────────
+check('Datenschutz: _deduplicateProject löscht NICHTS aus der Cloud', () => {
+  const fn = extractFn(web, '_deduplicateProject');
+  if (!fn) return '_deduplicateProject nicht gefunden';
+  if (/\.delete\s*\(/.test(fn)) return 'GEFÄHRLICH: _deduplicateProject enthält eine Löschung (.delete) – das hat schon einmal Daten gelöscht!';
+  if (/_deletedIds\s*\[/.test(fn)) return 'GEFÄHRLICH: _deduplicateProject setzt Grabsteine (_deletedIds) – kann echte Einträge löschen!';
+});
+
+check('Datenschutz: syncToCloud schützt noch vorhandene Einträge (Sicherheitsnetz)', () => {
+  const fn = extractFn(web, 'syncToCloud');
+  if (!fn) return 'syncToCloud nicht gefunden';
+  if (!/liveIds/.test(fn)) return 'Sicherheitsnetz fehlt: keine liveIds-Prüfung in syncToCloud';
+  if (!/delete\s+proj\._deletedIds\[/.test(fn)) return 'Sicherheitsnetz fehlt: Grabstein wird für vorhandene Einträge nicht entfernt';
+});
+
+// ───────────────────────────────────────────────────────────────────
 // 3b. FRISTEN & TERMINE – Zeitzonen-Fehler kosteten schon mal Skonto
 // ───────────────────────────────────────────────────────────────────
 {
