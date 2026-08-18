@@ -33,31 +33,31 @@ Mit Planory hast du alle Kosten mühelos beisammen und weißt jederzeit, wie du 
 
 WAS PLANORY ALLES KANN
 
-💶 KOSTEN & BUDGET IM GRIFF
+KOSTEN & BUDGET IM GRIFF
 • Gesamtbudget planen und auf Kategorien aufteilen – du siehst sofort, was ausgegeben ist und was übrig bleibt.
 • Ausgaben und Eigenleistungen erfassen – jede Position sauber und übersichtlich festgehalten.
 • Kostenentwicklung als klares Diagramm – erkenne früh, wohin dein Budget läuft.
 • Kostenaufteilung – behalte spielend den Überblick, wer wie viel beigetragen hat.
 • Zahlungstermine & Skonto-Fristen – zahle pünktlich und sichere dir bares Geld an Skonto.
 
-🤖 KI, DIE DIR ARBEIT ABNIMMT
+KI, DIE DIR ARBEIT ABNIMMT
 • Rechnungen scannen: Foto oder PDF hochladen – die KI liest Betrag, Datum und Anbieter automatisch aus und bucht die Ausgabe ein.
 • KI-Bauberater: analysiert dein Projekt, erkennt Kostenfallen und gibt dir konkrete Empfehlungen für die nächsten Schritte.
 • KI-Zeitplan: erstellt dir auf Wunsch in Sekunden einen strukturierten Ablaufplan.
 
-📅 PLANUNG & ORGANISATION
+PLANUNG & ORGANISATION
 • Zeitplan mit Bauphasen und Unterpunkten – dein Projekt klar Schritt für Schritt.
 • Aufgaben & To-dos mit Erinnerungen – nichts geht mehr unter.
 • Angebote erfassen, vergleichen und mit einem Klick in eine Rechnung umwandeln.
 • Wartungsplan: nie wieder einen Service für Heizung, Wasser oder Elektrik verpassen.
 
-📸 DOKUMENTATION & GEBÄUDE
+DOKUMENTATION & GEBÄUDE
 • Bautagebuch & Fotos: halte den Baufortschritt fest – sortiert nach Alben und Bauphasen.
 • Grundrisse mit Markierungen – wichtige Stellen direkt im Plan festhalten.
 • Leitungen & Rohre dokumentieren – mit Fotos und Plänen weißt du beim nächsten Bohren genau Bescheid.
 • Notizen, Verträge & Genehmigungen – alle wichtigen Unterlagen sicher an einem Ort.
 
-👷 ALLE KONTAKTE AN EINEM ORT
+ALLE KONTAKTE AN EINEM ORT
 • Handwerker und Ansprechpartner deines Projekts übersichtlich verwaltet – jederzeit griffbereit.
 
 FÜR WEN?
