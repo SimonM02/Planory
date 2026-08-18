@@ -4564,6 +4564,11 @@ function saveAll() {
   if (currentUser && !_demoMode) {
     setSyncStatus('pending');
     clearTimeout(syncTimeout);
+    // Realtime waehrend des Debounce-Fensters blocken: ein von einem anderen
+    // Geraet eintreffendes Ereignis darf jetzt kein loadFromCloud ausloesen,
+    // das den gerade lokal eingetragenen (noch nicht synchronisierten) Eintrag
+    // ueberschreibt. syncToCloud haelt den Guard danach selbst aufrecht.
+    _holdRealtime(700);
     syncTimeout = setTimeout(syncToCloud, 500);
   }
 }
@@ -6058,21 +6063,22 @@ async function _rcInit() {
 // Testphase. So gilt ein im Web abgeschlossenes Abo auch in der App.
 async function _rcRefresh() {
   if (!_rcReady || !currentUser) return;
-  let isPro = false;
+  let isPro = false, checkFailed = false;
   const P = _rcPlugin();
   if (P) {
     try {
       const res = await P.getCustomerInfo();
       const info = res?.customerInfo || res;
       if ((info?.entitlements?.active || {})[RC_ENTITLEMENT]) isPro = true;
-    } catch(e) { console.warn('RevenueCat refresh failed', e); }
+    } catch(e) { checkFailed = true; console.warn('RevenueCat refresh failed', e); }
   }
   if (!isPro) {
     // Web-Abo (Stripe) aus derselben Supabase-Tabelle pruefen, die die Web-App nutzt.
     try {
-      const { data } = await supa.from('subscriptions').select('plan,status').eq('user_id', currentUser.id).maybeSingle();
+      const { data, error } = await supa.from('subscriptions').select('plan,status').eq('user_id', currentUser.id).maybeSingle();
+      if (error) checkFailed = true;
       if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) isPro = true;
-    } catch(e) {}
+    } catch(e) { checkFailed = true; }
   }
   if (isPro) { window._userPlan = 'pro'; }
   // Hat diese Sitzung bereits Pro bestaetigt, einen einzelnen fehlgeschlagenen
@@ -6080,8 +6086,15 @@ async function _rcRefresh() {
   // blitzt bei zahlenden Nutzern kurz der Nur-Lese-Modus auf. Eine echte
   // Kuendigung zeigt sich beim naechsten App-Start.
   else if (window._userPlan !== 'pro') {
-    const created = new Date(currentUser?.created_at || Date.now());
-    window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+    // Konnte der Status GAR NICHT ermittelt werden (Timeout/Fehler bei BEIDEN
+    // Quellen), einen zahlenden Nutzer NICHT aussperren: im Zweifel Zugriff
+    // lassen (Testphase), der naechste erfolgreiche Abgleich korrigiert das.
+    if (checkFailed && !isPro) {
+      if (!window._userPlan) window._userPlan = 'trial';
+    } else {
+      const created = new Date(currentUser?.created_at || Date.now());
+      window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+    }
   }
   const banner = document.getElementById('readonly-banner');
   if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
@@ -6160,7 +6173,26 @@ async function openPaywall() {
     }
     // Kein Angebot ladbar (Apple hat die Produkte noch nicht bereitgestellt) ->
     // klaren Hinweis zeigen statt einer leeren Paywall.
-    if (note) note.style.display = (!yp && !mp) ? '' : 'none';
+    if (note) {
+      note.textContent = en
+        ? 'The subscription options are still being provisioned by Apple. This can take a few hours after setup. Please try again later.'
+        : 'Die Abo-Optionen werden von Apple gerade noch bereitgestellt. Das kann nach dem Anlegen ein paar Stunden dauern. Bitte später erneut versuchen.';
+      note.style.display = (!yp && !mp) ? '' : 'none';
+    }
+    // Pflicht-Hinweis (Apple 3.1.2) sprachabhaengig setzen.
+    const legal = document.getElementById('pw-native-legal');
+    if (legal) {
+      const eula = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+      const priv = 'https://planory.at/datenschutz.html';
+      const linkStyle = 'color:var(--text2);text-decoration:underline';
+      legal.innerHTML = (en
+        ? `Payment is charged to your Apple account. The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. Cancel anytime in your App Store settings.<br>
+           <a href="${eula}" target="_blank" rel="noopener" style="${linkStyle}">Terms of Use</a> ·
+           <a href="${priv}" target="_blank" rel="noopener" style="${linkStyle}">Privacy</a>`
+        : `Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf des laufenden Zeitraums gekündigt wird. Die Abrechnung erfolgt über deinen Apple-Account. Kündigen jederzeit in den App-Store-Einstellungen.<br>
+           <a href="${eula}" target="_blank" rel="noopener" style="${linkStyle}">Nutzungsbedingungen</a> ·
+           <a href="${priv}" target="_blank" rel="noopener" style="${linkStyle}">Datenschutz</a>`);
+    }
   }
 }
 
@@ -6551,7 +6583,7 @@ async function startStripeCheckout(plan = 'monthly') {
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⭐ Jetzt auf Pro upgraden'; }
-    showToast('Fehler: ' + e.message, true);
+    showToast('Fehler: ' + e.message, 'error');
   }
 }
 
@@ -7340,10 +7372,10 @@ function addBudgetKat() {
 
   if (editId) {
     const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
-    if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color };
+    if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color, _updatedAt: Date.now() };
   } else {
     if (state.budgetKat.find(k => k.name === name)) { showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return; }
-    state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length] });
+    state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length], _updatedAt: Date.now() });
   }
   save(); closeModal('modal-budget-kat');
   document.getElementById('bk-name').value   = '';
@@ -12635,12 +12667,15 @@ async function loadFromCloud() {
           if (del[r.item_id]) return; // getilgte Eintraege ueberspringen
           proj[r.item_type].push(r.payload);
         });
-        // Migrations-Rueckfall: NUR wenn dieses Projekt noch nicht auf Zeilen
-        // umgestellt ist (_budgetKatV2 fehlt) UND es keine budgetKat-Zeilen gibt,
-        // die alten Kategorien aus dem Block uebernehmen. Beim naechsten Speichern
-        // werden sie automatisch als Zeilen geschrieben. Ist V2 gesetzt, gilt der
-        // Zeilen-Stand (auch leer) – so kommt "alle geloescht" nicht zurueck.
-        if (meta._budgetKatV2 !== true && proj.budgetKat.length === 0 &&
+        // Rueckfall auf den Block: wenn KEINE budgetKat-Zeilen ankamen, aber der
+        // Block (der bei JEDEM Sync mitgeschrieben wird) Kategorien enthaelt,
+        // diese uebernehmen. Das schuetzt vor Datenverlust, wenn ein Sync nach dem
+        // Schreiben von projektdaten abbricht, BEVOR die Zeilen geschrieben sind
+        // (dann waeren die Zeilen leer, der Block hat die Kategorien aber noch).
+        // Getilgte Kategorien werden ueber die Grabstein-Liste (del) herausgefiltert,
+        // deshalb kann "alle geloescht" trotzdem nicht zurueckkommen: wer wirklich
+        // alles loescht, hat einen leeren Block UND Grabsteine.
+        if (proj.budgetKat.length === 0 &&
             Array.isArray(meta.budgetKat) && meta.budgetKat.length > 0) {
           // Getilgte Kategorien (Grabsteine) beim Rueckfall NICHT wiederbeleben
           proj.budgetKat = meta.budgetKat.filter(k => !del[String(k.id)]).map(k => ({ ...k }));
@@ -12746,7 +12781,14 @@ async function loadFromCloud() {
     // Nur zurueckfallen, wenn die Cloud-Daten noch NICHT angewendet wurden.
     // Sonst wuerde ein Fehler nach dem Laden (z.B. voller Speicher) die
     // korrekten Cloud-Daten durch einen alten lokalen Stand ersetzen.
-    if (!cloudApplied) { _notifyOffline(); _loadFromLocalStorage(); }
+    if (!cloudApplied) {
+      // Cloud wurde in dieser Sitzung NICHT sauber uebernommen -> Uploads wieder
+      // sperren, sonst koennte der naechste Sync den guten Cloud-Stand mit dem
+      // alten lokalen ueberschreiben (die Abfragen waren zwar ok, aber der
+      // Wiederaufbau ist gescheitert).
+      _cloudLoadedOk = false;
+      _notifyOffline(); _loadFromLocalStorage();
+    }
     return null;
   }
 }
@@ -15435,8 +15477,8 @@ function exportRechnungenPDF() {
       <button onclick="rcPurchase('annual')" id="pw-native-yearly" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Jahres-Abo</button>
       <button onclick="rcPurchase('monthly')" id="pw-native-monthly" class="btn btn-ghost" style="width:100%;margin-bottom:8px;padding:12px">Monats-Abo</button>
       <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:10px;font-size:0.82rem">Käufe wiederherstellen</button>
-      <!-- Apple-Pflicht (Richtlinie 3.1.2): Hinweis auf automatische Verlängerung + Links zu Nutzungsbedingungen & Datenschutz. -->
-      <div style="font-size:0.7rem;color:var(--text3);line-height:1.5;margin-bottom:12px;text-align:left">
+      <!-- Apple-Pflicht (Richtlinie 3.1.2): Hinweis auf automatische Verlängerung + Links zu Nutzungsbedingungen & Datenschutz. Text wird in openPaywall() sprachabhängig gesetzt. -->
+      <div id="pw-native-legal" style="font-size:0.7rem;color:var(--text3);line-height:1.5;margin-bottom:12px;text-align:left">
         Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf des laufenden Zeitraums gekündigt wird. Die Abrechnung erfolgt über deinen Apple-Account. Kündigen jederzeit in den App-Store-Einstellungen.<br>
         <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener" style="color:var(--text2);text-decoration:underline">Nutzungsbedingungen</a> ·
         <a href="https://planory.at/datenschutz.html" target="_blank" rel="noopener" style="color:var(--text2);text-decoration:underline">Datenschutz</a>

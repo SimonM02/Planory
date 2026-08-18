@@ -360,8 +360,14 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (!lf) return 'loadFromCloud nicht gefunden';
     if (/hasBudgetKatInMeta/.test(lf))
       return 'loadFromCloud bevorzugt noch den alten Block statt der Zeilen';
-    if (!lf.includes('_budgetKatV2'))
-      return 'loadFromCloud kennt den Umbau-Merker _budgetKatV2 nicht (Rückfall/Migration fehlt)';
+    // Rückfall auf den Block MUSS existieren: wenn keine Kategorie-Zeilen ankamen
+    // (z.B. Sync brach nach projektdaten, aber vor den Zeilen ab), rettet der Block
+    // die Kategorien statt sie leer zu laden.
+    if (!/meta\.budgetKat/.test(lf))
+      return 'loadFromCloud hat keinen Block-Rückfall (Datenverlust bei abgebrochenem Sync möglich)';
+    // …und dabei Grabsteine herausfiltern, damit "alle gelöscht" nicht zurückkommt.
+    if (!/filter\(k => !del\[/.test(lf))
+      return 'Block-Rückfall filtert keine Grabsteine – gelöschte Kategorie kann zurückkommen';
   });
 }
 
