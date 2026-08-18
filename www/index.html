@@ -6075,7 +6075,11 @@ async function _rcRefresh() {
     } catch(e) {}
   }
   if (isPro) { window._userPlan = 'pro'; }
-  else {
+  // Hat diese Sitzung bereits Pro bestaetigt, einen einzelnen fehlgeschlagenen
+  // Abgleich (z.B. RevenueCat-Timeout) NICHT als "abgelaufen" werten – sonst
+  // blitzt bei zahlenden Nutzern kurz der Nur-Lese-Modus auf. Eine echte
+  // Kuendigung zeigt sich beim naechsten App-Start.
+  else if (window._userPlan !== 'pro') {
     const created = new Date(currentUser?.created_at || Date.now());
     window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
   }
@@ -6158,6 +6162,26 @@ async function openPaywall() {
     // klaren Hinweis zeigen statt einer leeren Paywall.
     if (note) note.style.display = (!yp && !mp) ? '' : 'none';
   }
+}
+
+// Dezenter Hinweis in den letzten Tagen der Testphase (max. 1x pro Tag), damit
+// niemand vom Ende des Gratismonats ueberrascht wird. Zeigt nichts bei Pro.
+function _checkTrialEndingSoon() {
+  try {
+    if (!currentUser || window._userPlan === 'pro') return;
+    const created  = new Date(currentUser.created_at || Date.now());
+    const trialEnd = new Date(created.getTime() + 30 * 86400000);
+    const days = Math.ceil((trialEnd.getTime() - Date.now()) / 86400000);
+    if (days < 1 || days > 3) return;                 // nur die letzten 3 Tage
+    const key = 'planory_trialhint_' + new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem(key)) return;            // heute schon gezeigt
+    localStorage.setItem(key, '1');
+    const en = (_lang === 'en');
+    const msg = en
+      ? `Your free month ends in ${days} day${days === 1 ? '' : 's'} – subscribe to keep adding entries.`
+      : `Dein Gratismonat endet in ${days} Tag${days === 1 ? '' : 'en'} – mit einem Abo bleibt alles nutzbar.`;
+    showToast(msg, 'warning', 6000);
+  } catch (e) {}
 }
 
 // Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
@@ -6484,6 +6508,15 @@ async function loadUserPlan() {
       // Hide lock icons
       const lockEl = document.getElementById('ki-nav-lock');
       if (lockEl) lockEl.style.display = 'none';
+    } else if (window._userPlan === 'pro') {
+      // Diese Sitzung hat Pro bereits bestaetigt -> einen transienten Leer-Treffer
+      // (z.B. kurze DB-/Stripe-Webhook-Verzoegerung) NICHT als "abgelaufen"
+      // werten. So blitzt bei zahlenden Nutzern nicht kurz der Nur-Lese-Modus auf;
+      // eine echte Kuendigung greift beim naechsten App-Start.
+      proEl.style.display = 'block';
+      freeEl.style.display = 'none';
+      const _rb = document.getElementById('readonly-banner');
+      if (_rb) _rb.style.display = 'none';
     } else {
       _applyFreePlan(freeEl);
     }
@@ -12011,6 +12044,8 @@ async function onAuthSuccess(user, isNewUser = false) {
   }
   // Load subscription plan (non-blocking)
   loadUserPlan();
+  // Kurz vor Ende des Gratismonats dezent erinnern (nach dem Plan-Abgleich).
+  setTimeout(_checkTrialEndingSoon, 2200);
   // Start real-time sync so changes on other devices appear instantly
   _setupRealtimeSync();
 }
@@ -15399,7 +15434,13 @@ function exportRechnungenPDF() {
       <div id="pw-native-note" style="display:none;font-size:0.82rem;color:var(--text3);line-height:1.55;margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:9px">Die Abo-Optionen werden von Apple gerade noch bereitgestellt. Das kann nach dem Anlegen ein paar Stunden dauern. Bitte später erneut versuchen.</div>
       <button onclick="rcPurchase('annual')" id="pw-native-yearly" class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:13px;font-size:0.95rem">Jahres-Abo</button>
       <button onclick="rcPurchase('monthly')" id="pw-native-monthly" class="btn btn-ghost" style="width:100%;margin-bottom:8px;padding:12px">Monats-Abo</button>
-      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:14px;padding:10px;font-size:0.82rem">Käufe wiederherstellen</button>
+      <button onclick="rcRestore()" class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:10px;font-size:0.82rem">Käufe wiederherstellen</button>
+      <!-- Apple-Pflicht (Richtlinie 3.1.2): Hinweis auf automatische Verlängerung + Links zu Nutzungsbedingungen & Datenschutz. -->
+      <div style="font-size:0.7rem;color:var(--text3);line-height:1.5;margin-bottom:12px;text-align:left">
+        Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf des laufenden Zeitraums gekündigt wird. Die Abrechnung erfolgt über deinen Apple-Account. Kündigen jederzeit in den App-Store-Einstellungen.<br>
+        <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener" style="color:var(--text2);text-decoration:underline">Nutzungsbedingungen</a> ·
+        <a href="https://planory.at/datenschutz.html" target="_blank" rel="noopener" style="color:var(--text2);text-decoration:underline">Datenschutz</a>
+      </div>
     </div>
     <!-- Web-Abo (Stripe) -->
     <div id="pw-stripe">
