@@ -4144,7 +4144,7 @@
     <div class="form-row">
       <label>Fotos</label>
       <div id="mg-photo-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-      <div onclick="document.getElementById('mg-photo-input').click()"
+      <div onclick="pickPhotosOrFile('mg-photo-input', addMaengelPhotos)"
         style="border:1.5px dashed var(--border);border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-size:0.82rem;color:var(--text2);transition:all 0.15s"
         onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
         <input type="file" id="mg-photo-input" accept="image/*" multiple style="display:none" onchange="addMaengelPhotos(this)">
@@ -4363,7 +4363,7 @@
     <div class="form-row">
       <label>Fotos</label>
       <div id="dk-photo-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-      <div onclick="document.getElementById('dk-photo-input').click()"
+      <div onclick="pickPhotosOrFile('dk-photo-input', addDokuPhotos)"
         style="border:2px dashed var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface2)"
         onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
@@ -6025,10 +6025,19 @@ function showPrompt(message, defaultValue = '', opts = {}) {
 // frei – sonst wuerde Apple die App ablehnen (Guideline 3.1.1).
 function _subActive() { return window._userPlan === 'pro' || window._userPlan === 'trial'; }
 
-// ─── Apple In-App-Abo via RevenueCat ─────────────────────────────────────────
+// ─── In-App-Abo via RevenueCat ───────────────────────────────────────────────
 // >>> HIER deine RevenueCat-Daten eintragen (aus dem RevenueCat-Dashboard):
-const RC_API_KEY     = 'appl_eMLeZHBkeBtxBeVVoPPTXKaSMvR';  // Public SDK Key (Apple) fuer die neue App com.planory.bauassistent.
-                                //  LEER lassen = Abo INAKTIV, App bleibt komplett gratis.
+const RC_API_KEY_IOS     = 'appl_eMLeZHBkeBtxBeVVoPPTXKaSMvR';  // Public SDK Key (Apple), App com.planory.bauassistent.
+const RC_API_KEY_ANDROID = '';  // Public SDK Key (Google, "goog_…") – bei der Android-Version eintragen.
+// Plattform-Weiche: iOS nutzt den appl_-Key, Android den goog_-Key, Web ist egal
+// (dort läuft RevenueCat nicht). LEERER Key = Abo INAKTIV, App bleibt gratis (Fail-safe).
+const RC_API_KEY = (function () {
+  try {
+    if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function'
+        && window.Capacitor.getPlatform() === 'android') return RC_API_KEY_ANDROID;
+  } catch (e) {}
+  return RC_API_KEY_IOS;
+})();
 const RC_ENTITLEMENT = 'Planory Pro';  // Name der Berechtigung in RevenueCat.
 // <<<
 let _rcReady = false, _rcOffering = null;
@@ -9826,43 +9835,53 @@ function setFotoView(view, btn) {
   renderFotos();
 }
 
-// Foto-Auswahl öffnen. In der iPhone-App über den NATIVEN Picker
-// (@capacitor/camera → Camera.pickImages), weil das WebView-Dateifeld auf iOS
-// keine zuverlässige Mehrfachauswahl erlaubt. Ist das Plugin nicht vorhanden
-// (oder Web), fällt es sauber auf das normale <input multiple> zurück – dann
-// ändert sich nichts gegenüber vorher.
-async function openPhotoPicker(targetAlbumId) {
-  if (isNativeApp()) {
-    const Cam = window.Capacitor?.Plugins?.Camera;
-    if (Cam && typeof Cam.pickImages === 'function') {
+// Holt Fotos über den NATIVEN Picker (@capacitor/camera → Camera.pickImages),
+// weil das WebView-Dateifeld auf iOS keine zuverlässige Mehrfachauswahl erlaubt.
+// Rückgabe:
+//   File[]  -> ausgewählte Dateien (auch [] bei Abbruch)
+//   null    -> nativer Picker nicht verfügbar (Web oder Plugin fehlt/Fehler)
+//              -> Aufrufer nutzt dann das normale <input multiple> als Fallback.
+async function _nativePickImageFiles() {
+  if (!isNativeApp()) return null;
+  const Cam = window.Capacitor?.Plugins?.Camera;
+  if (!Cam || typeof Cam.pickImages !== 'function') return null;
+  try {
+    const res = await Cam.pickImages({ quality: 85, limit: 0 });
+    const photos = res?.photos || [];
+    const files = [];
+    for (const p of photos) {
       try {
-        const res = await Cam.pickImages({ quality: 85, limit: 0 });
-        const photos = res?.photos || [];
-        if (!photos.length) return;
-        const files = [];
-        for (const p of photos) {
-          try {
-            const src = p.webPath || p.path;
-            if (!src) continue;
-            const resp = await fetch(src);
-            const blob = await resp.blob();
-            const ext  = (p.format || 'jpeg').replace('jpg', 'jpeg');
-            files.push(new File([blob], `foto-${Date.now()}-${files.length}.${ext}`,
-                                { type: blob.type || 'image/jpeg' }));
-          } catch(e) { /* einzelnes Bild überspringen, Rest weiter */ }
-        }
-        if (files.length === 1)      openSinglePhotoModal(files[0], targetAlbumId);
-        else if (files.length > 1)   openBatchPhotoModal(files, targetAlbumId);
-        return;
-      } catch(e) {
-        // Nutzer hat abgebrochen -> nichts tun. Anderer Fehler -> auf Dateifeld zurück.
-        if (/cancel/i.test(e?.message || '')) return;
-      }
+        const src = p.webPath || p.path;
+        if (!src) continue;
+        const resp = await fetch(src);
+        const blob = await resp.blob();
+        const ext  = (p.format || 'jpeg').replace('jpg', 'jpeg');
+        files.push(new File([blob], `foto-${Date.now()}-${files.length}.${ext}`,
+                            { type: blob.type || 'image/jpeg' }));
+      } catch(e) { /* einzelnes Bild überspringen, Rest weiter */ }
     }
+    return files;
+  } catch(e) {
+    if (/cancel/i.test(e?.message || '')) return [];   // Abbruch -> nichts tun
+    return null;                                        // echter Fehler -> Dateifeld-Fallback
   }
-  // Web / Fallback: normales Dateifeld (mit multiple)
-  const input = document.getElementById('foto-input');
-  if (input) input.click();
+}
+
+// Foto-Auswahl für die Fotos-Galerie (Einzel-/Batch-Dialog).
+async function openPhotoPicker(targetAlbumId) {
+  const files = await _nativePickImageFiles();
+  if (files === null) { const i = document.getElementById('foto-input'); if (i) i.click(); return; }
+  if (files.length === 1)      openSinglePhotoModal(files[0], targetAlbumId);
+  else if (files.length > 1)   openBatchPhotoModal(files, targetAlbumId);
+}
+
+// Generisch für die übrigen Foto-Buttons (Mängel, Leitungs-Doku …): in der App
+// nativer Mehrfach-Picker, sonst das Dateifeld. Der Handler bekommt ein Objekt,
+// das sich wie das <input> verhält (nur .files/.value werden gelesen).
+async function pickPhotosOrFile(inputId, handlerFn) {
+  const files = await _nativePickImageFiles();
+  if (files === null) { const el = document.getElementById(inputId); if (el) el.click(); return; }
+  if (files.length) handlerFn({ files, value: '' });
 }
 
 function addPhotos(input) {
@@ -10250,7 +10269,7 @@ async function addDoku() {
 let addPhotoToDokuId = null;
 function openAddPhotoToDoku(id) {
   addPhotoToDokuId = id;
-  document.getElementById('doku-add-photo-input').click();
+  pickPhotosOrFile('doku-add-photo-input', handleAddDokuPhoto);
 }
 
 async function handleAddDokuPhoto(input) {
