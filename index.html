@@ -13219,8 +13219,39 @@ async function finishOnboarding() {
   await syncToCloud();
   updateProjectHeader();
   applyModuleVisibility();
-  renderDashboard();
+  // Immer auf der Startseite (Dashboard) landen – nicht nur den Inhalt rendern,
+  // sondern den Reiter aktiv schalten, sonst bleibt evtl. eine andere Seite offen.
+  showPage('dashboard');
   showToast(`🎉 Willkommen! "${proj.settings.name}" wurde angelegt.`, 'success');
+  // Freundliche Begrüßung + kurze Erklärung (Gratismonat / Pro) nach dem Anlegen.
+  setTimeout(showWelcomeMessage, 500);
+}
+
+// Einmalige Willkommens-/Abo-Erklärung direkt nach dem Onboarding. Merkt sich
+// pro Konto, dass sie schon gezeigt wurde (localStorage), damit sie nicht bei
+// jedem Start wieder aufpoppt.
+function showWelcomeMessage() {
+  try {
+    const key = 'planory_welcome_seen_' + (currentUser?.id || 'x');
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch(e) {}
+  const en = (_lang === 'en');
+  const days = 30;
+  const title = en ? 'Welcome to Planory!' : 'Willkommen bei Planory!';
+  const body = en
+    ? `Your project is set up. You have a full <b>${days}-day free month</b> – every feature unlocked: budget, invoice scanning, the AI construction advisor and more.<br><br>After that you can keep going with <b>Planory Pro</b> – anytime under Settings. Your data always stays visible.`
+    : `Dein Projekt ist angelegt. Du hast jetzt einen ganzen <b>Gratismonat (${days} Tage)</b> – alle Funktionen frei: Budget, Rechnungen scannen, KI-Bauberater und mehr.<br><br>Danach kannst du mit <b>Planory Pro</b> weiterarbeiten – jederzeit in den Einstellungen. Deine Daten bleiben immer sichtbar.`;
+  const btn = en ? "Let's go" : 'Los geht’s';
+  const el = document.getElementById('modal-welcome');
+  if (!el) return;
+  const t = document.getElementById('welcome-title');
+  const b = document.getElementById('welcome-body');
+  const k = document.getElementById('welcome-btn');
+  if (t) t.textContent = title;
+  if (b) b.innerHTML = body;
+  if (k) k.textContent = btn;
+  openModal('modal-welcome');
 }
 
 // Onboarding abschliessen (Projekt anlegen) und danach direkt zum Stripe-
@@ -15463,6 +15494,16 @@ function exportRechnungenPDF() {
   </div>
 </div>
 <!-- Paywall: ohne aktives Abo (nach dem Gratismonat) ist Planory Nur-Lesen -->
+<!-- Willkommens-Dialog nach dem Onboarding (Begrüßung + kurze Abo-/Gratismonat-Erklärung) -->
+<div class="modal-overlay" id="modal-welcome" style="z-index:10041">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div style="font-size:2.6rem;margin-bottom:10px">🎉</div>
+    <h3 id="welcome-title" style="margin-bottom:10px">Willkommen bei Planory!</h3>
+    <p id="welcome-body" style="font-size:0.88rem;color:var(--text2);line-height:1.65;margin-bottom:20px;text-align:left"></p>
+    <button id="welcome-btn" class="btn btn-primary" style="width:100%;padding:13px;font-size:0.95rem" onclick="closeModal('modal-welcome')">Los geht’s</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-paywall" style="z-index:10040">
   <div class="modal" style="max-width:400px;text-align:center">
     <div style="font-size:2.6rem;margin-bottom:10px">🏗️</div>
