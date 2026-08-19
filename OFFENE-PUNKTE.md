@@ -11,10 +11,15 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.08.2026.
   (Kategorie = Produktivität).
 
 ## Für das nächste App-Update (v1.2) – schon live im Web, Code liegt bereit
-- [ ] Neuen Build ziehen (`git pull` → `npx cap sync ios` → Archive), dann sind drin:
+- [ ] Neuen Build ziehen. **Vorher** für den nativen Foto-Picker einmalig:
+      `npm install @capacitor/camera` → dann `git pull` → `npx cap sync ios` → Archive.
+       Enthalten ist dann:
   - Willkommens-Dialog nach dem Onboarding (Begrüßung + Gratismonat/Abo-Erklärung)
   - Nach dem Onboarding landet man zuverlässig auf dem Dashboard
   - Entwickler-Block „Diagnose & Test" aus den Einstellungen entfernt
+  - **Mehrfach-Foto-Upload** in der App (nativer Picker). Dazu in Xcode/Info.plist
+    `NSPhotoLibraryUsageDescription` ergänzen (Text: „Planory braucht Zugriff auf
+    deine Fotos, um Baufortschritt-Bilder hinzuzufügen.").
 
 ## Authentifizierungs-E-Mails (Supabase) – Texte fertig, Einbau bei Simon
 - [ ] Fertige deutsche Texte für „Confirm signup" + „Reset password" ins
