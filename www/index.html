@@ -3206,17 +3206,7 @@
             <div id="push-info-box" style="font-size:0.75rem;color:var(--text3);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.55">
               Für Erinnerungen auch bei gesperrtem Handy: App zum <strong>Home-Bildschirm hinzufügen</strong> (iOS: Teilen → „Zum Home-Bildschirm"), dann Mitteilungen erlauben und <strong>Gerät registrieren</strong> klicken.
             </div>
-            <!-- Debug tools – always visible when logged in -->
-            <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px">
-              <div style="font-size:0.75rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Diagnose & Test</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button onclick="runPushDiag()" class="btn btn-ghost" style="font-size:0.8rem;gap:5px">🔍 Diagnose</button>
-                <button onclick="testServerPush()" class="btn btn-ghost" style="font-size:0.8rem;gap:5px">🌐 Server-Push testen</button>
-                <button onclick="_showNotification('🔔 Test','Benachrichtigung funktioniert!','test-now')" class="btn btn-ghost" style="font-size:0.8rem;gap:5px">▶ Lokal testen</button>
-                <button onclick="checkScheduledNotifs()" class="btn btn-ghost" style="font-size:0.8rem;gap:5px">📋 Geplante prüfen</button>
-              </div>
-              <div id="push-diag-output" style="display:none;font-size:0.73rem;font-family:monospace;background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.7;white-space:pre-wrap;color:var(--text2)"></div>
-            </div>
+            <div id="push-diag-output" style="display:none;font-size:0.73rem;font-family:monospace;background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.7;white-space:pre-wrap;color:var(--text2)"></div>
           </div>
 
           <div class="table-header" id="plan-section-header" style="border-top:1px solid var(--border)"><div class="table-title">⭐ Mein Plan</div></div>
