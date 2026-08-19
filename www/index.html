@@ -3376,7 +3376,7 @@
     <div class="page-header">
       <div><h2 data-i18n="ph_fotos_t">Fotos</h2><p data-i18n="ph_fotos_s">Baufortschritt dokumentieren</p></div>
     </div>
-    <div class="photo-upload-area" onclick="document.getElementById('foto-input').click()">
+    <div class="photo-upload-area" onclick="openPhotoPicker()">
       <input type="file" id="foto-input" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
       <div class="icon">📸</div>
       <p>Fotos hier ablegen oder klicken zum Auswählen</p>
@@ -4196,7 +4196,7 @@
     </div>
     <div id="av-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:65vh;overflow-y:auto"></div>
     <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
-      <button class="btn btn-ghost" style="font-size:0.8rem" onclick="document.getElementById('av-add-input').click()">+ Weitere Fotos hinzufügen</button>
+      <button class="btn btn-ghost" style="font-size:0.8rem" onclick="openPhotoPicker(_openAlbumId)">+ Weitere Fotos hinzufügen</button>
       <input type="file" id="av-add-input" accept="image/*" multiple style="display:none" onchange="addFotosToAlbum(this)">
     </div>
   </div>
@@ -6717,7 +6717,7 @@ const QUICK_ACTIONS = [
   { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       en:'Own work',         run:"openModal('modal-eigenleistung')" },
   { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"_populateTaskPersonList();openModal('modal-task')" },
   { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', en:'Site diary entry', run:"openModal('modal-tagebuch')" },
-  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"(document.getElementById('foto-input')||{click:function(){showPage('fotos')}}).click()" },
+  { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"openPhotoPicker()" },
   { key:'angebot',       icon:'📋', label:'Angebot erfassen',    en:'Add quote',        run:"openModal('modal-angebot')" },
   { key:'milestone',     icon:'🏁', label:'Meilenstein',         en:'Milestone',        run:"openModal('modal-milestone')" },
   { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    en:'Add payment',      run:"openModal('modal-zahlung')" },
@@ -9824,6 +9824,45 @@ function setFotoView(view, btn) {
   document.querySelectorAll('#foto-tab-alben,#foto-tab-alle').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderFotos();
+}
+
+// Foto-Auswahl öffnen. In der iPhone-App über den NATIVEN Picker
+// (@capacitor/camera → Camera.pickImages), weil das WebView-Dateifeld auf iOS
+// keine zuverlässige Mehrfachauswahl erlaubt. Ist das Plugin nicht vorhanden
+// (oder Web), fällt es sauber auf das normale <input multiple> zurück – dann
+// ändert sich nichts gegenüber vorher.
+async function openPhotoPicker(targetAlbumId) {
+  if (isNativeApp()) {
+    const Cam = window.Capacitor?.Plugins?.Camera;
+    if (Cam && typeof Cam.pickImages === 'function') {
+      try {
+        const res = await Cam.pickImages({ quality: 85, limit: 0 });
+        const photos = res?.photos || [];
+        if (!photos.length) return;
+        const files = [];
+        for (const p of photos) {
+          try {
+            const src = p.webPath || p.path;
+            if (!src) continue;
+            const resp = await fetch(src);
+            const blob = await resp.blob();
+            const ext  = (p.format || 'jpeg').replace('jpg', 'jpeg');
+            files.push(new File([blob], `foto-${Date.now()}-${files.length}.${ext}`,
+                                { type: blob.type || 'image/jpeg' }));
+          } catch(e) { /* einzelnes Bild überspringen, Rest weiter */ }
+        }
+        if (files.length === 1)      openSinglePhotoModal(files[0], targetAlbumId);
+        else if (files.length > 1)   openBatchPhotoModal(files, targetAlbumId);
+        return;
+      } catch(e) {
+        // Nutzer hat abgebrochen -> nichts tun. Anderer Fehler -> auf Dateifeld zurück.
+        if (/cancel/i.test(e?.message || '')) return;
+      }
+    }
+  }
+  // Web / Fallback: normales Dateifeld (mit multiple)
+  const input = document.getElementById('foto-input');
+  if (input) input.click();
 }
 
 function addPhotos(input) {
