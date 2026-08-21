@@ -71,6 +71,9 @@ Planory gibt es als App und im Web (planory.at). Deine Daten sind auf allen Ger�
 PREIS
 
 Einen Monat kostenlos testen. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI-Funktionen gibt es ein faires Abo.
+
+Nutzungsbedingungen (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Datenschutz: https://planory.at/datenschutz.html
 ```
 
 ### Keywords (max. 100 Zeichen, mit Komma getrennt, KEINE Leerzeichen)
@@ -133,6 +136,9 @@ Planory is available as an app and on the web (planory.at). Your data stays in s
 PRICING
 
 Try it free for one month. After that you can still view your data; new entries and the AI features require a fair subscription.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://planory.at/datenschutz.html
 ```
 
 ### Keywords (max. 100 chars, comma-separated, NO spaces)
