@@ -8027,7 +8027,7 @@ async function handleRechnungScan(input) {
 
     const response = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _kiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
@@ -8321,7 +8321,7 @@ Antworte NUR mit validem JSON (kein Text davor/danach):
   try {
     const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _kiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2500,
@@ -11480,6 +11480,31 @@ function showUpgradeModal(feature) {
 }
 
 // ──────────────── TOAST ────────────────
+// ── Sicherheit: HTML-Escaping ──────────────────────────────────────────────
+// Wandelt Nutzer-/KI-Text in sicheres HTML um, BEVOR er per innerHTML in die
+// Seite kommt. Ohne das könnte ein Eintrag wie <img onerror=...> Schadcode
+// ausführen und (weil Login-Tokens im localStorage liegen) das Konto übernehmen.
+// IMMER um jeden ${...} legen, der aus Nutzer- oder KI-Daten in innerHTML geht.
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+// Kurzalias fürs schnelle Einsetzen in Templates.
+const esc = escapeHtml;
+
+// Header für KI-Aufrufe inkl. Login-Token (der Server prüft/deckelt darüber).
+async function _kiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  try {
+    const { data } = await supa.auth.getSession();
+    const t = data?.session?.access_token;
+    if (t) h['Authorization'] = 'Bearer ' + t;
+  } catch (e) {}
+  return h;
+}
+
 function showToast(msg, type='success', duration=3200) {
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
@@ -11591,7 +11616,7 @@ async function runKIAnalysis() {
   try {
     const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _kiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
@@ -11717,7 +11742,7 @@ async function askKI() {
   try {
     const resp = await fetch(API_BASE + '/api/ki', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _kiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 800,
@@ -12020,11 +12045,13 @@ async function doRegister() {
   btn.textContent = 'Konto erstellen'; btn.disabled = false;
 
   if (error) {
-    // Already registered
+    // Anti-Enumeration (OWASP A07): nicht bestaetigen, ob die E-Mail existiert –
+    // neutrale Meldung statt "ist bereits registriert". (Den API-seitigen Schutz
+    // liefert zusaetzlich Supabase "Prevent user enumeration".)
     if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-      setAuthMsg('Diese E-Mail ist bereits registriert. Bitte melde dich an.');
+      setAuthMsg('Registrierung nicht möglich. Falls du schon ein Konto hast, melde dich bitte an oder setze dein Passwort zurück.');
     } else {
-      setAuthMsg(error.message);
+      setAuthMsg('Registrierung gerade nicht möglich. Bitte prüfe deine Eingaben und versuche es erneut.');
     }
     return;
   }
@@ -12040,7 +12067,7 @@ async function doRegister() {
         <h3 style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:10px">Bitte bestätige deine E-Mail</h3>
         <p style="color:var(--text2);font-size:0.88rem;line-height:1.6;margin-bottom:20px">
           Wir haben eine Bestätigungs-Mail an<br>
-          <strong style="color:var(--accent)">${email}</strong><br>
+          <strong style="color:var(--accent)">${esc(email)}</strong><br>
           gesendet. Klicke auf den Link in der Mail um fortzufahren.
         </p>
         <div style="background:var(--surface2);border-radius:10px;padding:14px;font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
@@ -13737,7 +13764,7 @@ async function scanAngKI() {
     } else {
       messages = [{ role:'user', content:`${prompt}\n\nAngebotstext:\n${text}` }];
     }
-    const resp = await fetch(API_BASE + '/api/ki', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model, max_tokens:512, messages }) });
+    const resp = await fetch(API_BASE + '/api/ki', { method:'POST', headers: await _kiHeaders(), body:JSON.stringify({ model, max_tokens:512, messages }) });
     const respText = await resp.text();
     let data;
     try { data = JSON.parse(respText); } catch { throw new Error('Server-Fehler: ' + respText.slice(0,80)); }
