@@ -11674,8 +11674,8 @@ function renderKIResults(result, snapshot) {
       return `<div style="display:flex;gap:10px;align-items:flex-start;padding:12px 20px;background:${c.bg};border-bottom:1px solid ${c.border}">
         <span style="font-size:1rem;flex-shrink:0;margin-top:1px">${c.icon}</span>
         <div>
-          <div style="font-weight:700;font-size:0.85rem;color:${c.color}">${a.titel}</div>
-          <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;line-height:1.5">${a.text}</div>
+          <div style="font-weight:700;font-size:0.85rem;color:${c.color}">${esc(a.titel)}</div>
+          <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;line-height:1.5">${esc(a.text)}</div>
         </div>
       </div>`;
     }).join('');
@@ -11692,7 +11692,7 @@ function renderKIResults(result, snapshot) {
     <span style="font-size:1.6rem;flex-shrink:0">${ampelEmoji[result.ampel] || '🟡'}</span>
     <div>
       <div style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px">Gesamtbewertung</div>
-      <div style="font-weight:700;font-size:0.92rem;color:var(--text);line-height:1.4">${result.kurzfazit}</div>
+      <div style="font-weight:700;font-size:0.92rem;color:var(--text);line-height:1.4">${esc(result.kurzfazit)}</div>
     </div>
   </div>`;
 
@@ -11711,10 +11711,10 @@ function renderKIResults(result, snapshot) {
             <span style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;background:${katColor}18;color:${katColor};padding:2px 8px;border-radius:99px;font-weight:600">${ins.kategorie}</span>
             <span style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:${prioColor};font-weight:700;text-transform:uppercase">● ${ins.prioritaet}</span>
           </div>
-          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:5px">${ins.titel}</div>
-          <div style="font-size:0.83rem;color:var(--text2);line-height:1.6">${ins.text}</div>
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:5px">${esc(ins.titel)}</div>
+          <div style="font-size:0.83rem;color:var(--text2);line-height:1.6">${esc(ins.text)}</div>
           ${ins.aktion ? `<div style="margin-top:10px;display:flex;align-items:center;gap:7px;font-size:0.8rem;font-weight:700;color:var(--accent)">
-            <span style="background:var(--accent-light);padding:5px 11px;border-radius:7px">→ ${ins.aktion}</span>
+            <span style="background:var(--accent-light);padding:5px 11px;border-radius:7px">→ ${esc(ins.aktion)}</span>
           </div>` : ''}
         </div>
       </div>
@@ -11758,7 +11758,7 @@ async function askKI() {
 
     const data = await resp.json();
     const answer = (data.content || []).map(c => c.text || '').join('').trim();
-    answerEl.innerHTML = `<div style="font-size:0.72rem;color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${AI_SVG} Bauberater</div>${answer}`;
+    answerEl.innerHTML = `<div style="font-size:0.72rem;color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${AI_SVG} Bauberater</div>${esc(answer).replace(/\n/g,'<br>')}`;
     document.getElementById('ki-chat-input').value = '';
 
   } catch(e) {
@@ -14230,7 +14230,7 @@ function renderGescannteRechnungen() {
       <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
         ${(r.scanUrl || r.scanData)
-          ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${(r.beschr||'').replace(/"/g,'&quot;')}"
+          ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${esc(r.beschr||'')}"
                onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox-title').textContent=this.getAttribute('data-t')||'Beleg';document.getElementById('lightbox-meta').textContent='Gescannte Rechnung';document.getElementById('lightbox').classList.add('open')"
                style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform 0.15s"
                onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`
@@ -14238,11 +14238,11 @@ function renderGescannteRechnungen() {
         }
       </td>
       <td data-title>
-        <div style="font-weight:600;font-size:0.84rem">${r.beschr}</div>
+        <div style="font-weight:600;font-size:0.84rem">${esc(r.beschr)}</div>
         <span class="badge badge-purple" style="font-size:0.62rem;margin-top:2px"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>
       </td>
-      <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${r.anbieter||'–'}</td>
-      <td class="hide-mobile"><span class="badge badge-gray">${r.kat||'–'}</span></td>
+      <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${esc(r.anbieter||'–')}</td>
+      <td class="hide-mobile"><span class="badge badge-gray">${esc(r.kat||'–')}</span></td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(r.netto||0)}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">
         ${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'}
@@ -14252,7 +14252,7 @@ function renderGescannteRechnungen() {
       <td data-label="Status"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
       <td style="white-space:nowrap">
         ${r.scanUrl
-          ? `<a href="${r.scanUrl}" target="_blank" class="action-btn" title="Original öffnen">🔗</a>`
+          ? `<a href="${esc(r.scanUrl)}" target="_blank" rel="noopener noreferrer" class="action-btn" title="Original öffnen">🔗</a>`
           : ''}
         ${r.kostenId ? `<button class="action-btn" onclick="editKosten(${r.kostenId})" title="Bearbeiten">✏️</button>` : ''}
         <button class="action-btn del" onclick="deleteGescannteRechnung(${r.id})" title="Löschen">🗑</button>

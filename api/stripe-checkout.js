@@ -12,13 +12,19 @@ export default async function handler(req, res) {
   const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
   if (!token) return res.status(401).json({ error: 'unauthorized' });
 
-  // Decode user from JWT
+  const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Token ECHT verifizieren (Signatur + Ablauf) ueber Supabase, statt ihn nur
+  // zu dekodieren – ein gefaelschter Token wird so zuverlaessig abgelehnt.
   let userId, userEmail;
   try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
-    userId = payload.sub;
-    userEmail = payload.email;
-    if (!userId) throw new Error('no sub');
+    const vr = await fetch(`${SUPA_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: svcKey }
+    });
+    if (!vr.ok) throw new Error('invalid');
+    const u = await vr.json();
+    userId = u.id;
+    userEmail = u.email;
+    if (!userId) throw new Error('no id');
   } catch (e) {
     return res.status(401).json({ error: 'invalid token' });
   }
@@ -38,7 +44,6 @@ export default async function handler(req, res) {
     : (process.env.STRIPE_PRICE_MONTHLY || process.env.STRIPE_PRICE_ID);
   if (!priceId) return res.status(500).json({ error: 'Stripe price not configured (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY)' });
 
-  const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const hdrs = { Authorization: `Bearer ${svcKey}`, apikey: svcKey, 'Content-Type': 'application/json' };
 
   try {

@@ -20,12 +20,17 @@ export default async function handler(req, res) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  // Signatur IMMER pruefen. Kein unsicherer Fallback mehr: ohne gesetztes
+  // Secret wird abgelehnt, statt gefaelschte "Zahlung erfolgt"-Events zu
+  // akzeptieren (sonst koennte sich jemand selbst auf Pro schalten).
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET fehlt – Webhook abgelehnt.');
+    return res.status(500).json({ error: 'webhook not configured' });
+  }
   let event;
   try {
     const rawBody = await getRawBody(req);
-    event = webhookSecret
-      ? stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
-      : JSON.parse(rawBody.toString());
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
   } catch (e) {
     return res.status(400).json({ error: 'Webhook signature failed: ' + e.message });
   }
