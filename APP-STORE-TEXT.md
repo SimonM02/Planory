@@ -15,10 +15,15 @@ passende Feld kopieren. Zeichen-Limits von Apple sind jeweils angegeben.
 Planory
 ```
 
-### Untertitel (max. 30 Zeichen)
+### Untertitel (max. 30 Zeichen) — ASO-optimiert
+> Wird von Apple **für die Suche indexiert** (fast so stark wie der Name). Deshalb hier
+> ANDERE Keywords als im Namen „Planory - Bauassistent" nutzen (nicht „Bauassistent"
+> wiederholen). Empfehlung:
 ```
-Dein digitaler Bauassistent
+Hausbau: Budget & Baukosten
 ```
+> Alternative: `Budget, Baukosten & Termine` · früher gesetzt war „Dein digitaler Bauassistent"
+> (schwächer fürs Ranking, weil es den Namen wiederholt).
 
 ### Werbetext / Promotional Text (max. 170 Zeichen, jederzeit änderbar)
 ```
@@ -99,10 +104,12 @@ Bau,Hausbau,Bauprojekt,Baukosten,Budget,Sanierung,Umbau,Bautagebuch,Handwerker,R
 Planory
 ```
 
-### Subtitle (max. 30 chars)
+### Subtitle (max. 30 chars) — ASO-optimiert
+> Indexed by Apple for search. Use keywords NOT already in the name. Empfehlung:
 ```
-Your construction assistant
+Home build: budget & costs
 ```
+> Alternative: `Construction budget & costs`
 
 ### Promotional Text (max. 170 chars)
 ```

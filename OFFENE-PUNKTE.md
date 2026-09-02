@@ -1,14 +1,28 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 19.08.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
 
 ## Aktueller Stand (kurz)
-- **Neue App** `com.planory.bauassistent` – „Planory - Bauassistent", Version 1.1.
-- **Build 2 mit Abo (RevenueCat) eingereicht** – inkl. Auto-Renew-Hinweis (Apple 3.1.2),
-  Datenverlust-Härtung und Abo-Robustheit.
+- ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`), Version 1.1.
+- ✅ **Alte App** aus dem Verkauf genommen.
+- ✅ **Sicherheit gehärtet** (RLS `subscriptions`, Stripe-Webhook/Checkout, KI-Endpunkt-
+  Kostenschutz, KI-/Rechnungs-XSS) – Backend live, Rest im Web live.
 - **Web (planory.at) ist live** und bekommt alle Fixes sofort.
-- Kids-Kategorie-Problem ist mit der **neuen App-ID** endgültig erledigt
-  (Kategorie = Produktivität).
+
+## 🔴 HOTFIX 1.1.1 (dringend – Live-Bug!)
+- [ ] **Kamera-Absturz beim Rechnung-Scannen** beheben: In Xcode **Info.plist** ergänzen
+      (die App stürzt sonst beim „Take Photo" ab, weil die Berechtigung fehlt):
+  - `NSCameraUsageDescription` → „Planory nutzt die Kamera, um Rechnungen und
+    Baufortschritt zu fotografieren."
+  - `NSPhotoLibraryUsageDescription` → „Planory braucht Zugriff auf deine Fotos, um
+    Belege hinzuzufügen."
+  → Version **1.1.1** bauen, hochladen, einreichen. (Optional robuster: nativer Camera-
+     Picker im Scan – Claude baut den Code, falls der Info.plist-Fix nicht reicht.)
+- [ ] **App-Store-Untertitel** im selben Update setzen (30 Zeichen, wird von Apple
+      für die Suche indexiert – aktuell im US-Store LEER):
+  - Deutsch: `Hausbau: Budget & Baukosten`
+  - English: `Home build: budget & costs`
+  → App Store Connect → Version → je Sprache Feld **„Untertitel"**. Details in APP-STORE-TEXT.md.
 
 ## Für das nächste App-Update (v1.2) – schon live im Web, Code liegt bereit
 - [ ] Neuen Build ziehen. **Vorher** für den nativen Foto-Picker einmalig:
