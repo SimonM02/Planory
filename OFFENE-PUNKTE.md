@@ -31,6 +31,8 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
   - Willkommens-Dialog nach dem Onboarding (Begrüßung + Gratismonat/Abo-Erklärung)
   - Nach dem Onboarding landet man zuverlässig auf dem Dashboard
   - Entwickler-Block „Diagnose & Test" aus den Einstellungen entfernt
+  - **Glückwunsch-Dialog nach Abo-Abschluss** + „⭐ Planory Pro"-Knopf in der Seitenleiste
+    (kein Umweg mehr über die Einstellungen) — im Web bereits live.
   - **Mehrfach-Foto-Upload** in der App (nativer Picker). Dazu in Xcode/Info.plist
     `NSPhotoLibraryUsageDescription` ergänzen (Text: „Planory braucht Zugriff auf
     deine Fotos, um Baufortschritt-Bilder hinzuzufügen.").

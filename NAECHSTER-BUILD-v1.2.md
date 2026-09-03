@@ -8,6 +8,8 @@
 2. Nach dem Onboarding landet man zuverlässig auf dem Dashboard
 3. Entwickler-Block „Diagnose & Test" aus den Einstellungen entfernt
 4. **Mehrfach-Foto-Upload** in der App (nativer Picker) ← braucht die Extra-Schritte unten
+5. **Glückwunsch-Dialog nach Abo-Abschluss** + prominenter „⭐ Planory Pro"-Knopf
+   in der Seitenleiste (man muss nicht mehr in die Einstellungen, um das Abo zu starten)
 
 ## Schritte – in genau dieser Reihenfolge
 
@@ -46,6 +48,7 @@ npx cap sync ios
 • Freundliche Begrüßung nach dem Einrichten – mit Erklärung zum Gratismonat
 • Nach dem Onboarding geht's direkt zur Übersicht
 • Mehrere Fotos auf einmal hochladen
+• Glückwunsch-Meldung nach dem Abo-Abschluss und ein schnellerer Weg zu Planory Pro
 • Kleinere Verbesserungen
 ```
 
