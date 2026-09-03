@@ -2720,6 +2720,7 @@
     </div>
   </nav>
   <div style="padding:10px 10px 0">
+    <button id="sidebar-pro-btn" onclick="openPaywall()" style="display:none;width:100%;background:linear-gradient(135deg,#ff9f1c,#f57a00);border:none;border-radius:9px;padding:9px 10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.82rem;font-weight:800;color:#fff;cursor:pointer;text-align:center;margin-bottom:8px;box-shadow:0 2px 8px rgba(245,122,0,0.28)">⭐ Planory Pro</button>
     <button onclick="showPage('settings')" style="width:100%;background:none;border:1.5px solid var(--border);border-radius:9px;padding:8px 10px;font-family:'Hanken Grotesk',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.15s"
       onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
@@ -6115,7 +6116,7 @@ async function rcPurchase(which) {
   try {
     await P.purchasePackage({ aPackage: pkg });
     await _rcRefresh();
-    if (_subActive()) { closeModal('modal-paywall'); showToast('✅ Abo aktiv – danke!', 'success'); }
+    if (_subActive()) { closeModal('modal-paywall'); showAboSuccess(); }
   } catch(e) { if (!/cancel/i.test(e?.message || '')) showToast('Kauf nicht abgeschlossen', 'error'); }
 }
 async function rcRestore() {
@@ -6135,6 +6136,25 @@ function requireSub() {
   if (_subActive()) return true;
   openPaywall();
   return false;
+}
+// Glückwunsch-Modal nach erfolgreichem Abo-Abschluss.
+function showAboSuccess() {
+  const en = (_lang === 'en');
+  const t = document.getElementById('abosucc-title');
+  const b = document.getElementById('abosucc-body');
+  const k = document.getElementById('abosucc-btn');
+  if (t) t.textContent = en ? '🎉 Welcome to Planory Pro!' : '🎉 Willkommen bei Planory Pro!';
+  if (b) b.textContent = en ? 'All features unlocked. Have fun building your project!'
+                            : 'Alle Funktionen freigeschaltet. Viel Erfolg mit deinem Bauprojekt!';
+  if (k) k.textContent = en ? "Let's go" : 'Los geht’s';
+  try { if (typeof _updateProEntry === 'function') _updateProEntry(); } catch(e){}
+  const el = document.getElementById('modal-abo-success');
+  if (el) openModal('modal-abo-success');
+}
+// Sidebar-Upgrade-Knopf nur zeigen, wenn NICHT Pro.
+function _updateProEntry() {
+  const btn = document.getElementById('sidebar-pro-btn');
+  if (btn) btn.style.display = (window._userPlan === 'pro') ? 'none' : '';
 }
 async function openPaywall() {
   // In der nativen App IMMER den Apple-Kauf zeigen (nie Web/Stripe – das waere
@@ -6484,6 +6504,10 @@ if (document.readyState === 'loading') {
 }
 
 async function loadUserPlan() {
+  // Nach jeder Plan-Ermittlung (alle Zweige) den Sidebar-Upgrade-Knopf abgleichen.
+  try { await _loadUserPlanImpl(); } finally { try { _updateProEntry(); } catch(e){} }
+}
+async function _loadUserPlanImpl() {
   if (!currentUser) return;
   // Native App:
   //  - Abo INAKTIV (kein RevenueCat-Schluessel) -> alles gratis (wie bisher).
@@ -6616,8 +6640,8 @@ async function openStripePortal() {
   const p = new URLSearchParams(window.location.search);
   if (p.get('upgrade') === 'success') {
     history.replaceState({}, '', window.location.pathname);
-    // Wait for UI to be ready then show toast
-    setTimeout(() => showToast('🎉 Pro-Abo aktiviert! Willkommen an Bord.'), 1200);
+    // Wait for UI to be ready then show congrats modal
+    setTimeout(() => showAboSuccess(), 1200);
   }
 })();
 // ── End Stripe / Plan ───────────────────────────────────────────────────────
@@ -15576,6 +15600,17 @@ function exportRechnungenPDF() {
     <h3 id="welcome-title" style="margin-bottom:10px">Willkommen bei Planory!</h3>
     <p id="welcome-body" style="font-size:0.88rem;color:var(--text2);line-height:1.65;margin-bottom:20px;text-align:left"></p>
     <button id="welcome-btn" class="btn btn-primary" style="width:100%;padding:13px;font-size:0.95rem" onclick="closeModal('modal-welcome')">Los geht’s</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-abo-success" style="z-index:10050">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+    <h3 id="abosucc-title" style="margin-bottom:10px">🎉 Willkommen bei Planory Pro!</h3>
+    <p id="abosucc-body" style="font-size:0.9rem;color:var(--text2);line-height:1.6;margin-bottom:20px">
+      Alle Funktionen freigeschaltet. Viel Erfolg mit deinem Bauprojekt!
+    </p>
+    <button id="abosucc-btn" onclick="closeModal('modal-abo-success')" class="btn btn-primary" style="width:100%;padding:13px;font-size:0.95rem">Los geht’s</button>
   </div>
 </div>
 
