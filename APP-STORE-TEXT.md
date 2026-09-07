@@ -100,9 +100,12 @@ Bau,Hausbau,Bauprojekt,Baukosten,Budget,Sanierung,Umbau,Bautagebuch,Handwerker,R
 ## 🇬🇧 ENGLISH
 
 ### Name (max. 30 chars)
+> Für englischsprachige Nutzer (eigene Lokalisierung in App Store Connect → Englisch (U.S.)).
+> Empfehlung – bei Bedarf ändern:
 ```
-Planory
+Planory - Building Assistant
 ```
+> Alternativen: `Planory - Home Building` · `Planory - Build & Budget` · nur `Planory`
 
 ### Subtitle (max. 30 chars) — ASO-optimiert
 > Indexed by Apple for search. Use keywords NOT already in the name. Empfehlung:
