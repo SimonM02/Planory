@@ -10,6 +10,9 @@
 4. **Mehrfach-Foto-Upload** in der App (nativer Picker) ← braucht die Extra-Schritte unten
 5. **Glückwunsch-Dialog nach Abo-Abschluss** + prominenter „⭐ Planory Pro"-Knopf
    in der Seitenleiste (man muss nicht mehr in die Einstellungen, um das Abo zu starten)
+6. **Neues Modul „Helfer"** (zuschaltbar): Helfer-Tage mit Kalender planen, Bedarf
+   (½/ganzer Tag) + Helfer zuweisen, offene Plätze, Erinnerung 1 Woche vorher, und
+   automatische Übernahme der eingeteilten Helfer ins Bautagebuch
 
 ## Schritte – in genau dieser Reihenfolge
 
@@ -49,6 +52,7 @@ npx cap sync ios
 • Nach dem Onboarding geht's direkt zur Übersicht
 • Mehrere Fotos auf einmal hochladen
 • Glückwunsch-Meldung nach dem Abo-Abschluss und ein schnellerer Weg zu Planory Pro
+• Neu: Helfer-Planung mit Kalender – einteilen, wer wann hilft, direkt mit dem Bautagebuch verbunden
 • Kleinere Verbesserungen
 ```
 

@@ -33,6 +33,9 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
   - Entwickler-Block „Diagnose & Test" aus den Einstellungen entfernt
   - **Glückwunsch-Dialog nach Abo-Abschluss** + „⭐ Planory Pro"-Knopf in der Seitenleiste
     (kein Umweg mehr über die Einstellungen) — im Web bereits live.
+  - **Neues Modul „Helfer"** (zuschaltbar): Helfer-Tage mit Kalender planen, Bedarf +
+    ½/ganzer Tag, Helfer zuweisen, offene Plätze, Erinnerung 1 Woche vorher, automatische
+    Übernahme der eingeteilten Helfer ins Bautagebuch — im Web bereits live.
   - **Mehrfach-Foto-Upload** in der App (nativer Picker). Dazu in Xcode/Info.plist
     `NSPhotoLibraryUsageDescription` ergänzen (Text: „Planory braucht Zugriff auf
     deine Fotos, um Baufortschritt-Bilder hinzuzufügen.").
