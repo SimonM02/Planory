@@ -55,6 +55,16 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
       **Supabase-Dashboard → Authentication → Email Templates** einfügen
       (Texte liegen vor – von Claude geliefert).
 - [ ] Absendername in Supabase auf **„Planory"** setzen (statt „Supabase Auth").
+- [ ] **„Leaked Password Protection" aktivieren** (Supabase → Authentication → Policies /
+      Passwortschutz): prüft Passwörter gegen HaveIBeenPwned. Kleiner Klick, mehr Sicherheit.
+      (Nur im Dashboard möglich – nicht über den Zugriff, den Claude hat.)
+
+## Datenbank-Sicherheit (Claude, via Supabase-Zugriff) – erledigt
+- [x] SECURITY-DEFINER-Funktionen `handle_new_user` + `rls_auto_enable` gehärtet:
+      öffentlicher RPC-Zugriff (anon/authenticated) entzogen, `search_path` fixiert.
+      Trigger/Event-Trigger laufen unverändert weiter (Signup + Auto-RLS intakt).
+- Hinweis: Backup-Tabelle `backup_projektdaten_kunde` hat RLS an, aber keine Policy →
+  damit komplett gesperrt (nur service_role) = sicher; kein Handlungsbedarf.
 
 ## Landing-Page (live auf planory.at)
 - [ ] **Konkreten Preis eintragen** im Abschnitt „Preise". App/Web nutzen aktuell
@@ -69,7 +79,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
 - [ ] **Falls die Kamera in der App abstürzt:** natives **Capacitor Camera Plugin**
       einbauen (Claude schreibt Code; `npm install @capacitor/camera && npx cap sync ios`,
       dann neuer Build).
-- [ ] Prüfen, dass der Supabase-Storage-Bucket **`uploads`** existiert und **public** ist.
+- [x] Supabase-Storage-Bucket **`uploads`** existiert und ist **public** – geprüft (Claude, via Supabase-Zugriff). Bucket `dokumente` korrekt privat.
 
 ## Android-Version (Play Store) – NACH iOS-Launch
 Marktrecherche: Hauptkonkurrent POCASIO hat die meisten Nutzer auf **Android**
