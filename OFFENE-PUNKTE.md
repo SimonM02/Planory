@@ -23,6 +23,16 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 21.08.2026.
   - Deutsch: `Hausbau: Budget & Baukosten`
   - English: `Home build: budget & costs`
   → App Store Connect → Version → je Sprache Feld **„Untertitel"**. Details in APP-STORE-TEXT.md.
+- [ ] **Englische App-Store-Lokalisierung anlegen** (damit englischsprachige Nutzer den
+      Eintrag auf Englisch sehen – Name „Planory - Bauassistent" wirkt sonst deutsch).
+      Rein Metadaten, **kein neuer Build nötig**. Am **Computer** in App Store Connect:
+      oben Sprach-Dropdown → **Englisch (U.S.) hinzufügen** → ausfüllen:
+  - **Name:** `Planory - Building Assistant` (Alternativen: `Planory - Home Building`
+    / `Planory - Build & Budget`)
+  - **Untertitel:** `Home build: budget & costs`
+  - **Beschreibung / Keywords / What's New:** liegen fertig auf Englisch in APP-STORE-TEXT.md.
+  → Primärsprache bleibt Deutsch; Englisch kommt nur zusätzlich dazu. (Claude kann auf
+    Wunsch einen kopierfertigen EN-Block in APP-STORE-TEXT.md ablegen.)
 
 ## Für das nächste App-Update (v1.2) – schon live im Web, Code liegt bereit
 - [ ] Neuen Build ziehen. **Vorher** für den nativen Foto-Picker einmalig:
