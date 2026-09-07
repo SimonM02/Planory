@@ -2686,6 +2686,9 @@
     <div class="nav-item" onclick="showPage('aufgaben')" data-module="aufgaben" data-page="aufgaben">
       <span class="icon">✅</span><span data-i18n="nav_aufgaben">Aufgaben</span>
     </div>
+    <div class="nav-item" onclick="showPage('helfer')" data-module="helfer" data-page="helfer">
+      <span class="icon">🤝</span><span data-i18n="nav_helfer">Helfer</span>
+    </div>
 
     <div class="nav-section" data-module="tagebuch_gruppe" data-i18n="sec_tagebuch">Doku &amp; Fotos</div>
     <div class="nav-item" onclick="showPage('fotos')" data-module="fotos" data-page="fotos">
@@ -3485,6 +3488,42 @@
     <div id="wartung-list"></div>
   </div>
 
+  <!-- HELFER -->
+  <div class="page" id="page-helfer">
+    <div class="page-header">
+      <div><h2 data-i18n="ph_helfer_t">Helfer</h2><p data-i18n="ph_helfer_s">Plane, wann du wie viele Helfer brauchst</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="openHelferListe()">👥 Meine Helfer</button>
+        <button class="btn btn-primary" onclick="resetEinsatzModal();openModal('modal-einsatz')">+ Helfer-Tag</button>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-label">Helfer-Tage</div>
+        <div class="card-value" id="hf-total">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Offene Plätze</div>
+        <div class="card-value yellow" id="hf-open">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Nächster Einsatz</div>
+        <div class="card-value" id="hf-next" style="font-size:1rem">–</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Helfer angelegt</div>
+        <div class="card-value green" id="hf-people">0</div>
+      </div>
+    </div>
+
+    <div id="helfer-cal" style="margin-bottom:18px"></div>
+    <h3 style="font-size:0.95rem;margin:6px 0 10px">Kommende Helfer-Tage</h3>
+    <div id="helfer-list"></div>
+    <h3 style="font-size:0.95rem;margin:22px 0 10px">Einsätze pro Helfer</h3>
+    <div id="helfer-summary"></div>
+  </div>
+
   <!-- ANGEBOTE -->
   <div class="page" id="page-angebote">
     <div class="page-header">
@@ -3921,7 +3960,7 @@
   <div class="modal" style="width:560px">
     <h3 id="tb-modal-title">Tagebucheintrag</h3>
     <input type="hidden" id="tb-edit-id">
-    <div class="form-row"><label>Datum</label><input type="date" id="tb-datum"></div>
+    <div class="form-row"><label>Datum</label><input type="date" id="tb-datum" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
     <div class="form-row"><label>Titel</label><input type="text" id="tb-title" placeholder="z.B. Betonage Decke EG"></div>
     <div class="form-row"><label>Bericht</label><textarea id="tb-text" placeholder="Was wurde heute gemacht?"></textarea></div>
     <div class="form-row"><label>Wetter</label>
@@ -4446,6 +4485,76 @@
   </div>
 </div>
 
+<!-- Helfer-Tag (Einsatz) Modal -->
+<div class="modal-overlay" id="modal-einsatz">
+  <div class="modal">
+    <h3 id="einsatz-modal-title">🤝 Helfer-Tag anlegen</h3>
+    <input type="hidden" id="einsatz-edit-id">
+    <div class="form-row"><label>Datum</label><input type="date" id="einsatz-datum"></div>
+    <div style="display:flex;gap:12px">
+      <div class="form-row" style="flex:1"><label>Wie viele Helfer?</label><input type="number" id="einsatz-bedarf" min="1" step="1" placeholder="2" oninput="einsatzRenderAssigned()"></div>
+      <div class="form-row" style="flex:1"><label>Umfang</label>
+        <select id="einsatz-umfang">
+          <option value="full">Ganzer Tag</option>
+          <option value="half">Halber Tag</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>Zugeteilte Helfer</label>
+      <div id="einsatz-assigned" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="einsatz-add-name" list="helfer-suggest-list" placeholder="Name eingeben oder auswählen"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();einsatzAddAssigned();}">
+        <datalist id="helfer-suggest-list"></datalist>
+        <button type="button" class="btn btn-ghost" style="padding:8px 14px" onclick="einsatzAddAssigned()">+</button>
+      </div>
+      <div id="einsatz-open-hint" style="font-size:0.78rem;color:var(--text3);margin-top:6px"></div>
+    </div>
+    <div class="form-row"><label>Erinnerung, falls noch Plätze offen</label>
+      <select id="einsatz-remind">
+        <option value="aus">Keine Erinnerung</option>
+        <option value="3">3 Tage vorher</option>
+        <option value="7" selected>1 Woche vorher</option>
+        <option value="14">2 Wochen vorher</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Notiz (optional)</label><input type="text" id="einsatz-notiz" placeholder="z.B. Beton gießen, feste Schuhe mitbringen"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-einsatz');resetEinsatzModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="addEinsatz()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meine Helfer (Liste) Modal -->
+<div class="modal-overlay" id="modal-helfer-liste">
+  <div class="modal">
+    <h3>👥 Meine Helfer</h3>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:12px">Leg deine Helfer einmal an – dann kannst du sie bei jedem Helfer-Tag schnell auswählen.</p>
+    <div id="helfer-person-list" style="margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-helfer-liste')">Schließen</button>
+      <button class="btn btn-primary" onclick="resetHelferPersonModal();openModal('modal-helfer-person')">+ Helfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Einzelner Helfer Modal -->
+<div class="modal-overlay" id="modal-helfer-person" style="z-index:10045">
+  <div class="modal" style="max-width:380px">
+    <h3 id="helfer-person-title">🙋 Helfer anlegen</h3>
+    <input type="hidden" id="helfer-person-id">
+    <div class="form-row"><label>Name</label><input type="text" id="helfer-person-name" placeholder="z.B. Nachbar Franz"></div>
+    <div class="form-row"><label>Telefon (optional)</label><input type="tel" id="helfer-person-tel" placeholder="+43 …"></div>
+    <div class="form-row"><label>Notiz (optional)</label><input type="text" id="helfer-person-notiz" placeholder="z.B. kann Kran bedienen"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-helfer-person')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="addHelferPerson()">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- Schnellzugriff anpassen -->
 <div class="modal-overlay" id="modal-qa-edit">
   <div class="modal">
@@ -4472,6 +4581,7 @@ const EMPTY_PROJECT = () => ({
   dokumentation: [], wartungen: [], abhaengigkeiten: [],
   angebote: [], zahlungen: [], maengel: [], gescannteRechnungen: [], zahlungspersonen: [],
   dateien: [], grundrisse: [],
+  helfer: [], helfereinsaetze: [],
   _deletedIds: {}   // tombstone: { "id": deletedAtTimestamp }
 });
 
@@ -4494,7 +4604,7 @@ const ITEM_TYPES = [
   'tagebuch','notizen','kontakte','gantt','fotos','fotoAlben',
   'dokumentation','angebote','zahlungen','zahlungsplan','zahlungspersonen',
   'maengel','wartungen','gewerke','personen','abhaengigkeiten',
-  'gescannteRechnungen','dateien','grundrisse'
+  'gescannteRechnungen','dateien','grundrisse','helfer','helfereinsaetze'
 ];
 
 // Record a deletion — immediately removes from Supabase so realtime can't resurrect it
@@ -4528,7 +4638,8 @@ function saveAll() {
   // einen _updatedAt-Stempel wie alle anderen Eintraege. Kein Block-Stempel
   // (_budgetKatTs) mehr noetig – das war nur fuer die alte Snapshot-Speicherung.
   const STAMP_FIELDS = ['kosten','aufgaben','notizen','maengel','angebote','zahlungen',
-                        'kontakte','dokumentation','meilensteine','wartungen','tagebuch','budgetKat'];
+                        'kontakte','dokumentation','meilensteine','wartungen','tagebuch','budgetKat',
+                        'helfer','helfereinsaetze'];
   STAMP_FIELDS.forEach(f => { if (Array.isArray(state[f])) state[f] = _stampUpdatedAt(state[f]); });
 
   // _order auf budgetKat stempeln, damit die vom Nutzer gewaehlte Reihenfolge
@@ -4915,6 +5026,7 @@ function showPage(id) {
   if (id === 'kostenaufteilung') renderKostenaufteilung();
   if (id === 'dokumentation') renderDoku();
   if (id === 'wartung') renderWartung();
+  if (id === 'helfer') renderHelfer();
   if (id === 'settings') { loadSettings(); loadUserPlan(); }
   showPageHint(id);
   if (_lang !== 'de') { try { _sweepPhrases(document.getElementById('page-' + id)); } catch(e){} }
@@ -4935,7 +5047,7 @@ const I18N = {
     nav_dashboard:'Dashboard', nav_kosten:'Rechnungen & Ausgaben', nav_angebote:'Angebote',
     nav_rechnungen:'Gescannte Rechnungen', nav_zahlungsplan:'Zahlungstermine',
     nav_kostenchart:'Kostenentwicklung', nav_kostenaufteilung:'Kostenaufteilung',
-    nav_budget:'Budget', nav_planung:'Zeitplan', nav_aufgaben:'Aufgaben',
+    nav_budget:'Budget', nav_planung:'Zeitplan', nav_aufgaben:'Aufgaben', nav_helfer:'Helfer',
     nav_maengel:'Mängel', nav_fotos:'Fotos', nav_tagebuch:'Bautagebuch',
     nav_notizen:'Notizen', nav_handwerker:'Handwerker', nav_grundrisse:'Grundrisse',
     nav_doku:'Leitungen & Rohre', nav_wartung:'Wartung',
@@ -4957,6 +5069,7 @@ const I18N = {
     ph_grundrisse_t:'Grundrisse', ph_grundrisse_s:'Pläne mit Markierungen, Leitungen & Notizen',
     ph_doku_t:'Leitungen & Rohre', ph_doku_s:'Leitungsführung, versteckte Installationen & wichtige Hinweise',
     ph_wartung_t:'Wartung', ph_wartung_s:'Wiederkehrende Wartungsaufgaben & Intervalle',
+    ph_helfer_t:'Helfer', ph_helfer_s:'Plane, wann du wie viele Helfer brauchst',
     ph_angebote_t:'Angebote', ph_angebote_s:'Angebote erfassen, vergleichen und zu Rechnungen umwandeln',
     ph_zahlungsplan_t:'Zahlungstermine', ph_zahlungsplan_s:'Fälligkeiten, Abschlagszahlungen & offene Rechnungen',
     ph_maengel_t:'Mängel', ph_maengel_s:'Mängel dokumentieren, fotografieren & nachverfolgen',
@@ -4968,7 +5081,7 @@ const I18N = {
     nav_dashboard:'Dashboard', nav_kosten:'Invoices & Expenses', nav_angebote:'Quotes',
     nav_rechnungen:'Scanned Invoices', nav_zahlungsplan:'Payment Dates',
     nav_kostenchart:'Cost Trend', nav_kostenaufteilung:'Cost Split',
-    nav_budget:'Budget', nav_planung:'Schedule', nav_aufgaben:'Tasks',
+    nav_budget:'Budget', nav_planung:'Schedule', nav_aufgaben:'Tasks', nav_helfer:'Helpers',
     nav_maengel:'Defects', nav_fotos:'Photos', nav_tagebuch:'Site Diary',
     nav_notizen:'Notes', nav_handwerker:'Contractors', nav_grundrisse:'Floor Plans',
     nav_doku:'Pipes & Cables', nav_wartung:'Maintenance',
@@ -4990,6 +5103,7 @@ const I18N = {
     ph_grundrisse_t:'Floor Plans', ph_grundrisse_s:'Plans with markers, lines & notes',
     ph_doku_t:'Pipes & Cables', ph_doku_s:'Utility routing, hidden installations & key notes',
     ph_wartung_t:'Maintenance', ph_wartung_s:'Recurring maintenance tasks & intervals',
+    ph_helfer_t:'Helpers', ph_helfer_s:'Plan when and how many helpers you need',
     ph_angebote_t:'Quotes', ph_angebote_s:'Capture and compare quotes, convert them to invoices',
     ph_zahlungsplan_t:'Payment Dates', ph_zahlungsplan_s:'Due dates, instalments & open invoices',
     ph_maengel_t:'Defects', ph_maengel_s:'Document, photograph & track defects',
@@ -5012,6 +5126,40 @@ function t(key) { return I18N[_lang]?.[key] ?? I18N.de[key] ?? key; }
 //  bzw. i18nMissing('fr')  (listet alle Texte ohne diese Sprache auf).
 // ══════════════════════════════════════════════════════════════════════════
 const TEXTE = {
+  "👥 Meine Helfer": { en: "👥 My helpers" },
+  "+ Helfer-Tag": { en: "+ Helper day" },
+  "+ Helfer": { en: "+ Helper" },
+  "+ Helfer-Tag anlegen": { en: "+ Add helper day" },
+  "Helfer-Tage": { en: "Helper days" },
+  "Offene Plätze": { en: "Open spots" },
+  "Nächster Einsatz": { en: "Next day" },
+  "Helfer angelegt": { en: "Helpers added" },
+  "Kommende Helfer-Tage": { en: "Upcoming helper days" },
+  "Einsätze pro Helfer": { en: "Days per helper" },
+  "Noch keine Helfer-Tage geplant": { en: "No helper days planned yet" },
+  "Noch niemand eingeteilt": { en: "Nobody assigned yet" },
+  "Noch niemand zugeteilt": { en: "Nobody assigned yet" },
+  "Sobald du Helfer einteilst, zählt Planory hier die geplanten Tage pro Person.": { en: "Once you assign helpers, Planory counts the planned days per person here." },
+  "🤝 Helfer-Tag anlegen": { en: "🤝 Add helper day" },
+  "🤝 Helfer-Tag bearbeiten": { en: "🤝 Edit helper day" },
+  "Wie viele Helfer?": { en: "How many helpers?" },
+  "Umfang": { en: "Duration" },
+  "Ganzer Tag": { en: "Full day" },
+  "Halber Tag": { en: "Half day" },
+  "Zugeteilte Helfer": { en: "Assigned helpers" },
+  "Name eingeben oder auswählen": { en: "Type or pick a name" },
+  "Erinnerung, falls noch Plätze offen": { en: "Reminder if spots are still open" },
+  "Keine Erinnerung": { en: "No reminder" },
+  "3 Tage vorher": { en: "3 days before" },
+  "1 Woche vorher": { en: "1 week before" },
+  "2 Wochen vorher": { en: "2 weeks before" },
+  "🙋 Helfer anlegen": { en: "🙋 Add helper" },
+  "🙋 Helfer bearbeiten": { en: "🙋 Edit helper" },
+  "Telefon (optional)": { en: "Phone (optional)" },
+  "Leg deine Helfer einmal an – dann kannst du sie bei jedem Helfer-Tag schnell auswählen.": { en: "Add your helpers once – then pick them quickly for every helper day." },
+  "Noch keine Helfer angelegt.": { en: "No helpers added yet." },
+  "Helfer aus der Liste löschen? Bereits eingeteilte Tage bleiben erhalten.": { en: "Remove helper from the list? Days already assigned stay." },
+  "Helfer-Tag löschen?": { en: "Delete helper day?" },
   "✏️ Anpassen": { en: "✏️ Customise" },
   "Anpassen": { en: "Customise" },
   "+ Abschnitt hinzufügen": { en: "+ Add section" },
@@ -5950,6 +6098,9 @@ function openModal(id) {
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
     setTimeout(fetchWetter, 300);
+    const dEl = document.getElementById('tb-datum');
+    if (dEl && !dEl.value) dEl.value = today();
+    try { _prefillDiaryHelfer(); } catch(e){}
   }
   // Project modals
   if (id === 'modal-project-switcher') renderProjectSwitcher();
@@ -6333,6 +6484,7 @@ const MODULES = [
   { id: 'budget',           label: 'Budget',              icon: '📊', group: 'Finanzen',   default: true },
   { id: 'planung',          label: 'Zeitplan',            icon: '📆', group: 'Planung',    default: true },
   { id: 'aufgaben',         label: 'Aufgaben',            icon: '✅', group: 'Planung',    default: true },
+  { id: 'helfer',           label: 'Helfer',              icon: '🤝', group: 'Planung',    default: false },
   { id: 'maengel',          label: 'Mängel',              icon: '⚠️', group: 'Tagebuch',   default: true },
   { id: 'fotos',            label: 'Fotos',               icon: '📸', group: 'Tagebuch',   default: true },
   { id: 'tagebuch',         label: 'Bautagebuch',         icon: '📓', group: 'Tagebuch',   default: true },
@@ -8766,21 +8918,20 @@ function switchDiaryTab(tab, btn) {
   else renderDiarySummary();
 }
 
-function addWorkerRow() {
+function addWorkerRow(prefillName = '') {
   const container = document.getElementById('tb-worker-rows');
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:8px;align-items:center';
 
-  // build worker options from kontakte
-  const workerOptions = state.kontakte.length
-    ? state.kontakte.map(k => `<option value="${k.name}">${k.name} (${k.gewerk})</option>`).join('')
-    : '';
+  // Vorschläge aus allen bisher verwendeten Namen (Helfer, Einteilungen, Tagebuch, Kontakte)
+  const listId = 'worker-list-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
+  const workerOptions = _helferSuggestions().map(n => `<option value="${esc(n)}">`).join('');
 
   row.innerHTML = `
-    <input type="text" placeholder="Name / Gewerk" list="worker-list-${Date.now()}"
+    <input type="text" placeholder="Name / Gewerk" list="${listId}" value="${esc(prefillName)}"
       style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none"
       class="tb-worker-name">
-    <datalist id="worker-list-${Date.now()}">${workerOptions}</datalist>
+    <datalist id="${listId}">${workerOptions}</datalist>
     <input type="number" min="0.5" max="24" step="0.5" placeholder="Std."
       style="width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;outline:none"
       class="tb-worker-hours">
@@ -11489,6 +11640,284 @@ function renderWartung() {
   document.getElementById('w-ok').textContent = ok;
 }
 
+// ──────────────── HELFER (Planung + Einteilung) ────────────────
+let _einsatzAssigned = [];   // Arbeits-Array, solange das Einsatz-Modal offen ist
+let _helferCal = null;       // aktueller Kalendermonat { y, m(0-basiert) }
+
+// Namens-Vorschläge aus ALLEN bisher verwendeten Quellen (Helfer-Liste,
+// frühere Einteilungen, Bautagebuch, Kontakte) – einmal getippt = ab dann Vorschlag.
+function _helferSuggestions() {
+  const names = new Set();
+  (state.helfer || []).forEach(h => { if (h && h.name) names.add(String(h.name).trim()); });
+  (state.helfereinsaetze || []).forEach(e => (e.zugewiesen || []).forEach(n => { if (n) names.add(String(n).trim()); }));
+  (state.tagebuch || []).forEach(t => (t.workers || []).forEach(w => { if (w && w.name) names.add(String(w.name).trim()); }));
+  (state.kontakte || []).forEach(k => { if (k && k.name) names.add(String(k.name).trim()); });
+  return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b, 'de'));
+}
+function _refreshHelferDatalist() {
+  const dl = document.getElementById('helfer-suggest-list');
+  if (dl) dl.innerHTML = _helferSuggestions().map(n => `<option value="${esc(n)}">`).join('');
+}
+
+function _einsatzBelegt(e) { return (e.zugewiesen || []).filter(Boolean).length; }
+function _umfangLabel(u)   { return u === 'half' ? '½ Tag' : 'ganzer Tag'; }
+function _umfangWeight(u)  { return u === 'half' ? 0.5 : 1; }
+
+// ── Einsatz-Modal (Helfer-Tag) ──
+function resetEinsatzModal() {
+  _einsatzAssigned = [];
+  ['einsatz-bedarf','einsatz-notiz','einsatz-add-name'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const u = document.getElementById('einsatz-umfang'); if (u) u.value = 'full';
+  const r = document.getElementById('einsatz-remind'); if (r) r.value = '7';
+  const eid = document.getElementById('einsatz-edit-id'); if (eid) eid.value = '';
+  const t = document.getElementById('einsatz-modal-title'); if (t) t.textContent = '🤝 Helfer-Tag anlegen';
+  const d = document.getElementById('einsatz-datum'); if (d) d.value = today();
+  _refreshHelferDatalist();
+  einsatzRenderAssigned();
+}
+function einsatzRenderAssigned() {
+  const box = document.getElementById('einsatz-assigned');
+  if (box) box.innerHTML = _einsatzAssigned.length
+    ? _einsatzAssigned.map((n, i) => `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:4px 8px 4px 12px;font-size:0.82rem">${esc(n)}<button type="button" onclick="einsatzRemoveAssigned(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.9rem;line-height:1">✕</button></span>`).join('')
+    : '<span style="font-size:0.8rem;color:var(--text3)">Noch niemand zugeteilt</span>';
+  const bedarf = parseInt(document.getElementById('einsatz-bedarf')?.value, 10) || 0;
+  const offen = Math.max(0, bedarf - _einsatzAssigned.length);
+  const hint = document.getElementById('einsatz-open-hint');
+  if (hint) hint.textContent = bedarf ? `${_einsatzAssigned.length} von ${bedarf} besetzt · ${offen} offen` : '';
+}
+function einsatzAddAssigned() {
+  const inp = document.getElementById('einsatz-add-name'); if (!inp) return;
+  const n = inp.value.trim(); if (!n) return;
+  if (!_einsatzAssigned.includes(n)) _einsatzAssigned.push(n);
+  inp.value = ''; einsatzRenderAssigned();
+}
+function einsatzRemoveAssigned(i) { _einsatzAssigned.splice(i, 1); einsatzRenderAssigned(); }
+
+function addEinsatz() {
+  if (!requireSub()) return;
+  state.helfereinsaetze = state.helfereinsaetze || [];
+  const editId = parseInt(document.getElementById('einsatz-edit-id')?.value) || null;
+  const datum = document.getElementById('einsatz-datum').value;
+  if (!datum) { showToast('Bitte ein Datum wählen', 'warning'); return; }
+  const item = {
+    id: editId || Date.now(),
+    datum,
+    bedarf: Math.max(1, parseInt(document.getElementById('einsatz-bedarf').value, 10) || 1),
+    umfang: document.getElementById('einsatz-umfang').value || 'full',
+    zugewiesen: [..._einsatzAssigned],
+    remind: document.getElementById('einsatz-remind').value || '7',
+    notiz: document.getElementById('einsatz-notiz').value || ''
+  };
+  if (editId) {
+    const idx = state.helfereinsaetze.findIndex(e => String(e.id) === String(editId));
+    if (idx > -1) state.helfereinsaetze[idx] = { ...state.helfereinsaetze[idx], ...item };
+  } else state.helfereinsaetze.push(item);
+  save(); closeModal('modal-einsatz'); resetEinsatzModal();
+  showToast(editId ? '✏️ Helfer-Tag aktualisiert' : '✅ Helfer-Tag gespeichert', 'success');
+  renderHelfer();
+}
+function editEinsatz(id) {
+  const e = (state.helfereinsaetze || []).find(e => String(e.id) === String(id));
+  if (!e) return;
+  _einsatzAssigned = [...(e.zugewiesen || []).filter(Boolean)];
+  document.getElementById('einsatz-edit-id').value = id;
+  document.getElementById('einsatz-datum').value = e.datum || '';
+  document.getElementById('einsatz-bedarf').value = e.bedarf || 1;
+  document.getElementById('einsatz-umfang').value = e.umfang || 'full';
+  document.getElementById('einsatz-remind').value = (e.remind == null) ? '7' : String(e.remind);
+  document.getElementById('einsatz-notiz').value = e.notiz || '';
+  document.getElementById('einsatz-modal-title').textContent = '🤝 Helfer-Tag bearbeiten';
+  _refreshHelferDatalist();
+  einsatzRenderAssigned();
+  openModal('modal-einsatz');
+}
+async function deleteEinsatz(id) {
+  if (!requireSub()) return;
+  if (!(await showConfirm('Helfer-Tag löschen?'))) return;
+  _trackDeletion(id, 'helfereinsaetze');
+  state.helfereinsaetze = (state.helfereinsaetze || []).filter(e => String(e.id) !== String(id));
+  save(); renderHelfer(); showToast('🗑 Helfer-Tag gelöscht', 'success');
+}
+// Tag im Kalender antippen: vorhandenen Einsatz bearbeiten, sonst neuen mit dem Datum
+function openEinsatzForDay(dateStr) {
+  const existing = (state.helfereinsaetze || []).find(e => e.datum === dateStr);
+  if (existing) { editEinsatz(existing.id); return; }
+  resetEinsatzModal();
+  const d = document.getElementById('einsatz-datum'); if (d) d.value = dateStr;
+  openModal('modal-einsatz');
+}
+
+// ── Meine-Helfer-Liste ──
+function openHelferListe() { renderHelferPersonList(); openModal('modal-helfer-liste'); }
+function renderHelferPersonList() {
+  const el = document.getElementById('helfer-person-list'); if (!el) return;
+  const list = state.helfer || [];
+  el.innerHTML = list.length
+    ? list.map(h => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1"><div style="font-weight:600;font-size:0.88rem">${esc(h.name)}</div>${(h.tel || h.notiz) ? `<div style="font-size:0.76rem;color:var(--text3)">${esc([h.tel, h.notiz].filter(Boolean).join(' · '))}</div>` : ''}</div>
+        <button class="action-btn" onclick="editHelferPerson(${h.id})">✏️</button>
+        <button class="action-btn del" onclick="deleteHelferPerson(${h.id})">🗑</button>
+      </div>`).join('')
+    : '<div style="font-size:0.85rem;color:var(--text3);padding:8px 0">Noch keine Helfer angelegt.</div>';
+}
+function resetHelferPersonModal() {
+  ['helfer-person-id','helfer-person-name','helfer-person-tel','helfer-person-notiz'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const t = document.getElementById('helfer-person-title'); if (t) t.textContent = '🙋 Helfer anlegen';
+}
+function addHelferPerson() {
+  if (!requireSub()) return;
+  state.helfer = state.helfer || [];
+  const editId = parseInt(document.getElementById('helfer-person-id')?.value) || null;
+  const name = document.getElementById('helfer-person-name').value.trim();
+  if (!name) { showToast('Bitte einen Namen eingeben', 'warning'); return; }
+  const item = {
+    id: editId || Date.now(), name,
+    tel: document.getElementById('helfer-person-tel').value.trim(),
+    notiz: document.getElementById('helfer-person-notiz').value.trim()
+  };
+  if (editId) {
+    const idx = state.helfer.findIndex(h => String(h.id) === String(editId));
+    if (idx > -1) state.helfer[idx] = { ...state.helfer[idx], ...item };
+  } else state.helfer.push(item);
+  save(); closeModal('modal-helfer-person'); resetHelferPersonModal();
+  renderHelferPersonList(); _refreshHelferDatalist(); renderHelfer();
+  showToast(editId ? '✏️ Helfer aktualisiert' : '✅ Helfer angelegt', 'success');
+}
+function editHelferPerson(id) {
+  const h = (state.helfer || []).find(h => String(h.id) === String(id)); if (!h) return;
+  document.getElementById('helfer-person-id').value = id;
+  document.getElementById('helfer-person-name').value = h.name || '';
+  document.getElementById('helfer-person-tel').value = h.tel || '';
+  document.getElementById('helfer-person-notiz').value = h.notiz || '';
+  document.getElementById('helfer-person-title').textContent = '🙋 Helfer bearbeiten';
+  openModal('modal-helfer-person');
+}
+async function deleteHelferPerson(id) {
+  if (!(await showConfirm('Helfer aus der Liste löschen? Bereits eingeteilte Tage bleiben erhalten.'))) return;
+  _trackDeletion(id, 'helfer');
+  state.helfer = (state.helfer || []).filter(h => String(h.id) !== String(id));
+  save(); renderHelferPersonList(); _refreshHelferDatalist(); renderHelfer();
+  showToast('🗑 Helfer gelöscht', 'success');
+}
+
+// ── Monatskalender ──
+function helferCalNav(delta) {
+  const n = new Date();
+  if (!_helferCal) _helferCal = { y: n.getFullYear(), m: n.getMonth() };
+  let m = _helferCal.m + delta, y = _helferCal.y;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  _helferCal = { y, m };
+  _helferCalRender();
+}
+function _helferCalRender() {
+  const el = document.getElementById('helfer-cal'); if (!el) return;
+  const now = new Date();
+  if (!_helferCal) _helferCal = { y: now.getFullYear(), m: now.getMonth() };
+  const { y, m } = _helferCal;
+  const first = new Date(y, m, 1);
+  const startOffset = (first.getDay() + 6) % 7;           // Montag = 0
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const monthName = first.toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
+  const todayStr = today();
+  const byDate = {};
+  (state.helfereinsaetze || []).forEach(e => {
+    if (!e.datum) return;
+    const b = byDate[e.datum] || { bedarf: 0, belegt: 0 };
+    b.bedarf += parseInt(e.bedarf, 10) || 0;
+    b.belegt += _einsatzBelegt(e);
+    byDate[e.datum] = b;
+  });
+  const wd = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  let cells = '';
+  for (let i = 0; i < startOffset; i++) cells += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const info = byDate[ds];
+    const isToday = ds === todayStr;
+    let badge = '';
+    if (info) {
+      const offen = info.bedarf - info.belegt;
+      const col = offen > 0 ? '#f59e0b' : '#22c55e';
+      badge = `<div style="margin-top:2px"><span style="display:inline-block;min-width:20px;padding:1px 5px;border-radius:99px;background:${col};color:#fff;font-size:0.68rem;font-weight:700">${info.belegt}/${info.bedarf}</span></div>`;
+    }
+    cells += `<div onclick="openEinsatzForDay('${ds}')" style="cursor:pointer;border-radius:8px;padding:6px 2px;min-height:44px;text-align:center;border:1px solid ${isToday ? 'var(--accent)' : 'transparent'};background:${info ? 'var(--surface2)' : 'transparent'}">
+      <div style="font-size:0.78rem;color:var(--text2)">${d}</div>${badge}</div>`;
+  }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <button class="action-btn" onclick="helferCalNav(-1)">‹</button>
+      <div style="font-weight:700;font-size:0.9rem;text-transform:capitalize">${monthName}</div>
+      <button class="action-btn" onclick="helferCalNav(1)">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+      ${wd.map(w => `<div style="text-align:center;font-size:0.7rem;color:var(--text3);font-weight:600">${w}</div>`).join('')}
+      ${cells}
+    </div>`;
+}
+
+function renderHelfer() {
+  state.helfereinsaetze = state.helfereinsaetze || [];
+  state.helfer = state.helfer || [];
+  _helferCalRender();
+  const todayStr = today();
+  const sorted = [...state.helfereinsaetze].filter(e => e.datum).sort((a, b) => a.datum.localeCompare(b.datum));
+  const upcoming = sorted.filter(e => e.datum >= todayStr);
+  let openTotal = 0;
+  state.helfereinsaetze.forEach(e => { if (e.datum >= todayStr) openTotal += Math.max(0, (parseInt(e.bedarf, 10) || 0) - _einsatzBelegt(e)); });
+  document.getElementById('hf-total').textContent = state.helfereinsaetze.length;
+  document.getElementById('hf-open').textContent = openTotal;
+  document.getElementById('hf-people').textContent = state.helfer.length;
+  document.getElementById('hf-next').textContent = upcoming.length ? fmtDate(upcoming[0].datum) : '–';
+
+  const list = document.getElementById('helfer-list');
+  if (!state.helfereinsaetze.length) {
+    list.innerHTML = `<div class="empty"><div class="icon">🤝</div><p>Noch keine Helfer-Tage geplant</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetEinsatzModal();openModal('modal-einsatz')">+ Helfer-Tag anlegen</button></div>`;
+  } else {
+    const ordered = [...upcoming, ...sorted.filter(e => e.datum < todayStr).reverse()];
+    list.innerHTML = ordered.map(e => {
+      const bedarf = parseInt(e.bedarf, 10) || 0, belegt = _einsatzBelegt(e), offen = Math.max(0, bedarf - belegt);
+      const col = offen > 0 ? '#f59e0b' : '#22c55e';
+      const past = e.datum < todayStr;
+      const chips = (e.zugewiesen || []).filter(Boolean).map(n => `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:2px 9px;font-size:0.78rem">${esc(n)}</span>`).join(' ');
+      return `<div class="wartung-item" style="${past ? 'opacity:.6' : ''}">
+        <div class="wartung-icon" style="background:#fff3e8">🤝</div>
+        <div class="wartung-info">
+          <div class="wartung-name">${fmtDate(e.datum)} · ${bedarf} Helfer · ${_umfangLabel(e.umfang)}</div>
+          ${e.notiz ? `<div style="font-size:0.8rem;color:var(--text3);margin-top:2px">${esc(e.notiz)}</div>` : ''}
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">${chips || '<span style="font-size:0.78rem;color:var(--text3)">Noch niemand eingeteilt</span>'}</div>
+          <div style="margin-top:6px"><span style="display:inline-block;padding:2px 9px;border-radius:99px;background:${col};color:#fff;font-size:0.74rem;font-weight:700">${belegt}/${bedarf} besetzt${offen > 0 ? ` · ${offen} offen` : ' · voll'}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="action-btn" onclick="editEinsatz(${e.id})" title="Bearbeiten">✏️</button>
+          <button class="action-btn del" onclick="deleteEinsatz(${e.id})">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const sum = document.getElementById('helfer-summary');
+  const map = {};
+  state.helfereinsaetze.forEach(e => { const w = _umfangWeight(e.umfang); (e.zugewiesen || []).filter(Boolean).forEach(n => { map[n] = (map[n] || 0) + w; }); });
+  const rows = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  sum.innerHTML = rows.length
+    ? rows.map(([n, d]) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:0.86rem">${esc(n)}</span><span style="font-size:0.86rem;font-weight:700">${d.toLocaleString('de-AT')} Tag${d === 1 ? '' : 'e'}</span></div>`).join('')
+    : '<div style="font-size:0.83rem;color:var(--text3)">Sobald du Helfer einteilst, zählt Planory hier die geplanten Tage pro Person.</div>';
+}
+
+// Bautagebuch: für ein Datum eingeteilte Helfer automatisch als Arbeiter-Zeilen vorbefüllen
+function _prefillDiaryHelfer() {
+  const dEl = document.getElementById('tb-datum');
+  const rows = document.getElementById('tb-worker-rows');
+  if (!dEl || !rows) return;
+  if (document.getElementById('tb-edit-id')?.value) return;   // nur bei neuen Einträgen
+  const datum = dEl.value; if (!datum) return;
+  const names = [...new Set((state.helfereinsaetze || []).filter(e => e.datum === datum).flatMap(e => (e.zugewiesen || []).filter(Boolean)))];
+  if (!names.length) return;
+  const existing = new Set([...rows.querySelectorAll('.tb-worker-name')].map(i => i.value.trim()).filter(Boolean));
+  names.forEach(n => { if (!existing.has(n)) addWorkerRow(n); });
+}
+
 // ──────────────── UPGRADE MODAL ────────────────
 function showUpgradeModal(feature) {
   const featureTexts = {
@@ -12253,7 +12682,7 @@ function _mergeProjects(localProjects, cloudProjects) {
   if (!Array.isArray(localProjects) || localProjects.length === 0) return cloudProjects;
   const ARRS = ['kosten','aufgaben','dokumentation','budgetKat','notizen','maengel',
                 'angebote','zahlungsplan','kontakte','gewerke','personen','dokumente','fotos',
-                'meilensteine','gantt','abhaengigkeiten','wartungen','tagebuch'];
+                'meilensteine','gantt','abhaengigkeiten','wartungen','tagebuch','helfer','helfereinsaetze'];
   const result = cloudProjects.map(cp => {
     const lp = localProjects.find(p => p.id === cp.id);
     if (!lp) return cp;
@@ -12316,6 +12745,7 @@ function _setupRealtimeSync() {
           else if (pid === 'maengel') renderMaengel();
           else if (pid === 'fotos') renderFotos();
           else if (pid === 'grundrisse') renderGrundrisse();
+          else if (pid === 'helfer') renderHelfer();
           else if (pid === 'zeitplan') renderZeitplan?.();
           else if (pid === 'planung') { renderMilestones?.(); renderGantt?.(); }
         }
@@ -15167,6 +15597,26 @@ async function scheduleAllReminders() {
     }
   }
 
+  // ── Helfer-Einsätze: Vorlauf-Erinnerung NUR wenn noch Plätze offen sind
+  for (const e of (state.helfereinsaetze || [])) {
+    if (!e.datum) continue;
+    const bedarf = parseInt(e.bedarf, 10) || 0;
+    const belegt = (e.zugewiesen || []).filter(Boolean).length;
+    const offen  = bedarf - belegt;
+    if (offen <= 0) continue;   // voll besetzt -> keine Erinnerung nötig
+    const remind = (e.remind == null) ? '7' : String(e.remind);
+    if (remind === 'aus') continue;
+    const lead = parseInt(remind, 10) || 0;
+    if (lead > 0) {
+      sched('helfer-pre-' + e.id, daysBefore(e.datum, lead), defT,
+        `🤝 Noch ${offen} Helfer gesucht`,
+        `Für den ${fmtDate(e.datum)} fehlen noch ${offen} von ${bedarf} Helfern.`);
+    }
+    sched('helfer-0-' + e.id, e.datum, defT,
+      `🤝 Heute ${bedarf} Helfer eingeplant`,
+      belegt ? `Eingeteilt: ${(e.zugewiesen || []).filter(Boolean).join(', ')}` : `Noch ${offen} offen`);
+  }
+
   // ── Native App: direkt beim iOS-System einplanen (kein Server noetig)
   if (_native) { _scheduleNativeReminders(_collected); return; }
 
@@ -15305,6 +15755,7 @@ async function _syncAndRender() {
   else if (pageId === 'maengel') renderMaengel();
   else if (pageId === 'fotos') renderFotos();
   else if (pageId === 'grundrisse') renderGrundrisse();
+  else if (pageId === 'helfer') renderHelfer();
   else if (pageId === 'zeitplan') renderZeitplan?.();
 }
 
