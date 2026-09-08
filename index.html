@@ -11645,6 +11645,7 @@ function renderWartung() {
 // ──────────────── HELFER (Planung + Einteilung) ────────────────
 let _einsatzAssigned = [];   // Arbeits-Array, solange das Einsatz-Modal offen ist
 let _einsatzQuickList = [];  // aktuelle Schnell-Auswahl-Vorschläge (Index -> Name)
+let _helferExtraList = [];   // verwendete, aber nicht gespeicherte Helfer (Index -> Name)
 let _helferCal = null;       // aktueller Kalendermonat { y, m(0-basiert) }
 
 // Namens-Vorschläge aus ALLEN bisher verwendeten Quellen (Helfer-Liste,
@@ -11770,14 +11771,38 @@ function openEinsatzForDay(dateStr) {
 function openHelferListe() { renderHelferPersonList(); openModal('modal-helfer-liste'); }
 function renderHelferPersonList() {
   const el = document.getElementById('helfer-person-list'); if (!el) return;
-  const list = state.helfer || [];
-  el.innerHTML = list.length
-    ? list.map(h => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+  const saved = state.helfer || [];
+  const savedNames = new Set(saved.map(h => (h.name || '').trim()));
+  // Namen, die du verwendet hast (Einteilungen + Bautagebuch), aber die NICHT
+  // als fester Helfer gespeichert sind:
+  const used = new Set();
+  (state.helfereinsaetze || []).forEach(e => (e.zugewiesen || []).forEach(n => { if (n) used.add(String(n).trim()); }));
+  (state.tagebuch || []).forEach(t => (t.workers || []).forEach(w => { if (w && w.name) used.add(String(w.name).trim()); }));
+  _helferExtraList = [...used].filter(n => n && !savedNames.has(n)).sort((a, b) => a.localeCompare(b, 'de'));
+
+  let html = '';
+  if (saved.length) {
+    html += saved.map(h => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1"><div style="font-weight:600;font-size:0.88rem">${esc(h.name)}</div>${(h.tel || h.notiz) ? `<div style="font-size:0.76rem;color:var(--text3)">${esc([h.tel, h.notiz].filter(Boolean).join(' · '))}</div>` : ''}</div>
         <button class="action-btn" onclick="editHelferPerson(${h.id})">✏️</button>
         <button class="action-btn del" onclick="deleteHelferPerson(${h.id})">🗑</button>
-      </div>`).join('')
-    : '<div style="font-size:0.85rem;color:var(--text3);padding:8px 0">Noch keine Helfer angelegt.</div>';
+      </div>`).join('');
+  }
+  if (_helferExtraList.length) {
+    html += '<div style="font-size:0.74rem;color:var(--text3);margin:14px 0 4px">Verwendet (noch nicht gespeichert) – zum Übernehmen antippen:</div>';
+    html += _helferExtraList.map((n, i) => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;font-size:0.88rem">${esc(n)}</div>
+        <button class="btn btn-ghost" style="padding:5px 11px;font-size:0.78rem" onclick="saveUsedHelfer(${i})">＋ In Liste</button>
+      </div>`).join('');
+  }
+  el.innerHTML = html || '<div style="font-size:0.85rem;color:var(--text3);padding:8px 0">Noch keine Helfer angelegt.</div>';
+}
+// Verwendeten (spontan getippten) Namen als festen Helfer speichern – Modal mit Namen vorbefüllt.
+function saveUsedHelfer(i) {
+  const n = _helferExtraList[i]; if (!n) return;
+  resetHelferPersonModal();
+  document.getElementById('helfer-person-name').value = n;
+  openModal('modal-helfer-person');
 }
 function resetHelferPersonModal() {
   ['helfer-person-id','helfer-person-name','helfer-person-tel','helfer-person-notiz'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
