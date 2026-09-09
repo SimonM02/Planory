@@ -5296,6 +5296,52 @@ const TEXTE = {
   "Smart Home & IT": { en: "Smart home & IT" },
   "Photovoltaik & Energie": { en: "Photovoltaics & energy" },
   "Reservepuffer": { en: "Contingency reserve" },
+  // ── Formular-Labels & Dropdown-Optionen (Stapel 3) ──
+  "Erinnerung (Push-Mitteilung)": { en: "Reminder (push notification)" },
+  "Projektname": { en: "Project name" },
+  "Rechnungsbild / Beleg (optional)": { en: "Invoice image / receipt (optional)" },
+  "Wetter": { en: "Weather" },
+  "Wiederholen": { en: "Repeat" },
+  "z.B. Beton gießen, feste Schuhe mitbringen": { en: "e.g. pour concrete, bring sturdy shoes" },
+  "Nicht wiederholen": { en: "Don't repeat" },
+  "Täglich": { en: "Daily" },
+  "Alle 2 Tage": { en: "Every 2 days" },
+  "Alle 3 Tage": { en: "Every 3 days" },
+  "Wöchentlich": { en: "Weekly" },
+  "Alle 2 Wochen": { en: "Every 2 weeks" },
+  "Monatlich": { en: "Monthly" },
+  "Alle 3 Monate": { en: "Every 3 months" },
+  "Halbjährlich": { en: "Every 6 months" },
+  "Jährlich": { en: "Yearly" },
+  "Alle 2 Jahre": { en: "Every 2 years" },
+  "Individuell…": { en: "Custom…" },
+  "Keine Erinnerung": { en: "No reminder" },
+  "Nur am Fälligkeitstag": { en: "On the due date only" },
+  "1 Tag vorher (+ am Tag)": { en: "1 day before (+ on the day)" },
+  "3 Tage vorher (+ am Tag)": { en: "3 days before (+ on the day)" },
+  "1 Woche vorher (+ am Tag)": { en: "1 week before (+ on the day)" },
+  "2 Wochen vorher (+ am Tag)": { en: "2 weeks before (+ on the day)" },
+  "3 Tage vorher": { en: "3 days before" },
+  "1 Woche vorher": { en: "1 week before" },
+  "2 Wochen vorher": { en: "2 weeks before" },
+  "Tage": { en: "Days" },
+  "Wochen": { en: "Weeks" },
+  "Monate": { en: "Months" },
+  "Jahre": { en: "Years" },
+  "Monat": { en: "Month" },
+  "1 – Erster Schritt": { en: "1 – First step" },
+  "2 – Zweiter Schritt": { en: "2 – Second step" },
+  "3 – Dritter Schritt": { en: "3 – Third step" },
+  "4 – Vierter Schritt": { en: "4 – Fourth step" },
+  "5 – Fünfter Schritt": { en: "5 – Fifth step" },
+  "Grün": { en: "Green" },
+  "Standard (Weiß)": { en: "Standard (white)" },
+  "🌀 Lüftung": { en: "🌀 Ventilation" },
+  "💧 Wasser / Sanitär": { en: "💧 Water / plumbing" },
+  "🌿 Außenanlage": { en: "🌿 Outdoor area" },
+  "⛅ Bewölkt": { en: "⛅ Cloudy" },
+  "Sanitär": { en: "Plumbing" },
+  "Überfällig": { en: "Overdue" },
   "👥 Meine Helfer": { en: "👥 My helpers" },
   "+ Helfer-Tag": { en: "+ Helper day" },
   "+ Helfer": { en: "+ Helper" },
@@ -6182,8 +6228,10 @@ function _sweepPhrases(root) {
       const p = n.parentNode;
       if (!p) return NodeFilter.FILTER_REJECT;
       const tag = p.nodeName;
-      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'OPTION' || tag === 'SELECT') return NodeFilter.FILTER_REJECT;
-      if (p.closest && (p.closest('[data-i18n]') || p.closest('select') || p.closest('[data-noi18n]'))) return NodeFilter.FILTER_REJECT;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
+      // Options DÜRFEN übersetzt werden: _sweepPhrases ändert nur den Anzeigetext
+      // (nodeValue), NIE den option.value – value-basierte Selects bleiben intakt.
+      if (p.closest && (p.closest('[data-i18n]') || p.closest('[data-noi18n]'))) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
   });
