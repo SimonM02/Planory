@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/home/user/Planory/**)",
+      "Write(/home/user/Planory/**)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(cp index.html www/index.html)",
+      "Bash(node tests/pruefen.mjs)",
+      "mcp__Supabase__get_advisors",
+      "mcp__Supabase__list_projects",
+      "mcp__Supabase__list_tables",
+      "mcp__Supabase__get_project",
+      "mcp__Supabase__get_project_url"
+    ]
+  }
+}
