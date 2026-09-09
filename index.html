@@ -5128,6 +5128,122 @@ function t(key) { return I18N[_lang]?.[key] ?? I18N.de[key] ?? key; }
 //  bzw. i18nMissing('fr')  (listet alle Texte ohne diese Sprache auf).
 // ══════════════════════════════════════════════════════════════════════════
 const TEXTE = {
+  // ── Toast-/Dialog-Meldungen (Stapel 2) ──
+  "Abo gerade nicht verfügbar – bitte später erneut versuchen": { en: "Subscription not available right now – please try again later" },
+  "Abschnitt inkl. seiner Unterpunkte löschen?": { en: "Delete section including its sub-items?" },
+  "Account wirklich dauerhaft löschen?\n\nDiese Aktion löscht deinen Account und alle deine Daten unwiderruflich.": { en: "Really delete your account permanently?\n\nThis irreversibly deletes your account and all your data." },
+  "Angebot löschen?": { en: "Delete quote?" },
+  "Aufgabe löschen?": { en: "Delete task?" },
+  "Ausgabe löschen?": { en: "Delete expense?" },
+  "Bitte Projektname eingeben": { en: "Please enter a project name" },
+  "Bitte Start- und Enddatum angeben!": { en: "Please enter a start and end date!" },
+  "Bitte Text einfügen oder Foto hochladen": { en: "Please add text or upload a photo" },
+  "Bitte ein Datum wählen": { en: "Please choose a date" },
+  "Bitte einen Namen eingeben": { en: "Please enter a name" },
+  "Bitte in den Browser-Einstellungen → Datenschutz → Benachrichtigungen für diese Seite erlauben": { en: "Please allow notifications for this site in your browser settings → Privacy → Notifications" },
+  "Bitte zuerst anmelden": { en: "Please sign in first" },
+  "Datei konnte nicht geladen werden": { en: "File could not be loaded" },
+  "Diesen Unterpunkt löschen?": { en: "Delete this sub-item?" },
+  "Dokument löschen?": { en: "Delete document?" },
+  "Eigenleistung löschen?": { en: "Delete own-work entry?" },
+  "Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in „Rechnungen & Ausgaben\" bleibt erhalten.)": { en: "Remove entry from the invoice list?\n(The expense in \"Invoices & expenses\" is kept.)" },
+  "Eintrag löschen?": { en: "Delete entry?" },
+  "Enddatum muss nach Startdatum liegen!": { en: "End date must be after the start date!" },
+  "Foto löschen?": { en: "Delete photo?" },
+  "Helfer-Tag löschen?": { en: "Delete helper day?" },
+  "Helfer aus der Liste löschen? Bereits eingeteilte Tage bleiben erhalten.": { en: "Remove helper from the list? Days already assigned are kept." },
+  "Kategorie löschen?": { en: "Delete category?" },
+  "Kauf nicht abgeschlossen": { en: "Purchase not completed" },
+  "Kein Beleg gespeichert": { en: "No receipt saved" },
+  "Keine aktiven Käufe gefunden": { en: "No active purchases found" },
+  "Kontakt löschen?": { en: "Delete contact?" },
+  "Letzte Warnung: Alle Projekte, Kosten, Tagebucheinträge und Fotos werden gelöscht. Fortfahren?": { en: "Last warning: all projects, costs, diary entries and photos will be deleted. Continue?" },
+  "Mangel löschen?": { en: "Delete defect?" },
+  "Markierung löschen?": { en: "Delete marker?" },
+  "Meilenstein löschen?": { en: "Delete milestone?" },
+  "Notiz löschen?": { en: "Delete note?" },
+  "PDF-Bibliothek lädt noch…": { en: "PDF library still loading…" },
+  "Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.": { en: "Delete person? Existing assignments in invoices will be removed." },
+  "Wartung löschen?": { en: "Delete maintenance task?" },
+  "Wirklich abmelden? Deine Daten werden vorher gespeichert.": { en: "Really sign out? Your data is saved first." },
+  "Zahlung löschen?": { en: "Delete payment?" },
+  "⚠️ Abmelden gerade nicht möglich – deine Änderungen konnten noch nicht gesichert werden. Bitte Verbindung prüfen und neu laden.": { en: "⚠️ Can't sign out right now – your changes couldn't be saved yet. Please check your connection and reload." },
+  "⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert": { en: "⚠️ Attachment couldn't be processed – quote saved without attachment" },
+  "⚠️ Betrag muss größer als 0 sein": { en: "⚠️ Amount must be greater than 0" },
+  "⚠️ Bild konnte nicht verarbeitet werden": { en: "⚠️ Image couldn't be processed" },
+  "⚠️ Bitte bestätige die Datenschutzinformation": { en: "⚠️ Please confirm the privacy notice" },
+  "⚠️ Bitte eine Aufgabe eingeben": { en: "⚠️ Please enter a task" },
+  "⚠️ Bitte eine Beschreibung eingeben": { en: "⚠️ Please enter a description" },
+  "⚠️ Bitte eine Bezeichnung eingeben": { en: "⚠️ Please enter a name" },
+  "⚠️ Bitte zuerst eine Projektadresse in den Einstellungen eintragen": { en: "⚠️ Please add a project address in the settings first" },
+  "⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert": { en: "⚠️ File too large for the attachment (max ~1 MB) – quote saved without attachment" },
+  "⚠️ Dein Browser unterstützt keine Mitteilungen. Bitte die App zum Home-Bildschirm hinzufügen (iOS 16.4+)": { en: "⚠️ Your browser doesn't support notifications. Please add the app to your home screen (iOS 16.4+)" },
+  "⚠️ Du kannst das letzte Projekt nicht löschen": { en: "⚠️ You can't delete the last project" },
+  "⚠️ Gerätespeicher voll – deine Daten sind sicher in der Cloud": { en: "⚠️ Device storage full – your data is safe in the cloud" },
+  "⚠️ Keine Verbindung zur Cloud – bitte zuerst neu laden": { en: "⚠️ No connection to the cloud – please reload first" },
+  "⚠️ Lokaler Speicher voll – Daten werden nur in der Cloud gesichert": { en: "⚠️ Local storage full – data is saved only in the cloud" },
+  "⚠️ Lokaler Speicher voll – Fotos wurden nicht dauerhaft gespeichert": { en: "⚠️ Local storage full – photos were not saved permanently" },
+  "⚠️ Mitteilungen brauchen die neueste App-Version – bitte das Update aus dem App Store installieren": { en: "⚠️ Notifications need the latest app version – please install the update from the App Store" },
+  "⚠️ Mitteilungen nicht erlaubt – bitte in den iOS-Einstellungen unter Planory freigeben": { en: "⚠️ Notifications not allowed – please enable them for Planory in your iOS settings" },
+  "⚠️ Mitteilungen wurden nicht erlaubt": { en: "⚠️ Notifications were not allowed" },
+  "⚠️ Nicht eingeloggt": { en: "⚠️ Not signed in" },
+  "⚠️ Ort nicht gefunden": { en: "⚠️ Location not found" },
+  "⚠️ PDF-Bibliothek nicht geladen. Bitte Seite neu laden.": { en: "⚠️ PDF library not loaded. Please reload the page." },
+  "⚠️ Verbindung zum Server fehlgeschlagen – Änderungen werden vorerst nicht gespeichert": { en: "⚠️ Connection to the server failed – changes won't be saved for now" },
+  "⚠️ Wetter konnte nicht geladen werden": { en: "⚠️ Weather couldn't be loaded" },
+  "⚠️ Änderung nicht synchronisiert – bitte Verbindung prüfen und neu laden": { en: "⚠️ Change not synced – please check your connection and reload" },
+  "✅ Abhängigkeit gespeichert": { en: "✅ Dependency saved" },
+  "✅ Account wurde gelöscht.": { en: "✅ Account deleted." },
+  "✅ Angebot erkannt – bitte prüfen": { en: "✅ Quote recognised – please review" },
+  "✅ Angebot gespeichert": { en: "✅ Quote saved" },
+  "✅ Daten aktualisiert": { en: "✅ Data updated" },
+  "✅ Daten in Cloud gespeichert!": { en: "✅ Data saved to the cloud!" },
+  "✅ Daten übernommen – bitte Kategorie und Status noch setzen": { en: "✅ Data applied – please still set category and status" },
+  "✅ Foto aktualisiert": { en: "✅ Photo updated" },
+  "✅ Gerät registriert – Push aktiv": { en: "✅ Device registered – push active" },
+  "✅ Käufe wiederhergestellt": { en: "✅ Purchases restored" },
+  "✅ Mangel gespeichert": { en: "✅ Defect saved" },
+  "✅ Markierung aktualisiert": { en: "✅ Marker updated" },
+  "✅ Person hinzugefügt": { en: "✅ Person added" },
+  "✅ Projekt gespeichert": { en: "✅ Project saved" },
+  "✅ Rechnung eingebucht und gespeichert!": { en: "✅ Invoice booked and saved!" },
+  "✅ Status aktualisiert": { en: "✅ Status updated" },
+  "✅ Stockwerk aktualisiert": { en: "✅ Floor updated" },
+  "✅ Zahlung gespeichert": { en: "✅ Payment saved" },
+  "✓ Erledigt – nächster Termin gesetzt": { en: "✓ Done – next date set" },
+  "❌ Benachrichtigungen blockiert – bitte in den Einstellungen freigeben": { en: "❌ Notifications blocked – please enable them in your settings" },
+  "💡 Angebot in Rechnung umgewandelt – bitte prüfen & speichern": { en: "💡 Quote converted into an invoice – please review & save" },
+  "📄 Bautagebuch als PDF gespeichert": { en: "📄 Site diary saved as PDF" },
+  "📄 Gescannte Rechnungen als PDF gespeichert": { en: "📄 Scanned invoices saved as PDF" },
+  "📄 Mängel als PDF gespeichert": { en: "📄 Defects saved as PDF" },
+  "📄 Rechnungen & Ausgaben als PDF gespeichert": { en: "📄 Invoices & expenses saved as PDF" },
+  "📍 Markierung gespeichert": { en: "📍 Marker saved" },
+  "📡 Keine Internetverbindung – deine Daten werden angezeigt, aber Änderungen nicht gespeichert": { en: "📡 No internet connection – your data is shown, but changes aren't saved" },
+  "🗑 Abhängigkeit gelöscht": { en: "🗑 Dependency deleted" },
+  "🗑 Abschnitt gelöscht": { en: "🗑 Section deleted" },
+  "🗑 Album gelöscht": { en: "🗑 Album deleted" },
+  "🗑 Angebot gelöscht": { en: "🗑 Quote deleted" },
+  "🗑 Aufgabe gelöscht": { en: "🗑 Task deleted" },
+  "🗑 Ausgabe gelöscht": { en: "🗑 Expense deleted" },
+  "🗑 Dokument gelöscht": { en: "🗑 Document deleted" },
+  "🗑 Dokumentation gelöscht": { en: "🗑 Documentation deleted" },
+  "🗑 Eigenleistung gelöscht": { en: "🗑 Own-work entry deleted" },
+  "🗑 Eintrag gelöscht": { en: "🗑 Entry deleted" },
+  "🗑 Foto gelöscht": { en: "🗑 Photo deleted" },
+  "🗑 Helfer gelöscht": { en: "🗑 Helper deleted" },
+  "🗑 Helfer-Tag gelöscht": { en: "🗑 Helper day deleted" },
+  "🗑 Kategorie gelöscht": { en: "🗑 Category deleted" },
+  "🗑 Kontakt gelöscht": { en: "🗑 Contact deleted" },
+  "🗑 Mangel gelöscht": { en: "🗑 Defect deleted" },
+  "🗑 Markierung gelöscht": { en: "🗑 Marker deleted" },
+  "🗑 Meilenstein gelöscht": { en: "🗑 Milestone deleted" },
+  "🗑 Notiz gelöscht": { en: "🗑 Note deleted" },
+  "🗑 Person gelöscht": { en: "🗑 Person deleted" },
+  "🗑 Phase gelöscht": { en: "🗑 Phase deleted" },
+  "🗑 Rechnung gelöscht": { en: "🗑 Invoice deleted" },
+  "🗑 Stockwerk gelöscht": { en: "🗑 Floor deleted" },
+  "🗑 Wartung gelöscht": { en: "🗑 Maintenance task deleted" },
+  "🗑 Zahlung gelöscht": { en: "🗑 Payment deleted" },
   // ── i18n-Vervollständigung: Menüs, Labels, Hinweise (Stapel 1) ──
   "🗂️ Gescannte Rechnungen": { en: "🗂️ Scanned invoices" },
   "Gescannte Rechnungen": { en: "Scanned invoices" },
@@ -6816,7 +6932,7 @@ async function startStripeCheckout(plan = 'monthly') {
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⭐ Jetzt auf Pro upgraden'; }
-    showToast('Fehler: ' + e.message, 'error');
+    showToast((_lang === 'en' ? 'Error: ' : 'Fehler: ') + e.message, 'error');
   }
 }
 
@@ -6841,7 +6957,7 @@ async function openStripePortal() {
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⚙️ Abo verwalten / kündigen'; }
-    showToast('Fehler: ' + e.message, true);
+    showToast((_lang === 'en' ? 'Error: ' : 'Fehler: ') + e.message, true);
   }
 }
 
@@ -6945,7 +7061,7 @@ async function deleteAccount() {
     showToast('✅ Account wurde gelöscht.', 'success');
     showAuthOverlay();
   } catch(e) {
-    showToast('❌ Fehler beim Löschen: ' + e.message, 'error');
+    showToast((_lang === 'en' ? '❌ Error deleting: ' : '❌ Fehler beim Löschen: ') + e.message, 'error');
   }
 }
 
@@ -11118,7 +11234,7 @@ function previewGrundrissImage(input) {
           `PDF mit ${_grPdfDoc.numPages} Seite${_grPdfDoc.numPages !== 1 ? 'n' : ''} – wähle die richtige Seite`;
         await _grRenderPdfPage(input, _grPdfPage);
       } catch(err) {
-        showToast('⚠️ PDF konnte nicht gelesen werden: ' + err.message, 'error');
+        showToast((_lang === 'en' ? '⚠️ PDF could not be read: ' : '⚠️ PDF konnte nicht gelesen werden: ') + err.message, 'error');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -15269,7 +15385,7 @@ async function testServerPush() {
     }
   } catch(e) {
     if (out) out.textContent = '❌ Netzwerkfehler: ' + e.message;
-    showToast('❌ Fehler: ' + e.message, 'error');
+    showToast((_lang === 'en' ? '❌ Error: ' : '❌ Fehler: ') + e.message, 'error');
   }
 }
 
@@ -15312,7 +15428,7 @@ async function checkScheduledNotifs() {
       : '\n\n❌ Kein Push-Abonnement – Gerät registrieren!';
     out.textContent += subInfo;
   } catch(e) {
-    out.textContent = '❌ Fehler: ' + e.message;
+    out.textContent = (_lang === 'en' ? '❌ Error: ' : '❌ Fehler: ') + e.message;
   }
 }
 
