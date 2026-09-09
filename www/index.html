@@ -3170,7 +3170,7 @@
           <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
             <div style="font-size:0.82rem;color:var(--text2);line-height:1.6">
               Daten werden automatisch zwischen allen Geräten synchronisiert.<br>
-              <span style="color:var(--text3);font-size:0.75rem">Wichtig: Die App muss auf allen Geräten mit <strong>demselben Konto</strong> eingeloggt sein.</span>
+              <span style="color:var(--text3);font-size:0.75rem">Wichtig: Die App muss auf allen Geräten mit demselben Konto eingeloggt sein.</span>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding-top:12px">
               <div>
@@ -3209,7 +3209,7 @@
               <div id="push-device-status" style="font-size:0.75rem;border-radius:8px;padding:8px 12px;display:none"></div>
             </div>
             <div id="push-info-box" style="font-size:0.75rem;color:var(--text3);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.55">
-              Für Erinnerungen auch bei gesperrtem Handy: App zum <strong>Home-Bildschirm hinzufügen</strong> (iOS: Teilen → „Zum Home-Bildschirm"), dann Mitteilungen erlauben und <strong>Gerät registrieren</strong> klicken.
+              Für Erinnerungen auch bei gesperrtem Handy: App zum Home-Bildschirm hinzufügen (iOS: Teilen → „Zum Home-Bildschirm"), dann Mitteilungen erlauben und „Gerät registrieren" klicken.
             </div>
             <div id="push-diag-output" style="display:none;font-size:0.73rem;font-family:monospace;background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.7;white-space:pre-wrap;color:var(--text2)"></div>
           </div>
@@ -3709,7 +3709,7 @@
   <div class="modal">
     <h3 id="el-modal-title">Eigenleistung erfassen</h3>
     <input type="hidden" id="el-edit-id">
-    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:16px">Arbeiten oder Materialien die keinen Geldbetrag gekostet haben, aber einen Marktwert besitzen. Wird <strong style="color:var(--accent)">nicht</strong> vom Budget abgezogen.</p>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:16px">Arbeiten oder Materialien, die keinen Geldbetrag gekostet haben, aber einen Marktwert besitzen. Wird nicht vom Budget abgezogen.</p>
     <div class="form-row"><label>Datum</label><input type="date" id="el-datum"></div>
     <div class="form-row"><label>Beschreibung</label><input type="text" id="el-beschr" placeholder="z.B. Eigenarbeit Mauerwerk, gespendetes Material"></div>
     <div class="form-row"><label>Kategorie</label><select id="el-kat"></select></div>
@@ -4925,7 +4925,7 @@ function renderZeitplan() {
 
   const ungrouped = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId)));
 
-  let html = `<div class="pl-hint">Lege <b>Abschnitte</b> (Bauphasen mit Zeitspanne) an und darin <b>Unterpunkte</b>. Tippe den <b>Kreis</b> für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
+  let html = `<div class="pl-hint">Lege Abschnitte (Bauphasen mit Zeitspanne) an und darin Unterpunkte. Tippe den Kreis für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
   html += secs.map(sectionCard).join('');
   if (ungrouped.length) {
     const done = ungrouped.filter(m => _plItemStatus(m)==='erledigt').length;
@@ -5128,6 +5128,58 @@ function t(key) { return I18N[_lang]?.[key] ?? I18N.de[key] ?? key; }
 //  bzw. i18nMissing('fr')  (listet alle Texte ohne diese Sprache auf).
 // ══════════════════════════════════════════════════════════════════════════
 const TEXTE = {
+  // ── i18n-Vervollständigung: Menüs, Labels, Hinweise (Stapel 1) ──
+  "🗂️ Gescannte Rechnungen": { en: "🗂️ Scanned invoices" },
+  "Gescannte Rechnungen": { en: "Scanned invoices" },
+  "📎 Bild hinzufügen": { en: "📎 Add image" },
+  "Rechnungen & Ausgaben": { en: "Invoices & expenses" },
+  "Fotos": { en: "Photos" },
+  "Mängel": { en: "Defects" },
+  "Notizen": { en: "Notes" },
+  "Notiz (optional)": { en: "Note (optional)" },
+  "Helfer": { en: "Helpers" },
+  "Handwerker": { en: "Tradespeople" },
+  "Leitungen & Rohre": { en: "Pipes & cables" },
+  "Wartung": { en: "Maintenance" },
+  "Zeitplan": { en: "Schedule" },
+  "Aufgaben": { en: "Tasks" },
+  "Zahlungstermine": { en: "Payment dates" },
+  "Kostenentwicklung": { en: "Cost trend" },
+  "Kostenaufteilung": { en: "Cost split" },
+  "Keine Adresse · Kein Budget": { en: "No address · No budget" },
+  "Füge zuerst Personen in den Einstellungen hinzu (z.B. „Kredit\", „Eigenkapital\", „Bank\")": { en: "First add people in the settings (e.g. \"Loan\", \"Equity\", \"Bank\")." },
+  "Wichtig: Die App muss auf allen Geräten mit demselben Konto eingeloggt sein.": { en: "Important: the app must be signed in with the same account on every device." },
+  "Für Erinnerungen auch bei gesperrtem Handy: App zum Home-Bildschirm hinzufügen (iOS: Teilen → „Zum Home-Bildschirm\"), dann Mitteilungen erlauben und „Gerät registrieren\" klicken.": { en: "For reminders even when your phone is locked: add the app to your home screen (iOS: Share → \"Add to Home Screen\"), then allow notifications and tap \"Register device\"." },
+  "Lege Abschnitte (Bauphasen mit Zeitspanne) an und darin Unterpunkte. Tippe den Kreis für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.": { en: "Add sections (building phases with a time span) and sub-items within them. Tap the circle to change the status (Open → In progress → Done). 🔔 toggles the reminder for a dated item." },
+  "Bekannte Helfer antippen:": { en: "Tap a known helper:" },
+  "Verwendet (noch nicht gespeichert) – zum Übernehmen antippen:": { en: "Used (not saved yet) – tap to add:" },
+  "＋ In Liste": { en: "＋ To list" },
+  "Sobald du Helfer einteilst, zählt Planory hier die geplanten Tage pro Person (½ Tag = 0,5, ganzer Tag = 1).": { en: "Once you assign helpers, Planory counts the planned days per person here (½ day = 0.5, full day = 1)." },
+  "Summe der geplanten Tage pro Person · ½ Tag zählt 0,5, ganzer Tag 1.": { en: "Total planned days per person · ½ day counts as 0.5, full day as 1." },
+  "MwSt-Betrag: € 0,00": { en: "VAT amount: € 0.00" },
+  "Arbeiten oder Materialien, die keinen Geldbetrag gekostet haben, aber einen Marktwert besitzen. Wird nicht vom Budget abgezogen.": { en: "Work or materials that didn't cost money but have a market value. This is not deducted from the budget." },
+  "Alle Funktionen freigeschaltet. Viel Erfolg mit deinem Bauprojekt!": { en: "All features unlocked. Enjoy building your project!" },
+  "Mein erstes Projekt": { en: "My first project" },
+  "Grundstück & Aufschließung": { en: "Land & site development" },
+  "Planung & Behörden": { en: "Planning & authorities" },
+  "Erdarbeiten & Fundament": { en: "Earthworks & foundation" },
+  "Rohbau": { en: "Shell construction" },
+  "Dach": { en: "Roof" },
+  "Fenster & Türen": { en: "Windows & doors" },
+  "Fassade & Außenputz": { en: "Façade & render" },
+  "Elektro": { en: "Electrical" },
+  "Sanitär & Wasser": { en: "Plumbing & water" },
+  "Heizung & Lüftung": { en: "Heating & ventilation" },
+  "Innenputz & Trockenbau": { en: "Plaster & drywall" },
+  "Böden & Fliesen": { en: "Floors & tiles" },
+  "Malerarbeiten": { en: "Painting" },
+  "Innenausbau & Schreiner": { en: "Interior & joinery" },
+  "Außenanlagen": { en: "Outdoor areas" },
+  "Garage & Carport": { en: "Garage & carport" },
+  "Küche": { en: "Kitchen" },
+  "Smart Home & IT": { en: "Smart home & IT" },
+  "Photovoltaik & Energie": { en: "Photovoltaics & energy" },
+  "Reservepuffer": { en: "Contingency reserve" },
   "👥 Meine Helfer": { en: "👥 My helpers" },
   "+ Helfer-Tag": { en: "+ Helper day" },
   "+ Helfer": { en: "+ Helper" },
@@ -6390,6 +6442,7 @@ function _checkTrialEndingSoon() {
 
 // Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
 function _applyFreePlan(freeEl) {
+  const en = (_lang === 'en');
   const created  = new Date(currentUser?.created_at || Date.now());
   const trialEnd = new Date(created.getTime() + 30 * 86400000);
   window._trialEnd = trialEnd;
@@ -6399,27 +6452,30 @@ function _applyFreePlan(freeEl) {
   if (banner) banner.style.display = inTrial ? 'none' : '';
   if (!freeEl) return;
   const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000));
+  const title = inTrial ? (en ? 'Trial active' : 'Testphase aktiv') : (en ? 'View-only mode' : 'Nur-Lese-Modus');
+  const sub   = inTrial ? (en ? `${days} day${days===1?'':'s'} left · all free` : `Noch ${days} Tag${days===1?'':'e'} alles gratis`)
+                        : (en ? 'Viewing & ticking off free – adding needs a subscription' : 'Ansehen & Abhaken frei – Eintragen braucht ein Abo');
+  const badge = inTrial ? (en ? 'FREE MONTH' : 'GRATISMONAT') : (en ? 'EXPIRED' : 'ABGELAUFEN');
   freeEl.style.display = 'block';
   freeEl.innerHTML = `
     <div style="padding:16px 18px;background:${inTrial ? 'var(--surface2)' : '#fff7ed'};display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div>
-        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${inTrial ? 'Testphase aktiv' : 'Nur-Lese-Modus'}</div>
-        <div style="font-size:0.78rem;color:var(--text3)">${inTrial ? `Noch ${days} Tag${days===1?'':'e'} alles gratis` : 'Ansehen & Abhaken frei – Eintragen braucht ein Abo'}</div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${title}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${sub}</div>
       </div>
-      <span style="background:${inTrial ? '#dbeafe' : '#fed7aa'};color:${inTrial ? '#1d4ed8' : '#9a3412'};font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap">${inTrial ? 'GRATISMONAT' : 'ABGELAUFEN'}</span>
+      <span style="background:${inTrial ? '#dbeafe' : '#fed7aa'};color:${inTrial ? '#1d4ed8' : '#9a3412'};font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap">${badge}</span>
     </div>
     <div style="padding:14px 18px;background:var(--surface);display:flex;flex-direction:column;gap:8px">
       <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">
-        ✅ Alles eintragen &amp; bearbeiten<br>
-        ✅ KI-Bauberater, KI-Zeitplan &amp; Rechnungs-Scan<br>
-        ✅ Unbegrenzte Projekte
+        ${en ? '✅ Add &amp; edit everything<br>✅ AI advisor, AI schedule &amp; invoice scan<br>✅ Unlimited projects'
+             : '✅ Alles eintragen &amp; bearbeiten<br>✅ KI-Bauberater, KI-Zeitplan &amp; Rechnungs-Scan<br>✅ Unbegrenzte Projekte'}
       </div>
       <button id="btn-sub-yearly" onclick="startStripeCheckout('yearly')"
         style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:9px;padding:11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:white;cursor:pointer">
-        28,99 € / Jahr · spare 40 %
+        ${en ? '€28.99 / year · save 40%' : '28,99 € / Jahr · spare 40 %'}
       </button>
       <button id="btn-sub-monthly" onclick="startStripeCheckout('monthly')" class="btn btn-ghost" style="width:100%;padding:10px;font-size:0.85rem">
-        3,99 € / Monat
+        ${en ? '€3.99 / month' : '3,99 € / Monat'}
       </button>
     </div>`;
 }
@@ -7053,7 +7109,9 @@ function updateKostenBrutto() {
   const brutto = netto * (1 + mwst / 100);
   if (netto > 0) document.getElementById('k-betrag').value = brutto.toFixed(2);
   const mwstBetrag = brutto - netto;
-  document.getElementById('k-mwst-preview').textContent = `Netto: ${fmt(netto)}  ·  MwSt (${mwst}%): ${fmt(mwstBetrag)}  ·  Brutto: ${fmt(brutto)}`;
+  document.getElementById('k-mwst-preview').textContent = (_lang === 'en')
+    ? `Net: ${fmt(netto)}  ·  VAT (${mwst}%): ${fmt(mwstBetrag)}  ·  Gross: ${fmt(brutto)}`
+    : `Netto: ${fmt(netto)}  ·  MwSt (${mwst}%): ${fmt(mwstBetrag)}  ·  Brutto: ${fmt(brutto)}`;
   updateSkontoPreview('k');
 }
 
@@ -7064,7 +7122,9 @@ function updateKostenNetto() {
   if (brutto > 0) document.getElementById('k-netto-input').value = netto.toFixed(2);
   updateSkontoPreview('k');
   const mwstBetrag = brutto - netto;
-  document.getElementById('k-mwst-preview').textContent = `Netto: ${fmt(netto)}  ·  MwSt (${mwst}%): ${fmt(mwstBetrag)}  ·  Brutto: ${fmt(brutto)}`;
+  document.getElementById('k-mwst-preview').textContent = (_lang === 'en')
+    ? `Net: ${fmt(netto)}  ·  VAT (${mwst}%): ${fmt(mwstBetrag)}  ·  Gross: ${fmt(brutto)}`
+    : `Netto: ${fmt(netto)}  ·  MwSt (${mwst}%): ${fmt(mwstBetrag)}  ·  Brutto: ${fmt(brutto)}`;
 }
 
 let kostenTab = 'ausgaben';
@@ -7208,7 +7268,7 @@ async function saveKosten() {
   document.getElementById('k-edit-id').value = '';
   document.getElementById('k-modal-title').textContent = 'Ausgabe erfassen';
   ['k-datum','k-beschr','k-betrag','k-netto-input','k-anbieter','k-skonto-proz','k-skonto-bis'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('k-mwst-preview').textContent = 'MwSt-Betrag: € 0,00';
+  document.getElementById('k-mwst-preview').textContent = (_lang === 'en') ? 'VAT amount: € 0.00' : 'MwSt-Betrag: € 0,00';
   document.getElementById('k-skonto-preview').style.display = 'none';
   renderKosten();
   renderBudget();
@@ -7499,7 +7559,7 @@ function renderBudgetPresets() {
              text-decoration:${used ? 'line-through' : 'none'}"
       onmouseover="if(!${used}){this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-light)'}"
       onmouseout="if(!${used}){this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='white'}">
-      ${p.icon} ${p.name}${used ? ' ✓' : ''}
+      ${p.icon} <span>${p.name}</span>${used ? ' ✓' : ''}
     </button>`;
   }).join('');
 }
