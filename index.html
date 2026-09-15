@@ -3966,7 +3966,10 @@
   <div class="modal" style="width:560px">
     <h3 id="tb-modal-title">Tagebucheintrag</h3>
     <input type="hidden" id="tb-edit-id">
-    <div class="form-row"><label>Datum</label><input type="date" id="tb-datum" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
+    <div style="display:flex;gap:12px">
+      <div class="form-row" style="flex:1"><label>Datum</label><input type="date" id="tb-datum" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
+      <div class="form-row" style="flex:1"><label>bis (optional)</label><input type="date" id="tb-datum-bis"></div>
+    </div>
     <div class="form-row"><label>Titel</label><input type="text" id="tb-title" placeholder="z.B. Betonage Decke EG"></div>
     <div class="form-row"><label>Bericht</label><textarea id="tb-text" placeholder="Was wurde heute gemacht?"></textarea></div>
     <div class="form-row"><label>Wetter</label>
@@ -9188,9 +9191,12 @@ function addDiary() {
     if (name) workers.push({ name, hours });
   });
   const editId = parseInt(document.getElementById('tb-edit-id')?.value) || null;
+  const _tbDatum = document.getElementById('tb-datum').value || today();
+  const _tbBis   = document.getElementById('tb-datum-bis')?.value || '';
   const item = {
     id:      editId || Date.now(),
-    datum:   document.getElementById('tb-datum').value || today(),
+    datum:   _tbDatum,
+    datumBis: (_tbBis && _tbBis >= _tbDatum) ? _tbBis : null,
     title:   document.getElementById('tb-title').value || 'Eintrag',
     text:    document.getElementById('tb-text').value,
     weather: document.getElementById('tb-weather').value,
@@ -9206,7 +9212,7 @@ function addDiary() {
   }
   save(); closeModal('modal-tagebuch');
   showToast(editId ? '✏️ Eintrag aktualisiert' : '✅ Tagebucheintrag gespeichert', 'success');
-  ['tb-datum','tb-title','tb-text','tb-tags','tb-temp'].forEach(id => document.getElementById(id).value = '');
+  ['tb-datum','tb-datum-bis','tb-title','tb-text','tb-tags','tb-temp'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('tb-worker-rows').innerHTML = '';
   if (document.getElementById('tb-edit-id')) document.getElementById('tb-edit-id').value = '';
   if (document.getElementById('tb-modal-title')) document.getElementById('tb-modal-title').textContent = 'Tagebucheintrag';
@@ -9217,6 +9223,7 @@ function editDiary(id) {
   const e = state.tagebuch.find(e => String(e.id) === String(id));
   if (!e) return;
   document.getElementById('tb-datum').value  = e.datum   || '';
+  document.getElementById('tb-datum-bis').value = e.datumBis || '';
   document.getElementById('tb-title').value  = e.title   || '';
   document.getElementById('tb-text').value   = e.text    || '';
   document.getElementById('tb-tags').value   = (e.tags||[]).join(', ');
@@ -9314,9 +9321,9 @@ function renderDiary() {
         <button class="action-btn" onclick="editDiary(${e.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteDiary(${e.id})">🗑</button>
       </div>
-      <div class="diary-date">${fmtDate(e.datum)} · ${e.weather}${e.temp != null ? ` · ${e.temp}°C` : ''}</div>
+      <div class="diary-date">${fmtDate(e.datum)}${e.datumBis && e.datumBis !== e.datum ? ' – ' + fmtDate(e.datumBis) : ''} · ${esc(e.weather)}${e.temp != null ? ` · ${e.temp}°C` : ''}</div>
       <div class="diary-title">${esc(e.title)}</div>
-      <div class="diary-text">${(e.text||'').replace(/\n/g,'<br>')}</div>
+      <div class="diary-text">${esc(e.text||'').replace(/\n/g,'<br>')}</div>
       ${workers.length ? `
         <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px">
           <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">
