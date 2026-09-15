@@ -9254,12 +9254,22 @@ async function fetchWetter() {
   btn.textContent = '⏳'; btn.disabled = true;
   try {
     const address = state.settings?.address || '';
-    const city = address.split(',').pop()?.trim() || address.split(' ')[0] || '';
-    if (!city) { showToast('⚠️ Bitte zuerst eine Projektadresse in den Einstellungen eintragen', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=de&format=json`);
-    const geoData = await geoRes.json();
-    const loc = geoData.results?.[0];
-    if (!loc) { showToast('⚠️ Ort nicht gefunden', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
+    if (!address.trim()) { showToast('⚠️ Bitte zuerst eine Projektadresse in den Einstellungen eintragen', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
+    // Ort robust ermitteln: die Wetter-Ortssuche kennt Ortsnamen, keine Straßen/PLZ.
+    // Deshalb mehrere Kandidaten probieren – zuerst ohne führende Postleitzahl.
+    const lastSeg = (address.split(',').pop() || '').trim();
+    const candidates = [...new Set([
+      lastSeg.replace(/^\d{3,6}\s+/, '').trim(),   // "4600 Wels" -> "Wels"
+      lastSeg,                                      // "4600 Wels"
+      (address.split(',')[0] || '').trim()         // erster Teil (Fallback)
+    ].filter(Boolean))];
+    let loc = null;
+    for (const c of candidates) {
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(c)}&count=1&language=de&format=json`);
+      const geoData = await geoRes.json();
+      if (geoData.results?.[0]) { loc = geoData.results[0]; break; }
+    }
+    if (!loc) { showToast('⚠️ Ort nicht gefunden – bitte in den Einstellungen den Ortsnamen (z.B. „Wels") eintragen', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
     const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=weathercode,temperature_2m&timezone=auto`);
     const wxData = await wxRes.json();
     const code = wxData.current?.weathercode ?? -1;
@@ -9293,7 +9303,9 @@ function renderDiary() {
     el.innerHTML = `<div class="empty"><div class="icon">📓</div><p>Noch keine Einträge im Bautagebuch</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-tagebuch')">+ Eintrag</button></div>`;
     return;
   }
-  el.innerHTML = [...state.tagebuch].reverse().map(e => {
+  el.innerHTML = [...state.tagebuch]
+    .sort((a, b) => (b.datum || '').localeCompare(a.datum || '') || (Number(b.id) - Number(a.id)))
+    .map(e => {
     const workers = e.workers || [];
     const totalHours = workers.reduce((s,w) => s + (w.hours||0), 0);
     return `
