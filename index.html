@@ -3777,14 +3777,19 @@
     <h3><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> Rechnung automatisch einbuchen</h3>
     <p style="font-size:0.84rem;color:var(--text2);margin-bottom:18px;line-height:1.6">Lade ein Foto oder Scan deiner Rechnung hoch – die KI liest Betrag, Datum, Anbieter und Kategorie automatisch aus.</p>
 
-    <div id="scan-upload-area" onclick="document.getElementById('scan-file-input').click()"
-      style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all 0.18s;background:var(--surface2);margin-bottom:16px"
-      onmouseover="this.style.borderColor='#6d28d9';this.style.background='#f5f3ff'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
+    <div id="scan-upload-area" style="margin-bottom:16px">
+      <button type="button" onclick="scanTakePhoto()" class="btn btn-primary"
+        style="width:100%;margin-bottom:10px;padding:14px;font-size:0.95rem;display:flex;align-items:center;justify-content:center;gap:8px">📷 Rechnung abfotografieren</button>
+      <div onclick="document.getElementById('scan-file-input').click()"
+        style="border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:var(--surface2)"
+        onmouseover="this.style.borderColor='#6d28d9';this.style.background='#f5f3ff'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
+        <div style="font-size:1.8rem;margin-bottom:6px">🖼️</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:2px">Aus Galerie / Datei wählen</div>
+        <div style="font-size:0.8rem;color:var(--text3)">JPG, PNG oder PDF</div>
+      </div>
       <input type="file" id="scan-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleRechnungScan(this)">
-      <div style="font-size:2.5rem;margin-bottom:8px">📄</div>
-      <div style="font-weight:700;color:var(--text);margin-bottom:4px">Rechnung hochladen</div>
-      <div style="font-size:0.8rem;color:var(--text3)">JPG, PNG oder PDF · Klicken oder ablegen</div>
+      <input type="file" id="scan-cam-input" accept="image/*" capture="environment" style="display:none" onchange="handleRechnungScan(this)">
     </div>
 
     <div id="scan-preview" style="display:none;margin-bottom:16px">
@@ -8008,6 +8013,7 @@ function resetScanModal() {
   document.getElementById('scan-confirm-btn').style.display = 'none';
   document.getElementById('scan-upload-area').style.display = 'block';
   document.getElementById('scan-file-input').value = '';
+  { const ci = document.getElementById('scan-cam-input'); if (ci) ci.value = ''; }
   document.getElementById('scan-skonto-proz').value = '';
   document.getElementById('scan-skonto-bis').value  = '';
   document.getElementById('scan-skonto-preview').style.display = 'none';
@@ -8393,8 +8399,11 @@ function sendStatusReport() {
 }
 
 async function handleRechnungScan(input) {
+  const file = input.files && input.files[0];
+  if (file) _processScanFile(file);
+}
+async function _processScanFile(file) {
   if (!requireSub()) return;
-  const file = input.files[0];
   if (!file) return;
 
   document.getElementById('scan-upload-area').style.display = 'none';
@@ -10239,6 +10248,37 @@ function setFotoView(view, btn) {
   document.querySelectorAll('#foto-tab-alben,#foto-tab-alle').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderFotos();
+}
+
+// Öffnet beim „abfotografieren"-Knopf im Scan die Kamera:
+//  - In der App: nativer Kamera-Aufruf (@capacitor/camera → Camera.getPhoto).
+//  - Im Web / falls Plugin fehlt: verstecktes <input capture> (Handy-Kamera bzw. Dateiwahl).
+async function scanTakePhoto() {
+  if (!requireSub()) return;
+  const f = await _nativeTakePhotoFile();
+  if (f === 'cancel') return;                 // Nutzer hat abgebrochen
+  if (f) { _processScanFile(f); return; }     // native Aufnahme -> direkt verarbeiten
+  const ci = document.getElementById('scan-cam-input');  // Web/Fallback
+  if (ci) ci.click();
+}
+
+// Native Kamera-Aufnahme als File. Rückgabe: File | 'cancel' | null (nicht verfügbar).
+async function _nativeTakePhotoFile() {
+  if (!isNativeApp()) return null;
+  const Cam = window.Capacitor?.Plugins?.Camera;
+  if (!Cam || typeof Cam.getPhoto !== 'function') return null;
+  try {
+    const photo = await Cam.getPhoto({ source: 'CAMERA', resultType: 'uri', quality: 85, allowEditing: false });
+    const src = photo?.webPath || photo?.path;
+    if (!src) return null;
+    const resp = await fetch(src);
+    const blob = await resp.blob();
+    const ext  = (photo.format || 'jpeg').replace('jpg', 'jpeg');
+    return new File([blob], `rechnung-${Date.now()}.${ext}`, { type: blob.type || 'image/jpeg' });
+  } catch(e) {
+    if (/cancel/i.test(e?.message || '')) return 'cancel';
+    return null;   // echter Fehler -> Web-Fallback
+  }
 }
 
 // Holt Fotos über den NATIVEN Picker (@capacitor/camera → Camera.pickImages),
