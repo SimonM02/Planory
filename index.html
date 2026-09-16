@@ -12000,6 +12000,13 @@ function einsatzAddAssigned() {
   inp.value = ''; einsatzRenderAssigned();
 }
 function einsatzRemoveAssigned(i) { _einsatzAssigned.splice(i, 1); einsatzRenderAssigned(); }
+// Getippten/zugewiesenen Namen dauerhaft als Helfer sichern (falls noch nicht vorhanden).
+function _ensureHelfer(name) {
+  const n = (name || '').trim(); if (!n) return;
+  state.helfer = state.helfer || [];
+  if (state.helfer.some(h => (h.name || '').trim().toLowerCase() === n.toLowerCase())) return;
+  state.helfer.push({ id: Date.now() + Math.floor(Math.random() * 1000), name: n, tel: '', notiz: '' });
+}
 
 function addEinsatz() {
   if (!requireSub()) return;
@@ -12020,6 +12027,8 @@ function addEinsatz() {
     const idx = state.helfereinsaetze.findIndex(e => String(e.id) === String(editId));
     if (idx > -1) state.helfereinsaetze[idx] = { ...state.helfereinsaetze[idx], ...item };
   } else state.helfereinsaetze.push(item);
+  // getippte/zugewiesene Namen dauerhaft als Helfer merken -> Schnellauswahl wächst
+  (_einsatzAssigned || []).forEach(_ensureHelfer);
   save(); closeModal('modal-einsatz'); resetEinsatzModal();
   showToast(editId ? '✏️ Helfer-Tag aktualisiert' : '✅ Helfer-Tag gespeichert', 'success');
   renderHelfer();
