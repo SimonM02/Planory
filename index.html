@@ -7431,7 +7431,7 @@ async function saveKosten() {
   _kBeleg = null; _kBelegChanged = false; _showKBelegPreview(null);
   if (_pendingAngebotId && !editId) {
     const ang = (state.angebote||[]).find(a => String(a.id) === String(_pendingAngebotId));
-    if (ang) { ang.konvertiert = true; ang.status = 'Umgewandelt'; }
+    if (ang) { ang.konvertiert = true; ang.status = 'Umgewandelt'; ang._updatedAt = Date.now(); }
     _pendingAngebotId = null;
   }
   save();
@@ -9814,7 +9814,7 @@ async function deleteKontakt(id) {
   _trackDeletion(id, 'kontakte');
   const k = state.kontakte.find(k => String(k.id) === String(id));
   if (k && k.firma) {
-    (state.angebote||[]).forEach(a => { if (a.anbieter === k.firma) a.anbieter = ''; });
+    (state.angebote||[]).forEach(a => { if (a.anbieter === k.firma) { a.anbieter = ''; a._updatedAt = Date.now(); } });
   }
   state.kontakte = state.kontakte.filter(k => String(k.id) !== String(id));
   save(); renderKontakte();
@@ -11733,6 +11733,7 @@ function addWartung() {
   const next = document.getElementById('wt-next').value || today();
   const item = {
     id: editId || Date.now(),
+    _updatedAt: Date.now(),
     name:      document.getElementById('wt-name').value || 'Wartung',
     kat:       document.getElementById('wt-kat').value,
     desc:      document.getElementById('wt-desc').value,
@@ -12016,6 +12017,7 @@ function addEinsatz() {
   if (!datum) { showToast('Bitte ein Datum wählen', 'warning'); return; }
   const item = {
     id: editId || Date.now(),
+    _updatedAt: Date.now(),
     datum,
     bedarf: Math.max(1, parseInt(document.getElementById('einsatz-bedarf').value, 10) || 1),
     umfang: document.getElementById('einsatz-umfang').value || 'full',
@@ -12113,6 +12115,7 @@ function addHelferPerson() {
   if (!name) { showToast('Bitte einen Namen eingeben', 'warning'); return; }
   const item = {
     id: editId || Date.now(), name,
+    _updatedAt: Date.now(),
     tel: document.getElementById('helfer-person-tel').value.trim(),
     notiz: document.getElementById('helfer-person-notiz').value.trim()
   };
@@ -14281,6 +14284,7 @@ async function saveAngebot() {
   const editId = parseInt(document.getElementById('ang-edit-id').value) || null;
   const item = {
     id:       editId || Date.now(),
+    _updatedAt: Date.now(),
     beschr:   document.getElementById('ang-beschr').value || 'Angebot',
     anbieter: document.getElementById('ang-anbieter').value,
     kat:      document.getElementById('ang-kat').value,
