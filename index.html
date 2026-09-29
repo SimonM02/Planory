@@ -401,7 +401,7 @@
   }
 
   .page { display: none; }
-  .page.active { display: block; animation: fadeIn 0.1s ease-out; }
+  .page.active { display: block; animation: slideUp 0.24s cubic-bezier(.22,.9,.37,1); }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   .page-header {
@@ -927,7 +927,7 @@
   }
 
   .page { display: none; }
-  .page.active { display: block; animation: fadeIn 0.1s ease-out; }
+  .page.active { display: block; animation: slideUp 0.24s cubic-bezier(.22,.9,.37,1); }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   .page-header {
@@ -1142,7 +1142,10 @@
     justify-content: center;
   }
 
-  .modal-overlay.open { display: flex; }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.18s ease; }
+  /* sanftes Schliessen: .closing blendet Overlay + Karte aus, bevor .open faellt */
+  .modal-overlay.closing { animation: fadeOut 0.18s ease forwards; }
+  .modal-overlay.closing .modal { animation: modalOut 0.18s ease forwards; }
 
   .modal {
     background: white;
@@ -1158,6 +1161,13 @@
   }
 
   @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes modalOut { from { opacity:1; transform:none; } to { opacity:0; transform:scale(0.97) translateY(6px); } }
+  @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .modal-overlay.open, .modal-overlay.closing, .modal-overlay.closing .modal,
+    .modal, .page.active { animation: none !important; }
+  }
 
   .modal h3 {
     font-family: 'Hanken Grotesk', sans-serif;
@@ -6301,6 +6311,8 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else _initI18n();
 
 function openModal(id) {
+  const _m = document.getElementById(id);
+  if (_m) { clearTimeout(_m._closeT); _m.classList.remove('closing'); }
   document.getElementById(id).classList.add('open');
   if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
   const d = document.querySelector('#' + id + ' input[type="date"]');
@@ -6340,20 +6352,29 @@ function openModal(id) {
   }
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!el.classList.contains('open')) { el.classList.remove('closing'); return; }
+  el.classList.add('closing');
+  clearTimeout(el._closeT);
+  el._closeT = setTimeout(() => { el.classList.remove('open'); el.classList.remove('closing'); }, 190);
+}
 
 // close on overlay click – klickt den Abbrechen-Button des Modals, damit
 // dessen Reset-Logik (edit-id-Felder, wartende Promises) immer laeuft.
 // Sonst wuerde nach "Bearbeiten → Hintergrund-Klick → + Neu" der neue
 // Eintrag still den zuletzt bearbeiteten ueberschreiben.
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => {
-    if (e.target !== o) return;
-    const cancel = [...o.querySelectorAll('.modal-actions button')]
-      .find(b => /abbrechen|schlie|cancel|close/i.test(b.textContent));
-    if (cancel) cancel.click();
-    else o.classList.remove('open');
-  });
+// WICHTIG: EIN delegierter Listener auf document statt je Overlay – so greift
+// es auch fuer Modals, die erst weiter unten im HTML stehen (existierten frueher
+// zur Registrierungszeit noch nicht → blieben beim Hintergrund-Klick offen).
+document.addEventListener('click', e => {
+  const o = e.target;
+  if (!o || !o.classList || !o.classList.contains('modal-overlay') || !o.classList.contains('open')) return;
+  const cancel = [...o.querySelectorAll('.modal-actions button')]
+    .find(b => /abbrechen|schlie|cancel|close/i.test(b.textContent));
+  if (cancel) cancel.click();
+  else closeModal(o.id);
 });
 
 // ── App-eigene Dialoge (ersetzen window.confirm / window.prompt) ──
@@ -12307,7 +12328,7 @@ function showToast(msg, type='success', duration=3200) {
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
   const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.3s ease;pointer-events:none`;
+  t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
