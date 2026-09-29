@@ -356,9 +356,16 @@
   .pl-sec.pl-collapsed .pl-chev { transform:rotate(-90deg); }
   .pl-secname { font-weight:800; font-size:1rem; flex:1; min-width:0; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; }
   .pl-count { font-size:0.72rem; font-weight:700; color:var(--text3); background:var(--surface2); border-radius:99px; padding:3px 9px; white-space:nowrap; }
-  .pl-secdel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.9rem; opacity:.6; }
-  .pl-span { display:flex; align-items:center; gap:6px; margin:7px 0 0 24px; font-size:0.76rem; color:var(--text3); flex-wrap:wrap; }
-  .pl-span input { border:1px solid var(--border); background:var(--surface2); border-radius:7px; padding:3px 7px; font-size:0.74rem; color:var(--text2); font-family:inherit; width:130px; }
+  .pl-secdel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:1rem; opacity:.65; padding:4px; }
+  .pl-progress { height:6px; background:var(--surface2); border-radius:99px; overflow:hidden; margin:9px 0 0 24px; }
+  .pl-progress-bar { height:100%; background:var(--success); border-radius:99px; transition:width .35s ease; }
+  .pl-progress-lg { height:9px; margin:9px 0 0 0; }
+  .pl-overview { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 16px; margin-bottom:14px; }
+  .pl-overview-top { display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--text2); }
+  .pl-overview-top strong { color:var(--text); font-weight:800; }
+  .pl-span { display:flex; align-items:center; gap:7px; margin:8px 0 0 24px; font-size:0.78rem; color:var(--text3); flex-wrap:wrap; }
+  .pl-span-lbl { color:var(--text3); font-size:0.74rem; font-weight:600; }
+  .pl-span input { border:1px solid var(--border); background:var(--surface2); border-radius:7px; padding:5px 8px; font-size:0.8rem; color:var(--text2); font-family:inherit; width:140px; }
   .pl-secbody { border-top:1px solid var(--border); }
   .pl-sec.pl-collapsed .pl-secbody { display:none; }
   .pl-item { display:flex; align-items:center; gap:11px; padding:10px 16px; border-bottom:1px solid var(--surface2); }
@@ -370,19 +377,25 @@
   .pl-iname { font-size:0.92rem; font-weight:600; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; width:100%; }
   .pl-item.pl-erledigt .pl-iname { text-decoration:line-through; color:var(--text3); }
   .pl-imeta { font-size:0.72rem; color:var(--text3); margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .pl-stbadge { font-size:0.66rem; font-weight:800; padding:2px 8px; border-radius:99px; cursor:pointer; white-space:nowrap; }
+  .pl-stbadge { font-size:0.66rem; font-weight:800; padding:2px 8px; border-radius:99px; white-space:nowrap; }
   .pl-st-offen { background:var(--surface2); color:var(--text3); }
   .pl-st-arbeit { background:#fef3c7; color:#b45309; }
   .pl-st-erledigt { background:#dcfce7; color:#15803d; }
-  .pl-idate { font-size:0.72rem; color:var(--text3); border:1px solid var(--border); background:var(--surface2); border-radius:6px; padding:2px 5px; font-family:inherit; }
-  .pl-bell { cursor:pointer; font-size:0.82rem; opacity:.5; }
+  .pl-idate { font-size:0.78rem; color:var(--text2); border:1px solid var(--border); background:var(--surface2); border-radius:6px; padding:4px 7px; font-family:inherit; }
+  .pl-overdue .pl-idate { border-color:var(--danger); color:var(--danger); }
+  .pl-overdue-tag { font-size:0.62rem; font-weight:800; color:var(--danger); background:var(--danger-light); padding:2px 7px; border-radius:99px; white-space:nowrap; }
+  .pl-bell { cursor:pointer; font-size:0.98rem; opacity:.55; }
   .pl-bell.on { opacity:1; }
-  .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.85rem; opacity:.5; flex-shrink:0; }
+  .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.98rem; opacity:.6; flex-shrink:0; padding:4px; }
   .pl-addrow { display:flex; align-items:center; gap:10px; padding:10px 16px; }
   .pl-addrow .pl-plus { width:22px; text-align:center; color:var(--accent); font-weight:800; font-size:1.1rem; flex-shrink:0; }
   .pl-addrow input { flex:1; border:none; background:transparent; font-size:0.9rem; color:var(--text); font-family:inherit; outline:none; }
   .pl-addsec { width:100%; border:1.5px dashed var(--border); background:transparent; border-radius:12px; padding:13px; color:var(--text3); font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit; }
   .pl-addsec:hover { border-color:var(--accent); color:var(--accent); }
+  .pl-empty { text-align:center; padding:46px 20px; }
+  .pl-empty-ic { font-size:2.6rem; margin-bottom:10px; }
+  .pl-empty-t { font-weight:800; font-size:1.05rem; color:var(--text); margin-bottom:6px; }
+  .pl-empty-s { font-size:0.85rem; color:var(--text2); line-height:1.55; max-width:360px; margin:0 auto; }
 
   .sidebar-footer {
     padding: 12px 16px;
@@ -4901,17 +4914,28 @@ function renderZeitplan() {
   const secs  = state.gantt || [];
   const miles = state.meilensteine || [];
   const escA = s => (s==null?'':String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'));
+  const _today = today();
+  // Sortierung: mit Datum aufsteigend zuerst, ohne Datum ans Ende (stabil).
+  const _byDate = (field) => (a,b) => {
+    const da = a[field] || '', db = b[field] || '';
+    if (da && db) return da < db ? -1 : (da > db ? 1 : 0);
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    return 0;
+  };
 
   const itemRow = (m) => {
     const st = _plItemStatus(m);
     const remOn = m.remind !== false && !!m.datum;
-    return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''}">
-      <div class="pl-dot ${st}" onclick="planCycle(${m.id})" title="Status ändern">${PL_ST_MARK[st]}</div>
+    const overdue = !!m.datum && st !== 'erledigt' && m.datum < _today;
+    return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''} ${overdue?'pl-overdue':''}">
+      <div class="pl-dot ${st}" onclick="planCycle(${m.id})" title="Status ändern (Offen → In Arbeit → Erledigt)">${PL_ST_MARK[st]}</div>
       <div class="pl-imain">
         <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)">
         <div class="pl-imeta">
-          <span class="pl-stbadge pl-st-${st}" onclick="planCycle(${m.id})">${PL_ST_LABEL[st]}</span>
+          <span class="pl-stbadge pl-st-${st}">${PL_ST_LABEL[st]}</span>
           <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)">
+          ${overdue?`<span class="pl-overdue-tag">überfällig</span>`:''}
           <span class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="Erinnerung ${remOn?'an – tippen zum Ausschalten':'aus – tippen zum Einschalten'}">${remOn?'🔔':'🔕'}</span>
         </div>
       </div>
@@ -4925,20 +4949,22 @@ function renderZeitplan() {
     </div>`;
 
   const sectionCard = (s) => {
-    const items = miles.filter(m => String(m.ganttId||'') === String(s.id));
+    const items = miles.filter(m => String(m.ganttId||'') === String(s.id)).sort(_byDate('datum'));
+    const total = items.length;
     const done  = items.filter(m => _plItemStatus(m)==='erledigt').length;
+    const pct   = total ? Math.round(done/total*100) : 0;
     return `<div class="pl-sec ${s.collapsed?'pl-collapsed':''}">
       <div class="pl-sechead">
         <div class="pl-sectop">
           <span class="pl-chev" onclick="planToggleSection(${s.id})">▼</span>
           <input class="pl-secname" value="${escA(s.name)}" onchange="planRenameSection(${s.id},this.value)">
-          <span class="pl-count">${done}/${items.length} ✓</span>
+          <span class="pl-count">${done}/${total} ✓</span>
           <button class="pl-secdel" onclick="planDelSection(${s.id})" title="Abschnitt löschen">🗑</button>
         </div>
+        <div class="pl-progress"><div class="pl-progress-bar" style="width:${pct}%"></div></div>
         <div class="pl-span">
-          📅 <input type="date" value="${s.start||''}" title="Beginn" onchange="planSetSecStart(${s.id},this.value)">
-          <span>–</span>
-          <input type="date" value="${s.end||''}" title="Ende" onchange="planSetSecEnd(${s.id},this.value)">
+          <span class="pl-span-lbl">von</span><input type="date" value="${s.start||''}" title="Beginn" onchange="planSetSecStart(${s.id},this.value)">
+          <span class="pl-span-lbl">bis</span><input type="date" value="${s.end||''}" title="Ende" onchange="planSetSecEnd(${s.id},this.value)">
         </div>
       </div>
       <div class="pl-secbody">
@@ -4948,10 +4974,32 @@ function renderZeitplan() {
     </div>`;
   };
 
-  const ungrouped = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId)));
+  // Leerzustand: freundlicher Einstieg statt leerer Seite
+  if (!secs.length && !miles.length) {
+    el.innerHTML = `<div class="pl-empty">
+      <div class="pl-empty-ic">🗓️</div>
+      <div class="pl-empty-t">Noch kein Zeitplan</div>
+      <div class="pl-empty-s">Lege deine erste Bauphase an (z.B. „Fundament") und füge darin Unterpunkte mit Datum hinzu. Alles wird automatisch nach Datum sortiert.</div>
+      <button class="btn btn-primary" onclick="planAddSection()" style="margin-top:16px">+ Erste Phase anlegen</button>
+    </div>`;
+    return;
+  }
 
-  let html = `<div class="pl-hint">Lege Abschnitte (Bauphasen mit Zeitspanne) an und darin Unterpunkte. Tippe den Kreis für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
-  html += secs.map(sectionCard).join('');
+  const ungrouped  = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId))).sort(_byDate('datum'));
+  const sortedSecs = [...secs].sort(_byDate('start'));
+  const allTotal = miles.length;
+  const allDone  = miles.filter(m => _plItemStatus(m)==='erledigt').length;
+  const allPct   = allTotal ? Math.round(allDone/allTotal*100) : 0;
+
+  let html = '';
+  if (allTotal) {
+    html += `<div class="pl-overview">
+      <div class="pl-overview-top"><span>Gesamt-Fortschritt</span><strong>${allDone}/${allTotal} erledigt</strong></div>
+      <div class="pl-progress pl-progress-lg"><div class="pl-progress-bar" style="width:${allPct}%"></div></div>
+    </div>`;
+  }
+  html += `<div class="pl-hint">Abschnitte sind nach Startdatum geordnet, Unterpunkte nach ihrem Datum. Tippe den Kreis für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
+  html += sortedSecs.map(sectionCard).join('');
   if (ungrouped.length) {
     const done = ungrouped.filter(m => _plItemStatus(m)==='erledigt').length;
     html += `<div class="pl-sec">
