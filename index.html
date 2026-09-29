@@ -3546,7 +3546,7 @@
       <div><h2 data-i18n="ph_angebote_t">Angebote</h2><p data-i18n="ph_angebote_s">Angebote erfassen, vergleichen und zu Rechnungen umwandeln</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" style="border-color:#7c3aed;color:#7c3aed" onclick="openModal('modal-angebot-ki')"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> KI einlesen</button>
-        <button class="btn btn-primary" onclick="openModal('modal-angebot')">+ Angebot</button>
+        <button class="btn btn-primary" onclick="openNeuesAngebot()">+ Angebot</button>
       </div>
     </div>
     <div class="cards-grid">
@@ -4113,7 +4113,9 @@
     <div class="form-row"><label>Notiz</label><textarea id="ang-notiz" placeholder="Details, Konditionen..."></textarea></div>
     <div class="form-row">
       <label>PDF / Scan anhängen (optional)</label>
-      <input type="file" id="ang-datei-input" accept=".pdf,.jpg,.jpeg,.png" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px;font-size:0.82rem;color:var(--text);width:100%">
+      <input type="file" id="ang-datei-input" accept=".pdf,.jpg,.jpeg,.png" onchange="onAngDateiPick()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px;font-size:0.82rem;color:var(--text);width:100%">
+      <div style="font-size:0.72rem;color:var(--text3);margin-top:5px">PDF oder Bild hierher ziehen oder oben auswählen</div>
+      <div id="ang-datei-info" style="display:none;align-items:center;gap:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-angebot');resetAngModal()">Abbrechen</button>
@@ -7213,7 +7215,7 @@ const QUICK_ACTIONS = [
   { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"_populateTaskPersonList();openModal('modal-task')" },
   { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', en:'Site diary entry', run:"openModal('modal-tagebuch')" },
   { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"openPhotoPicker()" },
-  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    en:'Add quote',        run:"openModal('modal-angebot')" },
+  { key:'angebot',       icon:'📋', label:'Angebot erfassen',    en:'Add quote',        run:"openNeuesAngebot()" },
   { key:'milestone',     icon:'🏁', label:'Meilenstein',         en:'Milestone',        run:"openModal('modal-milestone')" },
   { key:'zahlung',       icon:'📅', label:'Zahlung erfassen',    en:'Add payment',      run:"openModal('modal-zahlung')" },
   { key:'wartung',       icon:'🔧', label:'Wartung anlegen',     en:'Add maintenance',  run:"resetWartungModal();openModal('modal-wartung')" },
@@ -8586,6 +8588,8 @@ async function _processScanFile(file) {
     document.getElementById('scan-loading').style.display = 'none';
     document.getElementById('scan-result').style.display  = 'block';
     document.getElementById('scan-confirm-btn').style.display = 'inline-flex';
+    // Nach dem Scannen direkt zum Kategorie-Feld springen (muss meist noch gesetzt werden).
+    _focusField('scan-kat');
 
   } catch(e) {
     console.error('Scan Fehler:', e);
@@ -14356,6 +14360,55 @@ function resetAngModal() {
   document.getElementById('ang-edit-id').value = '';
   document.getElementById('ang-modal-title').textContent = 'Angebot erfassen';
   document.getElementById('ang-to-rechnung-btn').style.display = 'none';
+  const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
+  _angExistingDateiName = '';
+  _renderAngDatei();
+}
+
+// Neues Angebot: Felder leeren, damit keine Reste vom letzten Bearbeiten stehen bleiben.
+function openNeuesAngebot() {
+  ['ang-beschr','ang-anbieter','ang-betrag','ang-datum','ang-gueltig','ang-notiz'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const kat = document.getElementById('ang-kat'); if (kat) kat.selectedIndex = 0;
+  const st = document.getElementById('ang-status'); if (st) st.selectedIndex = 0;
+  resetAngModal();
+  openModal('modal-angebot');
+}
+
+// Sichtbare Rueckmeldung fuer den Angebots-Anhang (Drag&Drop UND Auswahl).
+var _angExistingDateiName = '';
+function _renderAngDatei() {
+  const inp  = document.getElementById('ang-datei-input');
+  const info = document.getElementById('ang-datei-info');
+  if (!info) return;
+  const f = inp && inp.files && inp.files[0];
+  if (f) {
+    const isImg = (f.type || '').startsWith('image/');
+    const thumb = isImg
+      ? `<img src="${URL.createObjectURL(f)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0">`
+      : `<span style="font-size:1.4rem;flex-shrink:0">📄</span>`;
+    info.style.display = 'flex';
+    info.innerHTML = `${thumb}<span style="flex:1;font-size:0.82rem;color:var(--text);word-break:break-all">${esc(f.name)}</span>`
+      + `<button type="button" class="action-btn del" onclick="clearAngDatei()" title="Entfernen" style="flex-shrink:0">✕</button>`;
+  } else if (_angExistingDateiName) {
+    info.style.display = 'flex';
+    info.innerHTML = `<span style="font-size:1.4rem;flex-shrink:0">📎</span>`
+      + `<span style="flex:1;font-size:0.82rem;color:var(--text2);word-break:break-all">${esc(_angExistingDateiName)} <span style="color:var(--text3)">· bereits angehängt</span></span>`;
+  } else {
+    info.style.display = 'none';
+    info.innerHTML = '';
+  }
+}
+function onAngDateiPick() { _renderAngDatei(); }
+function clearAngDatei() { const inp = document.getElementById('ang-datei-input'); if (inp) inp.value = ''; _renderAngDatei(); }
+
+// Ein Feld sichtbar machen und fokussieren (z.B. nach dem Scannen direkt zur Kategorie).
+function _focusField(id) {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(_) {}
+    try { el.focus({ preventScroll: true }); } catch(_) { try { el.focus(); } catch(__){} }
+  }, 80);
 }
 
 async function saveAngebot() {
@@ -14435,6 +14488,9 @@ function editAngebot(id) {
   document.getElementById('ang-edit-id').value = id;
   document.getElementById('ang-modal-title').textContent = 'Angebot bearbeiten';
   document.getElementById('ang-to-rechnung-btn').style.display = a.status === 'Angenommen' ? '' : 'none';
+  const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
+  _angExistingDateiName = a.datei?.name || '';
+  _renderAngDatei();
   openModal('modal-angebot');
 }
 
@@ -14678,8 +14734,13 @@ function confirmAngKI() {
   document.getElementById('ang-datum').value    = document.getElementById('ang-ki-datum').value;
   document.getElementById('ang-gueltig').value  = document.getElementById('ang-ki-gueltig').value;
   document.getElementById('ang-notiz').value    = document.getElementById('ang-ki-notiz').value;
+  document.getElementById('ang-edit-id').value  = '';
+  const _fi = document.getElementById('ang-datei-input'); if (_fi) _fi.value = '';
+  _angExistingDateiName = ''; _renderAngDatei();
   closeModal('modal-angebot-ki'); resetAngKI();
   openModal('modal-angebot');
+  // Direkt zum Kategorie-Feld, das die KI nicht setzt.
+  _focusField('ang-kat');
   showToast('✅ Daten übernommen – bitte Kategorie und Status noch setzen', 'success');
 }
 
@@ -14706,7 +14767,7 @@ function renderAngebote() {
 
   const tbody = document.getElementById('angebot-table');
   if (state.angebote.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote</p><button class="btn btn-primary" style="margin-top:12px" onclick="openModal('modal-angebot')">+ Angebot</button></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote</p><button class="btn btn-primary" style="margin-top:12px" onclick="openNeuesAngebot()">+ Angebot</button></div></td></tr>`;
     return;
   }
 
