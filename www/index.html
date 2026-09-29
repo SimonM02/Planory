@@ -1164,6 +1164,11 @@
   @keyframes modalOut { from { opacity:1; transform:none; } to { opacity:0; transform:scale(0.97) translateY(6px); } }
   @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 
+  /* Datei-Drag&Drop: Hervorhebung, wenn eine Datei ueber eine Ablage-Zone gezogen wird */
+  .drag-over { outline: 2.5px dashed var(--accent); outline-offset: -6px; }
+  .modal.drag-over, .photo-upload-area.drag-over { background: var(--accent-light) !important; border-color: var(--accent) !important; }
+  .page.drag-over { border-radius: 14px; outline-offset: -10px; }
+
   @media (prefers-reduced-motion: reduce) {
     .modal-overlay.open, .modal-overlay.closing, .modal-overlay.closing .modal,
     .modal, .page.active { animation: none !important; }
@@ -6376,6 +6381,60 @@ document.addEventListener('click', e => {
   if (cancel) cancel.click();
   else closeModal(o.id);
 });
+
+// ── Datei-Drag&Drop ────────────────────────────────────────────────
+// Ueberall wo es einen Datei-Upload gibt, kann man Dateien direkt in den
+// Bereich/das Fenster ziehen. Die Datei wird auf das zugehoerige
+// <input type=file> gelegt und dessen change-Handler ausgeloest, sodass die
+// bestehende Upload-Logik (uploadDokument, addPhotos, handleRechnungScan …)
+// unveraendert weiterlaeuft. Reiner Web-/Desktop-Komfort.
+function _dragHasFiles(e) {
+  const t = e.dataTransfer; if (!t) return false;
+  return [...(t.types || [])].includes('Files');
+}
+function _dropZoneTargetInput(zone) {
+  const inputs = [...zone.querySelectorAll('input[type=file]')];
+  if (!inputs.length) return null;
+  // Beim Ziehen (Desktop) die Datei-/Galerie-Auswahl bevorzugen, nicht die Kamera.
+  return inputs.find(i => !i.hasAttribute('capture')) || inputs[0];
+}
+function _wireDropZone(zone) {
+  if (!zone || zone._dropWired) return;
+  zone._dropWired = true;
+  zone.addEventListener('dragenter', e => { if (_dragHasFiles(e)) { e.preventDefault(); zone.classList.add('drag-over'); } });
+  zone.addEventListener('dragover',  e => { if (_dragHasFiles(e)) { e.preventDefault(); try { e.dataTransfer.dropEffect = 'copy'; } catch(_){} } });
+  zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', e => {
+    if (!_dragHasFiles(e)) return;
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const files = e.dataTransfer && e.dataTransfer.files;
+    const inp = _dropZoneTargetInput(zone);
+    if (!inp || !files || !files.length) return;
+    try {
+      const dt = new DataTransfer();
+      (inp.multiple ? [...files] : [files[0]]).forEach(f => dt.items.add(f));
+      inp.files = dt.files;
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (err) {
+      try { showToast('Datei konnte nicht übernommen werden – bitte über den Auswählen-Knopf hinzufügen', 'error'); } catch(_){}
+    }
+  });
+}
+function _initDropZones() {
+  // Standard-Browserverhalten (Datei im Tab oeffnen) global unterbinden, damit
+  // ein Fehlablegen neben einer Zone nicht die App verlaesst.
+  window.addEventListener('dragover', e => { if (_dragHasFiles(e)) e.preventDefault(); });
+  window.addEventListener('drop',     e => { if (_dragHasFiles(e)) e.preventDefault(); });
+  const zones = new Set();
+  document.querySelectorAll('input[type=file]').forEach(inp => {
+    const z = inp.closest('.photo-upload-area, .modal') || inp.closest('.page');
+    if (z) zones.add(z);
+  });
+  zones.forEach(_wireDropZone);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initDropZones);
+else _initDropZones();
 
 // ── App-eigene Dialoge (ersetzen window.confirm / window.prompt) ──
 // Browser-Dialoge ("Diese Seite meldet...") wirken fremd zur App;
