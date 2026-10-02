@@ -57,6 +57,16 @@ Ein Build erledigt alles auf einmal (inkl. Kamera-Absturz-Fix). Kurz:
 - [x] Kamera-Foto-Verarbeitung speicherschonend/fehlertolerant; nativer Foto-Picker mit
       sicherem Fallback (Plugin optional).
 
+## Mit Marie besprechen (Tester-Feedback, noch offen)
+- [ ] **Zeitplan „oben/unten Aufgaben nicht abgrenzbar"** – vermutlich Phasen vs. Sammelblock
+      „Weitere Punkte" (dort landen Einträge aus altem Meilenstein-Dialog + KI-Import ohne Phase).
+- [ ] **Bautagebuch vs. Helfer** – „Arbeiter & Stunden" doppelt? (Tagebuch übernimmt jetzt die
+      Helfer inkl. Stunden automatisch). Tagebuch evtl. reiner Text-Bericht?
+- [ ] **Notizen & Dokumente ≈ Bautagebuch** – Zweck klarer trennen (Notizen = To-dos/Gespräche,
+      Tagebuch = was auf der Baustelle passiert ist).
+- [ ] Zurückgestellte Wünsche: Angebote → Budgetkategorien, mehrere Fotos je Tagebuch-Tag,
+      Tagebuch-Kategorien/Filter, Projekt-Export (Fotobuch + Tagebuch).
+
 ## Ideen für später
 - [ ] Todoist-Anbindung (optional).
 - [ ] Zeitplan-Feinschliff (Standard-Zeitspanne, Drag & Drop zwischen Abschnitten).
