@@ -2021,6 +2021,14 @@
 
   .lightbox.open { display: flex; }
   .lightbox img { max-width: 90vw; max-height: 80vh; border-radius: 12px; object-fit: contain; box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
+  /* Foto-Zoom */
+  .lightbox.open { overflow: hidden; }
+  .lightbox #lightbox-img { touch-action: none; user-select: none; -webkit-user-select: none; cursor: zoom-in; transition: transform .12s ease-out; will-change: transform; }
+  .lightbox.lb-zoomed #lightbox-img { cursor: grab; }
+  .lightbox.lb-dragging #lightbox-img { transition: none; cursor: grabbing; }
+  .lb-zoombar { position: fixed; top: 18px; left: 18px; z-index: 10001; display: flex; gap: 6px; }
+  .lb-zoombar button { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 8px; width: 38px; height: 34px; font-size: 1.05rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(6px); font-family: inherit; }
+  .lb-zoombar button:hover { background: rgba(255,255,255,0.22); }
   .lightbox-info { margin-top: 16px; text-align: center; }
   .lightbox-info strong { font-size: 1rem; color: white; }
   .lightbox-info small { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-left: 10px; }
@@ -3541,8 +3549,8 @@
         <div class="card-value" id="hf-next" style="font-size:1rem">–</div>
       </div>
       <div class="card">
-        <div class="card-label">Helfer angelegt</div>
-        <div class="card-value green" id="hf-people">0</div>
+        <div class="card-label">Geplante Stunden</div>
+        <div class="card-value green" id="hf-hours">0</div>
       </div>
     </div>
 
@@ -4404,14 +4412,19 @@
   <div style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,0.6);font-size:0.75rem;pointer-events:none">Ziehen zum Verschieben · Zwei Finger oder +/− zum Zoomen</div>
 </div>
 
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+<div class="lightbox" id="lightbox" onclick="_lbBackdropClick(event)">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <div class="lb-zoombar" onclick="event.stopPropagation()">
+    <button type="button" onclick="lbZoomBy(-0.5)" title="Verkleinern">−</button>
+    <button type="button" onclick="lbZoomBy(0.5)" title="Vergrößern">+</button>
+    <button type="button" onclick="lbZoomReset()" title="Zurücksetzen">⟲</button>
+  </div>
   <button onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
     style="position:fixed;top:18px;right:58px;z-index:10001;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:8px;padding:6px 12px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;backdrop-filter:blur(6px)"
     onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
     ⬇ Herunterladen
   </button>
-  <img id="lightbox-img" src="" alt="">
+  <img id="lightbox-img" src="" alt="" draggable="false">
   <div class="lightbox-info">
     <strong id="lightbox-title"></strong>
     <small id="lightbox-meta"></small>
@@ -4533,7 +4546,7 @@
     <div style="display:flex;gap:12px">
       <div class="form-row" style="flex:1"><label>Wie viele Helfer?</label><input type="number" id="einsatz-bedarf" min="1" step="1" placeholder="2" oninput="einsatzRenderAssigned()"></div>
       <div class="form-row" style="flex:1"><label>Umfang</label>
-        <select id="einsatz-umfang">
+        <select id="einsatz-umfang" onchange="einsatzRenderAssigned()">
           <option value="full">Ganzer Tag</option>
           <option value="half">Halber Tag</option>
         </select>
@@ -4812,7 +4825,6 @@ function updateProjectHeader() {
 // ──────────────── EINMAL-HINWEISE ────────────────
 const PAGE_HINTS = {
   dashboard:      'Dein Projektüberblick – Budget, Fortschritt, offene Aufgaben und „Demnächst fällig". Ganz oben der Schnellzugriff: die wichtigsten Aktionen mit einem Tipp – über „✏️ Anpassen" stellst du ihn selbst zusammen. Der KI-Bauberater analysiert alles auf Knopfdruck.',
-  planung:        'Alle Bauphasen und Meilensteine in einer Zeitleiste – nach Datum sortiert. Tippe einen Eintrag zum Bearbeiten an; über die Knöpfe oben legst du Phasen und Meilensteine an.',
   kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus.',
   budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest.',
   meilensteine:   'Definiere wichtige Bauphasen mit Terminen. Überfällige Meilensteine werden automatisch rot markiert.',
@@ -4823,7 +4835,6 @@ const PAGE_HINTS = {
   angebote:       'Vergleiche Angebote von Handwerkern und wandle das günstigste mit einem Klick direkt in eine Rechnung um.',
   zahlungsplan:   'Plane Ratenzahlungen mit Fälligkeitsterminen. Wenn du eine Zahlung abhakst, wird die zugehörige Rechnung automatisch auf „Bezahlt" gesetzt.',
   maengel:        'Dokumentiere Baumängel mit Fotos, Verantwortlichem und Behebungsdatum – wichtig für Gewährleistungsansprüche.',
-  fotos:          'Fotodokumentation nach Datum und Gewerk – ideal als Nachweis bei Übergabe oder bei Streitigkeiten.',
   rechnungen:     'Hier findest du alle per KI eingescannten Rechnungen als Übersicht.',
   kostenchart:    'Grafische Auswertung der Ausgaben nach Monat und Kategorie.',
   kostenaufteilung: 'Zeigt wie das Budget auf die einzelnen Kostenstellen aufgeteilt ist.',
@@ -4836,7 +4847,6 @@ const PAGE_HINTS = {
 // Englische Fassung der Seiten-Hinweise (Auswahl ueber _pageHint)
 const PAGE_HINTS_EN = {
   dashboard:      'Your project at a glance – budget, progress, open tasks and "Due soon". At the top is Quick Access: your most-used actions – build your own with "✏️ Customise". The AI construction advisor analyses everything at the touch of a button.',
-  planung:        'All building phases and milestones in one timeline – sorted by date. Tap an entry to edit it; use the buttons at the top to add phases and milestones.',
   kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
   budget:         'Split your budget across trades and see at a glance where you are over or under.',
   meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
@@ -4847,7 +4857,6 @@ const PAGE_HINTS_EN = {
   angebote:       'Compare quotes from tradespeople and turn the best one into an invoice with a single click.',
   zahlungsplan:   'Plan instalments with due dates. When you tick off a payment, the matching invoice is automatically set to "Paid".',
   maengel:        'Document defects with photos, responsible person and fix date – important for warranty claims.',
-  fotos:          'Photo documentation by date and trade – ideal as evidence at handover or in disputes.',
   rechnungen:     'Here you will find all invoices scanned by the AI in one overview.',
   kostenchart:    'Graphical analysis of expenses by month and category.',
   kostenaufteilung: 'Shows how the budget is split across the individual cost centres.',
@@ -4935,7 +4944,7 @@ function renderZeitplan() {
         <div class="pl-imeta">
           <span class="pl-stbadge pl-st-${st}">${PL_ST_LABEL[st]}</span>
           <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)">
-          ${overdue?`<span class="pl-overdue-tag">überfällig</span>`:''}
+          ${overdue?`<span class="pl-overdue-tag">${tt('überfällig')}</span>`:''}
           <span class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="Erinnerung ${remOn?'an – tippen zum Ausschalten':'aus – tippen zum Einschalten'}">${remOn?'🔔':'🔕'}</span>
         </div>
       </div>
@@ -4963,8 +4972,8 @@ function renderZeitplan() {
         </div>
         <div class="pl-progress"><div class="pl-progress-bar" style="width:${pct}%"></div></div>
         <div class="pl-span">
-          <span class="pl-span-lbl">von</span><input type="date" value="${s.start||''}" title="Beginn" onchange="planSetSecStart(${s.id},this.value)">
-          <span class="pl-span-lbl">bis</span><input type="date" value="${s.end||''}" title="Ende" onchange="planSetSecEnd(${s.id},this.value)">
+          <span class="pl-span-lbl">${_lang==='en'?'from':'von'}</span><input type="date" value="${s.start||''}" title="${tt('Beginn')}" onchange="planSetSecStart(${s.id},this.value)">
+          <span class="pl-span-lbl">${_lang==='en'?'to':'bis'}</span><input type="date" value="${s.end||''}" title="${tt('Ende')}" onchange="planSetSecEnd(${s.id},this.value)">
         </div>
       </div>
       <div class="pl-secbody">
@@ -4978,9 +4987,9 @@ function renderZeitplan() {
   if (!secs.length && !miles.length) {
     el.innerHTML = `<div class="pl-empty">
       <div class="pl-empty-ic">🗓️</div>
-      <div class="pl-empty-t">Noch kein Zeitplan</div>
-      <div class="pl-empty-s">Lege deine erste Bauphase an (z.B. „Fundament") und füge darin Unterpunkte mit Datum hinzu. Alles wird automatisch nach Datum sortiert.</div>
-      <button class="btn btn-primary" onclick="planAddSection()" style="margin-top:16px">+ Erste Phase anlegen</button>
+      <div class="pl-empty-t">${tt('Noch kein Zeitplan')}</div>
+      <div class="pl-empty-s">${tt('Lege deine erste Bauphase an (z.B. „Fundament") und füge darin Unterpunkte mit Datum hinzu.')}</div>
+      <button class="btn btn-primary" onclick="planAddSection()" style="margin-top:16px">${tt('+ Erste Phase anlegen')}</button>
     </div>`;
     return;
   }
@@ -4994,11 +5003,11 @@ function renderZeitplan() {
   let html = '';
   if (allTotal) {
     html += `<div class="pl-overview">
-      <div class="pl-overview-top"><span>Gesamt-Fortschritt</span><strong>${allDone}/${allTotal} erledigt</strong></div>
+      <div class="pl-overview-top"><span>${tt('Gesamt-Fortschritt')}</span><strong>${allDone}/${allTotal} ${_lang==='en'?'done':'erledigt'}</strong></div>
       <div class="pl-progress pl-progress-lg"><div class="pl-progress-bar" style="width:${allPct}%"></div></div>
     </div>`;
   }
-  html += `<div class="pl-hint">Abschnitte sind nach Startdatum geordnet, Unterpunkte nach ihrem Datum. Tippe den Kreis für den Status (Offen → In Arbeit → Erledigt). 🔔 schaltet die Erinnerung für einen Punkt mit Datum ein/aus.</div>`;
+  html += `<div class="pl-hint">${tt('Nach Datum sortiert · Kreis antippen = Status ändern · 🔔 = Erinnerung')}</div>`;
   html += sortedSecs.map(sectionCard).join('');
   if (ungrouped.length) {
     const done = ungrouped.filter(m => _plItemStatus(m)==='erledigt').length;
@@ -5424,7 +5433,20 @@ const TEXTE = {
   "Nächster Einsatz": { en: "Next day" },
   "Helfer angelegt": { en: "Helpers added" },
   "Kommende Helfer-Tage": { en: "Upcoming helper days" },
-  "Einsätze pro Helfer": { en: "Days per helper" },
+  "Einsätze pro Helfer": { en: "Hours per helper" },
+  "Geplante Stunden": { en: "Planned hours" },
+  "Sobald du Helfer einteilst, siehst du hier die geplanten Stunden pro Person.": { en: "Once you assign helpers, you'll see the planned hours per person here." },
+  "Nach Datum sortiert · Kreis antippen = Status ändern · 🔔 = Erinnerung": { en: "Sorted by date · tap the circle to change status · 🔔 = reminder" },
+  "überfällig": { en: "overdue" },
+  "Gesamt-Fortschritt": { en: "Overall progress" },
+  "Noch kein Zeitplan": { en: "No schedule yet" },
+  "Lege deine erste Bauphase an (z.B. „Fundament\") und füge darin Unterpunkte mit Datum hinzu.": { en: "Create your first building phase (e.g. \"Foundation\") and add sub-items with dates." },
+  "+ Erste Phase anlegen": { en: "+ Create first phase" },
+  "Beginn": { en: "Start" },
+  "Ende": { en: "End" },
+  "Vergrößern": { en: "Zoom in" },
+  "Verkleinern": { en: "Zoom out" },
+  "Zurücksetzen": { en: "Reset" },
   "Noch keine Helfer-Tage geplant": { en: "No helper days planned yet" },
   "Noch niemand eingeteilt": { en: "Nobody assigned yet" },
   "Noch niemand zugeteilt": { en: "Nobody assigned yet" },
@@ -9293,7 +9315,7 @@ function switchDiaryTab(tab, btn) {
   else renderDiarySummary();
 }
 
-function addWorkerRow(prefillName = '') {
+function addWorkerRow(prefillName = '', prefillHours = '') {
   const container = document.getElementById('tb-worker-rows');
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:8px;align-items:center';
@@ -9307,7 +9329,7 @@ function addWorkerRow(prefillName = '') {
       style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none"
       class="tb-worker-name">
     <datalist id="${listId}">${workerOptions}</datalist>
-    <input type="number" min="0.5" max="24" step="0.5" placeholder="Std."
+    <input type="number" min="0.5" max="24" step="0.5" placeholder="Std." value="${prefillHours ? esc(String(prefillHours)) : ''}"
       style="width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;outline:none"
       class="tb-worker-hours">
     <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:4px">✕</button>`;
@@ -10984,7 +11006,74 @@ function openMgLightbox(url, title) {
   document.getElementById('lightbox').classList.add('open');
 }
 
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lbZoomReset(); }
+
+// ── Foto-Ansicht: Zoomen (Zwei-Finger, Mausrad, +/−, Doppeltipp) & Verschieben ──
+// Muster wie beim Grundriss-Zoom (_grApply/_grInitZoom). Schliessen nur noch per
+// Hintergrund-Klick oder ✕, damit Ziehen/Tippen auf dem Bild die Ansicht nicht beendet.
+let _lbZ = { s:1, x:0, y:0, lx:0, ly:0 };
+const _lbPtrs = new Map();
+let _lbPinchDist = 0, _lbMoved = false, _lbSuppressClick = false, _lbLastTap = 0;
+function _lbApply() {
+  const img = document.getElementById('lightbox-img'); if (!img) return;
+  const zoomed = _lbZ.s > 1.001;
+  img.style.transform = zoomed ? `translate(${_lbZ.x}px, ${_lbZ.y}px) scale(${_lbZ.s})` : '';
+  document.getElementById('lightbox')?.classList.toggle('lb-zoomed', zoomed);
+}
+function lbZoomBy(d) {
+  _lbZ.s = Math.min(6, Math.max(1, _lbZ.s + d));
+  if (_lbZ.s <= 1.001) { _lbZ.s = 1; _lbZ.x = 0; _lbZ.y = 0; }
+  _lbApply();
+}
+function lbZoomReset() { _lbZ = { s:1, x:0, y:0, lx:0, ly:0 }; _lbPtrs.clear(); _lbPinchDist = 0; _lbApply(); }
+function _lbDist() { const p = [..._lbPtrs.values()]; return Math.hypot(p[0].clientX - p[1].clientX, p[0].clientY - p[1].clientY); }
+function _lbBackdropClick(e) {
+  if (_lbSuppressClick) { _lbSuppressClick = false; return; }   // Ende einer Zieh-Geste, kein Schliessen
+  if (e.target && e.target.id === 'lightbox') closeLightbox();
+}
+(function _lbInitZoom(){
+  const lb = () => document.getElementById('lightbox');
+  const isOpen = () => { const o = lb(); return !!(o && o.classList.contains('open')); };
+  // Neues Bild (egal von welcher Stelle geoeffnet) -> Zoom zuruecksetzen
+  document.getElementById('lightbox-img')?.addEventListener('load', lbZoomReset);
+  document.addEventListener('pointerdown', e => {
+    if (!isOpen() || !e.target || e.target.id !== 'lightbox-img') return;
+    e.preventDefault();
+    _lbPtrs.set(e.pointerId, e); _lbZ.lx = e.clientX; _lbZ.ly = e.clientY;
+    if (_lbPtrs.size === 1) _lbMoved = false;
+    if (_lbPtrs.size === 2) _lbPinchDist = _lbDist();
+    lb().classList.add('lb-dragging');
+  });
+  document.addEventListener('pointermove', e => {
+    if (!_lbPtrs.has(e.pointerId)) return;
+    _lbPtrs.set(e.pointerId, e);
+    if (_lbPtrs.size === 2) { const d = _lbDist(); if (_lbPinchDist) lbZoomBy((d - _lbPinchDist) * 0.01); _lbPinchDist = d; _lbMoved = true; return; }
+    const dx = e.clientX - _lbZ.lx, dy = e.clientY - _lbZ.ly;
+    if (Math.abs(dx) + Math.abs(dy) > 3) _lbMoved = true;
+    if (_lbZ.s > 1.001) { _lbZ.x += dx; _lbZ.y += dy; _lbApply(); }
+    _lbZ.lx = e.clientX; _lbZ.ly = e.clientY;
+  });
+  const up = e => {
+    if (!_lbPtrs.has(e.pointerId)) return;
+    _lbPtrs.delete(e.pointerId);
+    if (_lbPtrs.size < 2) _lbPinchDist = 0;
+    if (_lbPtrs.size === 1) { const p = [..._lbPtrs.values()][0]; _lbZ.lx = p.clientX; _lbZ.ly = p.clientY; }
+    if (_lbPtrs.size > 0) return;
+    lb()?.classList.remove('lb-dragging');
+    if (_lbMoved) { _lbSuppressClick = true; setTimeout(() => { _lbSuppressClick = false; }, 350); return; }
+    if (e.type !== 'pointerup') return;
+    // Doppeltipp: zwischen normal und 2,5-fach umschalten
+    const now = Date.now();
+    if (now - _lbLastTap < 320) { if (_lbZ.s > 1.001) lbZoomReset(); else { _lbZ.s = 2.5; _lbApply(); } _lbLastTap = 0; }
+    else _lbLastTap = now;
+  };
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
+  document.addEventListener('wheel', e => {
+    if (!isOpen() || !lb().contains(e.target)) return;
+    e.preventDefault(); lbZoomBy(e.deltaY < 0 ? 0.3 : -0.3);
+  }, { passive:false });
+})();
 
 function downloadLightboxPhoto() {
   const src = document.getElementById('lightbox-img').src;
@@ -12065,6 +12154,7 @@ function renderWartung() {
 
 // ──────────────── HELFER (Planung + Einteilung) ────────────────
 let _einsatzAssigned = [];   // Arbeits-Array, solange das Einsatz-Modal offen ist
+let _einsatzStunden = {};    // optionale Stunden je zugeteiltem Namen (leer = Standard aus Umfang)
 let _einsatzQuickList = [];  // aktuelle Schnell-Auswahl-Vorschläge (Index -> Name)
 let _helferExtraList = [];   // verwendete, aber nicht gespeicherte Helfer (Index -> Name)
 let _helferCal = null;       // aktueller Kalendermonat { y, m(0-basiert) }
@@ -12085,12 +12175,31 @@ function _refreshHelferDatalist() {
 }
 
 function _einsatzBelegt(e) { return (e.zugewiesen || []).filter(Boolean).length; }
-function _umfangLabel(u)   { return u === 'half' ? '½ Tag' : 'ganzer Tag'; }
+function _umfangLabel(u)   { const en = (_lang === 'en'); return u === 'half' ? (en ? '½ day' : '½ Tag') : (en ? 'full day' : 'ganzer Tag'); }
 function _umfangWeight(u)  { return u === 'half' ? 0.5 : 1; }
+// Stunden pro Helfer: eigene Angabe am Helfer-Tag (e.stunden[Name]), sonst Standard
+// aus dem Umfang (ganzer Tag = 8 Std, halber Tag = 4 Std).
+const HELFER_TAG_STD = 8;
+function _umfangStd(u)     { return u === 'half' ? HELFER_TAG_STD / 2 : HELFER_TAG_STD; }
+function _helferStd(e, name) {
+  const v = parseFloat(e && e.stunden && e.stunden[name]);
+  return v > 0 ? v : _umfangStd(e && e.umfang);
+}
+function _fmtStd(h) {
+  const en = (_lang === 'en');
+  return (Math.round(h * 10) / 10).toLocaleString(en ? 'en-GB' : 'de-AT') + (en ? ' h' : ' Std');
+}
+// Kurzes Datum mit Wochentag, ohne Jahr (z.B. "Mo., 21.9.")
+function _fmtKurzDatum(d) {
+  const dt = new Date(String(d) + 'T12:00:00');
+  if (isNaN(dt)) return '–';
+  return dt.toLocaleDateString(_lang === 'en' ? 'en-GB' : 'de-AT', { weekday: 'short', day: 'numeric', month: 'numeric' });
+}
 
 // ── Einsatz-Modal (Helfer-Tag) ──
 function resetEinsatzModal() {
   _einsatzAssigned = [];
+  _einsatzStunden = {};
   ['einsatz-bedarf','einsatz-notiz','einsatz-add-name'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const u = document.getElementById('einsatz-umfang'); if (u) u.value = 'full';
   const r = document.getElementById('einsatz-remind'); if (r) r.value = '7';
@@ -12102,9 +12211,12 @@ function resetEinsatzModal() {
 }
 function einsatzRenderAssigned() {
   const box = document.getElementById('einsatz-assigned');
+  const en = (_lang === 'en');
+  const defStd = _umfangStd(document.getElementById('einsatz-umfang')?.value);
+  const stdTitle = en ? `Hours (empty = ${defStd} h)` : `Stunden (leer = ${defStd} Std)`;
   if (box) box.innerHTML = _einsatzAssigned.length
-    ? _einsatzAssigned.map((n, i) => `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:4px 8px 4px 12px;font-size:0.82rem">${esc(n)}<button type="button" onclick="einsatzRemoveAssigned(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.9rem;line-height:1">✕</button></span>`).join('')
-    : '<span style="font-size:0.8rem;color:var(--text3)">Noch niemand zugeteilt</span>';
+    ? _einsatzAssigned.map((n, i) => `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:4px 8px 4px 12px;font-size:0.82rem">${esc(n)}<input type="number" min="0.5" max="24" step="0.5" inputmode="decimal" value="${_einsatzStunden[n] > 0 ? _einsatzStunden[n] : ''}" placeholder="${defStd}" title="${stdTitle}" oninput="einsatzSetStd(${i},this.value)" style="width:52px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:0.8rem;font-family:inherit"><span style="font-size:0.72rem;color:var(--text3)">${en ? 'h' : 'Std'}</span><button type="button" onclick="einsatzRemoveAssigned(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.9rem;line-height:1">✕</button></span>`).join('')
+    : `<span style="font-size:0.8rem;color:var(--text3)">${tt('Noch niemand zugeteilt')}</span>`;
   const bedarf = parseInt(document.getElementById('einsatz-bedarf')?.value, 10) || 0;
   const offen = Math.max(0, bedarf - _einsatzAssigned.length);
   const hint = document.getElementById('einsatz-open-hint');
@@ -12132,7 +12244,13 @@ function einsatzAddAssigned() {
   if (!_einsatzAssigned.includes(n)) _einsatzAssigned.push(n);
   inp.value = ''; einsatzRenderAssigned();
 }
-function einsatzRemoveAssigned(i) { _einsatzAssigned.splice(i, 1); einsatzRenderAssigned(); }
+function einsatzRemoveAssigned(i) { delete _einsatzStunden[_einsatzAssigned[i]]; _einsatzAssigned.splice(i, 1); einsatzRenderAssigned(); }
+// Stunden-Eingabe: nur merken, NICHT neu zeichnen (sonst verliert das Feld den Fokus)
+function einsatzSetStd(i, v) {
+  const n = _einsatzAssigned[i]; if (!n) return;
+  const x = parseFloat(String(v).replace(',', '.'));
+  if (x > 0) _einsatzStunden[n] = x; else delete _einsatzStunden[n];
+}
 // Getippten/zugewiesenen Namen dauerhaft als Helfer sichern (falls noch nicht vorhanden).
 function _ensureHelfer(name) {
   const n = (name || '').trim(); if (!n) return;
@@ -12154,6 +12272,7 @@ function addEinsatz() {
     bedarf: Math.max(1, parseInt(document.getElementById('einsatz-bedarf').value, 10) || 1),
     umfang: document.getElementById('einsatz-umfang').value || 'full',
     zugewiesen: [..._einsatzAssigned],
+    stunden: Object.fromEntries(_einsatzAssigned.filter(n => _einsatzStunden[n] > 0).map(n => [n, _einsatzStunden[n]])),
     remind: document.getElementById('einsatz-remind').value || '7',
     notiz: document.getElementById('einsatz-notiz').value || ''
   };
@@ -12171,6 +12290,7 @@ function editEinsatz(id) {
   const e = (state.helfereinsaetze || []).find(e => String(e.id) === String(id));
   if (!e) return;
   _einsatzAssigned = [...(e.zugewiesen || []).filter(Boolean)];
+  _einsatzStunden = { ...(e.stunden || {}) };
   document.getElementById('einsatz-edit-id').value = id;
   document.getElementById('einsatz-datum').value = e.datum || '';
   document.getElementById('einsatz-bedarf').value = e.bedarf || 1;
@@ -12339,11 +12459,16 @@ function renderHelfer() {
   const todayStr = today();
   const sorted = [...state.helfereinsaetze].filter(e => e.datum).sort((a, b) => a.datum.localeCompare(b.datum));
   const upcoming = sorted.filter(e => e.datum >= todayStr);
-  let openTotal = 0;
-  state.helfereinsaetze.forEach(e => { if (e.datum >= todayStr) openTotal += Math.max(0, (parseInt(e.bedarf, 10) || 0) - _einsatzBelegt(e)); });
+  const en = (_lang === 'en');
+  let openTotal = 0, stdKommend = 0;
+  state.helfereinsaetze.forEach(e => {
+    if (e.datum < todayStr) return;
+    openTotal += Math.max(0, (parseInt(e.bedarf, 10) || 0) - _einsatzBelegt(e));
+    (e.zugewiesen || []).filter(Boolean).forEach(n => { stdKommend += _helferStd(e, n); });
+  });
   document.getElementById('hf-total').textContent = state.helfereinsaetze.length;
   document.getElementById('hf-open').textContent = openTotal;
-  document.getElementById('hf-people').textContent = state.helfer.length;
+  const hfH = document.getElementById('hf-hours'); if (hfH) hfH.textContent = _fmtStd(stdKommend);
   document.getElementById('hf-next').textContent = upcoming.length ? fmtDate(upcoming[0].datum) : '–';
 
   const list = document.getElementById('helfer-list');
@@ -12355,14 +12480,22 @@ function renderHelfer() {
       const bedarf = parseInt(e.bedarf, 10) || 0, belegt = _einsatzBelegt(e), offen = Math.max(0, bedarf - belegt);
       const col = offen > 0 ? '#f59e0b' : '#22c55e';
       const past = e.datum < todayStr;
-      const chips = (e.zugewiesen || []).filter(Boolean).map(n => `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:2px 9px;font-size:0.78rem">${esc(n)}</span>`).join(' ');
+      const chips = (e.zugewiesen || []).filter(Boolean).map(n => {
+        const eigen = parseFloat(e.stunden && e.stunden[n]) > 0;   // nur eigene Stundenangabe anzeigen
+        return `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:2px 9px;font-size:0.78rem">${esc(n)}${eigen ? ` · ${_fmtStd(_helferStd(e, n))}` : ''}</span>`;
+      }).join(' ');
+      const helferTxt = en ? `${bedarf} helper${bedarf === 1 ? '' : 's'}` : `${bedarf} Helfer`;
+      const besetztTxt = en
+        ? `${belegt}/${bedarf} filled${offen > 0 ? ` · ${offen} open` : ' · full'}`
+        : `${belegt}/${bedarf} besetzt${offen > 0 ? ` · ${offen} offen` : ' · voll'}`;
       return `<div class="wartung-item" style="${past ? 'opacity:.6' : ''}">
         <div class="wartung-icon" style="background:#fff3e8">🤝</div>
         <div class="wartung-info">
-          <div class="wartung-name">${fmtDate(e.datum)} · ${bedarf} Helfer · ${_umfangLabel(e.umfang)}</div>
+          <div class="wartung-name">${_fmtKurzDatum(e.datum)}</div>
+          <div style="font-size:0.84rem;color:var(--text2);margin-top:2px">${helferTxt} · ${_umfangLabel(e.umfang)}</div>
           ${e.notiz ? `<div style="font-size:0.8rem;color:var(--text3);margin-top:2px">${esc(e.notiz)}</div>` : ''}
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">${chips || '<span style="font-size:0.78rem;color:var(--text3)">Noch niemand eingeteilt</span>'}</div>
-          <div style="margin-top:6px"><span style="display:inline-block;padding:2px 9px;border-radius:99px;background:${col};color:#fff;font-size:0.74rem;font-weight:700">${belegt}/${bedarf} besetzt${offen > 0 ? ` · ${offen} offen` : ' · voll'}</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">${chips || `<span style="font-size:0.78rem;color:var(--text3)">${tt('Noch niemand eingeteilt')}</span>`}</div>
+          <div style="margin-top:6px"><span style="display:inline-block;padding:2px 9px;border-radius:99px;background:${col};color:#fff;font-size:0.74rem;font-weight:700">${besetztTxt}</span></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <button class="action-btn" onclick="editEinsatz(${e.id})" title="Bearbeiten">✏️</button>
@@ -12374,12 +12507,12 @@ function renderHelfer() {
 
   const sum = document.getElementById('helfer-summary');
   const map = {};
-  state.helfereinsaetze.forEach(e => { const w = _umfangWeight(e.umfang); (e.zugewiesen || []).filter(Boolean).forEach(n => { map[n] = (map[n] || 0) + w; }); });
+  // Summe der geplanten Stunden pro Person (eigene Angabe, sonst ganzer Tag 8 / halber 4 Std)
+  state.helfereinsaetze.forEach(e => { (e.zugewiesen || []).filter(Boolean).forEach(n => { map[n] = (map[n] || 0) + _helferStd(e, n); }); });
   const rows = Object.entries(map).sort((a, b) => b[1] - a[1]);
   sum.innerHTML = rows.length
-    ? '<div style="font-size:0.74rem;color:var(--text3);margin-bottom:6px">Summe der geplanten Tage pro Person · ½ Tag zählt 0,5, ganzer Tag 1.</div>'
-      + rows.map(([n, d]) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:0.86rem">${esc(n)}</span><span style="font-size:0.86rem;font-weight:700">${d.toLocaleString('de-AT')} Tag${d === 1 ? '' : 'e'}</span></div>`).join('')
-    : '<div style="font-size:0.83rem;color:var(--text3)">Sobald du Helfer einteilst, zählt Planory hier die geplanten Tage pro Person (½ Tag = 0,5, ganzer Tag = 1).</div>';
+    ? rows.map(([n, h]) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:0.86rem">${esc(n)}</span><span style="font-size:0.86rem;font-weight:700">${_fmtStd(h)}</span></div>`).join('')
+    : `<div style="font-size:0.83rem;color:var(--text3)">${tt('Sobald du Helfer einteilst, siehst du hier die geplanten Stunden pro Person.')}</div>`;
 }
 
 // Bautagebuch: für ein Datum eingeteilte Helfer automatisch als Arbeiter-Zeilen vorbefüllen
@@ -12389,10 +12522,14 @@ function _prefillDiaryHelfer() {
   if (!dEl || !rows) return;
   if (document.getElementById('tb-edit-id')?.value) return;   // nur bei neuen Einträgen
   const datum = dEl.value; if (!datum) return;
-  const names = [...new Set((state.helfereinsaetze || []).filter(e => e.datum === datum).flatMap(e => (e.zugewiesen || []).filter(Boolean)))];
+  // Name -> Stunden aus den Helfer-Einteilungen dieses Tages (eigene Angabe, sonst Standard)
+  const std = {};
+  (state.helfereinsaetze || []).filter(e => e.datum === datum).forEach(e =>
+    (e.zugewiesen || []).filter(Boolean).forEach(n => { std[n] = (std[n] || 0) + _helferStd(e, n); }));
+  const names = Object.keys(std);
   if (!names.length) return;
   const existing = new Set([...rows.querySelectorAll('.tb-worker-name')].map(i => i.value.trim()).filter(Boolean));
-  names.forEach(n => { if (!existing.has(n)) addWorkerRow(n); });
+  names.forEach(n => { if (!existing.has(n)) addWorkerRow(n, std[n]); });
 }
 
 // ──────────────── UPGRADE MODAL ────────────────
