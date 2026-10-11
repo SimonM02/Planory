@@ -249,6 +249,85 @@ check('Datenschutz: syncToCloud schützt noch vorhandene Einträge (Sicherheitsn
 }
 
 // ───────────────────────────────────────────────────────────────────
+// 3d. UNGESICHERTE ÄNDERUNGEN – Vorfall 11.10.2026: "Ausgabe erscheint kurz
+//     und verschwindet wieder". Ein Neuladen aus der Cloud hat noch nicht
+//     hochgeladene Einträge überschrieben (nachgestellt in tests/sync-e2e.mjs).
+// ───────────────────────────────────────────────────────────────────
+{
+  const pctx = { ITEM_TYPES: ['kosten', 'aufgaben', 'budgetKat'] };
+  vm.createContext(pctx);
+  vm.runInContext(['_stableStr', '_reapplyPending'].map(n => extractFn(web, n) || ';').join('\n'), pctx);
+  const re = pctx._reapplyPending, ss = pctx._stableStr;
+  const P = (kosten, del = {}) => [{ id: 1, kosten, _deletedIds: del }];
+  const pend = (item) => new Map([['1|kosten|' + item.id, { pid: '1', typ: 'kosten', id: String(item.id), item, j: 'x', syncedAt: 0 }]]);
+
+  check('Ungesichert: Schutz-Funktionen vorhanden', () =>
+    (typeof re === 'function' && typeof ss === 'function') || '_reapplyPending / _stableStr fehlen');
+  if (typeof re === 'function' && typeof ss === 'function') {
+    check('Ungesichert: neue Ausgabe überlebt das Neuladen aus der Cloud', () => {
+      const cloud = P([{ id: 10, betrag: 1000, _updatedAt: 1 }]);
+      re(cloud, pend({ id: 11, betrag: 4160, _updatedAt: 5 }), [], {}, 1, 0);
+      if (!cloud[0].kosten.some(k => k.id === 11 && k.betrag === 4160)) return 'Ungesicherter Eintrag wurde vom Cloud-Stand überschrieben';
+      if (!cloud[0].kosten.some(k => k.id === 10)) return 'Cloud-Eintrag ging verloren';
+    });
+    check('Ungesichert: lokale Änderung gewinnt gegen ältere Cloud-Fassung', () => {
+      const cloud = P([{ id: 11, betrag: 100, _updatedAt: 3 }]);
+      re(cloud, pend({ id: 11, betrag: 4160, _updatedAt: 5 }), [], {}, 1, 0);
+      if (cloud[0].kosten[0].betrag !== 4160) return `Betrag ${cloud[0].kosten[0].betrag} statt 4160`;
+    });
+    check('Ungesichert: neuere Fassung von anderem Gerät gewinnt', () => {
+      const cloud = P([{ id: 11, betrag: 999, _updatedAt: 9 }]);
+      const p = pend({ id: 11, betrag: 4160, _updatedAt: 5 });
+      re(cloud, p, [], {}, 1, 0);
+      if (cloud[0].kosten[0].betrag !== 999) return 'Ältere lokale Fassung hat die neuere überschrieben';
+      if (p.size) return 'Veralteter lokaler Stand bleibt als "ungesichert" hängen';
+    });
+    check('Ungesichert: frisch Gelöschtes kommt nicht zurück', () => {
+      const cloud = P([{ id: 12, betrag: 5 }]);
+      const p = pend({ id: 12, betrag: 5, _updatedAt: 7 });
+      re(cloud, p, [], { '12': { ts: 500 } }, 1, 100);
+      if (cloud[0].kosten.some(k => k.id === 12)) return 'Gelöschter Eintrag ist wieder da';
+      if (p.size) return 'Gelöschter Eintrag bleibt als "ungesichert" hängen';
+    });
+    check('Ungesichert: alte lokale Grabsteine löschen keine echten Cloud-Einträge', () => {
+      const cloud = P([{ id: 13, betrag: 5 }]);
+      re(cloud, new Map(), [], { '13': { ts: 50 } }, 1, 100);
+      if (!cloud[0].kosten.some(k => k.id === 13)) return 'Echter Eintrag wurde wegen eines alten Grabsteins entfernt';
+    });
+    check('Ungesichert: alte lokale Daten werden NICHT wiederbelebt, neue Projekte bleiben', () => {
+      const cloud = P([]);
+      re(cloud, new Map(), [{ id: 50, kosten: [] }, { id: 5000, kosten: [] }], {}, 1, 1000);
+      if (cloud.some(p => p.id === 50)) return 'Uraltes lokales Projekt wurde wiederbelebt';
+      if (!cloud.some(p => p.id === 5000)) return 'Gerade angelegtes Projekt ging verloren';
+    });
+    check('Ungesichert: Schlüssel-Reihenfolge spielt keine Rolle (Postgres ordnet um)', () =>
+      ss({ a: 1, b: { c: 2, d: [1, { x: 1, y: 2 }] } }) === ss({ b: { d: [1, { y: 2, x: 1 }], c: 2 }, a: 1 })
+        || 'Vergleich hängt von der Schlüssel-Reihenfolge ab – alles sähe "geändert" aus');
+  }
+}
+for (const [label, src] of [['Web', web], ['App', app]]) {
+  check(`${label}: Neuladen setzt ungesicherte Einträge wieder ein`, () => {
+    const lf = extractFn(src, 'loadFromCloud');
+    if (!lf) return 'loadFromCloud nicht gefunden';
+    const a = lf.indexOf('_reapplyPending('), b = lf.indexOf('projects = finalProjects');
+    if (a < 0) return 'loadFromCloud ruft _reapplyPending nicht auf – Eingetipptes kann beim Neuladen verschwinden';
+    if (b > -1 && a > b) return '_reapplyPending kommt erst NACH dem Ersetzen – zu spät';
+  });
+  check(`${label}: Speichern merkt ungesicherte Änderungen`, () => {
+    const sa = extractFn(src, 'saveAll');
+    if (!sa || !sa.includes('_markPending()')) return 'saveAll ruft _markPending nicht auf';
+  });
+  check(`${label}: nie zwei Uploads gleichzeitig`, () => {
+    const sc = extractFn(src, 'syncToCloud');
+    if (!sc || !/if \(_syncRunning\)/.test(sc)) return 'syncToCloud hat keine Sperre gegen parallele Uploads';
+  });
+  check(`${label}: Abo-Prüfung sperrt nicht, solange der Status noch lädt`, () => {
+    const rs = extractFn(src, 'requireSub');
+    if (!rs || !/_userPlan === undefined/.test(rs)) return 'requireSub sperrt Einträge in den ersten Sekunden nach dem Start';
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────
 // 4. ZUGESAGTE FUNKTIONEN – dürfen nie versehentlich gesperrt werden
 // ───────────────────────────────────────────────────────────────────
 for (const [label, src] of [['Web', web], ['App', app]]) {

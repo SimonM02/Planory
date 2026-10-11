@@ -10,6 +10,9 @@ So effizient, vollständig und korrekt wie möglich arbeiten:
 
 ## Projekt-Fakten (Kurz)
 - Ein-Datei-App: `index.html` == `www/index.html` (byte-identisch halten; `cmp` + `node tests/pruefen.mjs`).
+- Speichern/Sync geändert? Zusätzlich `node tests/sync-e2e.mjs` (echte App + nachgebautes Supabase).
+  Browser-Tests NIE über `file://` – ohne Hostnamen startet die App im Demo-Modus ohne Login/Cloud.
+- iOS-App bündelt `www/` beim Build (kein `server.url`) → Fixes erreichen die App erst mit neuem Build.
 - Dev-Branch: `claude/apple-feedback-changes-owr1go`. `main` = live (planory.at via GitHub Pages + Vercel-Backend).
 - Web-Deploy: `main` auschecken → `index.html`/`www/index.html` von dev holen → committen → pushen.
 - Backend im `api/`-Ordner (Vercel, deployt aus `main`).

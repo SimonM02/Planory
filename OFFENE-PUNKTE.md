@@ -1,6 +1,6 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 09.09.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 11.10.2026.
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -11,14 +11,18 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 09.09.2026.
   **Abo-Glückwunsch + Pro-Knopf**, **Landing-Preis**, **komplette DE/EN-Übersetzung**,
   **Eigenleistung-Fix**.
 
-## 🔴 NÄCHSTER SCHRITT: iOS-Upload v1.2  →  siehe NAECHSTER-BUILD-v1.2.md
-Ein Build erledigt alles auf einmal (inkl. Kamera-Absturz-Fix). Kurz:
-- [ ] **Kamera-Recht in Info.plist** (`NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription`)
-      → behebt den Scan-Absturz. **Einziger echter Blocker.**
-- [ ] **Version 1.2** bauen (Xcode) → hochladen.
-- [ ] App Store Connect: Build zuweisen, **Untertitel (DE)** `Hausbau: Budget & Baukosten`,
-      **englische Lokalisierung** anlegen (Texte in APP-STORE-TEXT.md), What's-New, einreichen.
-> Genaue Schritt-für-Schritt-Anleitung in **NAECHSTER-BUILD-v1.2.md**.
+## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (wichtiger Speicher-Fix)
+Die iPhone-App läuft mit dem eingebauten Stand v1.2 und hat noch den Fehler **„Ausgabe erscheint
+kurz und verschwindet wieder"** (neuer Eintrag wurde beim Neuladen aus der Cloud überschrieben).
+Im Web ist er seit 11.10.2026 behoben – in die App kommt er nur mit einem neuen Build.
+- [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → `npx cap sync ios` → Xcode:
+      **Version 1.3**, Build +1 → Archive → Upload (Ablauf wie NAECHSTER-BUILD-v1.2.md;
+      Info.plist-Kamera-Einträge sind schon drin).
+- [ ] What's New (Vorschlag):
+      „• Wichtige Fehlerbehebung: neue Einträge gehen nach dem Speichern nicht mehr verloren
+       • Rechnung scannen: verständliche Fehlermeldungen, Beträge wie 1.234,56 werden erkannt
+       • Fotos zoomen · Dateien per Drag & Drop · übersichtlicherer Zeitplan
+       • Helfer: Stunden pro Person · kleinere Verbesserungen"
 
 ## Authentifizierungs-E-Mails (Supabase) – Texte fertig, Einbau bei Simon
 - [ ] „Confirm signup" + „Reset password" (+ übrige) ins **Supabase → Authentication →
