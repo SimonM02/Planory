@@ -4642,6 +4642,22 @@ let projects = [];      // array of all projects
 let currentProjectId = null;
 let state = EMPTY_PROJECT(); // active project data (alias)
 
+// ── Schutz vor Datenverlust beim Neuladen aus der Cloud ──
+// loadFromCloud() ersetzt den lokalen Stand durch den Cloud-Stand. Lokale
+// Aenderungen, die noch NICHT hochgeladen sind (z.B. eine gerade eingetippte
+// Ausgabe), gingen dabei frueher verloren ("erscheint kurz, verschwindet dann").
+// _syncBaseline: was die Cloud je Eintrag hat ("Projekt|Typ|id" -> stabiler JSON-Text)
+// _pendingLocal: lokale Aenderungen, die noch nicht sicher in der Cloud sind
+let _syncBaseline = new Map();
+let _pendingLocal = new Map();
+let _baselineReady = false;          // erst nach Cache-/Cloud-Laden vergleichen
+let _initialCloudLoad = false;       // erstes Laden nach dem Login laeuft noch
+let _lastCloudApplyTs = 0;           // Startzeit des zuletzt angewendeten Cloud-Ladens
+const _sessionStartTs = Date.now();
+let _syncRunning = null;             // laufender Upload (Promise) – nie zwei gleichzeitig
+let _syncAgain = false;              // waehrend des Uploads neu gespeichert -> Nachlauf
+let _syncRetryMs = 0, _syncRetryTimer = null, _syncFailWarnedAt = 0;
+
 const PROJECT_COLORS = ['#ff9f1c','#3d6ff8','#7b5cfa','#0d9488','#ea6c19','#ef4444','#f59e0b','#22c55e','#e879f9','#06b6d4','#64748b'];
 
 // Stamp _updatedAt on any item in an array that doesn't already have one
@@ -4665,6 +4681,7 @@ function _trackDeletion(id, type = '') {
   if (id == null) return;
   state._deletedIds = state._deletedIds || {};
   state._deletedIds[String(id)] = { ts: Date.now(), type };
+  try { _dropPending(id); } catch(e) {}   // geloescht -> nicht als "ungesichert" wiederbeleben
   // Prune tombstones older than 60 days to keep storage lean
   const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
   for (const [k, v] of Object.entries(state._deletedIds)) {
@@ -4703,6 +4720,9 @@ function saveAll() {
 
   const idx = projects.findIndex(p => String(p.id) === String(currentProjectId));
   if (idx > -1) projects[idx] = { ...state, id: currentProjectId };
+  // Was jetzt vom Cloud-Stand abweicht, als "ungesichert" merken – ein Neuladen
+  // aus der Cloud setzt es wieder ein, bis der Upload bestaetigt ist.
+  try { _markPending(); } catch(e) { console.warn('[SYNC] _markPending:', e?.message); }
   const ts = new Date().toISOString();
   try {
     localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
@@ -6663,6 +6683,10 @@ function requireSub() {
   if (isNativeApp() && !_rcActive()) return true;  // Native ohne aktives Abo-System = gratis (unveraendert)
   if (_demoMode || !currentUser) return true;      // Demo & Vor-Login nie blocken
   if (_subActive()) return true;
+  // Abo-Status noch nicht geladen (erste Sekunden nach dem Start): NICHT sperren –
+  // sonst sehen zahlende Nutzer kurz die Bezahlschranke und ihr Eintrag geht verloren.
+  // (Sanfte Bezahlschranke, keine Sicherheitsgrenze – siehe _loadUserPlanImpl.)
+  if (window._userPlan === undefined) return true;
   openPaywall();
   return false;
 }
@@ -8570,6 +8594,11 @@ async function _processScanFile(file) {
   const isImage = file.type.startsWith('image/');
 
   try {
+    // PDFs werden nicht verkleinert. Der Server nimmt max. 4,5 MB an (Base64 macht
+    // die Datei um ein Drittel groesser) -> vorher abfangen statt kryptischer Fehler.
+    if (!isImage && file.size > 3.2 * 1024 * 1024) {
+      throw new Error('PDF zu groß (max. ca. 3 MB) – bitte die Rechnung abfotografieren oder als kleineres PDF speichern');
+    }
     // Datei einlesen. Bilder werden vorher verkleinert – grosse Handy-Fotos
     // wuerden sonst den Upload sprengen bzw. (in der App) zu viel Speicher kosten.
     // Wichtig: das Einlesen liegt IM try, damit ein Fehler eine Meldung zeigt
@@ -8630,25 +8659,41 @@ async function _processScanFile(file) {
       })
     });
 
-    const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    // Antwort erst als Text lesen: bei Server-Fehlern kommt evtl. kein JSON
+    // (z.B. HTML-Fehlerseite) -> verstaendliche Meldung statt "Unexpected token".
+    const raw = await response.text();
+    let data = null;
+    try { data = JSON.parse(raw); } catch (_) { /* kein JSON */ }
+    if (!response.ok || !data) throw new Error(_kiFehlertext(response.status, data));
+    const text = (data.content || []).map(c => c.text || '').join('');
+    const m = text.match(/\{[\s\S]*\}/);   // JSON auch dann finden, wenn die KI Text davor schreibt
+    if (!m) throw new Error('Die KI konnte die Rechnung nicht lesen – bitte ein schärferes Foto versuchen');
+    let parsed;
+    try { parsed = JSON.parse(m[0]); } catch (_) { throw new Error('Die KI-Antwort war unvollständig – bitte nochmal versuchen'); }
+
+    // Betraege robust lesen (Zahl ODER Text wie "1.234,56")
+    const mwstAuto = _parseBetrag(parsed.mwst_prozent);
+    let nettoN  = _parseBetrag(parsed.netto);
+    let bruttoN = _parseBetrag(parsed.brutto);
+    const satz  = isFinite(mwstAuto) ? mwstAuto : 20;
+    if (!(bruttoN > 0) && nettoN > 0) bruttoN = Math.round(nettoN * (1 + satz / 100) * 100) / 100;
+    if (!(nettoN > 0) && bruttoN > 0) nettoN = Math.round(bruttoN / (1 + satz / 100) * 100) / 100;
 
     // Fill form
     document.getElementById('scan-beschr').value   = parsed.beschreibung || '';
     document.getElementById('scan-anbieter').value  = parsed.anbieter     || '';
-    document.getElementById('scan-datum').value     = parsed.datum        || today();
-    document.getElementById('scan-netto').value     = parsed.netto        || '';
-    document.getElementById('scan-brutto').value    = parsed.brutto       || '';
+    document.getElementById('scan-datum').value     = /^\d{4}-\d{2}-\d{2}$/.test(parsed.datum || '') ? parsed.datum : today();
+    document.getElementById('scan-netto').value     = nettoN  > 0 ? nettoN  : '';
+    document.getElementById('scan-brutto').value    = bruttoN > 0 ? bruttoN : '';
     document.getElementById('scan-ki-notiz').textContent = parsed.hinweis ? `💡 KI-Hinweis: ${parsed.hinweis}` : '';
-    document.getElementById('scan-skonto-proz').value = parsed.skonto_prozent || '';
+    const skontoN = _parseBetrag(parsed.skonto_prozent);
+    document.getElementById('scan-skonto-proz').value = skontoN > 0 ? skontoN : '';
     document.getElementById('scan-skonto-bis').value  = (parsed.skonto_bis && parsed.skonto_bis !== 'null') ? parsed.skonto_bis : '';
     updateSkontoPreview('scan');
 
     // Set MwSt
     const mwstSel = document.getElementById('scan-mwst');
-    const mwstVal = String(parsed.mwst_prozent || 20);
+    const mwstVal = String(isFinite(mwstAuto) ? mwstAuto : 20);
     Array.from(mwstSel.options).forEach(o => { if (o.value === mwstVal) o.selected = true; });
 
     // Set Kategorie
@@ -8670,11 +8715,46 @@ async function _processScanFile(file) {
   }
 }
 
+// Betrag aus Zahl oder Text lesen – auch deutsches Format ("1.234,56", "1.234",
+// "€ 99,-") und englisches ("1,234.56"). Liefert NaN, wenn nichts Brauchbares drin ist.
+function _parseBetrag(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : NaN;
+  if (v == null) return NaN;
+  let s = String(v).trim().replace(/[,.]-$/, '').replace(/[^\d.,-]/g, '');
+  if (!s || s === '-') return NaN;
+  const c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+  if (c > -1 && d > -1) {
+    // beides vorhanden: das spaetere Zeichen trennt die Kommastellen
+    s = c > d ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (c > -1) {
+    s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
+  } else if (d > -1 && /^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.replace(/\./g, '');   // "1.234" bzw. "12.345.678" = Tausenderpunkte
+  }
+  const n = parseFloat(s);
+  return isFinite(n) ? n : NaN;
+}
+
+// Verstaendliche Meldung, wenn der KI-Server einen Fehler meldet
+function _kiFehlertext(status, data) {
+  const detail = data && (data.error?.message || (typeof data.error === 'string' ? data.error : ''));
+  if (status === 413) return 'Datei zu groß – bitte die Rechnung abfotografieren oder ein kleineres PDF verwenden';
+  if (status === 401 || status === 403) return 'Bitte melde dich neu an und versuche es dann nochmal';
+  if (status === 429) return 'Gerade zu viele Anfragen – bitte kurz warten und nochmal versuchen';
+  if (!status || status >= 500) return 'Der KI-Dienst ist gerade nicht erreichbar – bitte später nochmal versuchen';
+  return 'Rechnung konnte nicht gelesen werden' + (detail ? ' (' + detail + ')' : '');
+}
+
 async function confirmRechnungScan() {
   if (!requireSub()) return;
   const brutto   = parseFloat(document.getElementById('scan-brutto').value)  || 0;
   const mwst     = parseFloat(document.getElementById('scan-mwst').value)    || 0;
   const netto    = mwst > 0 ? brutto / (1 + mwst/100) : brutto;
+  if (!(brutto > 0)) {
+    showToast('⚠️ Bitte einen gültigen Bruttobetrag eintragen', 'error');
+    try { document.getElementById('scan-brutto').focus(); } catch (_) {}
+    return;
+  }
   const btn      = document.getElementById('scan-confirm-btn');
   btn.textContent = 'Wird gespeichert…'; btn.disabled = true;
 
@@ -13179,6 +13259,8 @@ async function onAuthSuccess(user, isNewUser = false) {
   // sofort anfuehlt (kein Warten auf die Cloud fuer den ersten Anblick). Danach
   // gleicht loadFromCloud() unten im Hintergrund ab und rendert neu. Aendert
   // NICHTS an der Sync-/Speicher-Logik – nur der Zeitpunkt der ersten Anzeige.
+  // Neuer Login: Merker fuer ungesicherte Aenderungen zuruecksetzen
+  _pendingLocal = new Map(); _syncBaseline = new Map(); _baselineReady = false; _lastCloudApplyTs = 0;
   try {
     if (!_demoMode
         && localStorage.getItem('bauplan_user_id') === user.id
@@ -13187,9 +13269,16 @@ async function onAuthSuccess(user, isNewUser = false) {
       if (projects.length) { applyModuleVisibility(); renderDashboard(); }
     }
   } catch(e) { /* Cache-Anzeige ist optional – im Zweifel einfach auf die Cloud warten */ }
+  // Vergleichsbasis = angezeigter Zwischenspeicher: was der Nutzer ab jetzt (auch
+  // waehrend die Cloud noch laedt) eintraegt, gilt als neu und geht nicht verloren.
+  // Aeltere lokale Daten gelten NICHT als neu -> werden nie wiederbelebt.
+  _syncBaseline = _baselineFromProjects(projects);
+  _baselineReady = true;
 
   // Load data from cloud (with local timestamp comparison)
-  const cloudData = await loadFromCloud();
+  _initialCloudLoad = true;
+  let cloudData = null;
+  try { cloudData = await loadFromCloud(); } finally { _initialCloudLoad = false; }
 
   // DSGVO: einmal pro Konto zugestimmt → auf jedem weiteren Geraet merken
   if (cloudData?.dsgvoAccepted) localStorage.setItem('dsgvoAccepted', '1');
@@ -13241,6 +13330,104 @@ function _saveLocalBackup(projectsData) {
     localStorage.setItem('bauplan_backup_2', b2 || '');
     localStorage.setItem('bauplan_backup_1', JSON.stringify({ ts, projects: projectsData }));
   } catch(e) { /* storage full – ignore */ }
+}
+
+// ── Ungesicherte lokale Aenderungen (Schutz beim Neuladen) ────────────────────
+// Stabiler JSON-Text mit sortierten Schluesseln: Postgres (jsonb) ordnet die
+// Schluessel um, ein normaler JSON-Vergleich wuerde sonst alles als "geaendert" sehen.
+function _stableStr(v) {
+  if (Array.isArray(v)) return '[' + v.map(x => (x === undefined ? 'null' : _stableStr(x))).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).filter(k => v[k] !== undefined && typeof v[k] !== 'function').sort()
+      .map(k => JSON.stringify(k) + ':' + _stableStr(v[k])).join(',') + '}';
+  }
+  const s = JSON.stringify(v);
+  return s === undefined ? 'null' : s;
+}
+function _syncKey(pid, typ, id) { return String(pid) + '|' + typ + '|' + String(id); }
+function _baselineFromProjects(projs) {
+  const m = new Map();
+  for (const p of (projs || [])) for (const t of ITEM_TYPES) for (const it of (p?.[t] || [])) {
+    if (it?.id != null) m.set(_syncKey(p.id, t, it.id), _stableStr(it));
+  }
+  return m;
+}
+function _baselineFromRows(rows) {
+  const m = new Map();
+  for (const r of (rows || [])) m.set(_syncKey(r.project_id, r.item_type, r.item_id), _stableStr(r.payload));
+  return m;
+}
+function _hasUnsyncedChanges() {
+  for (const e of _pendingLocal.values()) if (!e.syncedAt) return true;
+  return false;
+}
+// Nach jedem lokalen Speichern: Eintraege des offenen Projekts, die vom Cloud-Stand
+// abweichen oder neu sind, als ungesichert merken (tiefe Kopie).
+function _markPending() {
+  if (!_baselineReady || !currentUser || _demoMode || !state || state.id == null) return;
+  const pid = String(currentProjectId ?? state.id);
+  const del = state._deletedIds || {};
+  for (const t of ITEM_TYPES) {
+    for (const it of (state[t] || [])) {
+      if (it?.id == null || del[String(it.id)]) continue;
+      const key = _syncKey(pid, t, it.id);
+      const j = _stableStr(it);
+      const prev = _pendingLocal.get(key);
+      if (prev && prev.j === j) continue;                      // schon gemerkt, unveraendert
+      if (!prev && _syncBaseline.get(key) === j) continue;     // entspricht der Cloud
+      _pendingLocal.set(key, { pid, typ: t, id: String(it.id), item: JSON.parse(JSON.stringify(it)), j, syncedAt: 0 });
+    }
+  }
+}
+function _dropPending(id) {
+  const sfx = '|' + String(id);
+  for (const k of [..._pendingLocal.keys()]) if (k.endsWith(sfx)) _pendingLocal.delete(k);
+}
+// Frisch aus der Cloud geladene Projekte um die ungesicherten lokalen Aenderungen
+// ergaenzen. sinceTs = Beginn des vorigen Ladens: nur Projekte/Loeschungen, die
+// SEITHER lokal entstanden sind, werden uebernommen – aeltere lokale Daten werden
+// so nie wiederbelebt (siehe "Bekannte Luecke" in tests/pruefen.mjs).
+function _reapplyPending(finalProjects, pending, localProjects, localDeleted, localPid, sinceTs) {
+  const tsOf = v => (typeof v === 'number' ? v : Number(v?.ts) || 0);
+  // 1) Seit dem letzten Laden lokal angelegte Projekte, die die Cloud noch nicht kennt
+  for (const lp of (localProjects || [])) {
+    if (!lp || lp.id == null) continue;
+    if (finalProjects.some(p => String(p.id) === String(lp.id))) continue;
+    if ((Number(lp.id) || 0) >= sinceTs) finalProjects.push(JSON.parse(JSON.stringify(lp)));
+  }
+  // 2) Seit dem letzten Laden lokal geloeschte Eintraege (Cloud weiss es evtl. noch nicht)
+  const fpLocal = finalProjects.find(p => String(p.id) === String(localPid));
+  if (fpLocal && localDeleted) {
+    const del = { ...(fpLocal._deletedIds || {}) };
+    let neu = false;
+    for (const [id, v] of Object.entries(localDeleted)) {
+      if (!del[id] && tsOf(v) >= sinceTs) { del[id] = v; neu = true; }
+    }
+    if (neu) {
+      fpLocal._deletedIds = del;
+      for (const t of ITEM_TYPES) {
+        if (Array.isArray(fpLocal[t])) fpLocal[t] = fpLocal[t].filter(it => !(it && it.id != null && del[String(it.id)]));
+      }
+    }
+  }
+  // 3) Ungesicherte Eintraege wieder einsetzen (ausser geloescht oder anderswo neuer)
+  for (const [key, e] of pending) {
+    const fp = finalProjects.find(p => String(p.id) === String(e.pid));
+    if (!fp) { pending.delete(key); continue; }                       // Projekt gibt es nicht mehr
+    if (fp._deletedIds && fp._deletedIds[e.id]) { pending.delete(key); continue; }
+    if (!Array.isArray(fp[e.typ])) fp[e.typ] = [];
+    const arr = fp[e.typ];
+    const i = arr.findIndex(it => it && String(it.id) === e.id);
+    const copy = JSON.parse(JSON.stringify(e.item));
+    if (i > -1) {
+      const cTs = Number(arr[i]._updatedAt) || 0, lTs = Number(e.item._updatedAt) || 0;
+      if (cTs > lTs) { pending.delete(key); continue; }               // anderes Geraet hat Neueres
+      arr[i] = copy;
+    } else {
+      arr.push(copy);
+    }
+  }
+  return finalProjects;
 }
 
 // ── Merge helpers ─────────────────────────────────────────────────────────────
@@ -13483,6 +13670,9 @@ async function syncToCloud() {
   // alter lokaler Stand die aktuellen Daten der anderen ueberschreiben
   // (genau das ist am 29.07. mit den Budget-Kategorien passiert).
   if (!_cloudLoadedOk) {
+    // Erstes Laden nach dem Start laeuft noch: kein Fehler – die Aenderung ist als
+    // "ungesichert" gemerkt und wird nach dem Laden automatisch hochgeladen.
+    if (_initialCloudLoad) { setSyncStatus('pending'); return; }
     console.warn('[SYNC] blockiert: Cloud-Daten wurden auf diesem Geraet noch nicht geladen');
     if (Date.now() - _syncBlockWarnedAt > 60000) {
       _syncBlockWarnedAt = Date.now();
@@ -13491,6 +13681,10 @@ async function syncToCloud() {
     setSyncStatus('err');
     return;
   }
+  // Nie zwei Uploads gleichzeitig: laeuft schon einer, danach nochmal (mit neuestem Stand)
+  if (_syncRunning) { _syncAgain = true; return _syncRunning; }
+  let _syncDone;
+  _syncRunning = new Promise(r => { _syncDone = r; });
   // Block realtime from triggering a reload while we're syncing our own changes
   _realtimeLoading = true;
   _holdRealtime(500); // immediate guard while we work
@@ -13614,22 +13808,56 @@ async function syncToCloud() {
       }
     }
 
-    // Batch upsert in chunks of 500
+    // Batch upsert in chunks of 500. Der gesendete Stand wird DIREKT vor dem Senden
+    // festgehalten – aendert sich ein Eintrag waehrend des Uploads, bleibt er offen.
+    const sent = [];
     for (let i = 0; i < rows.length; i += 500) {
+      const chunk = rows.slice(i, i + 500);
+      const snap = chunk.map(r => [_syncKey(r.project_id, r.item_type, r.item_id), _stableStr(r.payload)]);
       const { error } = await supa.from('projekt_items')
-        .upsert(rows.slice(i, i + 500), { onConflict: 'user_id,project_id,item_type,item_id' });
+        .upsert(chunk, { onConflict: 'user_id,project_id,item_type,item_id' });
       if (error) throw error;
+      sent.push(...snap);
     }
+
+    // Hochgeladen = gesichert: Vergleichsbasis nachziehen und ungesicherte Eintraege
+    // mit genau diesem Stand als gesichert markieren.
+    const syncedAt = Date.now();
+    for (const [key, j] of sent) {
+      _syncBaseline.set(key, j);
+      const pe = _pendingLocal.get(key);
+      if (pe && !pe.syncedAt && pe.j === j) pe.syncedAt = syncedAt;
+    }
+    _syncRetryMs = 0;
 
     localStorage.setItem('bauplan_last_synced_at', ts);
     setSyncStatus('ok');
   } catch(e) {
     console.error('Sync error:', e.message);
     setSyncStatus('err');
+    _scheduleSyncRetry();
   } finally {
     _holdRealtime(2000); // block realtime for 2 s after sync so our own events don't reload
     _realtimeLoading = false;
+    const again = _syncAgain;
+    _syncAgain = false;
+    _syncRunning = null;
+    _syncDone();
+    if (again) { clearTimeout(syncTimeout); syncTimeout = setTimeout(syncToCloud, 50); }
   }
+}
+
+// Fehlgeschlagener Upload: Nutzer informieren (max. 1x/Minute) und automatisch
+// erneut versuchen (10 s, 30 s, 60 s …). Ungesichertes bleibt bis dahin geschuetzt.
+function _scheduleSyncRetry() {
+  if (!_hasUnsyncedChanges()) return;
+  if (Date.now() - _syncFailWarnedAt > 60000) {
+    _syncFailWarnedAt = Date.now();
+    showToast('⚠️ Speichern in der Cloud fehlgeschlagen – neuer Versuch läuft automatisch', 'warning', 6000);
+  }
+  _syncRetryMs = _syncRetryMs ? Math.min(_syncRetryMs * 3, 60000) : 10000;
+  clearTimeout(_syncRetryTimer);
+  _syncRetryTimer = setTimeout(() => { if (_hasUnsyncedChanges()) syncToCloud(); }, _syncRetryMs);
 }
 
 function _loadFromLocalStorage() {
@@ -13748,6 +13976,7 @@ async function loadFromCloud() {
     _loadFromLocalStorage(); return null;
   }
   let cloudApplied = false; // true, sobald die Cloud-Daten aktiv sind
+  const loadStartedAt = Date.now(); // alles, was danach gesichert wird, kennt diese Abfrage evtl. noch nicht
   try {
     // ── Load metadata + items in parallel ──────────────────────────
     const [metaResult, itemsResult] = await Promise.all([
@@ -13871,15 +14100,35 @@ async function loadFromCloud() {
     // ── Dedup all projects (remove duplicate budgetKat etc.) ───────
     finalProjects.forEach(_deduplicateProject);
 
+    // ── Ungesicherte lokale Aenderungen NICHT verlieren ────────────
+    // Eine gerade eingetippte Ausgabe ist evtl. noch nicht hochgeladen (Upload
+    // laeuft noch / erstes Laden nach dem Start / App kam gerade zurueck). Frueher
+    // hat dieses Neuladen sie still ueberschrieben ("erscheint kurz, verschwindet").
+    const _prevPid = currentProjectId;
+    try {
+      _reapplyPending(finalProjects, _pendingLocal, projects, state && state._deletedIds,
+                      _prevPid ?? state?.id, _lastCloudApplyTs || _sessionStartTs);
+    } catch (e) { console.warn('[SYNC] Wiedereinsetzen fehlgeschlagen:', e?.message); }
+
     // ── Apply to app ───────────────────────────────────────────────
     projects = finalProjects;
     const savedId = cloudMeta?.currentProjectId;
-    const found   = savedId && projects.find(p => String(p.id) === String(savedId));
+    // Im gerade offenen Projekt bleiben, falls es (noch) existiert
+    const keep    = _prevPid != null && projects.find(p => String(p.id) === String(_prevPid));
+    const found   = keep || (savedId && projects.find(p => String(p.id) === String(savedId)));
     currentProjectId = found ? found.id : projects[0]?.id;
     loadProject(currentProjectId, false);
     // Ab hier sind die Cloud-Daten aktiv. Sie duerfen NIE mehr durch den
     // (aelteren) lokalen Stand ersetzt werden – siehe catch unten.
     cloudApplied = true;
+
+    // Vergleichsbasis = Cloud-Stand; was diese Abfrage sicher schon enthielt, aufraeumen
+    _syncBaseline = _baselineFromRows(itemRows);
+    _baselineReady = true;
+    for (const [k, e] of _pendingLocal) if (e.syncedAt && e.syncedAt < loadStartedAt) _pendingLocal.delete(k);
+    _lastCloudApplyTs = loadStartedAt;
+    // Noch Ungesichertes (z.B. waehrend des Ladens eingetragen)? -> gleich hochladen
+    if (_hasUnsyncedChanges()) { clearTimeout(syncTimeout); syncTimeout = setTimeout(syncToCloud, 300); }
 
     // Lokaler Zwischenspeicher ist nur eine Kopie fuer den Offline-Start.
     // Ist er voll (alte Fotos/Plaene als Base64), darf das NICHT dazu fuehren,
@@ -16409,8 +16658,20 @@ async function enableNotifFromModal() {
 }
 
 // Re-schedule whenever app comes back to foreground
-async function _syncAndRender() {
-  if (!currentUser) return;
+// focus + visibilitychange feuern beim Zurueckkehren oft beide -> nur EIN Durchlauf.
+let _syncRenderBusy = null;
+function _syncAndRender() {
+  if (!currentUser) return Promise.resolve();
+  if (_syncRenderBusy) return _syncRenderBusy;
+  _syncRenderBusy = _syncAndRenderOnce().finally(() => { _syncRenderBusy = null; });
+  return _syncRenderBusy;
+}
+async function _syncAndRenderOnce() {
+  // Erst offene Aenderungen hochladen, dann frisch laden – so springt nichts weg.
+  if (_cloudLoadedOk && !_demoMode && _hasUnsyncedChanges()) {
+    clearTimeout(syncTimeout); syncTimeout = null;
+    try { await syncToCloud(); } catch (e) { /* Ungesichertes bleibt trotzdem geschuetzt */ }
+  }
   await loadFromCloud();
   applyModuleVisibility();
   const active = document.querySelector('.page.active');
