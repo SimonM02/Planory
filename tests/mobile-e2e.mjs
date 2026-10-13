@@ -1,0 +1,229 @@
+// ═══════════════════════════════════════════════════════════════════════
+// PLANORY – Handy-Test (iPhone-Breite 390 px, Deutsch)
+// ═══════════════════════════════════════════════════════════════════════
+// Startet die ECHTE App (index.html) im eingebauten Demo-Modus und prueft, was
+// Nutzer am Handy tatsaechlich sehen bzw. speichern:
+//   • keine Tabelle ragt unsichtbar ueber den Rand (iPhone zeigt keinen Scrollbalken)
+//   • Knoepfe (z.B. Wartung ✓/✏️/🗑) bleiben im Bild
+//   • Auswahlfelder behalten ihre gespeicherten Werte (MwSt beim Bearbeiten!)
+//   • Fotos: "Alle Kategorien" zeigt alle Fotos; Rechnungen erscheinen sofort
+// Ausfuehren:  node tests/mobile-e2e.mjs     (PLANORY_FILE=… fuer eine andere Datei)
+// Braucht Playwright + Chromium, sonst wird der Test uebersprungen.
+// ═══════════════════════════════════════════════════════════════════════
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+let chromium = null;
+for (const spec of ['playwright', '/opt/node22/lib/node_modules/playwright/index.js']) {
+  try { const m = await import(spec); chromium = (m.default || m).chromium; if (chromium) break; } catch { /* naechste Quelle */ }
+}
+if (!chromium) { console.log('⏭  Playwright nicht installiert – Handy-Test übersprungen.'); process.exit(0); }
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const FILE = path.resolve(process.env.PLANORY_FILE || path.join(here, '..', 'index.html'));
+const HTML = readFileSync(FILE, 'utf8');
+// Nicht als file:// oeffnen (startet eine leere Vorschau) – echte Adresse + Demo-Parameter
+const URL_DEMO = 'https://planory.test/index.html?demo=planory2025';
+
+const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {});
+
+async function boot() {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true,
+    hasTouch: true, locale: 'de-AT', serviceWorkers: 'block' });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e.message || e)));
+  await page.addInitScript(() => {
+    try { localStorage.setItem('planoryLang', 'de'); localStorage.setItem('dsgvoAccepted', '1'); } catch (e) {}
+    const q = () => { const o = { select(){return o}, eq(){return o}, in(){return o}, order(){return o}, maybeSingle(){return o},
+      single(){return o}, insert(){return o}, update(){return o}, upsert(){return o}, delete(){return o},
+      then(r){ return Promise.resolve({ data: null, error: null }).then(r); } }; return o; };
+    window.supabase = { createClient: () => ({ from: q,
+      auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange(){ return { data: { subscription: { unsubscribe(){} } } }; }, signOut: async () => ({}) },
+      channel(){ const c = { on(){ return c; }, subscribe(){ return c; } }; return c; }, removeChannel(){},
+      storage: { from(){ return { upload: async () => ({}), getPublicUrl: () => ({ data: {} }) }; } } }) };
+  });
+  await page.route('**/*', r => {
+    const u = r.request().url();
+    if (u.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
+    if (u.includes('supabase-js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+    return r.abort();
+  });
+  await page.goto(URL_DEMO, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof _demoMode !== 'undefined' && _demoMode && state && state.kosten && state.kosten.length > 0, null, { timeout: 15000 });
+  await page.evaluate(() => {
+    ['landing-overlay', 'auth-overlay', 'onboarding-overlay'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    // Realistische, laengere Daten (so wie echte Nutzer sie eintragen)
+    state.zahlungspersonen = [{ id: 1, name: 'Kredit' }, { id: 2, name: 'Eigenkapital' }];
+    state.kosten.forEach((k, i) => {
+      k.anbieter = k.anbieter || 'Baumeister Huber GmbH & Co KG';
+      k.bezahltVon = i % 3 === 0 ? 'Kredit' : i % 3 === 1 ? 'Eigenkapital' : '';
+      if (i === 0) k.beschr = 'Fensterlieferung inklusive Montage und Abdichtung';
+    });
+    state.aufgaben.unshift({ id: 777001, name: 'Angebote für Photovoltaikanlage mit Batteriespeicher einholen', prio: 'Hoch', status: 'Offen', datum: '2026-11-01', notiz: '' });
+    state.tagebuch = [
+      { id: 880001, datum: '2026-09-01', title: 'Betonage Bodenplatte inklusive Abdichtung', text: '', weather: '☀️', temp: 18, tags: [],
+        workers: [{ name: 'Simon', hours: 8 }, { name: 'Baumeister Huber', hours: 9.5 }] },
+      { id: 880002, datum: '2026-09-02', title: 'Mauerwerk Erdgeschoss Außenwände', text: '', weather: '⛅', temp: 15, tags: [],
+        workers: [{ name: 'Simon', hours: 6 }, { name: 'Nachbar Thomas', hours: 4 }] },
+    ];
+    state.wartungen = [
+      { id: 990001, name: 'Rauchwarnmelderüberprüfung', kat: 'Sicherheit', intervall: 1, einheit: 'Jahre', last: '2026-01-10' },
+      { id: 990002, name: 'Kältemittelprüfung Wärmepumpe', kat: 'Heizung', intervall: 1, einheit: 'Jahre', last: '2026-03-05' },
+    ];
+  });
+  return { ctx, page, errors };
+}
+
+// Sichtbare Tabellen, die ohne Karten-Ansicht ueber den Rand ragen
+const CLIPPED = () => [...document.querySelectorAll('.table-wrap')]
+  .filter(w => w.offsetParent !== null && w.querySelector('table tbody tr'))
+  .map(w => {
+    const t = w.querySelector('table'), tr = w.querySelector('tbody tr');
+    const card = ['block', 'flex'].includes(getComputedStyle(tr).display);
+    const name = (w.querySelector('.table-title')?.textContent || [...w.querySelectorAll('th')].map(th => th.textContent).join('|')).trim().slice(0, 40);
+    return { name, over: t.scrollWidth - w.clientWidth, card };
+  })
+  .filter(x => x.over > 8 && !x.card)
+  .map(x => `${x.name} (+${x.over}px)`);
+// Sichtbare Knoepfe ausserhalb des Bildschirms
+const BUTTONS_OUT = sel => [...document.querySelectorAll(sel + ' button')]
+  .filter(b => b.offsetParent !== null && b.getBoundingClientRect().width > 0)
+  .filter(b => b.getBoundingClientRect().right > innerWidth + 1)
+  .map(b => (b.textContent || b.title).trim().slice(0, 20));
+
+const results = [];
+async function scenario(name, fn) {
+  const t0 = Date.now();
+  try { const msg = await fn(); results.push([!msg, name, msg || '', Date.now() - t0]); }
+  catch (e) { results.push([false, name, 'Abbruch: ' + String(e && e.message || e).split('\n')[0], Date.now() - t0]); }
+}
+
+const { ctx, page, errors } = await boot();
+
+// Zuerst (die Seite darf vorher noch nie geoeffnet worden sein):
+await scenario('Rechnungen: Einträge erscheinen schon beim ersten Öffnen', async () => {
+  const n = await page.evaluate(() => {
+    state.gescannteRechnungen = [1, 2].map(i => ({ id: 9300000 + i, kostenId: 0, datum: '2026-09-1' + i, beschr: 'Rechnung ' + i, anbieter: 'Lieferant',
+      kat: state.budgetKat[0].name, mwst: 20, netto: 100, brutto: 120, status: 'Bezahlt', gescannt: '2026-09-1' + i }));
+    showPage('rechnungen');
+    return [...document.querySelectorAll('#gr-table tr')].filter(tr => !tr.querySelector('td[colspan]')).length;
+  });
+  return n >= 2 ? '' : `nur ${n} Einträge sichtbar (erwartet: 2) – Seite zeigt „Noch keine gescannten Rechnungen"`;
+});
+
+
+await scenario('Budget: Buchungsliste einer Kategorie ist am Handy vollständig sichtbar', async () => {
+  await page.evaluate(() => { showPage('budget'); openBudgetDrilldown(state.kosten[0].kat); });
+  await page.waitForTimeout(300);
+  const c = await page.evaluate(CLIPPED);
+  const btn = await page.evaluate(BUTTONS_OUT, '#modal-budget-drilldown');
+  await page.evaluate(() => closeModal('modal-budget-drilldown'));
+  await page.waitForTimeout(250);
+  return [c.length ? 'abgeschnitten: ' + c.join(', ') : '', btn.length ? 'Knöpfe außerhalb: ' + btn.join(', ') : ''].filter(Boolean).join(' · ');
+});
+for (const [id, label, prep] of [
+  ['dashboard', 'Startseite (Letzte Ausgaben, Offene Aufgaben)', ''],
+  ['kosten', 'Ausgaben', ''],
+  ['budget', 'Budget-Übersicht', ''],
+  ['kostenaufteilung', 'Kostenaufteilung', ''],
+  ['tagebuch', 'Bautagebuch-Zusammenfassung', "switchDiaryTab('summary', document.getElementById('diary-tab-summary'))"],
+  ['kontakte', 'Kontakte', ''],
+  ['rechnungen', 'Gescannte Rechnungen', ''],
+]) {
+  await scenario(`${label}: keine Tabelle am Handy abgeschnitten`, async () => {
+    await page.evaluate(([pid, js]) => { showPage(pid); if (js) eval(js); }, [id, prep]);
+    await page.waitForTimeout(250);
+    const c = await page.evaluate(CLIPPED);
+    return c.length ? 'abgeschnitten: ' + c.join(', ') : '';
+  });
+}
+await scenario('Wartung: ✓/✏️/🗑 bleiben bei langen Namen im Bild', async () => {
+  await page.evaluate(() => showPage('wartung'));
+  await page.waitForTimeout(250);
+  const b = await page.evaluate(BUTTONS_OUT, '#page-wartung');
+  return b.length ? 'außerhalb des Bildschirms: ' + b.join(', ') : '';
+});
+await scenario('Einstellungen: Karten passen in die Bildschirmbreite', async () => {
+  await page.evaluate(() => showPage('settings'));
+  await page.waitForTimeout(250);
+  const over = await page.evaluate(() => Math.max(0, ...[...document.querySelectorAll('#page-settings .table-wrap, #page-settings .card')]
+    .filter(e => e.offsetParent !== null).map(e => Math.round(e.getBoundingClientRect().right - (innerWidth - 4)))));
+  return over > 0 ? `Karten ragen ${over}px über den Rand` : '';
+});
+
+// Sollwerte direkt aus dem HTML-Quelltext (so wie sie im Markup stehen)
+const SELECTS = ['k-mwst', 'n-color', 'np-type', 'dk-typ', 'gr-pin-typ', 'g-type', 'gr-filter-kat', 'foto-filter', 'k-bezahlt-von', 'scan-bezahlt-von'];
+const SOLL = {};
+for (const id of SELECTS) {
+  const m = HTML.match(new RegExp('<select[^>]*id="' + id + '"[^>]*>([\\s\\S]*?)</select>'));
+  if (m) SOLL[id] = [...m[1].matchAll(/<option[^>]*?value="([^"]*)"/g)].map(x => x[1]);
+}
+await scenario('Auswahlfelder behalten ihre gespeicherten Werte (kein Überschreiben beim Start)', async () => {
+  const bad = await page.evaluate(soll => {
+    const out = [];
+    for (const [id, werte] of Object.entries(soll)) {
+      const el = document.getElementById(id); if (!el) continue;
+      const ist = [...el.options].map(o => o.value);
+      werte.forEach(w => { if (!ist.includes(w)) out.push(`${id}: Wert "${w}" fehlt (jetzt: ${ist.slice(0, 3).map(v => '"' + v + '"').join(', ')})`); });
+    }
+    return out;
+  }, SOLL);
+  if (Object.keys(SOLL).length < 6) return 'Sollwerte nicht gefunden (Test kaputt?)';
+  return bad.length ? bad.slice(0, 5).join(' · ') : '';
+});
+await scenario('Ausgabe mit 0 % / 10 % MwSt bearbeiten → MwSt und Betrag bleiben gleich', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('kosten');
+    const mk = (id, mwst, netto, betrag) => ({ id, datum: '2026-10-01', beschr: 'Test ' + mwst + '%', kat: state.budgetKat[0].name, mwst, netto, betrag,
+      status: 'Bezahlt', bezahltVon: '', anbieter: 'Firma', skontoProz: 0, skontoBis: '', _updatedAt: 1 });
+    state.kosten.push(mk(9100001, 0, 100, 100), mk(9100002, 10, 100, 110), mk(9100003, 20, 100, 120));
+    const out = [];
+    for (const id of [9100001, 9100002, 9100003, 9100001]) {   // zuletzt nochmal 0 % nach einer 20-%-Ausgabe
+      editKosten(id);
+      document.getElementById('k-beschr').value += ' (bearbeitet)';
+      await saveKosten();
+      await new Promise(r => setTimeout(r, 250));
+      const k = state.kosten.find(x => x.id === id);
+      out.push({ id, mwst: k.mwst, betrag: k.betrag });
+    }
+    return out;
+  });
+  const soll = { 9100001: [0, 100], 9100002: [10, 110], 9100003: [20, 120] };
+  const falsch = r.filter(x => x.mwst !== soll[x.id][0] || Math.abs(x.betrag - soll[x.id][1]) > 0.001)
+    .map(x => `${soll[x.id][0]}% wurde zu ${x.mwst}% / ${x.betrag} €`);
+  return falsch.join(' · ');
+});
+await scenario('Fotos: „Alle Kategorien" zeigt Fotos aller Kategorien', async () => {
+  const r = await page.evaluate(() => {
+    const px = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+    state.fotoAlben = [];
+    state.fotos = ['Rohbau', 'Dach', 'Elektro'].map((kat, i) => ({ id: 9200001 + i, url: px, data: px, kat, datum: '2026-09-0' + (i + 1), name: 'foto' + i + '.jpg' }));
+    showPage('fotos');
+    setFotoView('alle', document.getElementById('foto-tab-alle'));
+    const grid = document.getElementById('photo-grid');
+    return { filter: document.getElementById('foto-filter').value, shown: grid.querySelectorAll('img').length,
+             hasAlle: [...document.getElementById('foto-filter').options].some(o => o.value === '') };
+  });
+  const p = [];
+  if (!r.hasAlle) p.push('Auswahl „Alle Kategorien" fehlt');
+  if (r.filter !== '') p.push(`Filter steht auf „${r.filter}"`);
+  if (r.shown < 3) p.push(`nur ${r.shown} von 3 Fotos sichtbar`);
+  return p.join(' · ');
+});
+if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
+await ctx.close();
+await browser.close();
+
+console.log('\n  PLANORY – Handy-Test (390 px, Deutsch)');
+console.log('  ' + '─'.repeat(64));
+let fail = 0;
+for (const [ok, name, msg] of results) {
+  console.log(`  ${ok ? '✅' : '❌'} ${name}`);
+  if (!ok) { fail++; console.log('      → ' + msg); }
+}
+console.log('  ' + '─'.repeat(64));
+console.log(`  ${results.length - fail} bestanden, ${fail} FEHLER\n`);
+process.exit(fail ? 1 : 0);

@@ -328,6 +328,70 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 }
 
 // ───────────────────────────────────────────────────────────────────
+// 3e. AUSWAHLFELDER – Vorfall 12.10.2026: translateOptions ersetzte beim Start
+//     eigene Werte (MwSt 0/10/20, "Alle Kategorien" = "") durch den Anzeige-Text.
+//     Folge: MwSt sprang beim Bearbeiten auf 20 %, Filter zeigten nichts.
+// ───────────────────────────────────────────────────────────────────
+{
+  const octx = { OPTIONEN: { 'Ohne MwSt (0%)': { en: 'No VAT (0%)' }, 'Alle Kategorien': { en: 'All categories' }, 'Bezahlt': { en: 'Paid' } }, _lang: 'en' };
+  vm.createContext(octx);
+  vm.runInContext(extractFn(web, 'translateOptions') || ';', octx);
+  const opt = (text, value) => {
+    const attrs = value === undefined ? {} : { value };
+    const o = { textContent: text, dataset: {}, hasAttribute: a => a in attrs,
+      get value() { return 'value' in attrs ? attrs.value : this.textContent; }, set value(v) { attrs.value = v; } };
+    return o;
+  };
+  const root = (opts) => ({ querySelectorAll: () => opts });
+  check('Auswahl: eigener Wert (MwSt "0") bleibt beim Übersetzen erhalten', () => {
+    if (typeof octx.translateOptions !== 'function') return 'translateOptions nicht gefunden';
+    const o = opt('Ohne MwSt (0%)', '0');
+    octx.translateOptions(root([o]));
+    if (o.value !== '0') return `Wert wurde zu "${o.value}" – MwSt springt beim Bearbeiten falsch`;
+    if (o.textContent !== 'No VAT (0%)') return 'Anzeige-Text wurde nicht übersetzt';
+  });
+  check('Auswahl: leerer Wert ("Alle Kategorien") bleibt leer', () => {
+    const o = opt('Alle Kategorien', '');
+    octx.translateOptions(root([o]));
+    if (o.value !== '') return `Wert wurde zu "${o.value}" – Filter zeigt dann nichts mehr an`;
+  });
+  check('Auswahl: Option ohne eigenen Wert speichert weiter deutsch', () => {
+    const o = opt('Bezahlt');
+    octx.translateOptions(root([o]));
+    if (o.value !== 'Bezahlt') return `Gespeicherter Wert wäre "${o.value}" statt "Bezahlt"`;
+    if (o.textContent !== 'Paid') return 'Anzeige-Text wurde nicht übersetzt';
+  });
+}
+check('Fotos: Filter bietet "Alle Kategorien" an', () => {
+  const f = extractFn(web, 'refreshFotoKat');
+  if (!f) return 'refreshFotoKat nicht gefunden';
+  if (!/value=""/.test(f) || !/foto-filter/.test(f)) return 'Foto-Filter ohne "Alle"-Option – Fotos anderer Kategorien wirken verschwunden';
+});
+{
+  const lctx = {};
+  vm.createContext(lctx);
+  const src = web.match(/const _LABEL_FIX = \{[\s\S]*?\n\};/);
+  vm.runInContext((src ? src[0].replace('const _LABEL_FIX', 'var _LABEL_FIX') : '') + '\n' + (extractFn(web, '_fixLabelValues') || ';'), lctx);
+  check('Reparatur: falsch gespeicherte Anzeige-Texte werden korrigiert', () => {
+    if (typeof lctx._fixLabelValues !== 'function') return '_fixLabelValues nicht gefunden';
+    const p = { settings: { type: '🏠 Neubau' }, grundrisse: [{ id: 1, pins: [{ typ: '🔥 Heizung' }, { typ: 'Elektro' }] }],
+      notizen: [{ id: 2, color: 'Gelb' }], dokumentation: [{ id: 3, typ: '⚡ Elektro' }], gantt: [{ id: 4, type: 'phase' }] };
+    const n = lctx._fixLabelValues(p);
+    if (p.settings.type !== 'Neubau' || p.grundrisse[0].pins[0].typ !== 'Heizung' || p.notizen[0].color !== '#fef9c3' || p.dokumentation[0].typ !== 'Elektro')
+      return 'nicht alle Werte korrigiert: ' + JSON.stringify(p);
+    if (p.grundrisse[0].pins[1].typ !== 'Elektro' || p.gantt[0].type !== 'phase') return 'korrekte Werte wurden verändert';
+    if (n !== 4) return `${n} statt 4 Korrekturen gezählt`;
+    if (lctx._fixLabelValues(p) !== 0) return 'zweiter Durchlauf ändert noch etwas (nicht stabil)';
+  });
+}
+for (const [label, src] of [['Web', web], ['App', app]]) {
+  check(`${label}: Cloud-Laden repariert alte Auswahl-Werte`, () => {
+    const lf = extractFn(src, 'loadFromCloud');
+    if (!lf || !lf.includes('_fixLabelValues(')) return 'loadFromCloud ruft _fixLabelValues nicht auf';
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────
 // 4. ZUGESAGTE FUNKTIONEN – dürfen nie versehentlich gesperrt werden
 // ───────────────────────────────────────────────────────────────────
 for (const [label, src] of [['Web', web], ['App', app]]) {
