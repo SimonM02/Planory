@@ -146,6 +146,23 @@ await scenario('Wartung: ✓/✏️/🗑 bleiben bei langen Namen im Bild', asyn
   const b = await page.evaluate(BUTTONS_OUT, '#page-wartung');
   return b.length ? 'außerhalb des Bildschirms: ' + b.join(', ') : '';
 });
+await scenario('Wartung: Name bleibt lesbar (kein Umbruch Buchstabe für Buchstabe)', async () => {
+  await page.evaluate(() => showPage('wartung'));
+  await page.waitForTimeout(200);
+  const w = await page.evaluate(() => Math.min(...[...document.querySelectorAll('#page-wartung .wartung-name')]
+    .filter(e => e.offsetParent !== null).map(e => Math.round(e.getBoundingClientRect().width))));
+  return w < 180 ? `Textspalte nur ${w}px breit – Namen zerfallen in Einzelbuchstaben` : '';
+});
+await scenario('Budget-Buchungsliste: keine zweite Scroll-Box im Fenster', async () => {
+  const r = await page.evaluate(() => {
+    showPage('budget'); openBudgetDrilldown(state.kosten[0].kat);
+    const w = document.querySelector('#modal-budget-drilldown .table-wrap');
+    return { sh: w.scrollHeight, ch: w.clientHeight };
+  });
+  await page.evaluate(() => closeModal('modal-budget-drilldown'));
+  await page.waitForTimeout(250);
+  return r.sh > r.ch + 4 ? `Liste scrollt innen (${r.ch}px sichtbar von ${r.sh}px)` : '';
+});
 await scenario('Einstellungen: Karten passen in die Bildschirmbreite', async () => {
   await page.evaluate(() => showPage('settings'));
   await page.waitForTimeout(250);
@@ -191,6 +208,9 @@ await scenario('Ausgabe mit 0 % / 10 % MwSt bearbeiten → MwSt und Betrag bleib
     }
     return out;
   });
+  const neu = await page.evaluate(() => { editKosten(9100001); closeModal('modal-kosten'); document.getElementById('k-edit-id').value = '';
+    openModal('modal-kosten'); const v = document.getElementById('k-mwst').value; closeModal('modal-kosten'); return v; });
+  if (neu !== '20') return `Neue Ausgabe übernimmt MwSt "${neu}" der zuletzt bearbeiteten statt 20 %`;
   const soll = { 9100001: [0, 100], 9100002: [10, 110], 9100003: [20, 120] };
   const falsch = r.filter(x => x.mwst !== soll[x.id][0] || Math.abs(x.betrag - soll[x.id][1]) > 0.001)
     .map(x => `${soll[x.id][0]}% wurde zu ${x.mwst}% / ${x.betrag} €`);
@@ -213,6 +233,25 @@ await scenario('Fotos: „Alle Kategorien" zeigt Fotos aller Kategorien', async 
   if (r.shown < 3) p.push(`nur ${r.shown} von 3 Fotos sichtbar`);
   return p.join(' · ');
 });
+await scenario('Englisch: Status wird trotzdem deutsch gespeichert (Werte bleiben gleich)', async () => {
+  const r = await page.evaluate(async () => {
+    setLang('en');
+    openModal('modal-kosten');
+    document.getElementById('k-edit-id').value = '';
+    document.getElementById('k-beschr').value = 'EN-Test';
+    const b = document.getElementById('k-betrag'); b.value = '50'; b.dispatchEvent(new Event('input', { bubbles: true }));
+    const st = document.getElementById('k-status'); st.selectedIndex = 1; st.dispatchEvent(new Event('change', { bubbles: true }));
+    const shown = st.options[1].textContent;
+    await saveKosten();
+    const k = state.kosten.find(x => x.beschr === 'EN-Test');
+    setLang('de');
+    return { status: k && k.status, mwst: k && k.mwst, shown };
+  });
+  if (r.status !== 'Ausstehend') return `gespeichert als "${r.status}" (angezeigt "${r.shown}") statt "Ausstehend"`;
+  if (r.mwst !== 20) return `MwSt ${r.mwst} statt 20`;
+  return '';
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

@@ -798,7 +798,7 @@
 
   .wartung-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); margin-bottom: 8px; }
   .wartung-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-  .wartung-info { flex: 1; min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+  .wartung-info { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   .wartung-name { font-size: 0.89rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
   .wartung-desc { font-size: 0.77rem; color: var(--text3); }
   .wartung-next { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; margin-top: 4px; font-weight: 500; }
@@ -1448,7 +1448,7 @@
     flex-shrink: 0;
   }
 
-  .wartung-info { flex: 1; min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+  .wartung-info { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   .wartung-name { font-size: 0.94rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
   .wartung-desc { font-size: 0.8rem; color: var(--text2); }
   .wartung-next { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; margin-top: 5px; font-weight: 600; }
@@ -1677,6 +1677,13 @@
     .main { padding-left: 10px !important; padding-right: 10px !important; }
     /* Zweispaltige Bereiche (Einstellungen, Startseite): Spalten nie breiter als der Bildschirm */
     .two-col > * { min-width: 0; }
+    /* Wartung: oben Symbol + Text in voller Breite, darunter Intervall und Knoepfe */
+    .wartung-item { flex-wrap: wrap; }
+    .wartung-info { flex: 1 1 calc(100% - 64px); }
+    .wartung-interval { width: auto !important; flex: 1 1 auto; text-align: left !important; }
+    .wartung-item > div:last-child { flex-direction: row !important; align-items: center; }
+    /* Karten-Listen in Fenstern nicht nochmal in eine eigene Scroll-Box stecken */
+    .modal .mobile-cards { max-height: none !important; overflow: visible !important; }
 
     /* KI-panel buttons wrap */
     #ki-advisor-panel [style*="display:flex"] { flex-wrap: wrap; }
@@ -2495,13 +2502,13 @@
             <span style="font-size:1.5rem;flex-shrink:0">🏠</span>
             <div><div style="font-weight:700;color:var(--text)">Neubau</div><div style="font-size:0.76rem;color:var(--text3)">Haus oder Wohnung neu bauen</div></div>
           </div>
-          <div onclick="selectObType('Umbau / Erweiterung',this)"
+          <div onclick="selectObType('Umbau',this)"
             style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:15px 16px;border:2px solid var(--border);cursor:pointer;transition:all 0.15s"
             onmouseover="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--border)'">
             <span style="font-size:1.5rem;flex-shrink:0">🔨</span>
             <div><div style="font-weight:700;color:var(--text)">Umbau / Erweiterung</div><div style="font-size:0.76rem;color:var(--text3)">Bestehendes erweitern oder umbauen</div></div>
           </div>
-          <div onclick="selectObType('Sanierung / Renovierung',this)"
+          <div onclick="selectObType('Sanierung',this)"
             style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:15px 16px;border:2px solid var(--border);cursor:pointer;transition:all 0.15s"
             onmouseover="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--border)'">
             <span style="font-size:1.5rem;flex-shrink:0">🔧</span>
@@ -3937,7 +3944,7 @@
 <!-- Meilenstein -->
 <!-- Budget Kategorie Drilldown -->
 <div class="modal-overlay" id="modal-budget-drilldown">
-  <div class="modal" style="width:660px">
+  <div class="modal" style="width:880px">
     <h3 id="drilldown-title">Kategorie – Buchungen</h3>
     <div id="drilldown-summary" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px"></div>
     <div style="height:8px;background:var(--surface3);border-radius:99px;overflow:hidden;margin-bottom:20px">
@@ -4826,6 +4833,7 @@ function loadProject(id, rerender = true) {
   currentProjectId = id;
   // Dedup before deep-copy so state and projects are both clean
   _deduplicateProject(proj);
+  try { _fixLabelValues(proj); } catch(e) {}   // alte Auswahl-Werte auch bei lokalem Laden reparieren
   // Deep-copy into state
   state = JSON.parse(JSON.stringify(proj));
   updateProjectHeader();
@@ -5477,6 +5485,11 @@ const TEXTE = {
   "Beginn": { en: "Start" },
   "Ende": { en: "End" },
   "Vergrößern": { en: "Zoom in" },
+  "Summe": { en: "Total" },
+  "Einsatztage": { en: "Days on site" },
+  "Stunden": { en: "Hours" },
+  "Ø Std./Tag": { en: "Avg h/day" },
+  "Anteil": { en: "Share" },
   "Verkleinern": { en: "Zoom out" },
   "Zurücksetzen": { en: "Reset" },
   "Noch keine Helfer-Tage geplant": { en: "No helper days planned yet" },
@@ -6356,8 +6369,8 @@ function _sweepPhrases(root) {
       if (!p) return NodeFilter.FILTER_REJECT;
       const tag = p.nodeName;
       if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
-      // Options DÜRFEN übersetzt werden: _sweepPhrases ändert nur den Anzeigetext
-      // (nodeValue), NIE den option.value – value-basierte Selects bleiben intakt.
+      // Options DÜRFEN übersetzt werden: nur der Anzeigetext aendert sich; der
+      // gespeicherte Wert bleibt deutsch (siehe Festschreiben unten).
       if (p.closest && (p.closest('[data-i18n]') || p.closest('[data-noi18n]'))) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -6366,7 +6379,14 @@ function _sweepPhrases(root) {
   while ((node = walker.nextNode())) {
     const raw = node.nodeValue;
     const key = raw.trim();
-    if (key && map[key]) node.nodeValue = raw.replace(key, map[key]);
+    if (key && map[key]) {
+      // Option OHNE eigenes value-Attribut: ihr Wert IST der Text. Vor dem Uebersetzen
+      // den deutschen Text als Wert festschreiben – sonst wird z.B. "Paid" statt
+      // "Bezahlt" bzw. "Other" statt "Sonstiges" gespeichert.
+      const par = node.parentNode;
+      if (par && par.nodeName === 'OPTION' && !par.hasAttribute('value')) par.value = key;
+      node.nodeValue = raw.replace(key, map[key]);
+    }
   }
   // Attribute (Platzhalter, Tooltips) ebenfalls uebersetzen – Voll-Treffer
   (root || document.body).querySelectorAll('[placeholder],[title]').forEach(el => {
@@ -6401,8 +6421,9 @@ function translateOptions(root) {
 function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-  try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
+  // Erst Auswahl-Werte festschreiben, DANN Texte uebersetzen (sonst sind die Werte schon englisch)
   try { translateOptions(document); } catch(e) {}
+  try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
 }
 function setLang(lang, save = true) {
   _lang = (lang === 'en') ? 'en' : 'de';
@@ -6448,7 +6469,16 @@ function openModal(id) {
   if (id === 'modal-kosten' || id === 'modal-eigenleistung' || id === 'modal-rechnung-scan') {
     const editId = document.getElementById('k-edit-id')?.value;
     if (!editId) { refreshAllKatSelects(_pendingKostenKat); _pendingKostenKat = ''; }
-    if (id === 'modal-kosten' && !editId) { _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){} }
+    if (id === 'modal-kosten' && !editId) {
+      _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){}
+      // Neue Ausgabe: MwSt/Status auf Standard – sonst "klebt" der Wert der zuletzt
+      // bearbeiteten Ausgabe (z.B. 0 %) und wird ungewollt uebernommen.
+      const _mw = document.getElementById('k-mwst'); if (_mw) _mw.value = '20';
+      const _st = document.getElementById('k-status'); if (_st) _st.selectedIndex = 0;
+      try { toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e){}
+      // Vorbefuellter Betrag (z.B. Angebot -> Rechnung): Netto/MwSt-Vorschau passend neu rechnen
+      try { if (document.getElementById('k-betrag')?.value) updateKostenNetto(); } catch(e){}
+    }
   }
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
@@ -7381,9 +7411,9 @@ function renderDashReminders() {
   const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
     .sort((a,b) => new Date(a.faellig) - new Date(b.faellig))[0];
   if (z) items.push({ icon:'📅', label:_en?'Next payment':'Nächste Zahlung', name:(z.beschr||z.empfaenger||(_en?'Payment':'Zahlung')) + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
-  const ms = (state.meilensteine || []).filter(m => !m.done && m.datum)
+  const ms = (state.meilensteine || []).filter(m => !m.done && String(m.status || '').toLowerCase() !== 'erledigt' && m.datum)
     .sort((a,b) => new Date(a.datum) - new Date(b.datum))[0];
-  if (ms) items.push({ icon:'🏁', label:_en?'Next milestone':'Nächster Meilenstein', name:ms.name, date:ms.datum });
+  if (ms) items.push({ icon:'🏁', label:_en?'Next milestone':'Nächster Meilenstein', name:ms.name || ms.title || ms.titel || (_en?'Milestone':'Meilenstein'), date:ms.datum });
   if (!items.length) { el.innerHTML = ''; return; }
   el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
     <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 ${_en?'Due soon':'Demnächst fällig'}</div>
@@ -7448,9 +7478,9 @@ function renderDashboard() {
   } else {
     tbody.innerHTML = recent.map(k => `
       <tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td data-title>${esc(k.beschr)}</td>
-        <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
       </tr>`).join('');
   }
 
@@ -7463,8 +7493,8 @@ function renderDashboard() {
     ttbody.innerHTML = openTasks.map(t => `
       <tr>
         <td data-title>${esc(t.name)}${t.person?`<br><span style="font-size:0.7rem;color:var(--text3)">👤 ${esc(t.person)}</span>`:''}</td>
-        <td data-label="Priorität"><span class="badge ${t.prio==='Hoch'?'badge-red':t.prio==='Mittel'?'badge-yellow':'badge-gray'}">${esc(t.prio)}</span></td>
-        <td data-label="Status"><span class="badge badge-blue">${esc(t.status)}</span></td>
+        <td data-label="${tt('Priorität')}"><span class="badge ${t.prio==='Hoch'?'badge-red':t.prio==='Mittel'?'badge-yellow':'badge-gray'}">${esc(t.prio)}</span></td>
+        <td data-label="${tt('Status')}"><span class="badge badge-blue">${esc(t.status)}</span></td>
       </tr>`).join('');
   }
 }
@@ -7723,12 +7753,12 @@ function openBudgetDrilldown(katName) {
       const netto = k.netto ?? k.betrag;
       // Am Handy als Karte (mobile-cards): Titel = Beschreibung, darunter Datum/Anbieter/Brutto/Status
       return `<tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.77rem">${fmtDate(k.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.77rem">${fmtDate(k.datum)}</td>
         <td data-title style="font-weight:600">${esc(k.beschr)}${k.aiScanned?` <span class="badge badge-purple" style="font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg></span>`:''}</td>
-        <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${esc(k.anbieter||'–')}</td>
+        <td data-label="${tt('Anbieter')}" style="font-size:0.82rem;color:var(--text2)">${esc(k.anbieter||'–')}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
-        <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
-        <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${esc(k.status)}</span></td>
+        <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${esc(k.status)}</span></td>
         <td><div style="display:flex;gap:4px;justify-content:flex-end">
           <button class="action-btn" title="Bearbeiten" onclick="closeModal('modal-budget-drilldown');editKosten(${k.id})">✏️</button>
           <button class="action-btn del" title="Löschen" onclick="deleteDrilldownKosten(${k.id},'${katName.replace(/'/g,"\\'")}')">🗑</button>
@@ -7849,13 +7879,13 @@ function renderKosten() {
         else skontoBadge = `<span class="badge badge-gray" style="font-size:0.62rem;margin-left:4px" title="Skonto bis ${fmtDate(k.skontoBis)}">💰 ${k.skontoProz}%</span>`;
       }
       return `<tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
         <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${k.scanUrl||k.scanData}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
-        <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
-        <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
+        <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
           <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
@@ -7871,13 +7901,13 @@ function renderKosten() {
   } else {
     etbody.innerHTML = [...state.eigenleistungen].reverse().map(e => `
       <tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${e.kat}</span></td>
         <td data-title>
           ${e.beschr}
           ${e.notiz ? `<br><span style="font-size:0.75rem;color:var(--text3)">${e.notiz}</span>` : ''}
         </td>
-        <td data-label="Marktwert" style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
+        <td data-label="${tt('Marktwert')}" style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
         <td class="hide-mobile">${e.von || '–'}</td>
         <td style="display:flex;gap:4px">
           <button class="action-btn" onclick="editEigenleistung(${e.id})" title="Bearbeiten">✏️</button>
@@ -8133,10 +8163,10 @@ function renderBudget() {
           </span>
           ${count > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${count} Buchungen – zum Öffnen klicken</div>` : `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">Noch keine Buchungen</div>`}
         </td>
-        <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
+        <td data-label="${tt('Geplant')}" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${share}%</span></td>
-        <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
-        <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
+        <td data-label="${tt('Ausgegeben')}" style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
+        <td data-label="${tt('Rest')}" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
         <td class="hide-mobile">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="flex:1;height:6px;background:var(--surface3);border-radius:99px;overflow:hidden;min-width:60px">
@@ -8155,10 +8185,10 @@ function renderBudget() {
     `<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
       <td></td>
       <td style="font-weight:800">∑ Gesamt</td>
-      <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
+      <td data-label="${tt('Geplant')}" style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
       <td class="hide-mobile"><span class="badge badge-blue">100%</span></td>
-      <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
-      <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
+      <td data-label="${tt('Ausgegeben')}" style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
+      <td data-label="${tt('Rest')}" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
       <td colspan="2" class="hide-mobile"><span class="badge ${totalPct>90?'badge-red':totalPct>70?'badge-yellow':'badge-green'}">${totalPct}%</span></td>
     </tr>`
   ].join('');
@@ -9670,8 +9700,8 @@ function renderDiarySummary() {
             const barW = Math.round(d.hours/Math.max(...sorted.map(x=>x[1].hours))*100);
             return `<tr>
               <td data-title><strong>${esc(name)}</strong></td>
-              <td data-label="Einsatztage" style="font-family:'JetBrains Mono',monospace">${d.days} Tage</td>
-              <td data-label="Stunden">
+              <td data-label="${tt('Einsatztage')}" style="font-family:'JetBrains Mono',monospace">${d.days} Tage</td>
+              <td data-label="${tt('Stunden')}">
                 <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:220px">
                   <div style="flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden">
                     <div style="width:${barW}%;height:100%;background:var(--accent);border-radius:99px"></div>
@@ -9679,8 +9709,8 @@ function renderDiarySummary() {
                   <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;white-space:nowrap">${d.hours.toFixed(1)} h</span>
                 </div>
               </td>
-              <td data-label="Ø Std./Tag" style="font-family:'JetBrains Mono',monospace">${(d.hours/d.days).toFixed(1)} h</td>
-              <td data-label="Anteil"><span class="badge badge-yellow">${pct}%</span></td>
+              <td data-label="${tt('Ø Std./Tag')}" style="font-family:'JetBrains Mono',monospace">${(d.hours/d.days).toFixed(1)} h</td>
+              <td data-label="${tt('Anteil')}"><span class="badge badge-yellow">${pct}%</span></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -9702,11 +9732,11 @@ function renderDiarySummary() {
             const ws = e.workers || [];
             const hrs = ws.reduce((s,w) => s+(w.hours||0), 0);
             return `<tr>
-              <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
+              <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
               <td data-title>${esc(e.title || '')}</td>
               <td class="hide-mobile">${esc(e.weather || '')}</td>
               <td class="hide-mobile">${ws.length ? ws.map(w=>`<span class="badge badge-gray" style="margin:1px">${esc(w.name)}</span>`).join('') : '<span style="color:var(--text3)">–</span>'}</td>
-              <td data-label="Stunden" style="font-family:'JetBrains Mono',monospace">${hrs > 0 ? hrs+'h' : '–'}</td>
+              <td data-label="${tt('Stunden')}" style="font-family:'JetBrains Mono',monospace">${hrs > 0 ? hrs+'h' : '–'}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -10085,10 +10115,10 @@ function renderKontakte() {
   tbody.innerHTML = state.kontakte.map(k => `
     <tr>
       <td data-title><strong>${esc(k.name)}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(k.notiz)}</span>`:''}</td>
-      <td data-label="Gewerk"><span class="badge badge-gray">${esc(k.gewerk)}</span></td>
-      <td data-label="Telefon">${k.tel?`<a href="tel:${esc(k.tel)}" style="color:var(--accent);text-decoration:none">${esc(k.tel)}</a>`:'–'}</td>
-      <td data-label="E-Mail">${k.mail?`<a href="mailto:${esc(k.mail)}" style="color:var(--accent);text-decoration:none">${esc(k.mail)}</a>`:'–'}</td>
-      <td data-label="Status"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
+      <td data-label="${tt('Gewerk')}"><span class="badge badge-gray">${esc(k.gewerk)}</span></td>
+      <td data-label="${tt('Telefon')}">${k.tel?`<a href="tel:${esc(k.tel)}" style="color:var(--accent);text-decoration:none">${esc(k.tel)}</a>`:'–'}</td>
+      <td data-label="${tt('E-Mail')}">${k.mail?`<a href="mailto:${esc(k.mail)}" style="color:var(--accent);text-decoration:none">${esc(k.mail)}</a>`:'–'}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteKontakt(${k.id})">🗑</button>
@@ -13461,7 +13491,8 @@ function _reapplyPending(finalProjects, pending, localProjects, localDeleted, lo
 // oder "🔥 Heizung" statt "Heizung" gespeichert. Hier werden solche Werte beim Laden
 // auf den richtigen Schluessel zurueckgesetzt. Liefert die Anzahl der Korrekturen.
 const _LABEL_FIX = {
-  typ:   { '🏠 Neubau': 'Neubau', '🔨 Umbau / Erweiterung': 'Umbau', '🔧 Sanierung / Renovierung': 'Sanierung', '📋 Sonstiges': 'Sonstiges' },
+  typ:   { '🏠 Neubau': 'Neubau', '🔨 Umbau / Erweiterung': 'Umbau', '🔧 Sanierung / Renovierung': 'Sanierung', '📋 Sonstiges': 'Sonstiges',
+           'Umbau / Erweiterung': 'Umbau', 'Sanierung / Renovierung': 'Sanierung' },   // Langform aus der Ersteinrichtung
   doku:  { '⚡ Elektro': 'Elektro', '💧 Wasser / Sanitär': 'Wasser', '🔥 Heizung / Gas': 'Heizung', '🏗️ Statik / Konstruktion': 'Statik', '📋 Sonstiges': 'Sonstiges' },
   pin:   { '⚡ Elektro': 'Elektro', '💧 Wasser': 'Wasser', '🔥 Heizung': 'Heizung', '🔵 Gas': 'Gas', '🌀 Lüftung': 'Lüftung', '📡 Internet / TV': 'Internet/TV', '📌 Sonstiges': 'Sonstiges' },
   farbe: { 'Standard (Weiß)': 'white', 'Gelb': '#fef9c3', 'Grün': '#dcfce7', 'Blau': '#dbeafe', 'Pink': '#fce7f3', 'Rot': '#fee2e2' },
@@ -13670,12 +13701,12 @@ function startDemo() {
       { id: 3005, name: 'Parkettmuster auswählen',     status: 'Offen',     prio: 'Niedrig',  datum: '2025-12-01', notiz: 'Verantwortlich: Familie',   person: 'Familie' },
     ],
     meilensteine: [
-      { id: 4001, titel: 'Spatenstich',         datum: '2025-03-15', status: 'Erledigt',  beschr: 'Offizieller Baubeginn' },
-      { id: 4002, titel: 'Rohbau fertig',       datum: '2025-07-31', status: 'Erledigt',  beschr: 'Alle Wände gemauert, Decke betoniert' },
-      { id: 4003, titel: 'Dach dicht',          datum: '2025-09-15', status: 'In Arbeit', beschr: 'Dachstuhl steht, Eindeckung läuft' },
-      { id: 4004, titel: 'Rohinstallationen',   datum: '2025-11-30', status: 'Offen',     beschr: 'Elektro, Sanitär, Heizung roh fertig' },
-      { id: 4005, titel: 'Innenausbau fertig',  datum: '2026-05-31', status: 'Offen',     beschr: 'Böden, Fliesen, Malerarbeiten' },
-      { id: 4006, titel: 'Einzug',              datum: '2026-09-01', status: 'Offen',     beschr: 'Fertigstellung und Übergabe' },
+      { id: 4001, name: 'Spatenstich',         datum: '2025-03-15', status: 'erledigt', done: true,  beschr: 'Offizieller Baubeginn' },
+      { id: 4002, name: 'Rohbau fertig',       datum: '2025-07-31', status: 'erledigt', done: true,  beschr: 'Alle Wände gemauert, Decke betoniert' },
+      { id: 4003, name: 'Dach dicht',          datum: '2025-09-15', status: 'arbeit', beschr: 'Dachstuhl steht, Eindeckung läuft' },
+      { id: 4004, name: 'Rohinstallationen',   datum: '2025-11-30', status: 'offen',     beschr: 'Elektro, Sanitär, Heizung roh fertig' },
+      { id: 4005, name: 'Innenausbau fertig',  datum: '2026-05-31', status: 'offen',     beschr: 'Böden, Fliesen, Malerarbeiten' },
+      { id: 4006, name: 'Einzug',              datum: '2026-09-01', status: 'offen',     beschr: 'Fertigstellung und Übergabe' },
     ],
     kontakte: [
       { id: 5001, name: 'Baumeister Müller GmbH', rolle: 'Rohbau',    telefon: '+43 316 123456', email: 'office@mueller-bau.at',  notiz: 'Ansprechpartner: Ing. Müller' },
@@ -14153,9 +14184,6 @@ async function loadFromCloud() {
 
     // ── Dedup all projects (remove duplicate budgetKat etc.) ───────
     finalProjects.forEach(_deduplicateProject);
-    // Falsch gespeicherte Anzeige-Texte (alter Auswahl-Fehler) reparieren
-    let _labelFixes = 0;
-    try { finalProjects.forEach(p => { _labelFixes += _fixLabelValues(p); }); } catch (e) { console.warn('[FIX] Labels:', e?.message); }
 
     // ── Ungesicherte lokale Aenderungen NICHT verlieren ────────────
     // Eine gerade eingetippte Ausgabe ist evtl. noch nicht hochgeladen (Upload
@@ -14166,6 +14194,10 @@ async function loadFromCloud() {
       _reapplyPending(finalProjects, _pendingLocal, projects, state && state._deletedIds,
                       _prevPid ?? state?.id, _lastCloudApplyTs || _sessionStartTs);
     } catch (e) { console.warn('[SYNC] Wiedereinsetzen fehlgeschlagen:', e?.message); }
+    // Falsch gespeicherte Anzeige-Texte (alter Auswahl-Fehler) reparieren – NACH dem
+    // Wiedereinsetzen, damit ungesicherte lokale Aenderungen nicht verdraengt werden.
+    let _labelFixes = 0;
+    try { finalProjects.forEach(p => { _labelFixes += _fixLabelValues(p); }); } catch (e) { console.warn('[FIX] Labels:', e?.message); }
 
     // ── Apply to app ───────────────────────────────────────────────
     projects = finalProjects;
@@ -15273,8 +15305,8 @@ function renderAngebote() {
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
       <td data-title><strong>${esc(a.beschr)}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(a.notiz)}</span>`:''}</td>
       <td class="hide-mobile" style="font-size:0.82rem">${a.anbieter||'–'}</td>
-      <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
-      <td data-label="Status"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
+      <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
@@ -15661,7 +15693,7 @@ function renderGescannteRechnungen() {
   tbody.innerHTML = [...filtered].reverse().map(r => {
     const mwstBetrag = (r.brutto||0) - (r.netto||0);
     return `<tr>
-      <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
+      <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
         ${(r.scanUrl || r.scanData)
           ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${esc(r.beschr||'')}"
@@ -15675,15 +15707,15 @@ function renderGescannteRechnungen() {
         <div style="font-weight:600;font-size:0.84rem">${esc(r.beschr)}</div>
         <span class="badge badge-purple" style="font-size:0.62rem;margin-top:2px"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>
       </td>
-      <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${esc(r.anbieter||'–')}</td>
+      <td data-label="${tt('Anbieter')}" style="font-size:0.82rem;color:var(--text2)">${esc(r.anbieter||'–')}</td>
       <td class="hide-mobile"><span class="badge badge-gray">${esc(r.kat||'–')}</span></td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(r.netto||0)}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">
         ${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'}
         ${r.mwst > 0 ? `<span class="badge badge-yellow" style="font-size:0.6rem;margin-left:3px">${r.mwst}%</span>` : ''}
       </td>
-      <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
-      <td data-label="Status"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
+      <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
       <td style="white-space:nowrap">
         ${r.scanUrl
           ? `<a href="${esc(r.scanUrl)}" target="_blank" rel="noopener noreferrer" class="action-btn" title="Original öffnen">🔗</a>`
@@ -15854,7 +15886,7 @@ function renderKostenaufteilung() {
           <div style="display:flex;align-items:center;gap:8px">
             <span style="width:28px;height:28px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.82rem">${p.name.charAt(0).toUpperCase()}</span>
             <div class="table-title">${p.name}</div>
-            <span class="badge badge-gray">${fmt(p.summe)}</span>
+            <span class="badge badge-gray" style="white-space:nowrap">${fmt(p.summe)}</span>
           </div>
           <span style="font-size:0.75rem;color:var(--text3)">${p.items.length} Buchungen · ${p.anteil}% des Gesamtbetrags</span>
         </div>
@@ -15863,14 +15895,14 @@ function renderKostenaufteilung() {
           <tbody>
             ${[...p.items].sort((a,b) => new Date(b.datum)-new Date(a.datum)).map(k => `
               <tr>
-                <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
+                <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
                 <td data-title>${esc(k.beschr)}${k.anbieter?`<br><span style="font-size:0.72rem;color:var(--text3);font-weight:400">${esc(k.anbieter)}</span>`:''}</td>
-                <td data-label="Kategorie"><span class="badge badge-gray">${esc(k.kat)}</span></td>
-                <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
+                <td data-label="${tt('Kategorie')}"><span class="badge badge-gray">${esc(k.kat)}</span></td>
+                <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
               </tr>`).join('')}
             <tr class="mc-sum" style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
               <td colspan="3" data-title style="font-weight:800">Gesamt ${esc(p.name)}</td>
-              <td data-label="Summe" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${BG_COLORS[i%BG_COLORS.length]}">${fmt(p.summe)}</td>
+              <td data-label="${tt('Summe')}" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${BG_COLORS[i%BG_COLORS.length]}">${fmt(p.summe)}</td>
             </tr>
           </tbody>
         </table>
@@ -15887,10 +15919,10 @@ function renderKostenaufteilung() {
           <tbody>
             ${unassigned.slice(0,10).map(k => `
               <tr>
-                <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
+                <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
                 <td data-title>${esc(k.beschr)}</td>
-                <td data-label="Kategorie"><span class="badge badge-gray">${esc(k.kat)}</span></td>
-                <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
+                <td data-label="${tt('Kategorie')}"><span class="badge badge-gray">${esc(k.kat)}</span></td>
+                <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
               </tr>`).join('')}
             ${unassigned.length > 10 ? `<tr><td colspan="4" style="text-align:center;color:var(--text3);font-size:0.8rem;padding:10px">... und ${unassigned.length-10} weitere</td></tr>` : ''}
           </tbody>
