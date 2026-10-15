@@ -6453,8 +6453,12 @@ function openModal(id) {
   if (_m) { clearTimeout(_m._closeT); _m.classList.remove('closing'); }
   document.getElementById(id).classList.add('open');
   if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
+  // Leeres Datum nur bei NEUEN Eintraegen mit "heute" vorbelegen. Beim Bearbeiten nie –
+  // sonst bekam z.B. eine Aufgabe ohne Termin still das heutige Datum (und wurde ueberfaellig).
+  const _editField = _m && _m.querySelector('input[type="hidden"][id*="edit"]');
+  const _isEdit = !!((_editField && _editField.value) || (_m && _m._editId));
   const d = document.querySelector('#' + id + ' input[type="date"]');
-  if (d && !d.value) d.value = today();
+  if (d && !d.value && !_isEdit) d.value = today();
   if (id === 'modal-budget-kat') {
     renderBudgetPresets();
     // Neue Kategorie (kein Edit): Standardfarbe vorbelegen
@@ -6467,7 +6471,10 @@ function openModal(id) {
     refreshBezahltVonSelects();
   }
   if (id === 'modal-kosten' || id === 'modal-eigenleistung' || id === 'modal-rechnung-scan') {
-    const editId = document.getElementById('k-edit-id')?.value;
+    // Jedes Fenster hat seine eigene Bearbeiten-Kennung (Eigenleistung: el-edit-id). Frueher
+    // wurde immer k-edit-id geprueft -> beim Bearbeiten einer Eigenleistung wurde die
+    // Kategorie-Liste neu aufgebaut und die Kategorie sprang auf die erste.
+    const editId = document.getElementById(id === 'modal-eigenleistung' ? 'el-edit-id' : 'k-edit-id')?.value;
     if (!editId) { refreshAllKatSelects(_pendingKostenKat); _pendingKostenKat = ''; }
     if (id === 'modal-kosten' && !editId) {
       _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){}
@@ -6504,9 +6511,100 @@ function closeModal(id) {
   if (!el) return;
   if (!el.classList.contains('open')) { el.classList.remove('closing'); return; }
   el.classList.add('closing');
+  // Bearbeiten-Modus SOFORT beenden (sonst ueberschreibt das naechste "+ Neu" den alten Eintrag)
+  try { _resetEditMarkers(id); } catch(e) {}
   clearTimeout(el._closeT);
-  el._closeT = setTimeout(() => { el.classList.remove('open'); el.classList.remove('closing'); }, 190);
+  el._closeT = setTimeout(() => {
+    el.classList.remove('open'); el.classList.remove('closing');
+    // Restliche Felder erst nach der Ausblend-Animation leeren (kein sichtbares Flackern).
+    // Wird das Fenster vorher wieder geoeffnet (openModal loescht den Timer), bleibt alles.
+    try { _resetFormModal(id); } catch(e) {}
+  }, 190);
 }
+
+// Gespeicherten Wert in einer Auswahl waehlen. Fehlt die Option (Kategorie umbenannt/
+// geloescht, Status "Umgewandelt", eigener MwSt-Satz …), wird sie ergaenzt – sonst wuerde
+// "Bearbeiten → Speichern" ohne Aenderung still einen ANDEREN Wert speichern.
+function _selectValue(sel, value) {
+  if (!sel) return;
+  const v = value == null ? '' : String(value);
+  let opt = [...sel.options].find(o => o.value === v);
+  if (!opt && v !== '') { opt = new Option(v, v); opt.dataset.added = '1'; sel.add(opt); }
+  if (opt) opt.selected = true;
+}
+
+// ── Eingabefenster beim Schliessen zuruecksetzen ─────────────────────────────
+// Frueher blieb nach "Abbrechen" oder Tippen auf den Hintergrund oft der Bearbeiten-
+// Modus stehen: das naechste "+ Neu" ueberschrieb dann still den zuletzt bearbeiteten
+// Eintrag, oder alte Werte (Farbe, Status, Fotos, Plan) wanderten in den neuen Eintrag.
+// Jetzt kehrt jedes Eingabefenster beim Schliessen in seinen Ausgangszustand zurueck.
+// Wert = zusaetzliche Aufraeumarbeit fuer JS-Zustand ausserhalb der Formularfelder.
+const _FORM_MODALS = {
+  'modal-kosten':        () => { try { clearKostenBeleg(); } catch(e) {} },
+  'modal-eigenleistung': null,
+  'modal-angebot':       () => { try { resetAngModal(); } catch(e) {} },
+  'modal-zahlung':       null,
+  'modal-task':          null,
+  'modal-kontakt':       null,
+  'modal-tagebuch':      () => { const r = document.getElementById('tb-worker-rows'); if (r) r.innerHTML = ''; },
+  'modal-notiz':         null,
+  'modal-doku':          () => { dokuPendingPhotos = []; dokuPendingFiles = []; try { renderDokuPhotoPreviews(); } catch(e) {} },
+  'modal-wartung':       () => { try { resetWartungModal(); } catch(e) {} },
+  'modal-mangel':        () => { try { resetMgModal(); } catch(e) {} },
+  'modal-einsatz':       () => { try { resetEinsatzModal(); } catch(e) {} },
+  'modal-budget-kat':    () => { const w = document.getElementById('bk-presets-wrap'); if (w) w.style.display = ''; },
+  'modal-new-project':   null,
+  'modal-foto-info':     () => { pendingPhoto = null; pendingPhotoFile = null; },
+  'modal-foto-batch':    () => { fotoBatchFiles = []; },
+  'modal-grundriss-add': () => { _grPdfDoc = null; _grPdfPage = 1; const n = document.getElementById('gr-pdf-nav'); if (n) n.style.display = 'none'; },
+  'modal-grundriss-pin': () => { _grPinFotosPending = []; },
+  'modal-milestone':     null,
+  'modal-gantt':         () => { try { resetGanttModal(); } catch(e) {} },
+  'modal-helfer-person': null,
+};
+// Sofort beim Schliessen: alle Bearbeiten-Kennungen (versteckte Felder + JS-Merker) leeren
+function _resetEditMarkers(id) {
+  if (!(id in _FORM_MODALS)) return;
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.querySelectorAll('input[type="hidden"]').forEach(h => { if (/edit|-id$/i.test(h.id)) h.value = h.defaultValue || ''; });
+  m._editId = null; m._next = null;
+  if (id === 'modal-kosten') _pendingAngebotId = null;   // abgebrochene Umwandlung nicht "mitnehmen"
+}
+// Nach dem Ausblenden: Felder auf die Ausgangswerte aus dem HTML, Titel zurueck
+function _resetFormModal(id) {
+  if (!(id in _FORM_MODALS)) return;
+  const m = document.getElementById(id);
+  if (!m || m.classList.contains('open')) return;
+  _resetEditMarkers(id);
+  m.querySelectorAll('input, select, textarea').forEach(el => {
+    try {
+      if (el.tagName === 'SELECT') {
+        el.querySelectorAll('option[data-added]').forEach(o => o.remove());   // nur fuer den bearbeiteten Eintrag ergaenzt
+        const def = [...el.options].findIndex(o => o.defaultSelected);
+        el.selectedIndex = def > -1 ? def : (el.options.length ? 0 : -1);
+      } else if (el.type === 'checkbox' || el.type === 'radio') el.checked = el.defaultChecked;
+      else if (el.type === 'file') { el.value = ''; delete el._compressed; }
+      else el.value = el.defaultValue;
+    } catch(e) {}
+  });
+  delete m._pendingX; delete m._pendingY;
+  m.querySelectorAll('h3[data-orig-title]').forEach(h => { h.textContent = h.dataset.origTitle; });
+  const extra = _FORM_MODALS[id];
+  if (extra) { try { extra(); } catch(e) {} }
+}
+// Original-Titel der Fenster merken (Bearbeiten setzt z.B. "Eintrag bearbeiten")
+function _captureModalTitles() {
+  Object.keys(_FORM_MODALS).forEach(id => {
+    const h = document.querySelector('#' + id + ' h3');
+    if (h && !h.dataset.origTitle && h.children.length === 0) h.dataset.origTitle = h.textContent;
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _captureModalTitles);
+else _captureModalTitles();
+// Frueher von "Abbrechen" aufgerufen, aber nie definiert (JS-Fehler, Bearbeiten-Modus blieb)
+function resetDiaryModal() { _resetEditMarkers('modal-tagebuch'); }
+function resetNotizModal() { _resetEditMarkers('modal-notiz'); }
 
 // close on overlay click – klickt den Abbrechen-Button des Modals, damit
 // dessen Reset-Logik (edit-id-Felder, wartende Promises) immer laeuft.
@@ -7685,9 +7783,9 @@ function editKosten(id) {
   document.getElementById('k-betrag').value  = k.betrag || '';
   document.getElementById('k-netto-input').value = k.netto ?? k.betrag ?? '';
   const mwstSel = document.getElementById('k-mwst');
-  Array.from(mwstSel.options).forEach(o => { if (o.value === String(k.mwst || 0)) o.selected = true; });
+  _selectValue(mwstSel, String(k.mwst || 0));
   const statusSel = document.getElementById('k-status');
-  Array.from(statusSel.options).forEach(o => { if (o.value === k.status) o.selected = true; });
+  _selectValue(statusSel, k.status);
   refreshBezahltVonSelects(k.bezahltVon || '');
   const bvSel = document.getElementById('k-bezahlt-von');
   if (bvSel) bvSel.value = k.bezahltVon || '';
@@ -7696,7 +7794,9 @@ function editKosten(id) {
   _kBeleg = k.scanUrl || k.scanData || null;
   _kBelegChanged = false;
   _showKBelegPreview(_kBeleg);
-  updateKostenBrutto();
+  // Brutto ist der gespeicherte Wert -> Netto daraus ableiten. Frueher wurde Brutto aus dem
+  // gerundeten Netto neu berechnet und verschob sich beim Speichern um 1 Cent (99,99 → 100,00).
+  updateKostenNetto();
   updateSkontoPreview('k');
   openModal('modal-kosten');
 }
@@ -7823,7 +7923,7 @@ function editEigenleistung(id) {
   document.getElementById('el-von').value    = e.von    || '';
   document.getElementById('el-notiz').value  = e.notiz  || '';
   const kSel = document.getElementById('el-kat');
-  Array.from(kSel.options).forEach(o => { if (o.value === e.kat) o.selected = true; });
+  _selectValue(kSel, e.kat);
   if (document.getElementById('el-edit-id')) document.getElementById('el-edit-id').value = id;
   if (document.getElementById('el-modal-title')) document.getElementById('el-modal-title').textContent = 'Eigenleistung bearbeiten';
   openModal('modal-eigenleistung');
@@ -9283,7 +9383,7 @@ function editTask(id) {
   const timeEl = document.getElementById('t-time');
   if (timeEl) { timeEl.value = t.time || ''; if (t.time) onTaskTimeChange(); }
   const pSel = document.getElementById('t-prio');
-  Array.from(pSel.options).forEach(o => { if (o.value === t.prio) o.selected = true; });
+  _selectValue(pSel, t.prio);
   if (document.getElementById('t-edit-id')) document.getElementById('t-edit-id').value = id;
   if (document.getElementById('t-modal-title')) document.getElementById('t-modal-title').textContent = 'Aufgabe bearbeiten';
   openModal('modal-task');
@@ -9513,7 +9613,7 @@ function editDiary(id) {
   document.getElementById('tb-text').value   = e.text    || '';
   document.getElementById('tb-tags').value   = (e.tags||[]).join(', ');
   const wSel = document.getElementById('tb-weather');
-  Array.from(wSel.options).forEach(o => { if (o.value === e.weather) o.selected = true; });
+  _selectValue(wSel, e.weather);
   document.getElementById('tb-temp').value = e.temp != null ? e.temp : '';
   // Restore workers
   const container = document.getElementById('tb-worker-rows');
@@ -9811,7 +9911,7 @@ function editNotiz(id) {
   document.getElementById('n-text').value    = n.text    || '';
   document.getElementById('n-ergebnis').value = n.ergebnis || '';
   const cSel = document.getElementById('n-color');
-  Array.from(cSel.options).forEach(o => { if (o.value === n.color) o.selected = true; });
+  _selectValue(cSel, n.color);
   if (document.getElementById('n-edit-id')) document.getElementById('n-edit-id').value = id;
   if (document.getElementById('n-modal-title')) document.getElementById('n-modal-title').textContent = 'Notiz bearbeiten';
   openModal('modal-notiz');
@@ -10085,9 +10185,9 @@ function editKontakt(id) {
   document.getElementById('c-mail').value  = k.mail   || '';
   document.getElementById('c-notiz').value = k.notiz  || '';
   const gSel = document.getElementById('c-gewerk');
-  Array.from(gSel.options).forEach(o => { if (o.value === k.gewerk) o.selected = true; });
+  _selectValue(gSel, k.gewerk);
   const sSel = document.getElementById('c-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === k.status) o.selected = true; });
+  _selectValue(sSel, k.status);
   if (document.getElementById('c-edit-id')) document.getElementById('c-edit-id').value = id;
   if (document.getElementById('c-modal-title')) document.getElementById('c-modal-title').textContent = 'Kontakt bearbeiten';
   openModal('modal-kontakt');
@@ -13038,7 +13138,7 @@ function editProject(id) {
   document.getElementById('np-start').value   = p.settings?.start   || '';
   document.getElementById('np-end').value     = p.settings?.end     || '';
   const typeEl = document.getElementById('np-type');
-  Array.from(typeEl.options).forEach(o => { if (o.value === p.settings?.type) o.selected = true; });
+  _selectValue(typeEl, p.settings?.type);
   renderNewProjectColorPicker(p.settings?.color || '#ff9f1c');
   renderNewProjectModules(p.settings?.modules || {});
   openModal('modal-new-project');
@@ -15007,9 +15107,9 @@ function editAngebot(id) {
   document.getElementById('ang-betrag').value   = a.betrag   || '';
   document.getElementById('ang-notiz').value    = a.notiz    || '';
   const katSel = document.getElementById('ang-kat');
-  Array.from(katSel.options).forEach(o => { if (o.value === a.kat) o.selected = true; });
+  _selectValue(katSel, a.kat);
   const sSel = document.getElementById('ang-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === a.status) o.selected = true; });
+  _selectValue(sSel, a.status);
   document.getElementById('ang-edit-id').value = id;
   document.getElementById('ang-modal-title').textContent = 'Angebot bearbeiten';
   document.getElementById('ang-to-rechnung-btn').style.display = a.status === 'Angenommen' ? '' : 'none';
@@ -15363,9 +15463,9 @@ function editZahlung(id) {
   document.getElementById('zp-bezahlt-datum').value = z.bezahltDatum || '';
   document.getElementById('zp-notiz').value         = z.notiz        || '';
   const katSel = document.getElementById('zp-kat');
-  Array.from(katSel.options).forEach(o => { if (o.value === z.kat) o.selected = true; });
+  _selectValue(katSel, z.kat);
   const sSel = document.getElementById('zp-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === z.status) o.selected = true; });
+  _selectValue(sSel, z.status);
   document.getElementById('zp-edit-id').value = id;
   document.getElementById('zp-modal-title').textContent = 'Zahlung bearbeiten';
   openModal('modal-zahlung');
@@ -15524,11 +15624,11 @@ function editMangel(id) {
   document.getElementById('mg-behoben-datum').value = m.behobenDatum || '';
   document.getElementById('mg-zustaendig').value   = m.zustaendig   || '';
   const gSel = document.getElementById('mg-gewerk');
-  Array.from(gSel.options).forEach(o => { if (o.value === m.gewerk) o.selected = true; });
+  _selectValue(gSel, m.gewerk);
   const pSel = document.getElementById('mg-prio');
-  Array.from(pSel.options).forEach(o => { if (o.value === m.prio) o.selected = true; });
+  _selectValue(pSel, m.prio);
   const sSel = document.getElementById('mg-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === m.status) o.selected = true; });
+  _selectValue(sSel, m.status);
   document.getElementById('mg-edit-id').value = id;
   document.getElementById('mg-modal-title').textContent = 'Mangel bearbeiten';
   // Show existing fotos in preview
