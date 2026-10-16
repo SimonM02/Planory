@@ -9985,13 +9985,16 @@ function _pickDateiKat() {
     const allKats = [...budgetKats, ...defaults.filter(d => !budgetNames.has(d.name))];
 
     const list = document.getElementById('datei-kat-list');
-    list.innerHTML = allKats.map(k => `
-      <button onclick="closeModal('modal-datei-kat');_dateiKatResolve('${k.name.replace(/'/g,"\\'")}')"
+    // Namen ueber den Index uebergeben (nicht als Text im onclick) – sonst war eine Kategorie
+    // mit " im Namen nicht antippbar.
+    window._dateiKatListe = allKats.map(k => k.name);
+    list.innerHTML = allKats.map((k, i) => `
+      <button onclick="closeModal('modal-datei-kat');_dateiKatResolve(window._dateiKatListe[${i}])"
         style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;font-size:0.875rem;font-weight:600;color:var(--text);text-align:left;transition:all 0.15s;width:100%"
         onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
         <span style="font-size:1.2rem;width:28px;text-align:center">${k.icon}</span>
-        <span>${k.name}</span>
+        <span>${esc(k.name)}</span>
       </button>`).join('');
 
     window._dateiKatResolve = (name) => { _dateiKatReject = null; resolve(name); };
@@ -15495,13 +15498,19 @@ function markZahlungBezahlt(id) {
   const z = (state.zahlungen||[]).find(z => String(z.id) === String(id));
   if (!z) return;
   z.status = 'Bezahlt'; z.bezahltDatum = today();
-  // Sync matching Kosten entry to "Bezahlt" if still Ausstehend
-  const match = (state.kosten||[]).find(k =>
+  // Passende offene Ausgabe mit auf "Bezahlt" setzen – aber NUR wenn eindeutig: gleicher
+  // Betrag UND gleicher Anbieter (ohne Anbieter: gleiche Kategorie) UND genau ein Treffer.
+  // Frueher reichte bei fehlendem Anbieter der Betrag -> eine fremde Rechnung (andere Firma,
+  // zufaellig gleicher Betrag) wurde still als bezahlt markiert.
+  const _norm = v => String(v || '').trim().toLowerCase();
+  const zA = _norm(z.anbieter);
+  const kandidaten = (state.kosten||[]).filter(k =>
     k.status === 'Ausstehend' &&
     Math.abs((parseFloat(k.betrag)||0) - (parseFloat(z.betrag)||0)) < 0.01 &&
-    (z.anbieter ? k.anbieter === z.anbieter : true)
+    (zA ? _norm(k.anbieter) === zA : (!!z.kat && k.kat === z.kat))
   );
-  if (match) { match.status = 'Bezahlt'; match.bezahltVon = z.bezahltVon || match.bezahltVon; }
+  const match = kandidaten.length === 1 ? kandidaten[0] : null;
+  if (match) { match.status = 'Bezahlt'; match.bezahltVon = z.bezahltVon || match.bezahltVon; match._updatedAt = Date.now(); }
   save(); renderZahlungsplan(); showToast('✅ Als bezahlt markiert', 'success');
 }
 
@@ -15896,9 +15905,9 @@ function renderPersonenList() {
   el.innerHTML = state.zahlungspersonen.map(p => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:8px">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent-text);font-weight:700;font-size:0.82rem;flex-shrink:0">
-        ${p.name.charAt(0).toUpperCase()}
+        ${esc(p.name.charAt(0).toUpperCase())}
       </div>
-      <span style="flex:1;font-weight:600;font-size:0.875rem">${p.name}</span>
+      <span style="flex:1;font-weight:600;font-size:0.875rem">${esc(p.name)}</span>
       <button class="action-btn del" onclick="deleteZahlungsPerson(${p.id})">🗑</button>
     </div>`).join('');
 }
@@ -15907,7 +15916,7 @@ function refreshBezahltVonSelects(selectedVal = '') {
   state.zahlungspersonen = state.zahlungspersonen || [];
   const options = `<option value="">– Nicht zugewiesen –</option>` +
     state.zahlungspersonen.map(p =>
-      `<option value="${p.name}" ${p.name === selectedVal ? 'selected' : ''}>${p.name}</option>`
+      `<option value="${esc(p.name)}" ${p.name === selectedVal ? 'selected' : ''}>${esc(p.name)}</option>`
     ).join('');
   ['k-bezahlt-von','scan-bezahlt-von'].forEach(id => {
     const el = document.getElementById(id);

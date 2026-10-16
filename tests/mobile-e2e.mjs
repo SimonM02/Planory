@@ -341,6 +341,36 @@ await scenario('Angebote-Vergleich: zuletzt gelöschtes Angebot verschwindet sof
   return r.nachher ? 'gelöschtes Angebot „A-Fenster" wird im Vergleich weiter angezeigt' : '';
 });
 
+await scenario('Zahlungsplan „✓ Bezahlt" ohne Anbieter markiert keine fremde Rechnung', async () => {
+  const r = await page.evaluate(() => {
+    const k1 = { id: 9400001, datum: '2026-10-01', beschr: 'Fenster Erdgeschoss', kat: state.budgetKat[0].name, mwst: 20, netto: 4166.67, betrag: 5000, status: 'Ausstehend', anbieter: 'Fensterbau Müller', _updatedAt: 1 };
+    const k2 = { id: 9400002, datum: '2026-10-02', beschr: 'Abschlag 2 Rohbau', kat: state.budgetKat[1].name, mwst: 20, netto: 4166.67, betrag: 5000, status: 'Ausstehend', anbieter: 'Baumeister Huber', _updatedAt: 1 };
+    state.kosten.push(k1, k2);
+    state.zahlungen = state.zahlungen || [];
+    state.zahlungen.push({ id: 9400003, beschr: 'Abschlag 2 Rohbau', kat: '', anbieter: '', faellig: '2026-10-20', betrag: 5000, status: 'Offen' });
+    markZahlungBezahlt(9400003);
+    return [k1.status, k2.status];
+  });
+  return r.includes('Bezahlt') ? `fremde Rechnung als bezahlt markiert (Status: ${r.join(', ')})` : '';
+});
+await scenario('Namen mit Anführungszeichen bleiben in „Bezahlt von" und im Kategorie-Picker vollständig', async () => {
+  const r = await page.evaluate(async () => {
+    state.zahlungspersonen.push({ id: 9400010, name: 'Kredit "Raiffeisen"' });
+    refreshBezahltVonSelects();
+    const vals = [...document.getElementById('k-bezahlt-von').options].map(o => o.value);
+    state.budgetKat.push({ id: 9400011, name: 'Fenster "Premium"', budget: 1000, color: '#3d6ff8' });
+    const p = _pickDateiKat();
+    const btn = [...document.querySelectorAll('#datei-kat-list button')].find(b => b.textContent.includes('Premium'));
+    btn && btn.click();
+    const picked = await Promise.race([p, new Promise(res => setTimeout(() => res('(nichts gewählt)'), 800))]);
+    return { person: vals.includes('Kredit "Raiffeisen"'), picked };
+  });
+  const p = [];
+  if (!r.person) p.push('Person in „Bezahlt von" abgeschnitten');
+  if (r.picked !== 'Fenster "Premium"') p.push(`Kategorie-Picker lieferte „${r.picked}"`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
