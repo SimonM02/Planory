@@ -398,9 +398,10 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
   check(`${label}: Scan bucht sofort ein (wartet nicht auf den Beleg-Upload)`, () => {
     const f = extractFn(src, 'confirmRechnungScan');
     if (!f) return 'confirmRechnungScan nicht gefunden';
-    const i = f.indexOf('state.kosten.push');
-    if (i < 0) return 'Scan bucht keine Ausgabe ein';
-    if (/\bawait\b/.test(f.slice(0, i))) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
+    if (!f.includes('state.kosten.push')) return 'Scan bucht keine Ausgabe ein';
+    // Normale Fotos: Beleg wird im Hintergrund getauscht (nicht abgewartet)
+    if (!/_scanBelegNachladen\(/.test(f) || /await\s+_scanBelegNachladen/.test(f)) return 'Beleg-Upload wird vor dem Einbuchen abgewartet';
+    if (/await\s+_uploadBeleg|await\s+supa\.storage/.test(f)) return 'Ausgabe erscheint erst nach dem Upload';
   });
   check(`${label}: „Bezahlt von" erlaubt eine neue Person`, () => {
     const f = extractFn(src, 'refreshBezahltVonSelects');

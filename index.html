@@ -7689,8 +7689,8 @@ function _showKBelegPreview(src) {
   const img  = document.getElementById('k-beleg-img');
   const btn  = document.getElementById('k-beleg-btn');
   if (!wrap || !img) return;
-  if (src) { img.src = _istPdfSrc(src) ? PDF_THUMB : src; wrap.style.display = 'flex'; if (btn) btn.textContent = '📎 Bild ersetzen'; }
-  else     { img.src = '';  wrap.style.display = 'none'; if (btn) btn.textContent = '📎 Bild hinzufügen'; }
+  if (src) { img.onerror = () => { img.onerror = null; img.src = DOC_THUMB; }; img.src = _istPdfSrc(src) ? PDF_THUMB : src; wrap.style.display = 'flex'; if (btn) btn.textContent = '📎 Bild ersetzen'; }
+  else     { img.onerror = null; img.src = '';  wrap.style.display = 'none'; if (btn) btn.textContent = '📎 Bild hinzufügen'; }
 }
 function clearKostenBeleg() { _kBeleg = null; _kBelegChanged = true; _showKBelegPreview(null); }
 async function onKostenBelegPick(input) {
@@ -7745,6 +7745,8 @@ function _istPdfSrc(s) {
   return /^data:application\/pdf/i.test(s) || /^data:[^,]*;base64,JVBER/i.test(s) || /\.pdf(?:[?#]|$)/i.test(s);
 }
 const PDF_THUMB = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fee2e2"/><text x="24" y="30" font-size="14" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#b91c1c">PDF</text></svg>');
+// Ersatzbild, falls ein Beleg nicht als Bild ladbar ist (z.B. alte PDFs, die als .jpg gespeichert wurden)
+const DOC_THUMB = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#e2e8f0"/><path d="M16 11h11l7 7v19H16z" fill="#fff" stroke="#64748b" stroke-width="2"/><path d="M20 24h10M20 29h10M20 34h6" stroke="#64748b" stroke-width="2"/></svg>');
 function _belegThumb(x) { const s = x && (x.scanUrl || x.scanData); return _istPdfSrc(s) ? PDF_THUMB : s; }
 function _oeffnePdf(src) {
   let url = src;
@@ -7763,7 +7765,21 @@ function _zeigeBeleg(src, title, meta) {
   const img = document.getElementById('lightbox-img');
   const t   = document.getElementById('lightbox-title');
   const m   = document.getElementById('lightbox-meta');
-  if (img) img.src = src;
+  if (img) {
+    // Laesst sich der Beleg nicht als Bild anzeigen (alte PDFs mit .jpg-Namen):
+    // Link zum Original anbieten statt leerer Ansicht
+    img.onerror = () => {
+      img.onerror = null;
+      if (img.getAttribute('src') !== src || !/^https?:/i.test(src) || !m) return;
+      img.src = DOC_THUMB;
+      m.innerHTML = '';
+      const a = document.createElement('a');
+      a.href = src; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'inherit';
+      a.textContent = _lang === 'en' ? 'Open original file' : 'Original-Datei öffnen';
+      m.appendChild(a);
+    };
+    img.src = src;
+  }
   if (t) t.textContent = title || 'Beleg';
   if (m) m.textContent = meta || '';
   document.getElementById('lightbox')?.classList.add('open');
@@ -8112,7 +8128,7 @@ function renderKosten() {
       return `<tr>
         <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
-        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${_belegThumb(k)}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
+        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${_belegThumb(k)}" onerror="this.onerror=null;this.src=DOC_THUMB" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
         <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
@@ -9064,12 +9080,28 @@ async function confirmRechnungScan() {
   // Beleg merken, BEVOR das Fenster zurueckgesetzt wird
   const b64  = scanImageBase64;
   const mime = scanMediaType || 'image/jpeg';
+  const dataUrl = b64 ? `data:${mime};base64,${b64}` : null;
   const hochladen = !!(b64 && currentUser && !_demoMode);
-  // Ohne Anmeldung/Demo: Bild wie bisher direkt beim Eintrag (wenn klein genug)
-  const scanData = (!hochladen && b64 && b64.length < 1200000) ? `data:${mime};base64,${b64}` : null;
-
+  const klein = !!(b64 && b64.length < 1200000);
   // Sofort einbuchen – frueher wurde erst auf den Bild-Upload gewartet (dauerte am Handy
-  // spuerbar, die Ausgabe erschien erst danach). Der Beleg wird im Hintergrund nachgereicht.
+  // spuerbar, die Ausgabe erschien erst danach). Der Beleg kommt zuerst direkt in den
+  // Eintrag (bleibt so auch erhalten, wenn die App gleich geschlossen wird) und wird im
+  // Hintergrund gegen den Speicher-Link getauscht. Nur grosse PDFs (passen nicht in den
+  // Eintrag) werden wie bisher vorher hochgeladen.
+  let vorab = null;
+  if (hochladen && !klein) {
+    const btn = document.getElementById('scan-confirm-btn');
+    if (btn.disabled) return;   // Doppelklick waehrend des Uploads
+    const txt = btn.textContent;
+    btn.disabled = true; btn.textContent = _lang === 'en' ? 'Uploading…' : 'Wird hochgeladen…';
+    try { vorab = await uploadDataUrlToStorage(dataUrl, 'rechnungen', mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg'); }
+    finally { btn.disabled = false; btn.textContent = txt; }
+    if (!vorab.path) { vorab = null; showToast('⚠️ Beleg konnte nicht gespeichert werden – Ausgabe ist eingebucht', 'warning', 5000); }
+  }
+  const scanUrl  = vorab ? vorab.url  : null;
+  const scanPath = vorab ? vorab.path : null;
+  const scanData = (!vorab && klein) ? dataUrl : null;
+
   const now = Date.now(), kostenId = _neueId(), scanId = _neueId(), pid = currentProjectId;
   const eintrag = {
     id:        kostenId,
@@ -9085,8 +9117,8 @@ async function confirmRechnungScan() {
     skontoProz: parseFloat(document.getElementById('scan-skonto-proz').value) || 0,
     skontoBis:  document.getElementById('scan-skonto-bis').value || '',
     aiScanned: true,
-    scanUrl:   null,
-    scanPath:  null,
+    scanUrl,
+    scanPath,
     scanData,
     _updatedAt: now
   };
@@ -9106,8 +9138,8 @@ async function confirmRechnungScan() {
     netto:       eintrag.netto,
     brutto,
     status:      eintrag.status,
-    scanUrl:     null,
-    scanPath:    null,
+    scanUrl,
+    scanPath,
     scanData,
     gescannt:    new Date().toISOString(),
     _updatedAt:  now
@@ -9119,33 +9151,34 @@ async function confirmRechnungScan() {
   resetScanModal();
   _renderKostenAnsichten();
   showToast('✅ Rechnung eingebucht und gespeichert!', 'success');
-  if (hochladen) _scanBelegNachladen(pid, kostenId, scanId, b64, mime).catch(e => console.warn('[Beleg]', e?.message));
+  if (hochladen && scanData) _scanBelegNachladen(pid, kostenId, scanId, dataUrl, mime).catch(e => console.warn('[Beleg]', e?.message));
 }
 
 // Beleg eines eingebuchten Scans in den Speicher laden und danach an Ausgabe +
 // gescannte Rechnung haengen. Eintraege werden erst JETZT per ID gesucht (der Stand kann
 // inzwischen neu aus der Cloud geladen, bearbeitet oder geloescht worden sein).
-async function _scanBelegNachladen(pid, kostenId, scanId, b64, mime) {
-  const dataUrl = `data:${mime};base64,${b64}`;
-  const up = await uploadDataUrlToStorage(dataUrl, 'rechnungen', mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg');
-  const ok = !!up.path;
-  const proj = String(currentProjectId) === String(pid) ? state : (projects || []).find(p => String(p.id) === String(pid));
-  const k = proj && (proj.kosten || []).find(x => String(x.id) === String(kostenId));
-  if (!k || k.scanUrl || k.scanPath || k.scanData) {   // geloescht oder inzwischen anderer Beleg
-    if (ok) deletePhotoFromStorage(up.path);
-    return;
-  }
-  const patch = ok ? { scanUrl: up.url, scanPath: up.path, scanData: null }
-              : (b64.length < 1200000 ? { scanUrl: null, scanPath: null, scanData: dataUrl } : null);
-  if (!patch) { showToast('⚠️ Beleg konnte nicht gespeichert werden – Ausgabe ist eingebucht', 'warning', 5000); return; }
-  const t = Date.now();
-  Object.assign(k, patch, { _updatedAt: t });
-  (proj.gescannteRechnungen || []).forEach(r => {
-    if ((String(r.id) === String(scanId) || String(r.kostenId) === String(kostenId)) && !r.scanUrl && !r.scanPath && !r.scanData)
-      Object.assign(r, patch, { _updatedAt: t });
-  });
-  save();
-  _renderKostenAnsichten();
+const _belegLaeuft = new Set();   // Ausgaben-IDs, deren Beleg gerade hochgeladen wird
+async function _scanBelegNachladen(pid, kostenId, scanId, dataUrl, mime) {
+  _belegLaeuft.add(String(kostenId));
+  try {
+    const up = await uploadDataUrlToStorage(dataUrl, 'rechnungen', mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg');
+    const proj = String(currentProjectId) === String(pid) ? state : (projects || []).find(p => String(p.id) === String(pid));
+    const k = proj && (proj.kosten || []).find(x => String(x.id) === String(kostenId));
+    // Nur den eigenen, noch eingebetteten Beleg ersetzen – nicht, wenn die Ausgabe inzwischen
+    // geloescht wurde oder einen anderen Beleg bekommen hat
+    const eigen = x => !x.scanUrl && !x.scanPath && x.scanData === dataUrl;
+    if (!up.path || !k || !eigen(k)) {
+      if (up.path) deletePhotoFromStorage(up.path);
+      return;   // Upload gescheitert: Beleg bleibt im Eintrag (wird beim naechsten Start erneut versucht)
+    }
+    const t = Date.now(), patch = { scanUrl: up.url, scanPath: up.path, scanData: null, _updatedAt: t };
+    Object.assign(k, patch);
+    (proj.gescannteRechnungen || []).forEach(r => {
+      if ((String(r.id) === String(scanId) || String(r.kostenId) === String(kostenId)) && eigen(r)) Object.assign(r, patch);
+    });
+    save();
+    _renderKostenAnsichten();
+  } finally { _belegLaeuft.delete(String(kostenId)); }
 }
 
 // Beleg (gescanntes Rechnungsbild) einer Kostenzeile gross anzeigen. Nutzt das
@@ -14313,6 +14346,18 @@ async function _migrateEmbeddedFiles() {
         const up = await uploadDataUrlToStorage(dat.data, 'dokumente', dat.name || 'dokument');
         if (up.path) { dat.url = up.url; dat.path = up.path; delete dat.data; moved++; }
       }
+      // 5) Rechnungs-Belege, die noch im Eintrag stecken (z.B. App direkt nach dem
+      //    Einbuchen geschlossen oder Upload damals gescheitert) – Ausgabe + Scan teilen sich die Datei
+      for (const k of (proj.kosten || [])) {
+        if (!_isEmbeddedFile(k.scanData) || k.scanUrl || _belegLaeuft.has(String(k.id))) continue;
+        const alt = k.scanData;
+        const up = await uploadDataUrlToStorage(alt, 'rechnungen', _istPdfSrc(alt) ? 'rechnung.pdf' : 'rechnung.jpg');
+        if (!up.path) continue;
+        if (k.scanData !== alt) { deletePhotoFromStorage(up.path); continue; }   // inzwischen geaendert
+        const patch = { scanUrl: up.url, scanPath: up.path, scanData: null, _updatedAt: Date.now() };
+        Object.assign(k, patch); moved++;
+        (proj.gescannteRechnungen || []).forEach(r => { if (String(r.kostenId) === String(k.id) && r.scanData === alt) Object.assign(r, patch); });
+      }
     }
 
     if (moved > 0) {
@@ -15997,7 +16042,7 @@ function renderGescannteRechnungen() {
       <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
         ${(r.scanUrl || r.scanData)
-          ? `<img src="${_belegThumb(r)}" alt="Scan"
+          ? `<img src="${_belegThumb(r)}" alt="Scan" onerror="this.onerror=null;this.src=DOC_THUMB"
                onclick="openScanBeleg(${r.id})"
                style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform 0.15s"
                onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`

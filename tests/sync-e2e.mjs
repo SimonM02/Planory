@@ -48,7 +48,11 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
   };
   let rowId = 1;
   const now = new Date().toISOString();
-  const db = window.__fakeDb = {
+  // cfg.persist: Datenbank ueberlebt ein Neuladen der Seite (= App geschlossen und neu gestartet)
+  const gespeichert = C.persist ? (() => { try { return JSON.parse(sessionStorage.getItem('__fakeDbState') || 'null'); } catch (e) { return null; } })() : null;
+  const ersterStart = !gespeichert;
+  const persist = () => { if (C.persist) try { sessionStorage.setItem('__fakeDbState', JSON.stringify(db)); } catch (e) { console.warn('[fake] persist', e.message); } };
+  const db = window.__fakeDb = gespeichert || {
     projektdaten: [{ id: rowId++, user_id: uid, typ: 'all_projects', updated_at: now, daten: {
       projects: [{ id: pid, settings: { name: 'Testhaus', type: 'Neubau', budget: 500000, start: '', end: '', address: '', color: '#ff9f1c', modules: {} },
                    budgetKat: [], _budgetKatV2: true, _deletedIds: {} }],
@@ -58,6 +62,7 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
     subscriptions: [{ user_id: uid, plan: 'pro', status: 'active', current_period_end: '2099-01-01' }],
     profiles: [],
   };
+  if (gespeichert) rowId = Math.max(0, ...Object.values(db).flat().map(r => Number(r.id) || 0)) + 1;
   const stats = window.__fakeStats = { itemReadsInFlight: 0, itemReads: 0, writes: 0 };
   const rtCallbacks = [];
   const echo = (rows) => rows.forEach((r, i) => setTimeout(() => rtCallbacks.slice().forEach(cb => { try { cb({ eventType: 'UPDATE', new: r }); } catch (e) {} }), C.rtDelay + i * 3));
@@ -111,6 +116,7 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
         for (let i = tab.length - 1; i >= 0; i--) if (hit(tab[i])) { changed.push(tab[i]); tab.splice(i, 1); }
       }
       await sleep(C.write / 2);
+      persist();
       if (this.t === 'projekt_items' && changed.length) echo(changed);
       return { data: null, error: null };
     }
@@ -124,6 +130,7 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
       const u = { path: p, type: (o && o.contentType) || (body && body.type) || '', done: false };
       uploads.push(u);
       if (C.uploadDelay) await sleep(C.uploadDelay);
+      if (C.uploadHangFirstLoad && ersterStart) await new Promise(() => {});   // App wird vorher geschlossen
       if (C.uploadFail) return { data: null, error: { message: 'Bucket not found' } };
       u.done = true;
       return { data: { path: p }, error: null };
@@ -212,6 +219,7 @@ const cloud = (page, beschr) => page.evaluate(b => window.__fakeDb.projekt_items
 
 const results = [];
 async function scenario(name, fn) {
+  if (process.env.NUR && !name.startsWith(process.env.NUR)) return;   // z.B. NUR=E10 → nur dieses Szenario
   const t0 = Date.now();
   try { const msg = await fn(); results.push([!msg, name, msg || '', Date.now() - t0]); }
   catch (e) { results.push([false, name, 'Abbruch: ' + (e && e.message || e).split('\n')[0], Date.now() - t0]); }
@@ -296,14 +304,17 @@ await scenario('D: Gelöschte Ausgabe kommt nach dem Neuladen nicht zurück', as
 });
 
 // E) Rechnung scannen: KI liefert Betraege als deutschen Text bzw. der Server meldet Fehler
-async function scan(page, kiResponse, { pdf = false } = {}) {
+async function scan(page, kiResponse, { pdf = false, gross = false } = {}) {
   page.__kiHandler = route => route.fulfill(kiResponse);
-  return page.evaluate(async pdf => {
+  return page.evaluate(async ([pdf, gross]) => {
     let file;
     if (pdf) file = new File(['%PDF-1.4\n1 0 obj<<>>endobj\n%%EOF'], 'rechnung.pdf', { type: 'application/pdf' });
     else {
-      const c = document.createElement('canvas'); c.width = 60; c.height = 40;
-      c.getContext('2d').fillRect(0, 0, 60, 40);
+      // gross = echtes Handyfoto-Format (einige 100 KB), sonst ein Mini-Bild
+      const c = document.createElement('canvas'); c.width = gross ? 900 : 60; c.height = gross ? 700 : 40;
+      const g = c.getContext('2d');
+      if (gross) { const d = g.createImageData(900, 700); for (let i = 0; i < d.data.length; i++) d.data[i] = (i * 7919 % 251) ^ (i >> 5 & 255); g.putImageData(d, 0, 0); }
+      else g.fillRect(0, 0, 60, 40);
       const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
       file = new File([blob], 'rechnung.jpg', { type: 'image/jpeg' });
     }
@@ -314,7 +325,7 @@ async function scan(page, kiResponse, { pdf = false } = {}) {
       netto: document.getElementById('scan-netto').value,
       fehler: document.getElementById('scan-error').style.display !== 'none' ? document.getElementById('scan-error').textContent : '',
     };
-  }, pdf);
+  }, [pdf, gross]);
 }
 // Erfolgreiche KI-Antwort fuer eine Rechnung
 const KI_OK = (beschr, brutto) => ({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [{ type: 'text',
@@ -489,6 +500,43 @@ await scenario('E9: Neue Person beim Scan („Bezahlt von") landet mit eigener I
     const p = [];
     if (x.bv !== 'Oma Erna') p.push(`Ausgabe „Bezahlt von" = „${x.bv}"`);
     if (x.ids !== 3) p.push('Person, Ausgabe und Rechnung teilen sich eine ID (Löschen träfe mehrere)');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
+await scenario('E10: App direkt nach dem Einbuchen geschlossen → Beleg wird beim nächsten Start nachgeladen', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true, uploadHangFirstLoad: true });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Beleg nach Neustart', '730,00'), { gross: true });
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(() => document.getElementById('scan-confirm-btn').click());
+    try {
+      // in der Cloud angekommen (und der Test-Server hat es dauerhaft abgelegt)
+      await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('Beleg nach Neustart'), null, 8000);
+    } catch (e) { return 'Ausgabe wurde nicht eingebucht, solange der Beleg-Upload hängt'; }
+    const vorher = await page.evaluate(() => ({ laeuft: window.__fakeUploads.length > 0 && !window.__fakeUploads[0].done,
+      groesse: ((state.kosten.find(k => k.beschr === 'Beleg nach Neustart') || {}).scanData || '').length }));
+    if (!vorher.laeuft) return 'Test-Annahme verletzt: Upload lief nicht mehr';
+    if (!vorher.groesse) return 'Beleg ist nirgends gesichert, solange der Upload läuft (geht beim Schließen der App verloren)';
+    if (vorher.groesse < 55000) return `Test-Annahme verletzt: Testbild zu klein (${vorher.groesse})`;
+    // App "abschießen" und neu starten
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    try {
+      await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Beleg nach Neustart' && r.payload.scanUrl), null, 15000);
+    } catch (e) { return 'Beleg wurde nach dem Neustart nicht hochgeladen'; }
+    await settle(page, 1500);
+    const x = await page.evaluate(() => {
+      const k = state.kosten.find(x => x.beschr === 'Beleg nach Neustart');
+      const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k && k.id));
+      const c = window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Beleg nach Neustart');
+      return { k: !!(k && k.scanUrl && !k.scanData), g: !!(g && g.scanUrl && !g.scanData), cloudKlein: !c.payload.scanData };
+    });
+    const p = [];
+    if (!x.k) p.push('Ausgabe ohne Beleg-Link');
+    if (!x.g) p.push('Gescannte Rechnung ohne Beleg-Link');
+    if (!x.cloudKlein) p.push('Bild steckt weiterhin im Cloud-Eintrag');
     return p.join(' · ');
   } finally { await ctx.close(); }
 });
