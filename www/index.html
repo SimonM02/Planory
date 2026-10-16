@@ -4022,8 +4022,8 @@
     <h3 id="tb-modal-title">Tagebucheintrag</h3>
     <input type="hidden" id="tb-edit-id">
     <div style="display:flex;gap:12px">
-      <div class="form-row" style="flex:1"><label>Datum</label><input type="date" id="tb-datum" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
-      <div class="form-row" style="flex:1"><label>bis (optional)</label><input type="date" id="tb-datum-bis"></div>
+      <div class="form-row" style="flex:1;min-width:0"><label>Datum</label><input type="date" id="tb-datum" style="min-width:0" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
+      <div class="form-row" style="flex:1;min-width:0"><label>bis (optional)</label><input type="date" id="tb-datum-bis" style="min-width:0"></div>
     </div>
     <div class="form-row"><label>Titel</label><input type="text" id="tb-title" placeholder="z.B. Betonage Decke EG"></div>
     <div class="form-row"><label>Bericht</label><textarea id="tb-text" placeholder="Was wurde heute gemacht?"></textarea></div>
@@ -6567,7 +6567,9 @@ function _resetEditMarkers(id) {
   if (!(id in _FORM_MODALS)) return;
   const m = document.getElementById(id);
   if (!m) return;
-  m.querySelectorAll('input[type="hidden"]').forEach(h => { if (/edit|-id$/i.test(h.id)) h.value = h.defaultValue || ''; });
+  // Achtung: bei versteckten Feldern aendert ".value =" auch defaultValue – darum
+  // ausdruecklich leeren (ein Zuruecksetzen auf defaultValue liesse die alte ID stehen).
+  m.querySelectorAll('input[type="hidden"]').forEach(h => { if (/edit|-id$/i.test(h.id)) { h.value = ''; h.removeAttribute('value'); } });
   m._editId = null; m._next = null;
   if (id === 'modal-kosten') _pendingAngebotId = null;   // abgebrochene Umwandlung nicht "mitnehmen"
 }
@@ -6585,6 +6587,7 @@ function _resetFormModal(id) {
         el.selectedIndex = def > -1 ? def : (el.options.length ? 0 : -1);
       } else if (el.type === 'checkbox' || el.type === 'radio') el.checked = el.defaultChecked;
       else if (el.type === 'file') { el.value = ''; delete el._compressed; }
+      else if (el.type === 'hidden') { /* Kennungen leert _resetEditMarkers; uebrige (z.B. Farbe) setzt openModal neu */ }
       else el.value = el.defaultValue;
     } catch(e) {}
   });
@@ -7583,7 +7586,11 @@ function renderDashboard() {
   }
 
   // open tasks
-  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt').slice(0, 5);
+  // Dringende zuerst (Prioritaet, dann Faelligkeit) – frueher die 5 aeltesten, neue dringende fehlten
+  const _po = { Hoch: 0, Mittel: 1, Niedrig: 2 };
+  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt')
+    .sort((a, b) => ((_po[a.prio] ?? 1) - (_po[b.prio] ?? 1)) || String(a.datum || '9999').localeCompare(String(b.datum || '9999')))
+    .slice(0, 5);
   const ttbody = document.getElementById('dash-tasks');
   if (openTasks.length === 0) {
     ttbody.innerHTML = '<tr><td colspan="3" style="color:var(--text3);text-align:center;padding:20px">Keine offenen Aufgaben</td></tr>';
@@ -7981,7 +7988,10 @@ function renderKosten() {
   // Ausgaben table
   const tbody = document.getElementById('kosten-table');
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="icon">💶</div><p>Noch keine Ausgaben erfasst</p></div></td></tr>`;
+    // Bei aktiver Suche "Keine Treffer" statt "Noch keine Ausgaben" (wirkte, als waeren Daten weg)
+    tbody.innerHTML = (search && state.kosten.length)
+      ? `<tr><td colspan="8"><div class="empty"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div></td></tr>`
+      : `<tr><td colspan="8"><div class="empty"><div class="icon">💶</div><p>Noch keine Ausgaben erfasst</p></div></td></tr>`;
   } else {
     tbody.innerHTML = [...items].reverse().map(k => {
       const netto = k.netto ?? k.betrag;
@@ -9048,7 +9058,7 @@ function addMilestone() {
   };
   if (editId) {
     const idx = state.meilensteine.findIndex(m => String(m.id) === String(editId));
-    if (idx > -1) state.meilensteine[idx] = item;
+    if (idx > -1) state.meilensteine[idx] = { ...state.meilensteine[idx], ...item, _updatedAt: Date.now() };   // Zeitplan-Felder (Abschnitt, Status, Erinnerung) behalten
   } else {
     state.meilensteine.push(item);
   }
@@ -9498,7 +9508,7 @@ function renderTasks() {
     if (a.status === 'Erledigt' && b.status !== 'Erledigt') return 1;
     if (b.status === 'Erledigt' && a.status !== 'Erledigt') return -1;
     const po = {Hoch:0, Mittel:1, Niedrig:2};
-    const pd = (po[a.prio]||1) - (po[b.prio]||1);
+    const pd = (po[a.prio] ?? 1) - (po[b.prio] ?? 1);   // ?? statt || – sonst zaehlte 'Hoch' (0) wie 'Mittel'
     if (pd !== 0) return pd;
     if (a.datum && b.datum) return new Date(a.datum) - new Date(b.datum);
     if (a.datum) return -1;
@@ -10294,7 +10304,7 @@ function saveGanttItem() {
   };
   if (editId) {
     const idx = state.gantt.findIndex(g => String(g.id) === String(editId));
-    if (idx > -1) state.gantt[idx] = item;
+    if (idx > -1) state.gantt[idx] = { ...state.gantt[idx], ...item, _updatedAt: Date.now() };   // eingeklappt/Zeitstempel behalten
   } else {
     state.gantt.push(item);
   }
@@ -10833,6 +10843,10 @@ function openBatchPhotoModal(files, targetAlbumId) {
   } else {
     document.querySelector('#modal-foto-batch h3').textContent = '📸 Fotos hochladen';
   }
+  // Beim Hinzufuegen zu einem bestehenden Album wird keine Album-Beschreibung uebernommen ->
+  // Feld ausblenden statt Eingaben still zu verwerfen.
+  const _beschrRow = document.getElementById('fb-beschr')?.closest('.form-row');
+  if (_beschrRow) _beschrRow.style.display = targetAlbumId ? 'none' : '';
   openModal('modal-foto-batch');
 }
 
@@ -11372,9 +11386,12 @@ function renderFotos() {
   if (_fotoView === 'alben') {
     state.fotoAlben = state.fotoAlben || [];
     // Albums from fotoAlben
+    // Album zeigen, wenn das Album ODER eines seiner Fotos passt (Titel/Kategorie)
+    const _fotosVon = id => (state.fotos||[]).filter(f => f.albumId === id);
     let albums = [...state.fotoAlben].reverse().filter(a =>
-      (!filterKat || a.kat === filterKat) &&
-      (!search || (a.title||'').toLowerCase().includes(search) || (a.kat||'').toLowerCase().includes(search))
+      (!filterKat || a.kat === filterKat || _fotosVon(a.id).some(f => f.kat === filterKat)) &&
+      (!search || (a.title||'').toLowerCase().includes(search) || (a.kat||'').toLowerCase().includes(search) ||
+        _fotosVon(a.id).some(f => (f.title||'').toLowerCase().includes(search)))
     );
     // Legacy photos without albumId shown as individual virtual albums
     const legacyFotos = (state.fotos||[]).filter(f => !f.albumId &&
@@ -11383,7 +11400,9 @@ function renderFotos() {
     );
 
     if (albums.length === 0 && legacyFotos.length === 0) {
-      el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos – lade dein erstes Bild hoch!</p></div>`;
+      el.innerHTML = (search || filterKat) && ((state.fotos||[]).length || (state.fotoAlben||[]).length)
+        ? `<div class="empty" style="grid-column:1/-1"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div>`
+        : `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos – lade dein erstes Bild hoch!</p></div>`;
       return;
     }
 
@@ -11424,7 +11443,9 @@ function renderFotos() {
     (!search || (f.title||'').toLowerCase().includes(search))
   );
   if (allFotos.length === 0) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos vorhanden.</p></div>`;
+    el.innerHTML = (search || filterKat) && (state.fotos||[]).length
+      ? `<div class="empty" style="grid-column:1/-1"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div>`
+      : `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos vorhanden.</p></div>`;
     return;
   }
   el.innerHTML = [...allFotos].reverse().map(f => `
@@ -12054,7 +12075,7 @@ function savePinModal() {
   const grundrissId = parseInt(document.getElementById('gr-pin-grundriss-id').value);
   const pinId       = parseInt(document.getElementById('gr-pin-id').value) || null;
   const typ         = document.getElementById('gr-pin-typ').value;
-  const titel       = document.getElementById('gr-pin-titel').value.trim() || typ;
+  const titel       = document.getElementById('gr-pin-titel').value.trim();   // leer = Anzeige zeigt den Typ (folgt Typ-Aenderungen)
   const notiz       = document.getElementById('gr-pin-notiz').value.trim();
   const datum       = document.getElementById('gr-pin-datum').value || today();
   const modal       = document.getElementById('modal-grundriss-pin');
@@ -15766,7 +15787,7 @@ function renderMaengel() {
     const po = { Hoch:0, Mittel:1, Niedrig:2 };
     if (a.status==='Behoben' && b.status!=='Behoben') return 1;
     if (b.status==='Behoben' && a.status!=='Behoben') return -1;
-    return (po[a.prio]||1) - (po[b.prio]||1);
+    return (po[a.prio] ?? 1) - (po[b.prio] ?? 1);   // ?? statt || – sonst zaehlte 'Hoch' (0) wie 'Mittel'
   }).map(m => `
     <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ${prioColor[m.prio]||'var(--border)'};border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);position:relative">
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px">
@@ -15836,16 +15857,16 @@ function renderGescannteRechnungen() {
 
   const items   = state.gescannteRechnungen;
   const search  = (document.getElementById('gr-search')?.value || '').toLowerCase();
-  const filterKat = document.getElementById('gr-filter-kat')?.value || '';
-
-  // Update kat filter options
+  // Kategorie-Filter ZUERST neu aufbauen, DANN lesen: gibt es die gewaehlte Kategorie nicht
+  // mehr (letzte Rechnung geloescht), faellt er auf "Alle" zurueck statt eine leere Liste zu zeigen.
   const katSel = document.getElementById('gr-filter-kat');
   if (katSel) {
     const kats = [...new Set(items.map(r => r.kat).filter(Boolean))];
     const cur  = katSel.value;
     katSel.innerHTML = `<option value="">Alle Kategorien</option>` +
-      kats.map(k => `<option value="${k}" ${k===cur?'selected':''}>${k}</option>`).join('');
+      kats.map(k => `<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(k)}</option>`).join('');
   }
+  const filterKat = katSel?.value || '';
 
   const filtered = items.filter(r =>
     (!search    || (r.beschr+r.anbieter+r.kat).toLowerCase().includes(search)) &&
@@ -15866,7 +15887,9 @@ function renderGescannteRechnungen() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="icon">${AI_SVG}</div><p>Noch keine gescannten Rechnungen.<br>Nutze den „Rechnung scannen" Button um loszulegen.</p></div></td></tr>`;
+    tbody.innerHTML = items.length
+      ? `<tr><td colspan="10"><div class="empty"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div></td></tr>`
+      : `<tr><td colspan="10"><div class="empty"><div class="icon">${AI_SVG}</div><p>Noch keine gescannten Rechnungen.<br>Nutze den „Rechnung scannen" Button um loszulegen.</p></div></td></tr>`;
     return;
   }
 

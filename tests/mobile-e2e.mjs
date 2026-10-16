@@ -480,6 +480,115 @@ await scenario('Budgetkategorie umbenennen: Ausgaben bleiben in der Kategorie', 
   return r.ist === r.neu ? '' : `Ausgabe steht jetzt in „${r.ist}" statt „${r.neu}"`;
 });
 
+await scenario('Rechnungen: Filter springt nach Löschen der letzten Rechnung einer Kategorie auf „Alle"', async () => {
+  const r = await page.evaluate(async () => {
+    window.showConfirm = async () => true;
+    const [a, b] = [state.budgetKat[0].name, state.budgetKat[1].name];
+    state.gescannteRechnungen = [
+      { id: 9700001, kostenId: 0, datum: '2026-10-01', beschr: 'A-Rechnung', anbieter: 'X', kat: a, mwst: 20, netto: 1, brutto: 1.2, status: 'Bezahlt' },
+      { id: 9700002, kostenId: 0, datum: '2026-10-02', beschr: 'B-Rechnung', anbieter: 'Y', kat: b, mwst: 20, netto: 1, brutto: 1.2, status: 'Bezahlt' }];
+    showPage('rechnungen');
+    const sel = document.getElementById('gr-filter-kat'); sel.value = b; renderGescannteRechnungen();
+    await deleteGescannteRechnung(9700002);
+    const rows = [...document.querySelectorAll('#gr-table tr')].filter(tr => !tr.querySelector('td[colspan]')).length;
+    return { rows, filter: sel.value };
+  });
+  return r.rows >= 1 ? '' : `Liste leer (Filter „${r.filter}") obwohl noch eine Rechnung existiert`;
+});
+await scenario('Fotos: Suche findet Fotos innerhalb von Alben', async () => {
+  const r = await page.evaluate(() => {
+    const px = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+    state.fotoAlben = [{ id: 9700010, title: 'Rohbau Woche 1', kat: 'Rohbau', datum: '2026-09-01' }];
+    state.fotos = [{ id: 9700011, albumId: 9700010, title: 'Schalung Bodenplatte', kat: 'Rohbau', url: px, data: px, datum: '2026-09-01' }];
+    showPage('fotos'); setFotoView('alben', document.getElementById('foto-tab-alben'));
+    document.getElementById('foto-search').value = 'Schalung'; renderFotos();
+    const g = document.getElementById('photo-grid');
+    return { leer: !!g.querySelector('.empty'), text: g.textContent.trim().slice(0, 60) };
+  });
+  return r.leer ? `keine Treffer angezeigt („${r.text}")` : '';
+});
+await scenario('Startseite: dringende offene Aufgaben stehen oben (nicht nur die 5 ältesten)', async () => {
+  const r = await page.evaluate(() => {
+    for (let i = 0; i < 6; i++) state.aufgaben.push({ id: 9700020 + i, name: 'Alt ' + i, prio: 'Mittel', status: 'Offen', datum: '' });
+    state.aufgaben.push({ id: 9700030, name: 'Dringend neu', prio: 'Hoch', status: 'Offen', datum: '2026-10-20' });
+    showPage('dashboard');
+    return [...document.querySelectorAll('#dash-tasks tr')].map(tr => tr.textContent).join('|');
+  });
+  return r.includes('Dringend neu') ? '' : 'dringende neue Aufgabe fehlt auf der Startseite';
+});
+await scenario('Zeitplan: Bearbeiten über den Meilenstein-Dialog behält Abschnitt und Status', async () => {
+  const r = await page.evaluate(() => {
+    state.meilensteine.push({ id: 9700040, name: 'Estrich', ganttId: 777, status: 'arbeit', done: false, remind: false, datum: '2026-11-01', text: '' });
+    editMilestone(9700040);
+    addMilestone();
+    const m = state.meilensteine.find(x => x.id === 9700040);
+    return { ganttId: m.ganttId, status: m.status, remind: m.remind };
+  });
+  return (r.ganttId === 777 && r.status === 'arbeit' && r.remind === false) ? '' : `Felder verloren: ${JSON.stringify(r)}`;
+});
+
+// Abbrechen beim Bearbeiten -> "+ Neu" darf den alten Eintrag NICHT ueberschreiben
+for (const [modal, label, prep, editFn, fill, saveFn, arr, field] of [
+  ['modal-tagebuch', 'Bautagebuch', "state.tagebuch.push({ id: 9800001, datum: '2026-09-01', title: 'Alt', text: '', weather: '☀️', temp: 10, tags: [], workers: [] })", 'editDiary(9800001)', "document.getElementById('tb-title').value = 'Neu'", 'addDiary()', 'tagebuch', 'title'],
+  ['modal-notiz', 'Notiz', "state.notizen.push({ id: 9800002, title: 'Alt', text: 'x', color: 'white', datum: '2026-09-01' })", 'editNotiz(9800002)', "document.getElementById('n-title').value = 'Neu'", 'addNotiz()', 'notizen', 'title'],
+  ['modal-kontakt', 'Kontakt', "state.kontakte.push({ id: 9800003, name: 'Alt', gewerk: 'Elektro', tel: '', mail: '', status: 'Aktiv', notiz: '' })", 'editKontakt(9800003)', "document.getElementById('c-name').value = 'Neu'", 'addKontakt()', 'kontakte', 'name'],
+  ['modal-doku', 'Doku/Leitungen', "state.dokumentation = state.dokumentation || []; state.dokumentation.push({ id: 9800005, title: 'Alt', typ: 'Elektro', raum: '', text: '', hinweis: '', datum: '2026-09-01', tags: [], fotos: [] })", 'editDoku(9800005)', "document.getElementById('dk-title').value = 'Neu'", 'addDoku()', 'dokumentation', 'title'],
+  ['modal-budget-kat', 'Budgetkategorie', "state.budgetKat.push({ id: 9800006, name: 'Alt', budget: 1000, color: '#3d6ff8' })", 'editBudgetKat(9800006)', "document.getElementById('bk-name').value = 'Neu'; document.getElementById('bk-budget').value = '500'", 'addBudgetKat()', 'budgetKat', 'name'],
+  ['modal-mangel', 'Mangel', "state.maengel = state.maengel || []; state.maengel.push({ id: 9800004, titel: 'Alt', gewerk: 'Elektro', prio: 'Hoch', status: 'Offen', datum: '2026-09-01', fotos: [] })", 'editMangel(9800004)', "document.getElementById('mg-titel').value = 'Neu'", 'saveMangel()', 'maengel', 'titel'],
+]) {
+  await scenario(`${label}: Abbrechen beim Bearbeiten → „+ Neu" legt neuen Eintrag an (überschreibt nichts)`, async () => {
+    const r = await page.evaluate(async ([modal, prep, editFn, fill, saveFn, arr, field]) => {
+      eval(prep); eval(editFn);
+      const cancel = [...document.querySelectorAll('#' + modal + ' .modal-actions button')].find(b => /abbrechen/i.test(b.textContent));
+      cancel.click();
+      await new Promise(res => setTimeout(res, 300));
+      openModal(modal); eval(fill); await eval(saveFn);
+      await new Promise(res => setTimeout(res, 250));
+      const list = state[arr] || [];
+      return { alt: list.filter(x => x[field] === 'Alt').length, neu: list.filter(x => x[field] === 'Neu').length };
+    }, [modal, prep, editFn, fill, saveFn, arr, field]);
+    return (r.alt === 1 && r.neu === 1) ? '' : `alter Eintrag ${r.alt}×, neuer ${r.neu}× (alter wurde überschrieben)`;
+  });
+}
+await scenario('Projekt: Abbrechen beim Bearbeiten → „+ Neues Projekt" legt ein neues Projekt an', async () => {
+  const r = await page.evaluate(async () => {
+    const origId = currentProjectId;
+    const alt = projects.find(p => String(p.id) === String(currentProjectId)).settings.name;
+    const anzahl = projects.length;
+    editProject(currentProjectId);
+    const cancel = [...document.querySelectorAll('#modal-new-project .modal-actions button')].find(b => /abbrechen/i.test(b.textContent));
+    cancel.click();
+    await new Promise(res => setTimeout(res, 300));
+    openModal('modal-new-project');
+    document.getElementById('np-name').value = 'Ferienhaus';
+    saveProject();
+    await new Promise(res => setTimeout(res, 250));
+    const erg = { alt, jetzt: (projects.find(p => p.settings.name === alt) || {}).id ? alt : '(weg)', mehr: projects.length - anzahl };
+    loadProject(origId, false);   // fuer die folgenden Tests zurueck ins Demo-Projekt
+    return erg;
+  });
+  return (r.jetzt === r.alt && r.mehr === 1) ? '' : `altes Projekt „${r.alt}" → ${r.jetzt}, neue Projekte: ${r.mehr}`;
+});
+await scenario('Bearbeiten ohne Änderung: Eigenleistung-Kategorie, Brutto 99,99 €, leeres Aufgaben-Datum bleiben', async () => {
+  const r = await page.evaluate(async () => {
+    const kat2 = state.budgetKat[1].name;
+    state.eigenleistungen = state.eigenleistungen || [];
+    state.eigenleistungen.push({ id: 9800010, datum: '2026-09-01', beschr: 'Schlitze', kat: kat2, wert: 450, von: '', notiz: '' });
+    editEigenleistung(9800010); addEigenleistung();
+    state.kosten.push({ id: 9800011, datum: '2026-10-01', beschr: 'Cent-Test', kat: state.budgetKat[0].name, mwst: 20, netto: 83.33, betrag: 99.99, status: 'Bezahlt', anbieter: '', _updatedAt: 1 });
+    editKosten(9800011); await saveKosten();
+    state.aufgaben.push({ id: 9800012, name: 'Ohne Termin', prio: 'Mittel', status: 'Offen', datum: '', notiz: '' });
+    editTask(9800012); await saveTask();
+    return { kat: state.eigenleistungen.find(e => e.id === 9800010).kat, kat2, betrag: state.kosten.find(k => k.id === 9800011).betrag,
+             datum: state.aufgaben.find(t => t.id === 9800012).datum };
+  });
+  const p = [];
+  if (r.kat !== r.kat2) p.push(`Eigenleistung-Kategorie wurde „${r.kat}"`);
+  if (Math.abs(r.betrag - 99.99) > 0.001) p.push(`Betrag wurde ${r.betrag}`);
+  if (r.datum) p.push(`Aufgabe bekam das Datum ${r.datum}`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
