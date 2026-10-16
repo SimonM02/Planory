@@ -251,6 +251,95 @@ await scenario('Englisch: Status wird trotzdem deutsch gespeichert (Werte bleibe
   if (r.mwst !== 20) return `MwSt ${r.mwst} statt 20`;
   return '';
 });
+await scenario('Angebot → Rechnung: Ausgabe landet in der Kategorie des Angebots', async () => {
+  const r = await page.evaluate(async () => {
+    const kat = state.budgetKat[2]?.name || state.budgetKat[1]?.name;   // bewusst NICHT die erste Kategorie
+    if (!kat) return null;
+    showPage('angebote');
+    state.angebote = (state.angebote || []).concat({ id: 9400001, _updatedAt: 1, beschr: 'Angebot Elektroinstallation', anbieter: 'Elektro GmbH',
+      kat, datum: '2026-10-01', gueltig: '', betrag: 15000, status: 'Angenommen', notiz: '' });
+    renderAngebote();
+    editAngebot(9400001);
+    document.getElementById('ang-to-rechnung-btn').click();
+    const shown = document.getElementById('k-kat').value;
+    await saveKosten();
+    await new Promise(r => setTimeout(r, 300));
+    const k = state.kosten.find(x => x.beschr === 'Angebot Elektroinstallation');
+    return { kat, shown, saved: k && k.kat };
+  });
+  if (!r) return 'zu wenige Budget-Kategorien (Test kaputt?)';
+  if (r.shown !== r.kat) return `Fenster zeigt Kategorie „${r.shown}" statt „${r.kat}"`;
+  return r.saved !== r.kat ? `Ausgabe gespeichert in „${r.saved}" statt „${r.kat}"` : '';
+});
+await scenario('Umgewandeltes Angebot bearbeiten → kein zweites Umwandeln (Budget nicht doppelt belastet)', async () => {
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const zahl = () => state.kosten.filter(k => k.beschr === 'Angebot Dachdecker').length;
+    showPage('angebote');
+    state.angebote = (state.angebote || []).concat({ id: 9400002, _updatedAt: 1, beschr: 'Angebot Dachdecker', anbieter: 'Dach GmbH',
+      kat: state.budgetKat[0].name, datum: '2026-10-01', gueltig: '', betrag: 15000, status: 'Angenommen', notiz: '' });
+    renderAngebote();
+    editAngebot(9400002);
+    document.getElementById('ang-to-rechnung-btn').click();
+    await saveKosten(); await sleep(300);
+    const nach1 = zahl();
+    editAngebot(9400002);                                   // nur die Notiz aendern
+    document.getElementById('ang-notiz').value = 'Termin im Mai';
+    await saveAngebot(); await sleep(250);
+    const a = state.angebote.find(x => x.id === 9400002);
+    const { status, konvertiert } = a;                      // Stand direkt nach dem Bearbeiten
+    const btn = [...document.querySelectorAll('#angebot-table button')].find(b => b.textContent.includes('💶') && b.getAttribute('onclick').includes('9400002'));
+    btn.click(); await sleep(100);
+    if (document.getElementById('modal-kosten').classList.contains('open')) { await saveKosten(); await sleep(300); }
+    return { nach1, nach2: zahl(), status, konvertiert };
+  });
+  if (r.nach1 !== 1) return `erste Umwandlung ergab ${r.nach1} Ausgaben (Test kaputt?)`;
+  if (r.nach2 !== 1) return `${r.nach2} Ausgaben „Angebot Dachdecker" – nach dem Bearbeiten konnte es nochmal umgewandelt werden (Status jetzt „${r.status}", konvertiert=${r.konvertiert})`;
+  return r.konvertiert ? '' : `Bearbeiten hat „konvertiert" gelöscht (Status „${r.status}")`;
+});
+await scenario('KI-Angebot: deutscher Betrag („12.345,00", „15.000") wird richtig übernommen', async () => {
+  let antwort = '';
+  const ki = r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [{ type: 'text', text: antwort }] }) });
+  await page.route('**/api/ki', ki);
+  const falsch = [];
+  try {
+    for (const [roh, soll] of [['"12.345,00"', 12345], ['"15.000"', 15000], ['"€ 9.990,-"', 9990], ['12345.5', 12345.5]]) {
+      antwort = `{"beschr":"KI-Angebot ${soll}","anbieter":"Firma","betrag":${roh},"datum":null,"gueltig":null,"notiz":""}`;
+      const ist = await page.evaluate(async soll => {
+        showPage('angebote');
+        openModal('modal-angebot-ki');
+        document.getElementById('ang-ki-text').value = 'Angebot Dacharbeiten';
+        await scanAngKI();
+        confirmAngKI();
+        await saveAngebot();
+        await new Promise(r => setTimeout(r, 250));
+        const a = state.angebote.find(x => x.beschr === 'KI-Angebot ' + soll);
+        return a ? a.betrag : 'nicht gespeichert';
+      }, soll);
+      if (ist !== soll) falsch.push(`${roh} → ${ist} € statt ${soll} €`);
+    }
+  } finally { await page.unroute('**/api/ki', ki); }
+  return falsch.join(' · ');
+});
+await scenario('Angebote-Vergleich: zuletzt gelöschtes Angebot verschwindet sofort', async () => {
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    showPage('angebote');
+    state.angebote = [{ id: 9400003, _updatedAt: 1, beschr: 'Fenster', anbieter: 'A-Fenster', kat: state.budgetKat[0].name,
+      datum: '2026-10-01', gueltig: '', betrag: 5000, status: 'Ausstehend', notiz: '' }];
+    renderAngebote();
+    setAngView('vergleich', document.getElementById('ang-tab-vergleich'));
+    const vorher = document.getElementById('ang-vergleich-view').textContent.includes('A-Fenster');
+    document.querySelector('#ang-vergleich-view button.del').click(); await sleep(100);
+    document.getElementById('ac-ok-btn').click(); await sleep(250);
+    const nachher = document.getElementById('ang-vergleich-view').textContent.includes('A-Fenster');
+    const n = state.angebote.length;
+    setAngView('liste', document.getElementById('ang-tab-liste'));
+    return { vorher, nachher, n };
+  });
+  if (!r.vorher || r.n !== 0) return `Ausgangslage falsch (sichtbar=${r.vorher}, ${r.n} Angebote) – Test kaputt?`;
+  return r.nachher ? 'gelöschtes Angebot „A-Fenster" wird im Vergleich weiter angezeigt' : '';
+});
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
