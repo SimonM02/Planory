@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 16.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 86/86, mobile-e2e 49/49, sync-e2e 13/13).
+(pruefen 86/86, mobile-e2e 49/49, sync-e2e 16/16).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
       NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin).
@@ -80,6 +80,12 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       Tagebuch = was auf der Baustelle passiert ist).
 - [ ] Zurückgestellte Wünsche: Angebote → Budgetkategorien, mehrere Fotos je Tagebuch-Tag,
       Tagebuch-Kategorien/Filter, Projekt-Export (Fotobuch + Tagebuch).
+
+## Technik – später verbessern (bekannt, kein akuter Fehler)
+- [ ] Wird die App in der ~1 Sekunde zwischen Speichern und Cloud-Abgleich hart beendet, ist ein
+      eben eingetragener Eintrag beim nächsten Start weg (lokal Ungesichertes wird bewusst nicht
+      wiederbelebt, damit Gelöschtes nicht zurückkommt). Lösung: ungesicherte Einträge dauerhaft
+      vormerken und nach dem Start nachreichen. (Rechnungs-Belege haben das schon.)
 
 ## Ideen für später
 - [ ] Todoist-Anbindung (optional).
