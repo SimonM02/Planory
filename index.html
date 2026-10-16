@@ -7846,6 +7846,8 @@ async function saveKosten() {
   let scanUrl = kOld?.scanUrl || null, scanPath = kOld?.scanPath || null, scanData = kOld?.scanData || null;
   if (_kBelegChanged) {
     scanUrl = null; scanPath = null; scanData = null;
+    // Beleg bewusst geaendert/entfernt: eine Scan-Vormerkung darf ihn nicht wieder anhaengen
+    if (editId && currentUser) _bqDel(`${currentUser.id}|${currentProjectId}|${editId}`);
     if (_kBeleg && _kBeleg.startsWith('data:')) {
       const b64 = _kBeleg.split(',')[1];
       const up = await _uploadBeleg(b64);
@@ -9208,6 +9210,9 @@ async function _scanBelegNachladen(job, modus = 'neu') {
     // Ergebnis: Ausgabe weg, oder hat schon einen (eigenen/anderen) Beleg?
     const erledigt = async k => {
       if (k && eigen(k)) { if (modus === 'start') await _bqDel(job.key); return true; }   // haengt dran
+      // Beleg war schon angehaengt und wurde DANACH entfernt (Bild entfernt, anderes Geraet) ->
+      // nicht wieder anhaengen. (Nach einem Abbruch ist der Cloud-Stand dagegen aelter.)
+      if (k && frei(k) && job.angehaengtAt && (Number(k._updatedAt) || 0) > job.angehaengtAt) { await _bqDel(job.key); return true; }
       if (!k || !frei(k)) {   // geloescht oder anderer Beleg -> eigene Datei aufraeumen
         if (job.path && !(k && k.scanPath === job.path)) deletePhotoFromStorage(job.path);
         await _bqDel(job.key); return true;
@@ -9239,6 +9244,7 @@ async function _scanBelegNachladen(job, modus = 'neu') {
     });
     save();
     _renderKostenAnsichten();
+    await _bqPut({ ...job, angehaengtAt: t }).catch(() => {});
   } finally { _belegLaeuft.delete(id); }
 }
 

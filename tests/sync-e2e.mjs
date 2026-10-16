@@ -651,6 +651,34 @@ await scenario('E14: Großes PDF offline → wird beim nächsten Abgleich dersel
   } finally { await ctx.close(); }
 });
 
+await scenario('E15: Beleg bewusst entfernt → wird nicht wieder angehängt (auch nicht nach Neustart)', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Beleg weg', '88,00'));
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(() => document.getElementById('scan-confirm-btn').click());
+    await waitFor(page, () => (state.kosten.find(k => k.beschr === 'Beleg weg') || {}).scanUrl, null, 8000);
+    await page.evaluate(async () => {
+      const k = state.kosten.find(k => k.beschr === 'Beleg weg');
+      editKosten(k.id); clearKostenBeleg(); await saveKosten();
+    });
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => { window.dispatchEvent(new Event('focus')); });
+    await page.waitForTimeout(3000);
+    const nachFokus = await page.evaluate(() => !!(state.kosten.find(k => k.beschr === 'Beleg weg') || {}).scanUrl);
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('Beleg weg'), null, 5000);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await page.waitForTimeout(3000);
+    const nachStart = await page.evaluate(() => !!(state.kosten.find(k => k.beschr === 'Beleg weg') || {}).scanUrl);
+    const p = [];
+    if (nachFokus) p.push('kam beim nächsten Abgleich zurück');
+    if (nachStart) p.push('kam nach dem Neustart zurück');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 await browser.close();
 
 // ── Ergebnis ──

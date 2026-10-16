@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 16.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 86/86, mobile-e2e 49/49, sync-e2e 18/18).
+(pruefen 86/86, mobile-e2e 49/49, sync-e2e 19/19).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
       NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin).
