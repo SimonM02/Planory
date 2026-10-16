@@ -395,6 +395,17 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 // 4. ZUGESAGTE FUNKTIONEN – dürfen nie versehentlich gesperrt werden
 // ───────────────────────────────────────────────────────────────────
 for (const [label, src] of [['Web', web], ['App', app]]) {
+  check(`${label}: Scan bucht sofort ein (wartet nicht auf den Beleg-Upload)`, () => {
+    const f = extractFn(src, 'confirmRechnungScan');
+    if (!f) return 'confirmRechnungScan nicht gefunden';
+    const i = f.indexOf('state.kosten.push');
+    if (i < 0) return 'Scan bucht keine Ausgabe ein';
+    if (/\bawait\b/.test(f.slice(0, i))) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
+  });
+  check(`${label}: „Bezahlt von" erlaubt eine neue Person`, () => {
+    const f = extractFn(src, 'refreshBezahltVonSelects');
+    if (!f || !f.includes('BV_NEU')) return 'Option „Neue Person…" fehlt beim Neuaufbau der Auswahl';
+  });
   check(`${label}: Aufgaben abhaken bleibt ohne Abo möglich`, () => {
     const f = extractFn(src, 'toggleTask');
     if (!f) return 'toggleTask nicht gefunden';

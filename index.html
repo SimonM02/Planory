@@ -3730,9 +3730,11 @@
       <select id="k-status" onchange="toggleBezahltVon('k-status','k-bezahlt-von')"><option>Bezahlt</option><option>Ausstehend</option><option>Storniert</option></select>
     </div>
     <div class="form-row"><label>Bezahlt von</label>
-      <select id="k-bezahlt-von">
+      <select id="k-bezahlt-von" onchange="onBezahltVonChange(this)">
         <option value="">– Nicht zugewiesen –</option>
+        <option value="__neu__">➕ Neue Person…</option>
       </select>
+      <input type="text" id="k-bezahlt-von-neu" placeholder="Name der neuen Person" autocomplete="off" autocapitalize="words" maxlength="60" style="display:none;margin-top:8px">
     </div>
     <div class="form-row"><label>Anbieter / Lieferant</label><input type="text" id="k-anbieter" placeholder="Firma GmbH"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -3746,7 +3748,7 @@
       <label>Rechnungsbild / Beleg (optional)</label>
       <div id="k-beleg-preview" style="display:none;margin-bottom:8px;align-items:center;gap:10px">
         <img id="k-beleg-img" alt="Beleg" style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border);cursor:pointer"
-          onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox-title').textContent='Beleg';document.getElementById('lightbox-meta').textContent='';document.getElementById('lightbox').classList.add('open')">
+          onclick="_zeigeBeleg(_kBeleg || this.src, 'Beleg', '')">
         <button type="button" class="btn btn-ghost" style="font-size:0.78rem;margin-top:8px" onclick="clearKostenBeleg()">🗑 Bild entfernen</button>
       </div>
       <button type="button" class="btn btn-ghost" id="k-beleg-btn" style="font-size:0.85rem" onclick="document.getElementById('k-beleg-input').click()">📎 Bild hinzufügen</button>
@@ -3883,9 +3885,11 @@
           <select id="scan-status" onchange="toggleBezahltVon('scan-status','scan-bezahlt-von')"><option>Bezahlt</option><option>Ausstehend</option></select>
         </div>
         <div class="form-row" style="margin:0"><label>Bezahlt von</label>
-          <select id="scan-bezahlt-von">
+          <select id="scan-bezahlt-von" onchange="onBezahltVonChange(this)">
             <option value="">– Nicht zugewiesen –</option>
+            <option value="__neu__">➕ Neue Person…</option>
           </select>
+          <input type="text" id="scan-bezahlt-von-neu" placeholder="Name der neuen Person" autocomplete="off" autocapitalize="words" maxlength="60" style="display:none;margin-top:8px">
         </div>
         <div id="scan-ki-notiz" style="font-size:0.78rem;color:var(--text3);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.5"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -5277,6 +5281,9 @@ const TEXTE = {
   "Kategorie löschen?": { en: "Delete category?" },
   "Kauf nicht abgeschlossen": { en: "Purchase not completed" },
   "Kein Beleg gespeichert": { en: "No receipt saved" },
+  "⚠️ Bitte einen Namen für die neue Person eingeben": { en: "⚠️ Please enter a name for the new person" },
+  "⚠️ Beleg konnte nicht gespeichert werden – Ausgabe ist eingebucht": { en: "⚠️ Receipt could not be saved – the expense is booked" },
+  "Name der neuen Person": { en: "Name of the new person" },
   "Keine aktiven Käufe gefunden": { en: "No active purchases found" },
   "Kontakt löschen?": { en: "Delete contact?" },
   "Letzte Warnung: Alle Projekte, Kosten, Tagebucheinträge und Fotos werden gelöscht. Fortfahren?": { en: "Last warning: all projects, costs, diary entries and photos will be deleted. Continue?" },
@@ -6287,6 +6294,7 @@ const OPTIONEN = {
   "Alle Personen": { en: "All people" },
   "Phase": { en: "Phase" },
   "– Nicht zugewiesen –": { en: "– Unassigned –" },
+  "➕ Neue Person…": { en: "➕ New person…" },
   "Ohne MwSt (0%)": { en: "No VAT (0%)" },
   "10% MwSt": { en: "10% VAT" },
   "20% MwSt": { en: "20% VAT" },
@@ -6540,7 +6548,7 @@ function _selectValue(sel, value) {
 // Jetzt kehrt jedes Eingabefenster beim Schliessen in seinen Ausgangszustand zurueck.
 // Wert = zusaetzliche Aufraeumarbeit fuer JS-Zustand ausserhalb der Formularfelder.
 const _FORM_MODALS = {
-  'modal-kosten':        () => { try { clearKostenBeleg(); } catch(e) {} },
+  'modal-kosten':        () => { try { clearKostenBeleg(); _bvNeuZu('k-bezahlt-von'); toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e) {} },
   'modal-eigenleistung': null,
   'modal-angebot':       () => { try { resetAngModal(); } catch(e) {} },
   'modal-zahlung':       null,
@@ -7681,7 +7689,7 @@ function _showKBelegPreview(src) {
   const img  = document.getElementById('k-beleg-img');
   const btn  = document.getElementById('k-beleg-btn');
   if (!wrap || !img) return;
-  if (src) { img.src = src; wrap.style.display = 'flex'; if (btn) btn.textContent = '📎 Bild ersetzen'; }
+  if (src) { img.src = _istPdfSrc(src) ? PDF_THUMB : src; wrap.style.display = 'flex'; if (btn) btn.textContent = '📎 Bild ersetzen'; }
   else     { img.src = '';  wrap.style.display = 'none'; if (btn) btn.textContent = '📎 Bild hinzufügen'; }
 }
 function clearKostenBeleg() { _kBeleg = null; _kBelegChanged = true; _showKBelegPreview(null); }
@@ -7712,6 +7720,99 @@ async function _uploadBeleg(base64) {
   } catch (e) { return null; }
 }
 
+// Eindeutige, streng steigende ID. Date.now() allein lieferte fuer Person + Ausgabe +
+// Scan-Eintrag im selben Moment dieselbe Zahl – Loeschen per ID haette dann mehrere
+// Eintraege (auch in der Cloud) getroffen.
+let _lastNewId = 0;
+function _neueId() { const t = Date.now(); _lastNewId = t > _lastNewId ? t : _lastNewId + 1; return _lastNewId; }
+
+// Nach Aenderungen an Ausgaben alle Geld-Ansichten sofort auffrischen (frueher nur die
+// Ausgaben-Liste – Rechnungen, Budget und Startseite zeigten den Betrag erst spaeter).
+function _renderKostenAnsichten() {
+  try { renderKosten(); renderBudget(); renderGescannteRechnungen(); } catch (e) { console.warn('[render]', e?.message); }
+  const pid = document.querySelector('.page.active')?.id.replace('page-', '');
+  try {
+    if (pid === 'dashboard') renderDashboard();
+    else if (pid === 'kostenaufteilung') renderKostenaufteilung();
+    else if (pid === 'kostenchart') renderKostenChart();
+  } catch (e) { console.warn('[render]', e?.message); }
+}
+
+// ── Belege: PDF nicht als (kaputtes) Bild anzeigen ───────────────────────────
+// Erkennt PDFs am Typ, am Dateinamen oder am Inhalt (alte PDFs wurden als image/jpeg abgelegt).
+function _istPdfSrc(s) {
+  s = String(s || '');
+  return /^data:application\/pdf/i.test(s) || /^data:[^,]*;base64,JVBER/i.test(s) || /\.pdf(?:[?#]|$)/i.test(s);
+}
+const PDF_THUMB = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fee2e2"/><text x="24" y="30" font-size="14" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#b91c1c">PDF</text></svg>');
+function _belegThumb(x) { const s = x && (x.scanUrl || x.scanData); return _istPdfSrc(s) ? PDF_THUMB : s; }
+function _oeffnePdf(src) {
+  let url = src;
+  if (/^data:/i.test(src)) {
+    const b = atob(String(src).split(',')[1] || ''), a = new Uint8Array(b.length);
+    for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    url = URL.createObjectURL(new Blob([a], { type: 'application/pdf' }));
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  window.open(url, '_blank');
+}
+// Beleg gross anzeigen: Bild in der Lightbox, PDF wie bei den Dokumenten im neuen Fenster
+function _zeigeBeleg(src, title, meta) {
+  if (!src) { showToast('Kein Beleg gespeichert', 'error'); return; }
+  if (_istPdfSrc(src)) { _oeffnePdf(src); return; }
+  const img = document.getElementById('lightbox-img');
+  const t   = document.getElementById('lightbox-title');
+  const m   = document.getElementById('lightbox-meta');
+  if (img) img.src = src;
+  if (t) t.textContent = title || 'Beleg';
+  if (m) m.textContent = meta || '';
+  document.getElementById('lightbox')?.classList.add('open');
+}
+function openScanBeleg(id) {
+  const r = (state.gescannteRechnungen || []).find(x => String(x.id) === String(id));
+  if (r) _zeigeBeleg(r.scanUrl || r.scanData, r.beschr || 'Beleg', _lang === 'en' ? 'Scanned invoice' : 'Gescannte Rechnung');
+}
+
+// ── "Bezahlt von": neue Person direkt im Dialog eintragen ────────────────────
+const BV_NEU = '__neu__';
+function _bvNeuZu(selId) {
+  const i = document.getElementById(selId + '-neu');
+  if (i) { i.value = ''; i.style.display = 'none'; }
+}
+function onBezahltVonChange(sel) {
+  const i = document.getElementById(sel.id + '-neu');
+  if (!i) return;
+  if (sel.value === BV_NEU) { i.style.display = ''; i.disabled = false; try { i.focus(); } catch (_) {} }
+  else _bvNeuZu(sel.id);
+}
+function _normName(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+function _findZahlungsPerson(name) {
+  const k = _normName(name).toLocaleLowerCase('de');
+  return (state.zahlungspersonen || []).find(p => _normName(p.name).toLocaleLowerCase('de') === k) || null;
+}
+// Liest die Auswahl (ohne etwas zu aendern): { name } | { name, neu:true } | { fehlt:true }
+function _readBezahltVon(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel || sel.disabled) return { name: '' };
+  if (sel.value !== BV_NEU) return { name: sel.value || '' };
+  const name = _normName(document.getElementById(selId + '-neu')?.value).slice(0, 60);
+  return name ? { name, neu: true } : { fehlt: true };
+}
+// Legt die Person an, falls es sie (ohne Gross-/Kleinschreibung) noch nicht gibt;
+// liefert den gespeicherten Namen – so landet "kredit" bei der vorhandenen "Kredit".
+function _ensureZahlungsPerson(name) {
+  const vorh = _findZahlungsPerson(name);
+  if (vorh) return vorh.name;
+  state.zahlungspersonen = state.zahlungspersonen || [];
+  state.zahlungspersonen.push({ id: _neueId(), name, _updatedAt: Date.now() });
+  try { renderPersonenList(); refreshBezahltVonSelects(); } catch (e) {}
+  return name;
+}
+function _bvFehltHinweis(selId) {
+  showToast('⚠️ Bitte einen Namen für die neue Person eingeben', 'error');
+  try { document.getElementById(selId + '-neu').focus(); } catch (_) {}
+}
+
 async function saveKosten() {
   if (!requireSub()) return;
   const editId = parseInt(document.getElementById('k-edit-id').value) || null;
@@ -7720,6 +7821,8 @@ async function saveKosten() {
   const netto    = mwstRate > 0 ? brutto / (1 + mwstRate / 100) : brutto;
   if (!document.getElementById('k-beschr').value.trim()) { showToast('⚠️ Bitte eine Beschreibung eingeben', 'error'); return; }
   if (brutto <= 0) { showToast('⚠️ Betrag muss größer als 0 sein', 'error'); return; }
+  const bv = _readBezahltVon('k-bezahlt-von');
+  if (bv.fehlt) { _bvFehltHinweis('k-bezahlt-von'); return; }
   const kOld = editId ? state.kosten.find(k => String(k.id) === String(editId)) : null;
 
   // Belegbild: bestehendes uebernehmen (Bug-Fix: ging beim Bearbeiten verloren),
@@ -7736,7 +7839,7 @@ async function saveKosten() {
   }
 
   const item = {
-    id:      editId || Date.now(),
+    id:      editId || _neueId(),
     datum:   document.getElementById('k-datum').value || today(),
     beschr:  document.getElementById('k-beschr').value || 'Unbenannte Ausgabe',
     kat:     document.getElementById('k-kat').value,
@@ -7744,7 +7847,7 @@ async function saveKosten() {
     netto:   parseFloat(netto.toFixed(2)),
     betrag:  brutto,
     status:  document.getElementById('k-status').value,
-    bezahltVon: document.getElementById('k-bezahlt-von')?.value || '',
+    bezahltVon: bv.neu ? _ensureZahlungsPerson(bv.name) : bv.name,
     anbieter: document.getElementById('k-anbieter').value,
     skontoProz: parseFloat(document.getElementById('k-skonto-proz').value) || 0,
     skontoBis:  document.getElementById('k-skonto-bis').value || '',
@@ -7780,8 +7883,7 @@ async function saveKosten() {
   ['k-datum','k-beschr','k-betrag','k-netto-input','k-anbieter','k-skonto-proz','k-skonto-bis'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('k-mwst-preview').textContent = (_lang === 'en') ? 'VAT amount: € 0.00' : 'MwSt-Betrag: € 0,00';
   document.getElementById('k-skonto-preview').style.display = 'none';
-  renderKosten();
-  renderBudget();
+  _renderKostenAnsichten();
   showToast(editId ? '✏️ Ausgabe aktualisiert' : '✅ Ausgabe eingebucht', 'success');
 }
 
@@ -7800,9 +7902,11 @@ function editKosten(id) {
   _selectValue(mwstSel, String(k.mwst || 0));
   const statusSel = document.getElementById('k-status');
   _selectValue(statusSel, k.status);
+  // Name auch behalten, wenn er (noch) nicht in der Personenliste steht
   refreshBezahltVonSelects(k.bezahltVon || '');
-  const bvSel = document.getElementById('k-bezahlt-von');
-  if (bvSel) bvSel.value = k.bezahltVon || '';
+  _selectValue(document.getElementById('k-bezahlt-von'), k.bezahltVon || '');
+  _bvNeuZu('k-bezahlt-von');
+  toggleBezahltVon('k-status', 'k-bezahlt-von');   // war nach einer "Ausstehend"-Ausgabe sonst ausgegraut
   document.getElementById('k-skonto-proz').value = k.skontoProz || '';
   document.getElementById('k-skonto-bis').value  = k.skontoBis  || '';
   _kBeleg = k.scanUrl || k.scanData || null;
@@ -7829,7 +7933,7 @@ async function deleteKosten(id) {
   _trackDeletion(id, 'kosten');
   _deleteLinkedScans(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
-  save(); renderKosten(); renderBudget(); showToast('🗑 Ausgabe gelöscht', 'success');
+  save(); _renderKostenAnsichten(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
 
 // Compatibility shim (old calls still work)
@@ -8008,7 +8112,7 @@ function renderKosten() {
       return `<tr>
         <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
-        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${k.scanUrl||k.scanData}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
+        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${_belegThumb(k)}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
         <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
@@ -8371,9 +8475,11 @@ function _budgDrop(e, idx) {
 
 // ──────────────── KI RECHNUNGSSCAN ────────────────
 let scanImageBase64 = null;
+let scanMediaType = null;   // echter Dateityp (Bild/PDF) – PDFs wurden frueher als .jpg abgelegt
 
 function resetScanModal() {
   scanImageBase64 = null;
+  scanMediaType = null;
   document.getElementById('scan-preview').style.display = 'none';
   document.getElementById('scan-loading').style.display = 'none';
   document.getElementById('scan-result').style.display  = 'none';
@@ -8385,6 +8491,11 @@ function resetScanModal() {
   document.getElementById('scan-skonto-proz').value = '';
   document.getElementById('scan-skonto-bis').value  = '';
   document.getElementById('scan-skonto-preview').style.display = 'none';
+  // Status/Zahler nicht vom letzten Scan "mitnehmen" (wie beim Ausgabe-Fenster)
+  const st = document.getElementById('scan-status'); if (st) st.selectedIndex = 0;
+  const bv = document.getElementById('scan-bezahlt-von'); if (bv) bv.value = '';
+  _bvNeuZu('scan-bezahlt-von');
+  try { toggleBezahltVon('scan-status', 'scan-bezahlt-von'); } catch (e) {}
 }
 
 function toggleBezahltVon(statusId, bezahltVonId) {
@@ -8393,6 +8504,8 @@ function toggleBezahltVon(statusId, bezahltVonId) {
   const bezahlt = status === 'Bezahlt';
   sel.disabled = !bezahlt;
   if (!bezahlt) sel.value = '';
+  const neu = document.getElementById(bezahltVonId + '-neu');
+  if (neu) { neu.disabled = !bezahlt; if (!bezahlt) _bvNeuZu(bezahltVonId); }
   sel.closest('.form-row').style.opacity = bezahlt ? '1' : '0.4';
 }
 
@@ -8806,6 +8919,7 @@ async function _processScanFile(file) {
     }
 
     scanImageBase64 = dataUrl.split(',')[1];
+    scanMediaType = isImage ? ((dataUrl.match(/^data:(image\/[^;,]+)/) || [])[1] || 'image/jpeg') : 'application/pdf';
 
     if (isImage) {
       document.getElementById('scan-preview-img').src = dataUrl;
@@ -8944,42 +9058,19 @@ async function confirmRechnungScan() {
     try { document.getElementById('scan-brutto').focus(); } catch (_) {}
     return;
   }
-  const btn      = document.getElementById('scan-confirm-btn');
-  btn.textContent = 'Wird gespeichert…'; btn.disabled = true;
+  const bv = _readBezahltVon('scan-bezahlt-von');
+  if (bv.fehlt) { _bvFehltHinweis('scan-bezahlt-von'); return; }
 
-  // Upload scan image to Supabase Storage
-  let scanUrl  = null;
-  let scanPath = null;
-  if (scanImageBase64 && currentUser) {
-    try {
-      const byteStr  = atob(scanImageBase64);
-      const arr      = new Uint8Array(byteStr.length);
-      for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
-      const blob     = new Blob([arr], { type: 'image/jpeg' });
-      const fileName = `${currentUser.id}/rechnungen/${Date.now()}.jpg`;
-      const { data, error } = await supa.storage
-        .from(STORAGE_BUCKET)
-        .upload(fileName, blob, { cacheControl: '3600', upsert: false });
-      if (!error) {
-        const { data: urlData } = supa.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
-        scanUrl  = urlData.publicUrl;
-        scanPath = fileName;
-      }
-    } catch(e) {
-      console.log('Bild-Upload fehlgeschlagen (non-critical):', e.message);
-    }
-  }
+  // Beleg merken, BEVOR das Fenster zurueckgesetzt wird
+  const b64  = scanImageBase64;
+  const mime = scanMediaType || 'image/jpeg';
+  const hochladen = !!(b64 && currentUser && !_demoMode);
+  // Ohne Anmeldung/Demo: Bild wie bisher direkt beim Eintrag (wenn klein genug)
+  const scanData = (!hochladen && b64 && b64.length < 1200000) ? `data:${mime};base64,${b64}` : null;
 
-  // Sicherheitsnetz: Wenn der Upload NICHT klappte (z.B. Storage-Bucket fehlt),
-  // legen wir das (bereits verkleinerte) Bild direkt beim Eintrag ab, damit der
-  // Beleg nicht verloren geht. Nur wenn es klein genug ist, um Sync/Speicher
-  // nicht zu belasten.
-  let scanData = null;
-  if (!scanUrl && scanImageBase64 && scanImageBase64.length < 1200000) {
-    scanData = 'data:image/jpeg;base64,' + scanImageBase64;
-  }
-
-  const kostenId = Date.now();
+  // Sofort einbuchen – frueher wurde erst auf den Bild-Upload gewartet (dauerte am Handy
+  // spuerbar, die Ausgabe erschien erst danach). Der Beleg wird im Hintergrund nachgereicht.
+  const now = Date.now(), kostenId = _neueId(), scanId = _neueId(), pid = currentProjectId;
   const eintrag = {
     id:        kostenId,
     datum:     document.getElementById('scan-datum').value    || today(),
@@ -8989,14 +9080,15 @@ async function confirmRechnungScan() {
     netto:     parseFloat(netto.toFixed(2)),
     betrag:    brutto,
     status:    document.getElementById('scan-status').value,
-    bezahltVon: document.getElementById('scan-bezahlt-von')?.value || '',
+    bezahltVon: bv.neu ? _ensureZahlungsPerson(bv.name) : bv.name,
     anbieter:  document.getElementById('scan-anbieter').value,
     skontoProz: parseFloat(document.getElementById('scan-skonto-proz').value) || 0,
     skontoBis:  document.getElementById('scan-skonto-bis').value || '',
     aiScanned: true,
-    scanUrl,
-    scanPath,
-    scanData
+    scanUrl:   null,
+    scanPath:  null,
+    scanData,
+    _updatedAt: now
   };
 
   state.kosten.push(eintrag);
@@ -9004,7 +9096,7 @@ async function confirmRechnungScan() {
   // Auch in gescannte Rechnungen speichern
   state.gescannteRechnungen = state.gescannteRechnungen || [];
   state.gescannteRechnungen.push({
-    id:          Date.now() + 1,
+    id:          scanId,
     kostenId,
     datum:       eintrag.datum,
     beschr:      eintrag.beschr,
@@ -9014,34 +9106,56 @@ async function confirmRechnungScan() {
     netto:       eintrag.netto,
     brutto,
     status:      eintrag.status,
-    scanUrl,
-    scanPath,
+    scanUrl:     null,
+    scanPath:    null,
     scanData,
-    gescannt:    new Date().toISOString()
+    gescannt:    new Date().toISOString(),
+    _updatedAt:  now
   });
 
   save();
+  scheduleAllReminders();   // Skonto-Erinnerung wie bei "Ausgabe erfassen"
   closeModal('modal-rechnung-scan');
   resetScanModal();
-  btn.textContent = '✓ Einbuchen'; btn.disabled = false;
-  renderKosten();
+  _renderKostenAnsichten();
   showToast('✅ Rechnung eingebucht und gespeichert!', 'success');
+  if (hochladen) _scanBelegNachladen(pid, kostenId, scanId, b64, mime).catch(e => console.warn('[Beleg]', e?.message));
+}
+
+// Beleg eines eingebuchten Scans in den Speicher laden und danach an Ausgabe +
+// gescannte Rechnung haengen. Eintraege werden erst JETZT per ID gesucht (der Stand kann
+// inzwischen neu aus der Cloud geladen, bearbeitet oder geloescht worden sein).
+async function _scanBelegNachladen(pid, kostenId, scanId, b64, mime) {
+  const dataUrl = `data:${mime};base64,${b64}`;
+  const up = await uploadDataUrlToStorage(dataUrl, 'rechnungen', mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg');
+  const ok = !!up.path;
+  const proj = String(currentProjectId) === String(pid) ? state : (projects || []).find(p => String(p.id) === String(pid));
+  const k = proj && (proj.kosten || []).find(x => String(x.id) === String(kostenId));
+  if (!k || k.scanUrl || k.scanPath || k.scanData) {   // geloescht oder inzwischen anderer Beleg
+    if (ok) deletePhotoFromStorage(up.path);
+    return;
+  }
+  const patch = ok ? { scanUrl: up.url, scanPath: up.path, scanData: null }
+              : (b64.length < 1200000 ? { scanUrl: null, scanPath: null, scanData: dataUrl } : null);
+  if (!patch) { showToast('⚠️ Beleg konnte nicht gespeichert werden – Ausgabe ist eingebucht', 'warning', 5000); return; }
+  const t = Date.now();
+  Object.assign(k, patch, { _updatedAt: t });
+  (proj.gescannteRechnungen || []).forEach(r => {
+    if ((String(r.id) === String(scanId) || String(r.kostenId) === String(kostenId)) && !r.scanUrl && !r.scanPath && !r.scanData)
+      Object.assign(r, patch, { _updatedAt: t });
+  });
+  save();
+  _renderKostenAnsichten();
 }
 
 // Beleg (gescanntes Rechnungsbild) einer Kostenzeile gross anzeigen. Nutzt das
 // vorhandene Lightbox-Fenster. Quelle: Cloud-Link (scanUrl) oder – falls der
 // Upload nicht klappte – das direkt gespeicherte Bild (scanData).
 function openKostenBeleg(id) {
-  const k = (state.kosten || []).find(x => x.id === id);
-  const src = k && (k.scanUrl || k.scanData);
-  if (!src) { showToast('Kein Beleg gespeichert', 'error'); return; }
-  const img   = document.getElementById('lightbox-img');
-  const title = document.getElementById('lightbox-title');
-  const meta  = document.getElementById('lightbox-meta');
-  if (img)   img.src = src;
-  if (title) title.textContent = k.beschr || 'Beleg';
-  if (meta)  meta.textContent  = 'Gescannte Rechnung' + (k.anbieter ? ' · ' + k.anbieter : '');
-  document.getElementById('lightbox')?.classList.add('open');
+  const k = (state.kosten || []).find(x => String(x.id) === String(id));
+  if (!k) { showToast('Kein Beleg gespeichert', 'error'); return; }
+  _zeigeBeleg(k.scanUrl || k.scanData, k.beschr || 'Beleg',
+    (_lang === 'en' ? 'Scanned invoice' : 'Gescannte Rechnung') + (k.anbieter ? ' · ' + k.anbieter : ''));
 }
 
 // ──────────────── MILESTONES ────────────────
@@ -13800,27 +13914,11 @@ function _setupRealtimeSync() {
       if (_realtimeLoading || _realtimeGuard > 0) return; // blocked by our own operations
       _realtimeLoading = true;
       loadFromCloud().then(() => {
-        applyModuleVisibility();
-        const active = document.querySelector('.page.active');
-        if (active) {
-          const pid = active.id.replace('page-', '');
-          if (pid === 'dashboard') renderDashboard();
-          else if (pid === 'aufgaben') renderTasks();
-          else if (pid === 'kosten') renderKosten();
-          else if (pid === 'budget') renderBudget();
-          else if (pid === 'dokumente') { renderNotizen(); renderDokumente(); }
-          else if (pid === 'angebote') renderAngebote();
-          else if (pid === 'zahlungsplan') renderZahlungsplan();
-          else if (pid === 'kontakte') renderKontakte();
-          else if (pid === 'maengel') renderMaengel();
-          else if (pid === 'fotos') renderFotos();
-          else if (pid === 'grundrisse') renderGrundrisse();
-          else if (pid === 'helfer') renderHelfer();
-          else if (pid === 'zeitplan') renderZeitplan?.();
-          else if (pid === 'planung') { renderMilestones?.(); renderGantt?.(); }
-        }
+        try { applyModuleVisibility(); } catch (e) {}
+        _renderActivePage(true);
+      }).catch(e => console.warn('[realtime]', e?.message)).finally(() => {
         _holdRealtime(2000); // block cascade from our own load triggering another load
-        _realtimeLoading = false;
+        _realtimeLoading = false;   // auch nach einem Fehler – sonst blieb Live-Abgleich aus
       });
     })
     .subscribe();
@@ -15899,8 +15997,8 @@ function renderGescannteRechnungen() {
       <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
         ${(r.scanUrl || r.scanData)
-          ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${esc(r.beschr||'')}"
-               onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox-title').textContent=this.getAttribute('data-t')||'Beleg';document.getElementById('lightbox-meta').textContent='Gescannte Rechnung';document.getElementById('lightbox').classList.add('open')"
+          ? `<img src="${_belegThumb(r)}" alt="Scan"
+               onclick="openScanBeleg(${r.id})"
                style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform 0.15s"
                onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`
           : `<div style="width:48px;height:48px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--text3)">📄</div>`
@@ -15951,13 +16049,13 @@ async function deleteGescannteRechnung(id) {
 // ══════════════════════════════════════
 function addZahlungsPerson() {
   if (!requireSub()) return;
-  const name = document.getElementById('new-person-name').value.trim();
+  const name = _normName(document.getElementById('new-person-name').value).slice(0, 60);
   if (!name) return;
   state.zahlungspersonen = state.zahlungspersonen || [];
-  if (state.zahlungspersonen.find(p => p.name === name)) {
+  if (_findZahlungsPerson(name)) {   // auch "kredit" = "Kredit"
     showToast('Diese Person existiert bereits', 'error'); return;
   }
-  state.zahlungspersonen.push({ id: Date.now(), name });
+  state.zahlungspersonen.push({ id: _neueId(), name, _updatedAt: Date.now() });
   document.getElementById('new-person-name').value = '';
   save();
   renderPersonenList();
@@ -15970,7 +16068,7 @@ async function deleteZahlungsPerson(id) {
   if (!(await showConfirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.'))) return;
   _trackDeletion(id, 'zahlungspersonen');
   const person = (state.zahlungspersonen||[]).find(p => String(p.id) === String(id));
-  if (person) state.kosten.forEach(k => { if (k.bezahltVon === person.name) k.bezahltVon = ''; });
+  if (person) state.kosten.forEach(k => { if (k.bezahltVon === person.name) { k.bezahltVon = ''; k._updatedAt = Date.now(); } });
   state.zahlungspersonen = (state.zahlungspersonen||[]).filter(p => String(p.id) !== String(id));
   save();
   renderPersonenList();
@@ -15999,12 +16097,20 @@ function renderPersonenList() {
 function refreshBezahltVonSelects(selectedVal = '') {
   state.zahlungspersonen = state.zahlungspersonen || [];
   const options = `<option value="">– Nicht zugewiesen –</option>` +
-    state.zahlungspersonen.map(p =>
-      `<option value="${esc(p.name)}" ${p.name === selectedVal ? 'selected' : ''}>${esc(p.name)}</option>`
-    ).join('');
+    state.zahlungspersonen.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('') +
+    `<option value="${BV_NEU}">➕ Neue Person…</option>`;
   ['k-bezahlt-von','scan-bezahlt-von'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { const cur = el.value; el.innerHTML = options; if (cur) el.value = cur; }
+    if (!el) return;
+    const curOpt = el.selectedOptions && el.selectedOptions[0], cur = el.value;
+    el.innerHTML = options;
+    try { translateOptions(el); } catch (e) {}
+    // Aktuellen Wert behalten – auch einen Namen, der nur fuer den bearbeiteten Eintrag
+    // ergaenzt wurde (sonst ging er beim Speichern verloren). Geloeschte Personen nicht.
+    if (cur && ([...el.options].some(o => o.value === cur) || curOpt?.dataset.added)) _selectValue(el, cur);
+    else if (selectedVal) _selectValue(el, selectedVal);
+    else el.value = '';
+    if (el.value !== BV_NEU) _bvNeuZu(id);
   });
 }
 
@@ -16046,8 +16152,8 @@ function renderKostenaufteilung() {
       ${personData.map((p,i) => `
         <div class="card" style="border-top:3px solid ${BG_COLORS[i%BG_COLORS.length]}">
           <div class="card-label" style="display:flex;align-items:center;gap:6px">
-            <span style="width:20px;height:20px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-size:0.65rem;font-weight:700">${p.name.charAt(0).toUpperCase()}</span>
-            ${p.name}
+            <span style="width:20px;height:20px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-size:0.65rem;font-weight:700">${esc(p.name.charAt(0).toUpperCase())}</span>
+            ${esc(p.name)}
           </div>
           <div class="card-value" style="color:${BG_COLORS[i%BG_COLORS.length]}">${fmt(p.summe)}</div>
           <div class="card-sub">${p.anteil}% · ${p.items.length} Buchungen</div>
@@ -16066,14 +16172,14 @@ function renderKostenaufteilung() {
       <div style="height:16px;border-radius:99px;overflow:hidden;display:flex;margin-bottom:14px;background:var(--surface3)">
         ${[...personData.map((p,i) => ({ name: p.name, pct: parseFloat(p.anteil), color: BG_COLORS[i%BG_COLORS.length] })),
            ...(unassignedSum > 0 ? [{ name: 'Nicht zugewiesen', pct: total > 0 ? unassignedSum/total*100 : 0, color: '#cbd5e1' }] : [])
-          ].map(p => `<div style="width:${p.pct}%;background:${p.color};min-width:${p.pct>0?'3px':'0'};transition:width 0.4s" title="${p.name}: ${p.pct.toFixed(1)}%"></div>`).join('')}
+          ].map(p => `<div style="width:${p.pct}%;background:${p.color};min-width:${p.pct>0?'3px':'0'};transition:width 0.4s" title="${esc(p.name)}: ${p.pct.toFixed(1)}%"></div>`).join('')}
       </div>
       <!-- Legende -->
       <div style="display:flex;flex-wrap:wrap;gap:12px">
         ${personData.map((p,i) => `
           <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text2);font-weight:600">
             <span style="width:10px;height:10px;border-radius:3px;background:${BG_COLORS[i%BG_COLORS.length]};flex-shrink:0;display:inline-block"></span>
-            ${p.name} <span style="color:var(--text3);font-weight:400">${p.anteil}% · ${fmt(p.summe)}</span>
+            ${esc(p.name)} <span style="color:var(--text3);font-weight:400">${p.anteil}% · ${fmt(p.summe)}</span>
           </div>`).join('')}
         ${unassignedSum > 0 ? `
           <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text2);font-weight:600">
@@ -16088,8 +16194,8 @@ function renderKostenaufteilung() {
       <div class="table-wrap mobile-cards no-actions" style="margin-bottom:18px">
         <div class="table-header" style="flex-wrap:wrap;gap:6px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="width:28px;height:28px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.82rem">${p.name.charAt(0).toUpperCase()}</span>
-            <div class="table-title">${p.name}</div>
+            <span style="width:28px;height:28px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.82rem">${esc(p.name.charAt(0).toUpperCase())}</span>
+            <div class="table-title">${esc(p.name)}</div>
             <span class="badge badge-gray" style="white-space:nowrap">${fmt(p.summe)}</span>
           </div>
           <span style="font-size:0.75rem;color:var(--text3)">${p.items.length} Buchungen · ${p.anteil}% des Gesamtbetrags</span>
@@ -16969,22 +17075,32 @@ async function _syncAndRenderOnce() {
   }
   await loadFromCloud();
   applyModuleVisibility();
+  _renderActivePage();
+}
+
+// Aktive Seite nach dem Laden aus der Cloud neu zeichnen (Realtime + Fokus/Sync).
+// Rechnungen und Kostenaufteilung fehlten hier – sie zeigten Neues erst nach einem Seitenwechsel.
+function _renderActivePage(mitPlanung = false) {
   const active = document.querySelector('.page.active');
   if (!active) return;
-  const pageId = active.id.replace('page-', '');
-  if (pageId === 'dashboard') renderDashboard();
-  else if (pageId === 'kosten') renderKosten();
-  else if (pageId === 'budget') renderBudget();
-  else if (pageId === 'aufgaben') renderTasks();
-  else if (pageId === 'dokumente') { renderNotizen(); renderDokumente(); }
-  else if (pageId === 'angebote') renderAngebote();
-  else if (pageId === 'zahlungsplan') renderZahlungsplan();
-  else if (pageId === 'kontakte') renderKontakte();
-  else if (pageId === 'maengel') renderMaengel();
-  else if (pageId === 'fotos') renderFotos();
-  else if (pageId === 'grundrisse') renderGrundrisse();
-  else if (pageId === 'helfer') renderHelfer();
-  else if (pageId === 'zeitplan') renderZeitplan?.();
+  const pid = active.id.replace('page-', '');
+  try {
+    if (pid === 'dashboard') renderDashboard();
+    else if (pid === 'kosten') renderKosten();
+    else if (pid === 'budget') renderBudget();
+    else if (pid === 'aufgaben') renderTasks();
+    else if (pid === 'dokumente') { renderNotizen(); renderDokumente(); }
+    else if (pid === 'angebote') renderAngebote();
+    else if (pid === 'zahlungsplan') renderZahlungsplan();
+    else if (pid === 'kontakte') renderKontakte();
+    else if (pid === 'maengel') renderMaengel();
+    else if (pid === 'fotos') renderFotos();
+    else if (pid === 'grundrisse') renderGrundrisse();
+    else if (pid === 'helfer') renderHelfer();
+    else if (pid === 'rechnungen') renderGescannteRechnungen();
+    else if (pid === 'kostenaufteilung') renderKostenaufteilung();
+    else if (pid === 'planung' && mitPlanung) { if (typeof renderMilestones === 'function') renderMilestones(); if (typeof renderGantt === 'function') renderGantt(); }
+  } catch (e) { console.warn('[render]', pid, e?.message); }
 }
 
 // Verbindung kommt zurueck: frische Cloud-Daten holen (hebt die Sync-Sperre auf)

@@ -589,6 +589,196 @@ await scenario('Bearbeiten ohne Änderung: Eigenleistung-Kategorie, Brutto 99,99
   return p.join(' · ');
 });
 
+// ── „Bezahlt von": neue Person direkt eintragen · Scan sofort sichtbar · PDF-Belege ──
+// Scan-Fenster wie nach einer erfolgreichen KI-Auswertung fuellen (im Demo-Modus ohne KI)
+const SCAN_FORM = `window.__scanForm = (beschr, brutto) => {
+  openModal('modal-rechnung-scan');
+  document.getElementById('scan-result').style.display = 'block';
+  document.getElementById('scan-confirm-btn').style.display = 'inline-flex';
+  document.getElementById('scan-beschr').value = beschr;
+  document.getElementById('scan-brutto').value = String(brutto);
+  document.getElementById('scan-netto').value = (brutto / 1.2).toFixed(2);
+  document.getElementById('scan-datum').value = '2026-10-10';
+  document.getElementById('scan-anbieter').value = 'Fa. Test';
+};
+window.__neuePerson = (selId, name) => {
+  const sel = document.getElementById(selId);
+  sel.value = '__neu__'; sel.dispatchEvent(new Event('change'));
+  const inp = document.getElementById(selId + '-neu');
+  if (!inp || sel.value !== '__neu__') return false;
+  inp.value = name; return inp.style.display !== 'none';
+};
+window.__warte = ms => new Promise(res => setTimeout(res, ms));`;
+await page.evaluate(SCAN_FORM);
+
+await scenario('Scan: neue Person bei „Bezahlt von" eintragen → wird überall wie die anderen geführt', async () => {
+  const r = await page.evaluate(async () => {
+    __scanForm('Scan Oma', 240);
+    if (!__neuePerson('scan-bezahlt-von', '  Oma   Erna ')) return { fehlt: true };
+    await confirmRechnungScan();
+    await __warte(250);
+    const k = state.kosten.find(x => x.beschr === 'Scan Oma');
+    const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k && k.id));
+    const pe = state.zahlungspersonen.filter(p => p.name === 'Oma Erna');
+    const hat = id => [...document.getElementById(id).options].some(o => o.value === 'Oma Erna');
+    renderKostenaufteilung();
+    return { bv: k && k.bezahltVon, anzahl: pe.length, k: hat('k-bezahlt-von'), s: hat('scan-bezahlt-von'),
+             liste: document.getElementById('personen-list').textContent.includes('Oma Erna'),
+             aufteilung: document.getElementById('kostenaufteilung-content').textContent.includes('Oma Erna'),
+             ids: new Set([k && k.id, g && g.id, pe[0] && pe[0].id]).size };
+  });
+  if (r.fehlt) return 'im Scan-Fenster lässt sich keine neue Person eintragen';
+  const p = [];
+  if (r.bv !== 'Oma Erna') p.push(`Ausgabe „Bezahlt von" = „${r.bv}"`);
+  if (r.anzahl !== 1) p.push(`Person ${r.anzahl}× angelegt`);
+  if (!r.k || !r.s) p.push(`fehlt in Auswahl (Ausgabe ${r.k}, Scan ${r.s})`);
+  if (!r.liste) p.push('fehlt in den Einstellungen (Zahlungspersonen)');
+  if (!r.aufteilung) p.push('fehlt in der Kostenaufteilung');
+  if (r.ids !== 3) p.push('Person/Ausgabe/Rechnung mit gleicher ID');
+  return p.join(' · ');
+});
+await scenario('Ausgabe: neue Person eintragen – „kredit" landet bei „Kredit", keine Doppelten', async () => {
+  const r = await page.evaluate(async () => {
+    const neu = async (beschr, name) => {
+      openModal('modal-kosten');
+      document.getElementById('k-beschr').value = beschr;
+      document.getElementById('k-betrag').value = '120';
+      const ok = __neuePerson('k-bezahlt-von', name);
+      await saveKosten(); await __warte(300);
+      return ok ? (state.kosten.find(k => k.beschr === beschr) || {}).bezahltVon : null;
+    };
+    const a = await neu('Rate klein', 'kredit');
+    const b = await neu('Papa 1', 'Papa Franz');
+    const c = await neu('Papa 2', 'papa franz');
+    const n = name => state.zahlungspersonen.filter(p => p.name.toLowerCase() === name).length;
+    return { a, b, c, kredit: n('kredit'), papa: n('papa franz') };
+  });
+  if (r.a === null) return 'im Ausgabe-Fenster lässt sich keine neue Person eintragen';
+  const p = [];
+  if (r.a !== 'Kredit' || r.kredit !== 1) p.push(`„kredit" → „${r.a}", Kredit ${r.kredit}×`);
+  if (r.b !== 'Papa Franz' || r.c !== 'Papa Franz' || r.papa !== 1) p.push(`Papa Franz: „${r.b}"/„${r.c}", ${r.papa}× angelegt`);
+  return p.join(' · ');
+});
+await scenario('„Bezahlt von": Status „Ausstehend" und Abbrechen setzen das Feld zurück, nichts bleibt ausgegraut', async () => {
+  const r = await page.evaluate(async () => {
+    const out = {};
+    const sel = document.getElementById('k-bezahlt-von'), inp = document.getElementById('k-bezahlt-von-neu');
+    if (!inp) return { fehlt: true };
+    // Ausstehend: Feld gesperrt/leer, keine Person angelegt
+    openModal('modal-kosten');
+    document.getElementById('k-beschr').value = 'Noch offen';
+    document.getElementById('k-betrag').value = '50';
+    __neuePerson('k-bezahlt-von', 'Niemand');
+    const st = document.getElementById('k-status'); st.value = 'Ausstehend'; st.dispatchEvent(new Event('change'));
+    out.ausstehendVersteckt = inp.style.display === 'none' && sel.value === '';
+    await saveKosten(); await __warte(300);
+    out.bv = (state.kosten.find(k => k.beschr === 'Noch offen') || {}).bezahltVon;
+    out.niemand = state.zahlungspersonen.some(p => p.name === 'Niemand');
+    // danach eine bezahlte Ausgabe bearbeiten: Feld darf nicht ausgegraut sein
+    const bezahlt = state.kosten.find(k => k.status === 'Bezahlt');
+    editKosten(bezahlt.id);
+    out.gesperrt = sel.disabled;
+    document.querySelector('#modal-kosten .modal-actions .btn-ghost').click(); await __warte(300);
+    // Abbrechen mit offenem Namensfeld (Ausgabe + Scan)
+    for (const [modal, id] of [['modal-kosten', 'k-bezahlt-von'], ['modal-rechnung-scan', 'scan-bezahlt-von']]) {
+      if (modal === 'modal-rechnung-scan') __scanForm('Abbruch', 10); else openModal(modal);
+      __neuePerson(id, 'Abbruch');
+      [...document.querySelectorAll('#' + modal + ' .modal-actions button')].find(b => /abbrechen/i.test(b.textContent)).click();
+      await __warte(300);
+      openModal(modal);
+      const i = document.getElementById(id + '-neu');
+      out[id] = i.style.display === 'none' && i.value === '' && document.getElementById(id).value === '';
+      [...document.querySelectorAll('#' + modal + ' .modal-actions button')].find(b => /abbrechen/i.test(b.textContent)).click();
+      await __warte(300);
+    }
+    return out;
+  });
+  if (r.fehlt) return 'kein Feld für eine neue Person';
+  const p = [];
+  if (!r.ausstehendVersteckt) p.push('bei „Ausstehend" bleibt das Namensfeld offen');
+  if (r.bv !== '' || r.niemand) p.push(`„Ausstehend" speicherte „Bezahlt von" = „${r.bv}"${r.niemand ? ' und legte die Person an' : ''}`);
+  if (r.gesperrt) p.push('„Bezahlt von" nach einer ausstehenden Ausgabe beim Bearbeiten ausgegraut');
+  if (!r['k-bezahlt-von']) p.push('Ausgabe-Fenster: nach Abbrechen steht das Namensfeld noch');
+  if (!r['scan-bezahlt-von']) p.push('Scan-Fenster: nach Abbrechen steht das Namensfeld noch');
+  return p.join(' · ');
+});
+await scenario('Bearbeiten: „Bezahlt von" mit Namen außerhalb der Liste bleibt erhalten', async () => {
+  const r = await page.evaluate(async () => {
+    state.kosten.push({ id: 9820001, datum: '2026-10-02', beschr: 'Sepp zahlt', kat: state.budgetKat[0].name, mwst: 20, netto: 100, betrag: 120,
+      status: 'Bezahlt', bezahltVon: 'Onkel Sepp', anbieter: '', _updatedAt: 1 });
+    editKosten(9820001);
+    const angezeigt = document.getElementById('k-bezahlt-von').value;
+    await saveKosten(); await __warte(300);
+    return { angezeigt, gespeichert: state.kosten.find(k => k.id === 9820001).bezahltVon };
+  });
+  return (r.angezeigt === 'Onkel Sepp' && r.gespeichert === 'Onkel Sepp') ? '' : `angezeigt „${r.angezeigt}", gespeichert „${r.gespeichert}"`;
+});
+await scenario('Scan einbuchen: Rechnungen-Liste und Startseite zeigen den Betrag sofort', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('rechnungen');
+    __scanForm('Sofort in Liste', 360);
+    await confirmRechnungScan();
+    const liste = document.getElementById('gr-table').textContent.includes('Sofort in Liste');
+    showPage('dashboard');
+    const vorher = document.getElementById('d-spent').textContent;
+    __scanForm('Sofort Startseite', 1000);
+    await confirmRechnungScan();
+    return { liste, vorher, nachher: document.getElementById('d-spent').textContent,
+             neueste: document.getElementById('dash-recent-costs').textContent.includes('Sofort Startseite') };
+  });
+  const p = [];
+  if (!r.liste) p.push('Rechnungen-Liste zeigt die neue Rechnung erst nach Seitenwechsel');
+  if (r.vorher === r.nachher) p.push(`Startseite „Ausgegeben" bleibt bei ${r.vorher}`);
+  if (!r.neueste) p.push('Startseite „Letzte Ausgaben" ohne die neue Rechnung');
+  return p.join(' · ');
+});
+await scenario('PDF-Beleg: wird nicht als kaputtes Bild gezeigt und öffnet als PDF', async () => {
+  const r = await page.evaluate(async () => {
+    const pdf = 'data:application/pdf;base64,JVBERi0xLjQK';
+    state.kosten.push({ id: 9820002, datum: '2026-10-03', beschr: 'PDF Beleg', kat: state.budgetKat[0].name, mwst: 20, netto: 100, betrag: 120,
+      status: 'Bezahlt', anbieter: '', aiScanned: true, scanData: pdf, _updatedAt: 1 });
+    state.gescannteRechnungen.push({ id: 9820003, kostenId: 9820002, datum: '2026-10-03', beschr: 'PDF Beleg', anbieter: '', kat: state.budgetKat[0].name,
+      mwst: 20, netto: 100, brutto: 120, status: 'Bezahlt', scanData: pdf, gescannt: '2026-10-03' });
+    renderKosten(); renderGescannteRechnungen();
+    const kaputt = [...document.querySelectorAll('img')].filter(i => (i.getAttribute('src') || '').startsWith('data:application/pdf')).length;
+    let geoeffnet = '';
+    const orig = window.open; window.open = u => { geoeffnet = String(u); return null; };
+    document.getElementById('lightbox').classList.remove('open');
+    try { openKostenBeleg(9820002); } finally { window.open = orig; }
+    const lightbox = document.getElementById('lightbox').classList.contains('open');
+    document.getElementById('lightbox').classList.remove('open');
+    // gescannte PDF-Rechnung (Demo, ohne Upload) behaelt ihren Typ
+    __scanForm('Scan PDF', 120);
+    scanImageBase64 = 'JVBERi0xLjQK'; scanMediaType = 'application/pdf';
+    await confirmRechnungScan();
+    const neu = state.kosten.find(k => k.beschr === 'Scan PDF');
+    return { kaputt, geoeffnet, lightbox, typ: ((neu && neu.scanData) || '').slice(0, 20) };
+  });
+  const p = [];
+  if (r.kaputt) p.push(`${r.kaputt}× PDF als Bild eingebunden`);
+  if (!r.geoeffnet || r.lightbox) p.push('PDF öffnet in der Bild-Ansicht statt als PDF');
+  if (r.typ !== 'data:application/pdf') p.push(`gescanntes PDF gespeichert als „${r.typ}…"`);
+  return p.join(' · ');
+});
+await scenario('Englisch: „Neue Person" und Namensfeld sind übersetzt', async () => {
+  const r = await page.evaluate(async () => {
+    setLang('en', false);
+    openModal('modal-kosten'); await __warte(50);
+    const opt = [...document.getElementById('k-bezahlt-von').options].find(o => o.value === '__neu__');
+    const out = { opt: opt && opt.textContent, ph: (document.getElementById('k-bezahlt-von-neu') || {}).placeholder };
+    document.querySelector('#modal-kosten .modal-actions .btn-ghost').click(); await __warte(300);
+    setLang('de', false);
+    const opt2 = [...document.getElementById('k-bezahlt-von').options].find(o => o.value === '__neu__');
+    out.de = opt2 && opt2.textContent;
+    return out;
+  });
+  const p = [];
+  if (r.opt !== '➕ New person…') p.push(`Option „${r.opt}"`);
+  if (r.ph !== 'Name of the new person') p.push(`Platzhalter „${r.ph}"`);
+  if (r.de !== '➕ Neue Person…') p.push(`zurück auf Deutsch: „${r.de}"`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

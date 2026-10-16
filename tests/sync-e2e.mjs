@@ -116,10 +116,20 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
     }
   }
   const session = { user: { id: uid, email: 'e2e@planory.test' }, access_token: 'fake-token' };
+  // Speicher (Belege): protokolliert Uploads/Loeschungen; cfg.uploadDelay = langsames Netz,
+  // cfg.uploadFail = Upload scheitert (z.B. Bucket fehlt)
+  const uploads = window.__fakeUploads = [], removed = window.__fakeRemoved = [];
   const bucket = () => ({
-    upload: async p => ({ data: { path: p }, error: null }),
+    upload: async (p, body, o) => {
+      const u = { path: p, type: (o && o.contentType) || (body && body.type) || '', done: false };
+      uploads.push(u);
+      if (C.uploadDelay) await sleep(C.uploadDelay);
+      if (C.uploadFail) return { data: null, error: { message: 'Bucket not found' } };
+      u.done = true;
+      return { data: { path: p }, error: null };
+    },
     getPublicUrl: p => ({ data: { publicUrl: 'https://fake.storage/' + p } }),
-    remove: async () => ({ data: null, error: null }),
+    remove: async ps => { removed.push(...[].concat(ps)); return { data: null, error: null }; },
     createSignedUrl: async p => ({ data: { signedUrl: 'https://fake.storage/' + p }, error: null }),
   });
   window.supabase = { createClient: () => ({
@@ -286,21 +296,30 @@ await scenario('D: Gelöschte Ausgabe kommt nach dem Neuladen nicht zurück', as
 });
 
 // E) Rechnung scannen: KI liefert Betraege als deutschen Text bzw. der Server meldet Fehler
-async function scan(page, kiResponse) {
+async function scan(page, kiResponse, { pdf = false } = {}) {
   page.__kiHandler = route => route.fulfill(kiResponse);
-  return page.evaluate(async () => {
-    const c = document.createElement('canvas'); c.width = 60; c.height = 40;
-    c.getContext('2d').fillRect(0, 0, 60, 40);
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  return page.evaluate(async pdf => {
+    let file;
+    if (pdf) file = new File(['%PDF-1.4\n1 0 obj<<>>endobj\n%%EOF'], 'rechnung.pdf', { type: 'application/pdf' });
+    else {
+      const c = document.createElement('canvas'); c.width = 60; c.height = 40;
+      c.getContext('2d').fillRect(0, 0, 60, 40);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+      file = new File([blob], 'rechnung.jpg', { type: 'image/jpeg' });
+    }
     openModal('modal-rechnung-scan');
-    await _processScanFile(new File([blob], 'rechnung.jpg', { type: 'image/jpeg' }));
+    await _processScanFile(file);
     return {
       brutto: document.getElementById('scan-brutto').value,
       netto: document.getElementById('scan-netto').value,
       fehler: document.getElementById('scan-error').style.display !== 'none' ? document.getElementById('scan-error').textContent : '',
     };
-  });
+  }, pdf);
 }
+// Erfolgreiche KI-Antwort fuer eine Rechnung
+const KI_OK = (beschr, brutto) => ({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [{ type: 'text',
+  text: JSON.stringify({ beschreibung: beschr, anbieter: 'Fa. Test', datum: '2026-10-01', netto: '', mwst_prozent: 20, brutto, kategorie: 'Rohbau', skonto_prozent: 0, skonto_bis: null }) }] }) });
+const BEREIT = () => typeof _cloudLoadedOk !== 'undefined' && _cloudLoadedOk && window._userPlan === 'pro';
 await scenario('E1: Scan – KI liefert "4.160,00" als Text → Betrag 4160 übernommen', async () => {
   const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999 });
   try {
@@ -346,6 +365,131 @@ await scenario('E4: Scan einbuchen ohne gültigen Betrag wird abgelehnt (keine 0
     const nachher = await page.evaluate(() => state.kosten.length);
     if (nachher !== vorher) return 'Ausgabe mit 0 € wurde gespeichert';
     return '';
+  } finally { await ctx.close(); }
+});
+
+// E5–E9) Scan einbuchen: sofort sichtbar, Beleg im Hintergrund, PDF-Typ, neue Person
+await scenario('E5: Scan einbuchen – Ausgabe sofort sichtbar, Beleg kommt im Hintergrund nach', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, uploadDelay: 3000 });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Scan Sofort', '480,00'));
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    const s = await page.evaluate(async () => {
+      showPage('rechnungen');
+      document.getElementById('scan-confirm-btn').click();
+      await new Promise(res => setTimeout(res, 300));
+      return { lokal: state.kosten.some(k => k.beschr === 'Scan Sofort'),
+               liste: document.getElementById('gr-table').textContent.includes('Scan Sofort'),
+               offen: document.getElementById('modal-rechnung-scan').classList.contains('open'),
+               uploadLaeuft: window.__fakeUploads.length === 1 && !window.__fakeUploads[0].done };
+    });
+    const p = [];
+    if (!s.lokal) p.push('Ausgabe nach 0,3 s noch nicht eingebucht (wartet auf den Bild-Upload)');
+    if (!s.liste) p.push('Rechnungen-Liste zeigt die neue Rechnung nicht');
+    if (s.offen) p.push('Fenster bleibt während des Uploads offen');
+    if (!s.uploadLaeuft) p.push('Upload lief nicht im Hintergrund (Test-Annahme)');
+    if (p.length) return p.join(' · ');
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan Sofort' && r.payload.scanUrl), null, 15000);
+    const n = await page.evaluate(() => {
+      const k = state.kosten.find(x => x.beschr === 'Scan Sofort');
+      const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k.id));
+      return { kUrl: !!k.scanUrl, kData: !!k.scanData, gUrl: !!(g && g.scanUrl), gData: !!(g && g.scanData) };
+    });
+    if (!n.kUrl || n.kData) p.push(`Ausgabe: Beleg-Link ${n.kUrl}, Bild im Eintrag ${n.kData}`);
+    if (!n.gUrl || n.gData) p.push(`Gescannte Rechnung: Beleg-Link ${n.gUrl}, Bild im Eintrag ${n.gData}`);
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+await scenario('E6: PDF-Rechnung wird als PDF gespeichert (nicht als .jpg) und nicht als Bild angezeigt', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999 });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('PDF Rechnung', '120,00'), { pdf: true });
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(() => { showPage('kosten'); document.getElementById('scan-confirm-btn').click(); });
+    await waitFor(page, () => (state.kosten || []).some(k => k.beschr === 'PDF Rechnung' && k.scanUrl), null, 10000);
+    const x = await page.evaluate(() => ({ path: window.__fakeUploads[0]?.path || '', type: window.__fakeUploads[0]?.type || '',
+      bilder: [...document.querySelectorAll('#kosten-table img, #gr-table img')].filter(i => /\.pdf|application\/pdf/i.test(i.getAttribute('src') || '')).length }));
+    const p = [];
+    if (!/\.pdf$/i.test(x.path)) p.push(`Dateiname „${x.path.split('/').pop()}"`);
+    if (x.type !== 'application/pdf') p.push(`Dateityp „${x.type}"`);
+    if (x.bilder) p.push(`${x.bilder}× PDF als (kaputtes) Bild angezeigt`);
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+await scenario('E7: Beleg-Upload scheitert → PDF bleibt mit richtigem Typ beim Eintrag', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, uploadFail: true });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('PDF ohne Speicher', '99,00'), { pdf: true });
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(() => document.getElementById('scan-confirm-btn').click());
+    await waitFor(page, () => (state.kosten || []).some(k => k.beschr === 'PDF ohne Speicher' && k.scanData), null, 10000);
+    const x = await page.evaluate(() => {
+      const k = state.kosten.find(x => x.beschr === 'PDF ohne Speicher');
+      const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k.id));
+      return { k: (k.scanData || '').slice(0, 28), g: ((g && g.scanData) || '').slice(0, 28) };
+    });
+    const ok = v => v.startsWith('data:application/pdf');
+    return ok(x.k) && ok(x.g) ? '' : `gespeichert als „${x.k}…" / „${x.g}…"`;
+  } finally { await ctx.close(); }
+});
+await scenario('E8: Während des Beleg-Uploads gelöscht → bleibt gelöscht, Datei wird entfernt', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, uploadDelay: 2500 });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Gleich weg', '55,00'));
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(async () => {
+      document.getElementById('scan-confirm-btn').click();
+      await new Promise(res => setTimeout(res, 300));
+      window.showConfirm = async () => true;
+      const k = state.kosten.find(x => x.beschr === 'Gleich weg');
+      if (k) await deleteKosten(k.id);
+    });
+    await waitFor(page, () => window.__fakeUploads.length && window.__fakeUploads[0].done, null, 10000);
+    await settle(page, 2500);
+    const x = await page.evaluate(() => ({
+      lokal: state.kosten.filter(k => k.beschr === 'Gleich weg').length,
+      scans: (state.gescannteRechnungen || []).filter(g => g.beschr === 'Gleich weg').length,
+      cloud: window.__fakeDb.projekt_items.filter(r => r.payload && r.payload.beschr === 'Gleich weg').length,
+      entfernt: window.__fakeRemoved.includes(window.__fakeUploads[0].path) }));
+    const p = [];
+    if (x.lokal || x.scans) p.push(`kam in der App zurück (Ausgabe ${x.lokal}, Rechnung ${x.scans})`);
+    if (x.cloud) p.push(`steht in der Cloud (${x.cloud})`);
+    if (!x.entfernt) p.push('hochgeladene Datei bleibt verwaist im Speicher');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+await scenario('E9: Neue Person beim Scan („Bezahlt von") landet mit eigener ID in der Cloud', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999 });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Scan mit Person', '300,00'));
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    const vorher = await page.evaluate(() => {
+      const sel = document.getElementById('scan-bezahlt-von');
+      sel.value = '__neu__'; sel.dispatchEvent(new Event('change'));
+      const inp = document.getElementById('scan-bezahlt-von-neu');
+      if (!inp || sel.value !== '__neu__') return 'keine Möglichkeit, eine neue Person einzutragen';
+      inp.value = 'Oma Erna';
+      document.getElementById('scan-confirm-btn').click();
+      return '';
+    });
+    if (vorher) return vorher;
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'zahlungspersonen' && r.payload.name === 'Oma Erna')
+      && window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan mit Person'), null, 10000);
+    const x = await page.evaluate(() => {
+      const k = window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan mit Person');
+      const pe = window.__fakeDb.projekt_items.find(r => r.item_type === 'zahlungspersonen' && r.payload.name === 'Oma Erna');
+      const g = window.__fakeDb.projekt_items.find(r => r.item_type === 'gescannteRechnungen' && r.payload.beschr === 'Scan mit Person');
+      return { bv: k.payload.bezahltVon, ids: new Set([k.item_id, pe.item_id, g && g.item_id]).size };
+    });
+    const p = [];
+    if (x.bv !== 'Oma Erna') p.push(`Ausgabe „Bezahlt von" = „${x.bv}"`);
+    if (x.ids !== 3) p.push('Person, Ausgabe und Rechnung teilen sich eine ID (Löschen träfe mehrere)');
+    return p.join(' · ');
   } finally { await ctx.close(); }
 });
 

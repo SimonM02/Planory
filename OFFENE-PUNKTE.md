@@ -14,18 +14,21 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 16.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 82/82, mobile-e2e 42/42, sync-e2e 8/8).
+(pruefen 86/86, mobile-e2e 49/49, sync-e2e 13/13).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
       NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin).
 - [ ] What's New (Vorschlag):
       „• Wichtige Fehlerbehebung: neue Einträge gehen nach dem Speichern nicht mehr verloren
        • Abbrechen und Bearbeiten zuverlässig – nichts wird mehr versehentlich überschrieben
-       • Rechnung scannen: verständliche Fehlermeldungen, Beträge wie 1.234,56 werden erkannt
+       • Rechnung scannen: wird sofort eingebucht, Beträge wie 1.234,56 werden erkannt,
+         PDF-Rechnungen bleiben PDF, verständliche Fehlermeldungen
+       • „Bezahlt von": neue Person direkt beim Erfassen eintragen
        • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
        • Gelöschte Einträge bleiben gelöscht
        • Bessere Darstellung am iPhone (Tabellen, Wartung, Einstellungen)
        • Fotos zoomen · Dateien per Drag & Drop · übersichtlicherer Zeitplan · Helfer-Stunden"
+- [ ] Am iPhone einmal einen PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?).
 - [ ] Nach dem Update: die 3 seit 14.08. bearbeiteten Ausgaben (1 davon in Simons Konto) kurz auf
       die richtige MwSt prüfen (alter Fehler: MwSt vom letzten Bearbeiten blieb hängen).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
