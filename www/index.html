@@ -9183,32 +9183,53 @@ const _bqAll = () => _bq('readonly', st => st.getAll());
 function _belegVormerken(job) {
   _belegLaeuft.add(String(job.kostenId));
   const gesichert = _bqPut(job).catch(e => console.warn('[Beleg] nicht vorgemerkt:', e?.message));
-  gesichert.then(() => _scanBelegNachladen(job)).catch(e => console.warn('[Beleg]', e?.message));
+  gesichert.then(() => _scanBelegNachladen(job, 'neu')).catch(e => console.warn('[Beleg]', e?.message));
 }
 
 // Beleg hochladen und an Ausgabe + gescannte Rechnung haengen. Die Eintraege werden
 // jeweils JETZT per ID gesucht (Stand kann neu geladen, bearbeitet, geloescht sein).
-async function _scanBelegNachladen(job, neustart = false) {
+// modus: 'neu' (gerade eingebucht) · 'nachholen' (spaeter in derselben Sitzung) ·
+// 'start' (erster Lauf nach dem App-Start – der Stand entspricht dann der Cloud).
+// Die Vormerkung bleibt nach dem Anhaengen bestehen und wird erst beim naechsten Start
+// geloescht, wenn die Cloud den Beleg sicher hat (sonst ginge er bei einem App-Abbruch
+// zwischen lokalem Speichern und Cloud-Abgleich verloren).
+async function _scanBelegNachladen(job, modus = 'neu') {
   const id = String(job.kostenId);
-  if (neustart && _belegLaeuft.has(id)) return;
+  if (modus !== 'neu' && _belegLaeuft.has(id)) return;
   _belegLaeuft.add(id);
   try {
     const finde = () => {
       const proj = String(currentProjectId) === String(job.pid) ? state : (projects || []).find(p => String(p.id) === String(job.pid));
       return { proj, k: proj && (proj.kosten || []).find(x => String(x.id) === id) };
     };
-    const frei = x => !x.scanUrl && !x.scanPath && !x.scanData;
+    const frei  = x => !x.scanUrl && !x.scanPath && !x.scanData;
+    const dataUrl = job.b64 ? `data:${job.mime};base64,${job.b64}` : null;
+    const eigen = x => !!((job.path && x.scanPath === job.path) || (dataUrl && x.scanData === dataUrl));
+    // Ergebnis: Ausgabe weg, oder hat schon einen (eigenen/anderen) Beleg?
+    const erledigt = async k => {
+      if (k && eigen(k)) { if (modus === 'start') await _bqDel(job.key); return true; }   // haengt dran
+      if (!k || !frei(k)) {   // geloescht oder anderer Beleg -> eigene Datei aufraeumen
+        if (job.path && !(k && k.scanPath === job.path)) deletePhotoFromStorage(job.path);
+        await _bqDel(job.key); return true;
+      }
+      return false;
+    };
     let { proj, k } = finde();
-    if (!k || !frei(k)) { await _bqDel(job.key); return; }   // geloescht oder schon ein Beleg da
-    const dataUrl = `data:${job.mime};base64,${job.b64}`;
-    const up = await uploadDataUrlToStorage(dataUrl, 'rechnungen', job.mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg');
-    ({ proj, k } = finde());
-    if (!k || !frei(k)) { if (up.path) deletePhotoFromStorage(up.path); await _bqDel(job.key); return; }
+    if (await erledigt(k)) return;
+
+    let up = job.path ? { url: job.url, path: job.path } : null;   // schon hochgeladen (z.B. vor einem Abbruch)
+    if (!up) {
+      const r = await uploadDataUrlToStorage(dataUrl, 'rechnungen', job.mime === 'application/pdf' ? 'rechnung.pdf' : 'rechnung.jpg');
+      if (r.path) { up = r; job = { ...job, url: r.url, path: r.path, b64: null }; await _bqPut(job).catch(() => {}); }
+      ({ proj, k } = finde());
+      if (await erledigt(k)) return;
+    }
     let patch;
-    if (up.path) patch = { scanUrl: up.url, scanPath: up.path, scanData: null };
-    else if (job.b64.length < 1200000) patch = { scanUrl: null, scanPath: null, scanData: dataUrl };   // Sicherheitsnetz wie bisher
-    else {   // zu gross fuer den Eintrag: bleibt vorgemerkt, neuer Versuch beim naechsten Start
-      if (!neustart) showToast('⚠️ Beleg wird später hochgeladen – Ausgabe ist eingebucht', 'warning', 5000);
+    if (up) patch = { scanUrl: up.url, scanPath: up.path, scanData: null };
+    else if (job.b64 && job.b64.length < 1200000) patch = { scanUrl: null, scanPath: null, scanData: dataUrl };   // Sicherheitsnetz wie bisher
+    else {   // zu gross fuer den Eintrag: bleibt vorgemerkt, neuer Versuch beim naechsten Abgleich
+      if (modus === 'neu') showToast('⚠️ Beleg wird später hochgeladen – Ausgabe ist eingebucht', 'warning', 5000);
+      else if (Date.now() - (job.ts || 0) > 30 * 864e5) await _bqDel(job.key);   // nach 30 Tagen erfolglos aufgeben
       return;
     }
     const t = Date.now();
@@ -9218,22 +9239,26 @@ async function _scanBelegNachladen(job, neustart = false) {
     });
     save();
     _renderKostenAnsichten();
-    await _bqDel(job.key);
   } finally { _belegLaeuft.delete(id); }
 }
 
-// Nach dem Cloud-Laden: vorgemerkte Belege (App wurde z.B. direkt nach dem Einbuchen
-// geschlossen) nachreichen. Alte Vormerkungen (> 14 Tage) verwerfen.
-async function _belegWarteschlange() {
-  if (_bqGeprueft || !currentUser || _demoMode) return;
+// Nach jedem Cloud-Laden: vorgemerkte Belege nachreichen (App wurde z.B. direkt nach dem
+// Einbuchen geschlossen oder war offline). Der erste Lauf nach dem Start raeumt Erledigtes auf.
+let _bqLauf = null;
+function _belegWarteschlange() {
+  if (!currentUser || _demoMode) return Promise.resolve();
+  if (_bqLauf) return _bqLauf;
+  const modus = _bqGeprueft ? 'nachholen' : 'start';
   _bqGeprueft = true;
-  let jobs = [];
-  try { jobs = await _bqAll(); } catch (e) { return; }
-  for (const job of jobs || []) {
-    if (!job || job.uid !== currentUser.id) continue;
-    if (Date.now() - (job.ts || 0) > 14 * 864e5) { await _bqDel(job.key); continue; }
-    try { await _scanBelegNachladen(job, true); } catch (e) { console.warn('[Beleg]', e?.message); }
-  }
+  _bqLauf = (async () => {
+    let jobs = [];
+    try { jobs = await _bqAll(); } catch (e) { return; }
+    for (const job of jobs || []) {
+      if (!job || job.uid !== currentUser.id) continue;
+      try { await _scanBelegNachladen(job, modus); } catch (e) { console.warn('[Beleg]', e?.message); }
+    }
+  })().finally(() => { _bqLauf = null; });
+  return _bqLauf;
 }
 
 // Beleg (gescanntes Rechnungsbild) einer Kostenzeile gross anzeigen. Nutzt das

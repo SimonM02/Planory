@@ -99,6 +99,7 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
         } finally { if (isItems) stats.itemReadsInFlight--; }
       }
       await sleep(C.write / 2);
+      if (C.writesFail) return { data: null, error: { message: 'Failed to fetch' } };   // Netz weg
       stats.writes++;
       const changed = [];
       if (this.op === 'insert') {
@@ -537,11 +538,14 @@ await scenario('E10: App direkt nach dem Einbuchen geschlossen → Beleg wird be
       const k = state.kosten.find(x => x.beschr === 'Beleg nach Neustart');
       const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k && k.id));
       const c = window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Beleg nach Neustart');
-      return { k: !!(k && k.scanUrl && !k.scanData), g: !!(g && g.scanUrl && !g.scanData), cloudKlein: !c.payload.scanData,
-               rest: (await _bqAll()).length };
+      return { k: !!(k && k.scanUrl && !k.scanData), g: !!(g && g.scanUrl && !g.scanData), cloudKlein: !c.payload.scanData };
     });
     const p = [];
-    if (x.rest) p.push(`${x.rest} Beleg(e) bleiben vorgemerkt`);
+    // naechster Start: Cloud hat den Beleg -> Vormerkung wird aufgeraeumt
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    try { await waitFor(page, async () => (await _bqAll()).length === 0, null, 8000); }
+    catch (e) { p.push('Vormerkung wird auch nach dem nächsten Start nicht aufgeräumt'); }
     if (!x.k) p.push('Ausgabe ohne Beleg-Link');
     if (!x.g) p.push('Gescannte Rechnung ohne Beleg-Link');
     if (!x.cloudKlein) p.push('Bild steckt weiterhin im Cloud-Eintrag');
@@ -594,6 +598,56 @@ await scenario('E12: Alter, eingebetteter PDF-Beleg wird beim Start als echtes P
     if (x.typ !== 'application/pdf' || !/\.pdf$/.test(x.name)) p.push(`abgelegt als „${x.name}" (${x.typ})`);
     if (!x.k || !x.g) p.push('Bild bleibt im Eintrag');
     return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
+await scenario('E13: Beleg hochgeladen, App vor dem Cloud-Abgleich beendet → Beleg kommt beim nächsten Start dran', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true, uploadDelay: 1500 });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Abbruch vor Abgleich', '410,00'));
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    await page.evaluate(() => document.getElementById('scan-confirm-btn').click());
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('Abbruch vor Abgleich'), null, 8000);
+    // Netz weg, bevor der Beleg-Link in die Cloud kommt
+    await page.evaluate(() => { window.__fakeCfg.writesFail = true; });
+    try { await waitFor(page, () => (state.kosten.find(k => k.beschr === 'Abbruch vor Abgleich') || {}).scanUrl, null, 8000); }
+    catch (e) { return 'Beleg wurde lokal nicht angehängt (Test-Annahme)'; }
+    const cloudVorher = await page.evaluate(() => !!window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Abbruch vor Abgleich').payload.scanUrl);
+    if (cloudVorher) return 'Test-Annahme verletzt: Cloud hatte den Link schon';
+    await page.reload({ waitUntil: 'domcontentloaded' });   // App beendet + neu gestartet (Netz wieder da)
+    await waitFor(page, BEREIT);
+    try {
+      await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Abbruch vor Abgleich' && r.payload.scanUrl), null, 10000);
+    } catch (e) { return 'Beleg ging verloren (Cloud-Eintrag ohne Beleg, Vormerkung schon gelöscht)'; }
+    const x = await page.evaluate(() => ({ neueUploads: window.__fakeUploads.length }));
+    return x.neueUploads ? `Beleg wurde unnötig erneut hochgeladen (${x.neueUploads}×)` : '';
+  } finally { await ctx.close(); }
+});
+await scenario('E14: Großes PDF offline → wird beim nächsten Abgleich derselben Sitzung nachgeladen', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, uploadFail: true });
+  try {
+    await waitFor(page, BEREIT);
+    const r = await scan(page, KI_OK('Großes PDF', '1500,00'), { pdf: true });
+    if (r.fehler) return 'Scan-Fehler: ' + r.fehler;
+    // so tun, als waere das PDF gross (> 1,2 Mio. Zeichen, passt nicht in den Eintrag)
+    await page.evaluate(() => {
+      let b = scanImageBase64.replace(/=+$/, '') + 'A'.repeat(1300000);   // gueltiges Base64 bleiben
+      while (b.length % 4) b += 'A';
+      scanImageBase64 = b;
+      document.getElementById('scan-confirm-btn').click();
+    });
+    await page.waitForTimeout(1500);
+    const vorher = await page.evaluate(async () => ({ k: !!(state.kosten.find(k => k.beschr === 'Großes PDF') || {}).id,
+      beleg: !!(state.kosten.find(k => k.beschr === 'Großes PDF') || {}).scanData, jobs: typeof _bqAll === 'function' ? (await _bqAll()).length : 0 }));
+    if (!vorher.k) return 'Ausgabe nicht eingebucht';
+    if (vorher.beleg) return 'großes PDF steckt im Eintrag (großer Abgleich)';
+    if (!vorher.jobs) return 'großes PDF nicht für später vorgemerkt';
+    // Netz wieder da, App kommt in den Vordergrund
+    await page.evaluate(() => { window.__fakeCfg.uploadFail = false; window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); });
+    try { await waitFor(page, () => (state.kosten.find(k => k.beschr === 'Großes PDF') || {}).scanUrl, null, 10000); }
+    catch (e) { return 'Beleg erst nach einem Neustart nachgeladen (nicht beim nächsten Abgleich)'; }
+    return '';
   } finally { await ctx.close(); }
 });
 
