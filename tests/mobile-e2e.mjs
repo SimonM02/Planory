@@ -30,7 +30,7 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM ? { execut
 
 async function boot() {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true,
-    hasTouch: true, locale: 'de-AT', serviceWorkers: 'block' });
+    hasTouch: true, locale: 'de-AT', timezoneId: 'Europe/Vienna', serviceWorkers: 'block' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message || e)));
@@ -447,6 +447,37 @@ await scenario('Dokumente: Bilder werden als echte Bilddatei hochgeladen', async
   if (!r.istBlob) p.push('hochgeladen wurde kein Bild, sondern ein Objekt');
   if (!(r.size > 0)) p.push(`gespeicherte Größe ungültig (${r.size})`);
   return p.join(' · ');
+});
+
+await scenario('Wartung: nächster Termin über die Sommerzeit hinweg stimmt (kein Tag zu früh)', async () => {
+  const r = await page.evaluate(() => [getNextDate('2026-01-15', 3, 'Monate'), getNextDate('2026-03-25', 1, 'Wochen'), getNextDate('2026-10-20', 1, 'Wochen')]
+    .map(d => d.toISOString().slice(0, 10)));
+  const soll = ['2026-04-15', '2026-04-01', '2026-10-27'];
+  return r.join() === soll.join() ? '' : `berechnet ${r.join(', ')} statt ${soll.join(', ')}`;
+});
+await scenario('Wartung: einmalige Wartung ist nach „Erledigt" nicht mehr überfällig', async () => {
+  const r = await page.evaluate(() => {
+    state.wartungen = [{ id: 9600001, name: 'Kaminkehrer Abnahme', kat: state.wartungen?.[0]?.kat || '🔥 Heizung', intervall: 0, einheit: '', next: '2026-01-05' }];
+    showPage('wartung');
+    const vorher = document.getElementById('w-overdue').textContent;
+    markWartungDone(9600001);
+    return { vorher, nachher: document.getElementById('w-overdue').textContent, text: document.querySelector('#wartung-list .wartung-next')?.textContent || '' };
+  });
+  if (r.vorher !== '1') return `Ausgangslage falsch (überfällig: ${r.vorher})`;
+  return r.nachher !== '0' ? `bleibt überfällig (${r.nachher}): ${r.text.trim().slice(0, 60)}` : '';
+});
+await scenario('Budgetkategorie umbenennen: Ausgaben bleiben in der Kategorie', async () => {
+  const r = await page.evaluate(() => {
+    const kat = state.budgetKat[0];
+    state.kosten.push({ id: 9600010, datum: '2026-10-01', beschr: 'Umbenenn-Test', kat: kat.name, mwst: 20, netto: 100, betrag: 120, status: 'Bezahlt', anbieter: '', _updatedAt: 1 });
+    showPage('budget');
+    document.getElementById('bk-edit-id').value = String(kat.id);
+    document.getElementById('bk-name').value = kat.name + ' NEU';
+    const b = document.getElementById('bk-budget'); if (b && !b.value) b.value = String(kat.budget || 1000);
+    addBudgetKat();
+    return { neu: kat.name + ' NEU', ist: state.kosten.find(k => k.id === 9600010).kat };
+  });
+  return r.ist === r.neu ? '' : `Ausgabe steht jetzt in „${r.ist}" statt „${r.neu}"`;
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);

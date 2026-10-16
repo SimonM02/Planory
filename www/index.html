@@ -7503,7 +7503,7 @@ function renderDashReminders() {
   if (!el) return;
   const _en = (_lang === 'en');
   const items = [];
-  const w = (state.wartungen || []).map(x => ({ x, d: _wartungNextDate(x) }))
+  const w = (state.wartungen || []).filter(x => !x.erledigt).map(x => ({ x, d: _wartungNextDate(x) }))
     .filter(o => o.d && !isNaN(o.d)).sort((a,b) => a.d - b.d)[0];
   if (w) items.push({ icon:'🔧', label:_en?'Next maintenance':'Nächste Wartung', name:w.x.name || (_en?'Maintenance':'Wartung'), date:w.d.toISOString().slice(0,10) });
   const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
@@ -8130,7 +8130,18 @@ function addBudgetKat() {
 
   if (editId) {
     const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
+    const altName = idx > -1 ? state.budgetKat[idx].name : null;
+    if (altName && altName !== name && state.budgetKat.some((k, i) => i !== idx && k.name === name)) {
+      showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return;
+    }
     if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color, _updatedAt: Date.now() };
+    // Umbenannt: alle Eintraege mitziehen – sonst fielen Ausgaben, Angebote, Zahlungen und
+    // Eigenleistungen aus der Kategorie heraus ("nicht zugeordnet").
+    if (altName && altName !== name) {
+      const now = Date.now();
+      ['kosten', 'eigenleistungen', 'angebote', 'zahlungen', 'gescannteRechnungen'].forEach(arr =>
+        (state[arr] || []).forEach(x => { if (x && x.kat === altName) { x.kat = name; x._updatedAt = now; } }));
+    }
   } else {
     if (state.budgetKat.find(k => k.name === name)) { showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return; }
     state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length], _updatedAt: Date.now() });
@@ -12230,7 +12241,12 @@ function addWartung() {
   };
   if (editId) {
     const idx = state.wartungen.findIndex(w => String(w.id) === String(editId));
-    if (idx > -1) state.wartungen[idx] = { ...state.wartungen[idx], ...item };
+    if (idx > -1) {
+      const alt = state.wartungen[idx];
+      // "erledigt" (einmalige Wartung) bleibt nur, solange Termin und Wiederholung gleich bleiben
+      item.erledigt = !!(alt.erledigt && !item.einheit && item.next === alt.next);
+      state.wartungen[idx] = { ...alt, ...item };
+    }
   } else {
     state.wartungen.push(item);
   }
@@ -12280,16 +12296,24 @@ function markWartungDone(id) {
   const w = (state.wartungen || []).find(w => String(w.id) === String(id));
   if (!w) return;
   w.last = today();
+  w._updatedAt = Date.now();
   // Wiederholend: nächsten Termin ab heute weiterstellen
   if (w.einheit && w.intervall) {
     w.next = getNextDate(today(), w.intervall, w.einheit).toISOString().slice(0,10);
+  } else {
+    // Einmalig: als erledigt markieren – blieb sonst fuer immer "ueberfaellig"
+    w.erledigt = true;
   }
   save(); renderWartung();
   showToast('✓ Erledigt – nächster Termin gesetzt', 'success');
 }
 
 function getNextDate(last, intervall, einheit) {
-  const d = new Date(last);
+  // Zu MITTAG Ortszeit rechnen: "YYYY-MM-DD" wird sonst als Mitternacht UTC gelesen, in
+  // Ortszeit verschoben und per toISOString zurueck nach UTC – ueber den Sommerzeit-
+  // Wechsel hinweg landete die naechste Wartung dann einen Tag zu frueh.
+  const _s = String(last || '');
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(_s) ? new Date(_s + 'T12:00:00') : new Date(last);
   if (einheit === 'Tage')    d.setDate(d.getDate() + intervall);
   if (einheit === 'Wochen')  d.setDate(d.getDate() + intervall * 7);
   if (einheit === 'Monate')  d.setMonth(d.getMonth() + intervall);
@@ -12361,7 +12385,9 @@ function renderWartung() {
   const list = document.getElementById('wartung-list');
 
   let overdue = 0, soon = 0, ok = 0;
+  // Erledigte einmalige Wartungen ans Ende
   const sorted = [...state.wartungen].sort((a, b) => {
+    if (!!a.erledigt !== !!b.erledigt) return a.erledigt ? 1 : -1;
     return getDaysUntil(_wartungNextDate(a))
          - getDaysUntil(_wartungNextDate(b));
   });
@@ -12379,7 +12405,8 @@ function renderWartung() {
     const nextDate = _wartungNextDate(w);
     const days     = getDaysUntil(nextDate);
     let statusClass, statusText;
-    if (days < 0)  { overdue++; statusClass = 'overdue'; statusText = `${Math.abs(days)} Tage überfällig`; }
+    if (w.erledigt) { ok++; statusClass = 'ok'; statusText = `✓ erledigt${w.last ? ' am ' + fmtDate(w.last) : ''}`; }
+    else if (days < 0)  { overdue++; statusClass = 'overdue'; statusText = `${Math.abs(days)} Tage überfällig`; }
     else if (days <= 30) { soon++;   statusClass = 'soon';    statusText = `in ${days} Tagen fällig`; }
     else                 { ok++;     statusClass = 'ok';      statusText = `in ${days} Tagen (${fmtDate(nextDate.toISOString().split('T')[0])})`; }
 
@@ -12395,7 +12422,7 @@ function renderWartung() {
         <div class="wartung-desc">${w.kat}${w.who ? ' · ' + w.who : ''}${w.kosten ? ' · ca. ' + fmt(w.kosten) : ''}</div>
         ${w.desc ? `<div style="font-size:0.78rem;color:var(--text3);margin-top:3px;line-height:1.4">${w.desc}</div>` : ''}
         <div class="wartung-next ${statusClass}">
-          ${days < 0 ? '🔴' : days <= 30 ? '🟡' : '🟢'} ${statusText}
+          ${w.erledigt ? '🟢' : days < 0 ? '🔴' : days <= 30 ? '🟡' : '🟢'} ${statusText}
           · Fällig am ${fmtDate(nextDate.toISOString().split('T')[0])}${w.last ? ' · zuletzt ' + fmtDate(w.last) : ''}
         </div>
       </div>
@@ -12864,10 +12891,12 @@ function buildProjectSnapshot() {
   // overdueWartungen
   const wartungen = state.wartungen || [];
   const overdueWartungen = wartungen.filter(w => {
+    if (w.erledigt) return false;
     const next = _wartungNextDate(w);
     return getDaysUntil(next) < 0;
   });
   const soonWartungen = wartungen.filter(w => {
+    if (w.erledigt) return false;
     const d = getDaysUntil(_wartungNextDate(w));
     return d >= 0 && d <= 30;
   });
@@ -16745,7 +16774,7 @@ async function scheduleAllReminders() {
   // ── Wartung (Push-Erinnerung, pro Wartung einstellbar)
   for (const w of (state.wartungen || [])) {
     const remind = (w.remind == null) ? '3' : String(w.remind); // Altbestand -> 3 Tage
-    if (remind === 'aus') continue;
+    if (remind === 'aus' || w.erledigt) continue;
     const nd = _wartungNextDate(w);
     if (!nd || isNaN(nd)) continue;
     const dstr = nd.toISOString().slice(0, 10);
