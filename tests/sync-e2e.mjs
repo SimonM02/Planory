@@ -166,7 +166,7 @@ const KOSTEN_SEED = [1, 2, 3].map(i => ['kosten', { id: 1700000000000 + i, datum
   mwst: 20, netto: 100, betrag: 120, status: 'Bezahlt', anbieter: '', _updatedAt: 1700000000000 + i }]);
 const SEED = [['budgetKat', { id: 9001, name: 'Rohbau', budget: 100000, color: '#3d6ff8', _order: 0, _updatedAt: 1700000000000 }], ...KOSTEN_SEED];
 
-async function boot(browser, cfg = {}, { cache = false } = {}) {
+async function boot(browser, cfg = {}, { cache = false, seed = [] } = {}) {
   const ctx = await browser.newContext({ locale: 'de-AT', serviceWorkers: 'block' });
   const page = await ctx.newPage();
   const errors = [];
@@ -178,7 +178,7 @@ async function boot(browser, cfg = {}, { cache = false } = {}) {
     if (u.includes('/api/ki')) return (page.__kiHandler ? page.__kiHandler(route) : route.abort());
     return route.abort();
   });
-  await page.addInitScript(fakeSupabase, { uid: UID, pid: PID, cfg, seedItems: SEED });
+  await page.addInitScript(fakeSupabase, { uid: UID, pid: PID, cfg, seedItems: [...SEED, ...seed] });
   if (cache) {
     // Wiederkehrender Nutzer: lokaler Stand vorhanden -> App zeigt ihn sofort, laedt Cloud im Hintergrund
     await page.addInitScript(([uid, pid, seed]) => {
@@ -401,6 +401,13 @@ await scenario('E5: Scan einbuchen – Ausgabe sofort sichtbar, Beleg kommt im H
     if (s.offen) p.push('Fenster bleibt während des Uploads offen');
     if (!s.uploadLaeuft) p.push('Upload lief nicht im Hintergrund (Test-Annahme)');
     if (p.length) return p.join(' · ');
+    // Die Buchung erreicht die Cloud schon waehrend des Uploads – ohne eingebettetes Bild (klein & schnell)
+    try {
+      await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan Sofort'), null, 2500);
+    } catch (e) { return 'Buchung erreicht die Cloud erst nach dem Beleg-Upload'; }
+    const roh = await page.evaluate(() => ({ data: !!window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan Sofort').payload.scanData,
+      laeuft: !window.__fakeUploads[0].done }));
+    if (roh.laeuft && roh.data) return 'Buchung wird mit eingebettetem Bild abgeglichen (großer, langsamer Abgleich)';
     await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Scan Sofort' && r.payload.scanUrl), null, 15000);
     const n = await page.evaluate(() => {
       const k = state.kosten.find(x => x.beschr === 'Scan Sofort');
@@ -515,11 +522,10 @@ await scenario('E10: App direkt nach dem Einbuchen geschlossen → Beleg wird be
       // in der Cloud angekommen (und der Test-Server hat es dauerhaft abgelegt)
       await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('Beleg nach Neustart'), null, 8000);
     } catch (e) { return 'Ausgabe wurde nicht eingebucht, solange der Beleg-Upload hängt'; }
-    const vorher = await page.evaluate(() => ({ laeuft: window.__fakeUploads.length > 0 && !window.__fakeUploads[0].done,
-      groesse: ((state.kosten.find(k => k.beschr === 'Beleg nach Neustart') || {}).scanData || '').length }));
+    const vorher = await page.evaluate(async () => ({ laeuft: window.__fakeUploads.length > 0 && !window.__fakeUploads[0].done,
+      vorgemerkt: typeof _bqAll === 'function' ? (await _bqAll()).length : 0 }));
     if (!vorher.laeuft) return 'Test-Annahme verletzt: Upload lief nicht mehr';
-    if (!vorher.groesse) return 'Beleg ist nirgends gesichert, solange der Upload läuft (geht beim Schließen der App verloren)';
-    if (vorher.groesse < 55000) return `Test-Annahme verletzt: Testbild zu klein (${vorher.groesse})`;
+    if (!vorher.vorgemerkt) return 'Beleg ist nirgends gesichert, solange der Upload läuft (geht beim Schließen der App verloren)';
     // App "abschießen" und neu starten
     await page.reload({ waitUntil: 'domcontentloaded' });
     await waitFor(page, BEREIT);
@@ -527,16 +533,66 @@ await scenario('E10: App direkt nach dem Einbuchen geschlossen → Beleg wird be
       await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && r.payload.beschr === 'Beleg nach Neustart' && r.payload.scanUrl), null, 15000);
     } catch (e) { return 'Beleg wurde nach dem Neustart nicht hochgeladen'; }
     await settle(page, 1500);
-    const x = await page.evaluate(() => {
+    const x = await page.evaluate(async () => {
       const k = state.kosten.find(x => x.beschr === 'Beleg nach Neustart');
       const g = (state.gescannteRechnungen || []).find(x => String(x.kostenId) === String(k && k.id));
       const c = window.__fakeDb.projekt_items.find(r => r.item_type === 'kosten' && r.payload.beschr === 'Beleg nach Neustart');
-      return { k: !!(k && k.scanUrl && !k.scanData), g: !!(g && g.scanUrl && !g.scanData), cloudKlein: !c.payload.scanData };
+      return { k: !!(k && k.scanUrl && !k.scanData), g: !!(g && g.scanUrl && !g.scanData), cloudKlein: !c.payload.scanData,
+               rest: (await _bqAll()).length };
     });
     const p = [];
+    if (x.rest) p.push(`${x.rest} Beleg(e) bleiben vorgemerkt`);
     if (!x.k) p.push('Ausgabe ohne Beleg-Link');
     if (!x.g) p.push('Gescannte Rechnung ohne Beleg-Link');
     if (!x.cloudKlein) p.push('Bild steckt weiterhin im Cloud-Eintrag');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
+await scenario('E11: Scan abgebrochen, KI antwortet später → Fenster wird nicht nachträglich befüllt', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999 });
+  try {
+    await waitFor(page, BEREIT);
+    const ki = KI_OK('Zu spät', '999,00');
+    page.__kiHandler = route => setTimeout(() => route.fulfill(ki).catch(() => {}), 1500);
+    const x = await page.evaluate(async () => {
+      const c = document.createElement('canvas'); c.width = 60; c.height = 40; c.getContext('2d').fillRect(0, 0, 60, 40);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+      openModal('modal-rechnung-scan');
+      const lauf = _processScanFile(new File([blob], 'r.jpg', { type: 'image/jpeg' }));
+      await new Promise(res => setTimeout(res, 400));
+      [...document.querySelectorAll('#modal-rechnung-scan .modal-actions button')].find(b => /abbrechen/i.test(b.textContent)).click();
+      await lauf;
+      return { beschr: document.getElementById('scan-beschr').value, ergebnis: document.getElementById('scan-result').style.display,
+               knopf: document.getElementById('scan-confirm-btn').style.display, bild: typeof scanImageBase64 === 'string' };
+    });
+    const p = [];
+    if (x.beschr === 'Zu spät' || x.ergebnis === 'block' || x.knopf !== 'none') p.push('abgebrochener Scan füllte das Fenster nachträglich');
+    if (x.bild) p.push('Bild des abgebrochenen Scans bleibt hängen');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+const ALT_PDF = 'data:image/jpeg;base64,' + Buffer.from('%PDF-1.4\n' + 'x'.repeat(60000) + '\n%%EOF').toString('base64');
+await scenario('E12: Alter, eingebetteter PDF-Beleg wird beim Start als echtes PDF abgelegt', async () => {
+  const seed = [['kosten', { id: 1700000000101, datum: '2026-08-01', beschr: 'Alt-PDF', kat: 'Rohbau', mwst: 20, netto: 100, betrag: 120,
+    status: 'Bezahlt', anbieter: '', aiScanned: true, scanUrl: null, scanPath: null, scanData: ALT_PDF, _updatedAt: 1700000000101 }],
+    ['gescannteRechnungen', { id: 1700000000102, kostenId: 1700000000101, datum: '2026-08-01', beschr: 'Alt-PDF', anbieter: '', kat: 'Rohbau',
+    mwst: 20, netto: 100, brutto: 120, status: 'Bezahlt', scanUrl: null, scanPath: null, scanData: ALT_PDF, gescannt: '2026-08-01', _updatedAt: 1700000000102 }]];
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999 }, { seed });
+  try {
+    await waitFor(page, BEREIT);
+    try {
+      await waitFor(page, () => (state.kosten || []).some(k => k.beschr === 'Alt-PDF' && k.scanUrl), null, 10000);
+    } catch (e) { return 'eingebetteter Beleg wurde nicht in die Ablage verschoben'; }
+    const x = await page.evaluate(() => {
+      const u = window.__fakeUploads.find(u => /rechnungen/.test(u.path)) || {};
+      const k = state.kosten.find(k => k.beschr === 'Alt-PDF');
+      const g = state.gescannteRechnungen.find(r => String(r.kostenId) === String(k.id));
+      return { typ: u.type, name: (u.path || '').split('/').pop(), k: !k.scanData, g: !!(g && g.scanUrl && !g.scanData) };
+    });
+    const p = [];
+    if (x.typ !== 'application/pdf' || !/\.pdf$/.test(x.name)) p.push(`abgelegt als „${x.name}" (${x.typ})`);
+    if (!x.k || !x.g) p.push('Bild bleibt im Eintrag');
     return p.join(' · ');
   } finally { await ctx.close(); }
 });
