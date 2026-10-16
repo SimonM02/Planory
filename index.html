@@ -7749,6 +7749,13 @@ async function saveKosten() {
   if (editId) {
     const idx = state.kosten.findIndex(k => String(k.id) === String(editId));
     if (idx > -1) state.kosten[idx] = item;
+    // Verknuepfte Eintraege in "Gescannte Rechnungen" mitfuehren (zeigten sonst alte Werte)
+    (state.gescannteRechnungen || []).forEach(r => {
+      if (String(r.kostenId) !== String(editId)) return;
+      Object.assign(r, { datum: item.datum, beschr: item.beschr, anbieter: item.anbieter, kat: item.kat, mwst: item.mwst,
+        netto: item.netto, brutto: item.betrag, status: item.status, scanUrl: item.scanUrl, scanPath: item.scanPath,
+        scanData: item.scanData, _updatedAt: Date.now() });
+    });
   } else {
     state.kosten.push(item);
   }
@@ -7801,10 +7808,19 @@ function editKosten(id) {
   openModal('modal-kosten');
 }
 
+// Beim Loeschen einer Ausgabe die verknuepften "Gescannte Rechnungen" mit entfernen
+// (blieben sonst als Geister-Zeile mit totem ✏️ stehen) – mit Grabstein fuer die Cloud.
+function _deleteLinkedScans(kostenId) {
+  (state.gescannteRechnungen || []).filter(r => String(r.kostenId) === String(kostenId))
+    .forEach(r => _trackDeletion(r.id, 'gescannteRechnungen'));
+  state.gescannteRechnungen = (state.gescannteRechnungen || []).filter(r => String(r.kostenId) !== String(kostenId));
+}
+
 async function deleteKosten(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
+  _deleteLinkedScans(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); renderKosten(); renderBudget(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
@@ -7874,6 +7890,7 @@ async function deleteDrilldownKosten(id, katName) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
+  _deleteLinkedScans(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save();
   renderKosten();
@@ -9346,7 +9363,10 @@ function saveTask() {
 function _syncTaskNotiz(task) {
   const existing = state.notizen.find(n => n.__taskId === task.id);
   if (!task.notiz) {
-    if (existing) state.notizen = state.notizen.filter(n => n.__taskId !== task.id);
+    if (existing) {
+      _trackDeletion(existing.id, 'notizen');   // sonst kam die Notiz aus der Cloud zurueck
+      state.notizen = state.notizen.filter(n => n.__taskId !== task.id);
+    }
     return;
   }
   const noteTitle = `📋 ${task.name}${task.person ? ' · ' + task.person : ''}`;
@@ -9404,8 +9424,9 @@ async function deleteTask(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Aufgabe löschen?'))) return;
   _trackDeletion(id, 'aufgaben');
-  // Remove synced notiz
-  state.notizen = state.notizen.filter(n => n.__taskId !== id);
+  // Verknuepfte Auto-Notiz mit Grabstein entfernen (kam sonst aus der Cloud zurueck)
+  state.notizen.filter(n => String(n.__taskId) === String(id)).forEach(n => _trackDeletion(n.id, 'notizen'));
+  state.notizen = state.notizen.filter(n => String(n.__taskId) !== String(id));
   state.aufgaben = state.aufgaben.filter(t => String(t.id) !== String(id));
   save(); renderTasks(); showToast('🗑 Aufgabe gelöscht', 'success');
 }
@@ -10038,7 +10059,12 @@ async function uploadDokument(input) {
     if (pct) pct.textContent  = Math.round((i / files.length) * 90) + '%';
 
     // Compress images before upload
-    if (isImage) file = await compressImage(file, 1600, 0.82);
+    // compressImage liefert { dataUrl, mediaType } – daraus eine echte Bild-Datei machen.
+    // Frueher wurde das Objekt selbst hochgeladen ("[object Object]", Groesse "NaN MB").
+    if (isImage) {
+      const c = await compressImage(file, 1600, 0.82);
+      if (c && c.dataUrl) file = await (await fetch(c.dataUrl)).blob();
+    }
 
     // Upload to Supabase Storage
     const ext      = files[i].name.split('.').pop();
@@ -10118,6 +10144,7 @@ async function deleteDokument(id) {
   if (d?.storage) {
     await supa.storage.from('dokumente').remove([d.storage]);
   }
+  _trackDeletion(id, 'dateien');   // sonst kam das Dokument aus der Cloud zurueck
   state.dateien = (state.dateien||[]).filter(d => String(d.id) !== String(id));
   save(); renderDokumente();
   showToast('🗑 Dokument gelöscht', 'success');
@@ -12503,6 +12530,8 @@ function addEinsatz() {
   const editId = parseInt(document.getElementById('einsatz-edit-id')?.value) || null;
   const datum = document.getElementById('einsatz-datum').value;
   if (!datum) { showToast('Bitte ein Datum wählen', 'warning'); return; }
+  // Namen, die schon vorher eingeteilt waren (fuer _ensureHelfer unten)
+  const _vorher = new Set(((editId && state.helfereinsaetze.find(e => String(e.id) === String(editId))) || {}).zugewiesen || []);
   const item = {
     id: editId || Date.now(),
     _updatedAt: Date.now(),
@@ -12519,7 +12548,9 @@ function addEinsatz() {
     if (idx > -1) state.helfereinsaetze[idx] = { ...state.helfereinsaetze[idx], ...item };
   } else state.helfereinsaetze.push(item);
   // getippte/zugewiesene Namen dauerhaft als Helfer merken -> Schnellauswahl wächst
-  (_einsatzAssigned || []).forEach(_ensureHelfer);
+  // Nur NEU eingetragene Namen als Helfer merken – sonst kam ein bewusst aus "Meine Helfer"
+  // geloeschter Helfer beim naechsten Speichern eines alten Helfer-Tags zurueck.
+  (_einsatzAssigned || []).filter(n => !_vorher.has(n)).forEach(_ensureHelfer);
   save(); closeModal('modal-einsatz'); resetEinsatzModal();
   showToast(editId ? '✏️ Helfer-Tag aktualisiert' : '✅ Helfer-Tag gespeichert', 'success');
   renderHelfer();
@@ -15855,8 +15886,9 @@ async function deleteGescannteRechnung(id) {
   const _gr = (state.gescannteRechnungen||[]).find(x => String(x.id) === String(id));
   if (_gr && _gr.kostenId != null) {
     const _k = state.kosten.find(k => String(k.id) === String(_gr.kostenId));
-    if (_k) _k.aiScanned = false;
+    if (_k) { _k.aiScanned = false; _k._updatedAt = Date.now(); }
   }
+  _trackDeletion(id, 'gescannteRechnungen');   // sonst kam der Eintrag aus der Cloud zurueck
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');

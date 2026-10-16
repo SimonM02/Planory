@@ -371,6 +371,84 @@ await scenario('Namen mit Anführungszeichen bleiben in „Bezahlt von" und im K
   return p.join(' · ');
 });
 
+await scenario('Gescannte Rechnungen folgen der Ausgabe (Bearbeiten/Löschen) und bleiben gelöscht', async () => {
+  const r = await page.evaluate(async () => {
+    window.showConfirm = async () => true;
+    const kat = state.budgetKat[0].name;
+    state.kosten.push({ id: 9500001, datum: '2026-10-01', beschr: 'Fliesen Bad', kat, mwst: 20, netto: 100, betrag: 120, status: 'Bezahlt', anbieter: 'Fliesen Koch', aiScanned: true, _updatedAt: 1 });
+    state.gescannteRechnungen = [{ id: 9500002, kostenId: 9500001, datum: '2026-10-01', beschr: 'Fliesen Bad', anbieter: 'Fliesen Koch', kat, mwst: 20, netto: 100, brutto: 120, status: 'Bezahlt' }];
+    editKosten(9500001);
+    const b = document.getElementById('k-betrag'); b.value = '150'; b.dispatchEvent(new Event('input', { bubbles: true }));
+    await saveKosten();
+    const nachEdit = (state.gescannteRechnungen.find(x => x.id === 9500002) || {}).brutto;
+    await deleteKosten(9500001);
+    const nachLoeschen = state.gescannteRechnungen.filter(x => x.kostenId === 9500001).length;
+    const grab = !!(state._deletedIds || {})['9500002'];
+    // eigenstaendig geloeschte gescannte Rechnung bekommt einen Grabstein
+    state.gescannteRechnungen.push({ id: 9500003, kostenId: 0, datum: '2026-10-02', beschr: 'X', kat, mwst: 20, netto: 1, brutto: 1.2, status: 'Bezahlt' });
+    await deleteGescannteRechnung(9500003);
+    return { nachEdit, nachLoeschen, grab, grab2: !!(state._deletedIds || {})['9500003'] };
+  });
+  const p = [];
+  if (r.nachEdit !== 150) p.push(`Kopie zeigt nach Bearbeiten ${r.nachEdit} statt 150`);
+  if (r.nachLoeschen) p.push('Kopie bleibt nach Löschen der Ausgabe stehen');
+  if (!r.grab || !r.grab2) p.push('kein Lösch-Marker (kommt aus der Cloud zurück)');
+  return p.join(' · ');
+});
+await scenario('Gelöschte Aufgaben-Notiz und Dokumente bekommen einen Lösch-Marker', async () => {
+  const r = await page.evaluate(async () => {
+    window.showConfirm = async () => true;
+    state.aufgaben.push({ id: 9500010, name: 'Notiz-Test', prio: 'Mittel', status: 'Offen', datum: '', notiz: 'bitte anrufen' });
+    _syncTaskNotiz(state.aufgaben.find(t => t.id === 9500010));
+    const note = state.notizen.find(n => n.__taskId === 9500010);
+    await deleteTask(9500010);
+    state.dateien = state.dateien || [];
+    state.dateien.push({ id: 9500011, name: 'Plan.pdf', type: 'application/pdf', size: 1, kat: 'Bauplan', datum: '2026-10-01' });
+    await deleteDokument(9500011);
+    const del = state._deletedIds || {};
+    return { note: !!(note && del[String(note.id)]), doc: !!del['9500011'] };
+  });
+  const p = [];
+  if (!r.note) p.push('Aufgaben-Notiz ohne Lösch-Marker');
+  if (!r.doc) p.push('Dokument ohne Lösch-Marker');
+  return p.join(' · ');
+});
+await scenario('Gelöschter Helfer kommt beim Speichern eines alten Helfer-Tags nicht zurück', async () => {
+  const r = await page.evaluate(async () => {
+    window.showConfirm = async () => true;
+    state.helfer = [{ id: 9500020, name: 'Onkel Fritz', tel: '', notiz: '' }];
+    state.helfereinsaetze = [{ id: 9500021, datum: '2099-05-01', bedarf: 2, umfang: 'full', zugewiesen: ['Onkel Fritz'], stunden: {} }];
+    await deleteHelferPerson(9500020);
+    editEinsatz(9500021);
+    addEinsatz();
+    return state.helfer.some(h => h.name === 'Onkel Fritz');
+  });
+  return r ? 'gelöschter Helfer wieder in „Meine Helfer"' : '';
+});
+await scenario('Dokumente: Bilder werden als echte Bilddatei hochgeladen', async () => {
+  const r = await page.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 40; c.height = 30; c.getContext('2d').fillRect(0, 0, 40, 30);
+    const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+    const datei = new File([blob], 'plan.png', { type: 'image/png' });
+    let hochgeladen = null;
+    const altFrom = supa.storage.from;
+    supa.storage.from = () => ({ upload: async (p, f) => { hochgeladen = f; return { error: null }; }, getPublicUrl: () => ({ data: {} }) });
+    currentUser = { id: 'test-user' };
+    try {
+      const p = uploadDokument({ files: [datei], value: '' });
+      await new Promise(res => setTimeout(res, 150));
+      document.querySelector('#datei-kat-list button')?.click();
+      await p;
+    } finally { currentUser = null; supa.storage.from = altFrom; }
+    const d = (state.dateien || []).slice(-1)[0] || {};
+    return { istBlob: hochgeladen instanceof Blob, typ: hochgeladen && hochgeladen.type, size: d.size };
+  });
+  const p = [];
+  if (!r.istBlob) p.push('hochgeladen wurde kein Bild, sondern ein Objekt');
+  if (!(r.size > 0)) p.push(`gespeicherte Größe ungültig (${r.size})`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
