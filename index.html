@@ -798,7 +798,7 @@
 
   .wartung-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); margin-bottom: 8px; }
   .wartung-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-  .wartung-info { flex: 1; }
+  .wartung-info { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   .wartung-name { font-size: 0.89rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
   .wartung-desc { font-size: 0.77rem; color: var(--text3); }
   .wartung-next { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; margin-top: 4px; font-weight: 500; }
@@ -1448,7 +1448,7 @@
     flex-shrink: 0;
   }
 
-  .wartung-info { flex: 1; }
+  .wartung-info { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   .wartung-name { font-size: 0.94rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
   .wartung-desc { font-size: 0.8rem; color: var(--text2); }
   .wartung-next { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; margin-top: 5px; font-weight: 600; }
@@ -1675,6 +1675,15 @@
 
     /* Tighter main padding */
     .main { padding-left: 10px !important; padding-right: 10px !important; }
+    /* Zweispaltige Bereiche (Einstellungen, Startseite): Spalten nie breiter als der Bildschirm */
+    .two-col > * { min-width: 0; }
+    /* Wartung: oben Symbol + Text in voller Breite, darunter Intervall und Knoepfe */
+    .wartung-item { flex-wrap: wrap; }
+    .wartung-info { flex: 1 1 calc(100% - 64px); }
+    .wartung-interval { width: auto !important; flex: 1 1 auto; text-align: left !important; }
+    .wartung-item > div:last-child { flex-direction: row !important; align-items: center; }
+    /* Karten-Listen in Fenstern nicht nochmal in eine eigene Scroll-Box stecken */
+    .modal .mobile-cards { max-height: none !important; overflow: visible !important; }
 
     /* KI-panel buttons wrap */
     #ki-advisor-panel [style*="display:flex"] { flex-wrap: wrap; }
@@ -1756,6 +1765,16 @@
       padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--border);
     }
     .mobile-cards .action-btn { font-size: 1.1rem; padding: 6px 10px; }
+    /* Listen OHNE Knopf-Spalte: letzte Zelle ist ein normaler Wert (Betrag, Status …) */
+    .mobile-cards.no-actions tbody td:last-child {
+      justify-content: space-between; padding-top: 4px; margin-top: 0; border-top: none;
+    }
+    /* Summenzeile (z.B. "Gesamt Kredit") als hervorgehobene Karte */
+    .mobile-cards tr.mc-sum { background: var(--surface2); }
+    .mobile-cards tr.mc-sum td[colspan] {
+      text-align: left; padding: 0 0 8px 0; margin-bottom: 8px; font-size: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
     /* Leerer Zustand: keine Karten-Optik */
     .mobile-cards tbody td[colspan] {
       display: block; text-align: center; border: none;
@@ -2483,13 +2502,13 @@
             <span style="font-size:1.5rem;flex-shrink:0">🏠</span>
             <div><div style="font-weight:700;color:var(--text)">Neubau</div><div style="font-size:0.76rem;color:var(--text3)">Haus oder Wohnung neu bauen</div></div>
           </div>
-          <div onclick="selectObType('Umbau / Erweiterung',this)"
+          <div onclick="selectObType('Umbau',this)"
             style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:15px 16px;border:2px solid var(--border);cursor:pointer;transition:all 0.15s"
             onmouseover="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--border)'">
             <span style="font-size:1.5rem;flex-shrink:0">🔨</span>
             <div><div style="font-weight:700;color:var(--text)">Umbau / Erweiterung</div><div style="font-size:0.76rem;color:var(--text3)">Bestehendes erweitern oder umbauen</div></div>
           </div>
-          <div onclick="selectObType('Sanierung / Renovierung',this)"
+          <div onclick="selectObType('Sanierung',this)"
             style="display:flex;gap:14px;align-items:center;background:white;border-radius:12px;padding:15px 16px;border:2px solid var(--border);cursor:pointer;transition:all 0.15s"
             onmouseover="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ob-selected'))this.style.borderColor='var(--border)'">
             <span style="font-size:1.5rem;flex-shrink:0">🔧</span>
@@ -2839,14 +2858,14 @@
     </div>
 
     <div class="two-col">
-      <div class="table-wrap">
+      <div class="table-wrap mobile-cards no-actions">
         <div class="table-header"><div class="table-title">Letzte Ausgaben</div></div>
         <table>
           <thead><tr><th>Datum</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
           <tbody id="dash-recent-costs"></tbody>
         </table>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap mobile-cards no-actions">
         <div class="table-header"><div class="table-title">Offene Aufgaben</div></div>
         <table>
           <thead><tr><th>Aufgabe</th><th>Prio</th><th>Status</th></tr></thead>
@@ -3355,10 +3374,10 @@
             <div id="personen-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
             <div style="display:flex;gap:8px">
               <input type="text" id="new-person-name" placeholder="Name (z.B. Kredit, Eigenkapital, Bank)"
-                style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:7px 11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.845rem;outline:none"
+                style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:7px 11px;font-family:'Hanken Grotesk',sans-serif;font-size:0.845rem;outline:none"
                 onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
                 onkeydown="if(event.key==='Enter')addZahlungsPerson()">
-              <button class="btn btn-primary" onclick="addZahlungsPerson()" style="padding:7px 14px">+ Hinzufügen</button>
+              <button class="btn btn-primary" onclick="addZahlungsPerson()" style="padding:7px 14px;flex-shrink:0">+ Hinzufügen</button>
             </div>
             <div style="font-size:0.75rem;color:var(--text3);margin-top:8px">
               Beispiele: Kredit, Eigenkapital, Person 1, Person 2
@@ -3925,15 +3944,15 @@
 <!-- Meilenstein -->
 <!-- Budget Kategorie Drilldown -->
 <div class="modal-overlay" id="modal-budget-drilldown">
-  <div class="modal" style="width:660px">
+  <div class="modal" style="width:880px">
     <h3 id="drilldown-title">Kategorie – Buchungen</h3>
     <div id="drilldown-summary" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px"></div>
     <div style="height:8px;background:var(--surface3);border-radius:99px;overflow:hidden;margin-bottom:20px">
       <div id="drilldown-progress" style="height:100%;border-radius:99px;transition:width 0.4s"></div>
     </div>
-    <div class="table-wrap" style="margin-bottom:0;max-height:340px;overflow-y:auto">
+    <div class="table-wrap mobile-cards" style="margin-bottom:0;max-height:340px;overflow-y:auto">
       <table>
-        <thead><tr><th>Datum</th><th>Beschreibung</th><th>Anbieter</th><th>Netto</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Datum</th><th>Beschreibung</th><th>Anbieter</th><th class="hide-mobile">Netto</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
         <tbody id="drilldown-table"></tbody>
       </table>
     </div>
@@ -4003,8 +4022,8 @@
     <h3 id="tb-modal-title">Tagebucheintrag</h3>
     <input type="hidden" id="tb-edit-id">
     <div style="display:flex;gap:12px">
-      <div class="form-row" style="flex:1"><label>Datum</label><input type="date" id="tb-datum" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
-      <div class="form-row" style="flex:1"><label>bis (optional)</label><input type="date" id="tb-datum-bis"></div>
+      <div class="form-row" style="flex:1;min-width:0"><label>Datum</label><input type="date" id="tb-datum" style="min-width:0" onchange="try{_prefillDiaryHelfer()}catch(e){}"></div>
+      <div class="form-row" style="flex:1;min-width:0"><label>bis (optional)</label><input type="date" id="tb-datum-bis" style="min-width:0"></div>
     </div>
     <div class="form-row"><label>Titel</label><input type="text" id="tb-title" placeholder="z.B. Betonage Decke EG"></div>
     <div class="form-row"><label>Bericht</label><textarea id="tb-text" placeholder="Was wurde heute gemacht?"></textarea></div>
@@ -4814,6 +4833,7 @@ function loadProject(id, rerender = true) {
   currentProjectId = id;
   // Dedup before deep-copy so state and projects are both clean
   _deduplicateProject(proj);
+  try { _fixLabelValues(proj); } catch(e) {}   // alte Auswahl-Werte auch bei lokalem Laden reparieren
   // Deep-copy into state
   state = JSON.parse(JSON.stringify(proj));
   updateProjectHeader();
@@ -5465,6 +5485,11 @@ const TEXTE = {
   "Beginn": { en: "Start" },
   "Ende": { en: "End" },
   "Vergrößern": { en: "Zoom in" },
+  "Summe": { en: "Total" },
+  "Einsatztage": { en: "Days on site" },
+  "Stunden": { en: "Hours" },
+  "Ø Std./Tag": { en: "Avg h/day" },
+  "Anteil": { en: "Share" },
   "Verkleinern": { en: "Zoom out" },
   "Zurücksetzen": { en: "Reset" },
   "Noch keine Helfer-Tage geplant": { en: "No helper days planned yet" },
@@ -6344,8 +6369,8 @@ function _sweepPhrases(root) {
       if (!p) return NodeFilter.FILTER_REJECT;
       const tag = p.nodeName;
       if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
-      // Options DÜRFEN übersetzt werden: _sweepPhrases ändert nur den Anzeigetext
-      // (nodeValue), NIE den option.value – value-basierte Selects bleiben intakt.
+      // Options DÜRFEN übersetzt werden: nur der Anzeigetext aendert sich; der
+      // gespeicherte Wert bleibt deutsch (siehe Festschreiben unten).
       if (p.closest && (p.closest('[data-i18n]') || p.closest('[data-noi18n]'))) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -6354,7 +6379,14 @@ function _sweepPhrases(root) {
   while ((node = walker.nextNode())) {
     const raw = node.nodeValue;
     const key = raw.trim();
-    if (key && map[key]) node.nodeValue = raw.replace(key, map[key]);
+    if (key && map[key]) {
+      // Option OHNE eigenes value-Attribut: ihr Wert IST der Text. Vor dem Uebersetzen
+      // den deutschen Text als Wert festschreiben – sonst wird z.B. "Paid" statt
+      // "Bezahlt" bzw. "Other" statt "Sonstiges" gespeichert.
+      const par = node.parentNode;
+      if (par && par.nodeName === 'OPTION' && !par.hasAttribute('value')) par.value = key;
+      node.nodeValue = raw.replace(key, map[key]);
+    }
   }
   // Attribute (Platzhalter, Tooltips) ebenfalls uebersetzen – Voll-Treffer
   (root || document.body).querySelectorAll('[placeholder],[title]').forEach(el => {
@@ -6365,15 +6397,23 @@ function _sweepPhrases(root) {
   });
 }
 
+// Uebersetzt den ANZEIGE-Text von Auswahl-Optionen. Der gespeicherte Wert bleibt immer
+// gleich: Optionen OHNE eigenes value-Attribut bekommen ihren deutschen Text als Wert
+// festgeschrieben (sonst wuerde "Bezahlt" auf Englisch als "Paid" gespeichert).
+// Optionen MIT eigenem Wert (MwSt 0/10/20, "" fuer "Alle", Farben, Typ-Schluessel)
+// werden NIE angefasst – frueher wurden sie beim Start durch den Text ersetzt
+// (MwSt sprang beim Bearbeiten auf 20 %, "Alle Kategorien" filterte alles weg).
 function translateOptions(root) {
   (root || document).querySelectorAll('option').forEach(opt => {
-    let de = opt.dataset.deval;
+    let de = opt.dataset.detext;
     if (!de) {
       const cur = (opt.textContent || '').trim();
-      if (OPTIONEN[cur]) { de = cur; opt.dataset.deval = de; opt.value = de; }
+      if (!OPTIONEN[cur]) return;
+      de = cur;
+      opt.dataset.detext = de;
+      if (!opt.hasAttribute('value')) opt.value = de;   // nur implizite Werte festschreiben
     }
-    if (!de || !OPTIONEN[de]) return;
-    opt.value = de; // gespeicherter Wert bleibt deutsch
+    if (!OPTIONEN[de]) return;
     const tr = OPTIONEN[de][_lang];
     opt.textContent = (_lang !== 'de' && tr) ? tr : de;
   });
@@ -6381,8 +6421,9 @@ function translateOptions(root) {
 function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-  try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
+  // Erst Auswahl-Werte festschreiben, DANN Texte uebersetzen (sonst sind die Werte schon englisch)
   try { translateOptions(document); } catch(e) {}
+  try { _sweepPhrases(document.body); } catch(e) { /* Sweep ist optional */ }
 }
 function setLang(lang, save = true) {
   _lang = (lang === 'en') ? 'en' : 'de';
@@ -6412,8 +6453,12 @@ function openModal(id) {
   if (_m) { clearTimeout(_m._closeT); _m.classList.remove('closing'); }
   document.getElementById(id).classList.add('open');
   if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
+  // Leeres Datum nur bei NEUEN Eintraegen mit "heute" vorbelegen. Beim Bearbeiten nie –
+  // sonst bekam z.B. eine Aufgabe ohne Termin still das heutige Datum (und wurde ueberfaellig).
+  const _editField = _m && _m.querySelector('input[type="hidden"][id*="edit"]');
+  const _isEdit = !!((_editField && _editField.value) || (_m && _m._editId));
   const d = document.querySelector('#' + id + ' input[type="date"]');
-  if (d && !d.value) d.value = today();
+  if (d && !d.value && !_isEdit) d.value = today();
   if (id === 'modal-budget-kat') {
     renderBudgetPresets();
     // Neue Kategorie (kein Edit): Standardfarbe vorbelegen
@@ -6426,9 +6471,21 @@ function openModal(id) {
     refreshBezahltVonSelects();
   }
   if (id === 'modal-kosten' || id === 'modal-eigenleistung' || id === 'modal-rechnung-scan') {
-    const editId = document.getElementById('k-edit-id')?.value;
+    // Jedes Fenster hat seine eigene Bearbeiten-Kennung (Eigenleistung: el-edit-id). Frueher
+    // wurde immer k-edit-id geprueft -> beim Bearbeiten einer Eigenleistung wurde die
+    // Kategorie-Liste neu aufgebaut und die Kategorie sprang auf die erste.
+    const editId = document.getElementById(id === 'modal-eigenleistung' ? 'el-edit-id' : 'k-edit-id')?.value;
     if (!editId) { refreshAllKatSelects(_pendingKostenKat); _pendingKostenKat = ''; }
-    if (id === 'modal-kosten' && !editId) { _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){} }
+    if (id === 'modal-kosten' && !editId) {
+      _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){}
+      // Neue Ausgabe: MwSt/Status auf Standard – sonst "klebt" der Wert der zuletzt
+      // bearbeiteten Ausgabe (z.B. 0 %) und wird ungewollt uebernommen.
+      const _mw = document.getElementById('k-mwst'); if (_mw) _mw.value = '20';
+      const _st = document.getElementById('k-status'); if (_st) _st.selectedIndex = 0;
+      try { toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e){}
+      // Vorbefuellter Betrag (z.B. Angebot -> Rechnung): Netto/MwSt-Vorschau passend neu rechnen
+      try { if (document.getElementById('k-betrag')?.value) updateKostenNetto(); } catch(e){}
+    }
   }
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
@@ -6454,9 +6511,103 @@ function closeModal(id) {
   if (!el) return;
   if (!el.classList.contains('open')) { el.classList.remove('closing'); return; }
   el.classList.add('closing');
+  // Bearbeiten-Modus SOFORT beenden (sonst ueberschreibt das naechste "+ Neu" den alten Eintrag)
+  try { _resetEditMarkers(id); } catch(e) {}
   clearTimeout(el._closeT);
-  el._closeT = setTimeout(() => { el.classList.remove('open'); el.classList.remove('closing'); }, 190);
+  el._closeT = setTimeout(() => {
+    el.classList.remove('open'); el.classList.remove('closing');
+    // Restliche Felder erst nach der Ausblend-Animation leeren (kein sichtbares Flackern).
+    // Wird das Fenster vorher wieder geoeffnet (openModal loescht den Timer), bleibt alles.
+    try { _resetFormModal(id); } catch(e) {}
+  }, 190);
 }
+
+// Gespeicherten Wert in einer Auswahl waehlen. Fehlt die Option (Kategorie umbenannt/
+// geloescht, Status "Umgewandelt", eigener MwSt-Satz …), wird sie ergaenzt – sonst wuerde
+// "Bearbeiten → Speichern" ohne Aenderung still einen ANDEREN Wert speichern.
+function _selectValue(sel, value) {
+  if (!sel) return;
+  const v = value == null ? '' : String(value);
+  let opt = [...sel.options].find(o => o.value === v);
+  if (!opt && v !== '') { opt = new Option(v, v); opt.dataset.added = '1'; sel.add(opt); }
+  if (opt) opt.selected = true;
+}
+
+// ── Eingabefenster beim Schliessen zuruecksetzen ─────────────────────────────
+// Frueher blieb nach "Abbrechen" oder Tippen auf den Hintergrund oft der Bearbeiten-
+// Modus stehen: das naechste "+ Neu" ueberschrieb dann still den zuletzt bearbeiteten
+// Eintrag, oder alte Werte (Farbe, Status, Fotos, Plan) wanderten in den neuen Eintrag.
+// Jetzt kehrt jedes Eingabefenster beim Schliessen in seinen Ausgangszustand zurueck.
+// Wert = zusaetzliche Aufraeumarbeit fuer JS-Zustand ausserhalb der Formularfelder.
+const _FORM_MODALS = {
+  'modal-kosten':        () => { try { clearKostenBeleg(); } catch(e) {} },
+  'modal-eigenleistung': null,
+  'modal-angebot':       () => { try { resetAngModal(); } catch(e) {} },
+  'modal-zahlung':       null,
+  'modal-task':          null,
+  'modal-kontakt':       null,
+  'modal-tagebuch':      () => { const r = document.getElementById('tb-worker-rows'); if (r) r.innerHTML = ''; },
+  'modal-notiz':         null,
+  'modal-doku':          () => { dokuPendingPhotos = []; dokuPendingFiles = []; try { renderDokuPhotoPreviews(); } catch(e) {} },
+  'modal-wartung':       () => { try { resetWartungModal(); } catch(e) {} },
+  'modal-mangel':        () => { try { resetMgModal(); } catch(e) {} },
+  'modal-einsatz':       () => { try { resetEinsatzModal(); } catch(e) {} },
+  'modal-budget-kat':    () => { const w = document.getElementById('bk-presets-wrap'); if (w) w.style.display = ''; },
+  'modal-new-project':   null,
+  'modal-foto-info':     () => { pendingPhoto = null; pendingPhotoFile = null; },
+  'modal-foto-batch':    () => { fotoBatchFiles = []; },
+  'modal-grundriss-add': () => { _grPdfDoc = null; _grPdfPage = 1; const n = document.getElementById('gr-pdf-nav'); if (n) n.style.display = 'none'; },
+  'modal-grundriss-pin': () => { _grPinFotosPending = []; },
+  'modal-milestone':     null,
+  'modal-gantt':         () => { try { resetGanttModal(); } catch(e) {} },
+  'modal-helfer-person': null,
+};
+// Sofort beim Schliessen: alle Bearbeiten-Kennungen (versteckte Felder + JS-Merker) leeren
+function _resetEditMarkers(id) {
+  if (!(id in _FORM_MODALS)) return;
+  const m = document.getElementById(id);
+  if (!m) return;
+  // Achtung: bei versteckten Feldern aendert ".value =" auch defaultValue – darum
+  // ausdruecklich leeren (ein Zuruecksetzen auf defaultValue liesse die alte ID stehen).
+  m.querySelectorAll('input[type="hidden"]').forEach(h => { if (/edit|-id$/i.test(h.id)) { h.value = ''; h.removeAttribute('value'); } });
+  m._editId = null; m._next = null;
+  if (id === 'modal-kosten') _pendingAngebotId = null;   // abgebrochene Umwandlung nicht "mitnehmen"
+}
+// Nach dem Ausblenden: Felder auf die Ausgangswerte aus dem HTML, Titel zurueck
+function _resetFormModal(id) {
+  if (!(id in _FORM_MODALS)) return;
+  const m = document.getElementById(id);
+  if (!m || m.classList.contains('open')) return;
+  _resetEditMarkers(id);
+  m.querySelectorAll('input, select, textarea').forEach(el => {
+    try {
+      if (el.tagName === 'SELECT') {
+        el.querySelectorAll('option[data-added]').forEach(o => o.remove());   // nur fuer den bearbeiteten Eintrag ergaenzt
+        const def = [...el.options].findIndex(o => o.defaultSelected);
+        el.selectedIndex = def > -1 ? def : (el.options.length ? 0 : -1);
+      } else if (el.type === 'checkbox' || el.type === 'radio') el.checked = el.defaultChecked;
+      else if (el.type === 'file') { el.value = ''; delete el._compressed; }
+      else if (el.type === 'hidden') { /* Kennungen leert _resetEditMarkers; uebrige (z.B. Farbe) setzt openModal neu */ }
+      else el.value = el.defaultValue;
+    } catch(e) {}
+  });
+  delete m._pendingX; delete m._pendingY;
+  m.querySelectorAll('h3[data-orig-title]').forEach(h => { h.textContent = h.dataset.origTitle; });
+  const extra = _FORM_MODALS[id];
+  if (extra) { try { extra(); } catch(e) {} }
+}
+// Original-Titel der Fenster merken (Bearbeiten setzt z.B. "Eintrag bearbeiten")
+function _captureModalTitles() {
+  Object.keys(_FORM_MODALS).forEach(id => {
+    const h = document.querySelector('#' + id + ' h3');
+    if (h && !h.dataset.origTitle && h.children.length === 0) h.dataset.origTitle = h.textContent;
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _captureModalTitles);
+else _captureModalTitles();
+// Frueher von "Abbrechen" aufgerufen, aber nie definiert (JS-Fehler, Bearbeiten-Modus blieb)
+function resetDiaryModal() { _resetEditMarkers('modal-tagebuch'); }
+function resetNotizModal() { _resetEditMarkers('modal-notiz'); }
 
 // close on overlay click – klickt den Abbrechen-Button des Modals, damit
 // dessen Reset-Logik (edit-id-Felder, wartende Promises) immer laeuft.
@@ -7355,15 +7506,15 @@ function renderDashReminders() {
   if (!el) return;
   const _en = (_lang === 'en');
   const items = [];
-  const w = (state.wartungen || []).map(x => ({ x, d: _wartungNextDate(x) }))
+  const w = (state.wartungen || []).filter(x => !x.erledigt).map(x => ({ x, d: _wartungNextDate(x) }))
     .filter(o => o.d && !isNaN(o.d)).sort((a,b) => a.d - b.d)[0];
   if (w) items.push({ icon:'🔧', label:_en?'Next maintenance':'Nächste Wartung', name:w.x.name || (_en?'Maintenance':'Wartung'), date:w.d.toISOString().slice(0,10) });
   const z = (state.zahlungen || []).filter(x => x.status !== 'Bezahlt' && x.faellig)
     .sort((a,b) => new Date(a.faellig) - new Date(b.faellig))[0];
   if (z) items.push({ icon:'📅', label:_en?'Next payment':'Nächste Zahlung', name:(z.beschr||z.empfaenger||(_en?'Payment':'Zahlung')) + (z.betrag ? ' · '+fmt(z.betrag) : ''), date:z.faellig });
-  const ms = (state.meilensteine || []).filter(m => !m.done && m.datum)
+  const ms = (state.meilensteine || []).filter(m => !m.done && String(m.status || '').toLowerCase() !== 'erledigt' && m.datum)
     .sort((a,b) => new Date(a.datum) - new Date(b.datum))[0];
-  if (ms) items.push({ icon:'🏁', label:_en?'Next milestone':'Nächster Meilenstein', name:ms.name, date:ms.datum });
+  if (ms) items.push({ icon:'🏁', label:_en?'Next milestone':'Nächster Meilenstein', name:ms.name || ms.title || ms.titel || (_en?'Milestone':'Meilenstein'), date:ms.datum });
   if (!items.length) { el.innerHTML = ''; return; }
   el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
     <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">🔔 ${_en?'Due soon':'Demnächst fällig'}</div>
@@ -7428,23 +7579,27 @@ function renderDashboard() {
   } else {
     tbody.innerHTML = recent.map(k => `
       <tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
-        <td>${esc(k.beschr)}</td>
-        <td style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
+        <td data-title>${esc(k.beschr)}</td>
+        <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
       </tr>`).join('');
   }
 
   // open tasks
-  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt').slice(0, 5);
+  // Dringende zuerst (Prioritaet, dann Faelligkeit) – frueher die 5 aeltesten, neue dringende fehlten
+  const _po = { Hoch: 0, Mittel: 1, Niedrig: 2 };
+  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt')
+    .sort((a, b) => ((_po[a.prio] ?? 1) - (_po[b.prio] ?? 1)) || String(a.datum || '9999').localeCompare(String(b.datum || '9999')))
+    .slice(0, 5);
   const ttbody = document.getElementById('dash-tasks');
   if (openTasks.length === 0) {
     ttbody.innerHTML = '<tr><td colspan="3" style="color:var(--text3);text-align:center;padding:20px">Keine offenen Aufgaben</td></tr>';
   } else {
     ttbody.innerHTML = openTasks.map(t => `
       <tr>
-        <td>${t.name}${t.person?`<br><span style="font-size:0.7rem;color:var(--text3)">👤 ${t.person}</span>`:''}</td>
-        <td><span class="badge ${t.prio==='Hoch'?'badge-red':t.prio==='Mittel'?'badge-yellow':'badge-gray'}">${t.prio}</span></td>
-        <td><span class="badge badge-blue">${t.status}</span></td>
+        <td data-title>${esc(t.name)}${t.person?`<br><span style="font-size:0.7rem;color:var(--text3)">👤 ${esc(t.person)}</span>`:''}</td>
+        <td data-label="${tt('Priorität')}"><span class="badge ${t.prio==='Hoch'?'badge-red':t.prio==='Mittel'?'badge-yellow':'badge-gray'}">${esc(t.prio)}</span></td>
+        <td data-label="${tt('Status')}"><span class="badge badge-blue">${esc(t.status)}</span></td>
       </tr>`).join('');
   }
 }
@@ -7601,6 +7756,13 @@ async function saveKosten() {
   if (editId) {
     const idx = state.kosten.findIndex(k => String(k.id) === String(editId));
     if (idx > -1) state.kosten[idx] = item;
+    // Verknuepfte Eintraege in "Gescannte Rechnungen" mitfuehren (zeigten sonst alte Werte)
+    (state.gescannteRechnungen || []).forEach(r => {
+      if (String(r.kostenId) !== String(editId)) return;
+      Object.assign(r, { datum: item.datum, beschr: item.beschr, anbieter: item.anbieter, kat: item.kat, mwst: item.mwst,
+        netto: item.netto, brutto: item.betrag, status: item.status, scanUrl: item.scanUrl, scanPath: item.scanPath,
+        scanData: item.scanData, _updatedAt: Date.now() });
+    });
   } else {
     state.kosten.push(item);
   }
@@ -7635,9 +7797,9 @@ function editKosten(id) {
   document.getElementById('k-betrag').value  = k.betrag || '';
   document.getElementById('k-netto-input').value = k.netto ?? k.betrag ?? '';
   const mwstSel = document.getElementById('k-mwst');
-  Array.from(mwstSel.options).forEach(o => { if (o.value === String(k.mwst || 0)) o.selected = true; });
+  _selectValue(mwstSel, String(k.mwst || 0));
   const statusSel = document.getElementById('k-status');
-  Array.from(statusSel.options).forEach(o => { if (o.value === k.status) o.selected = true; });
+  _selectValue(statusSel, k.status);
   refreshBezahltVonSelects(k.bezahltVon || '');
   const bvSel = document.getElementById('k-bezahlt-von');
   if (bvSel) bvSel.value = k.bezahltVon || '';
@@ -7646,15 +7808,26 @@ function editKosten(id) {
   _kBeleg = k.scanUrl || k.scanData || null;
   _kBelegChanged = false;
   _showKBelegPreview(_kBeleg);
-  updateKostenBrutto();
+  // Brutto ist der gespeicherte Wert -> Netto daraus ableiten. Frueher wurde Brutto aus dem
+  // gerundeten Netto neu berechnet und verschob sich beim Speichern um 1 Cent (99,99 → 100,00).
+  updateKostenNetto();
   updateSkontoPreview('k');
   openModal('modal-kosten');
+}
+
+// Beim Loeschen einer Ausgabe die verknuepften "Gescannte Rechnungen" mit entfernen
+// (blieben sonst als Geister-Zeile mit totem ✏️ stehen) – mit Grabstein fuer die Cloud.
+function _deleteLinkedScans(kostenId) {
+  (state.gescannteRechnungen || []).filter(r => String(r.kostenId) === String(kostenId))
+    .forEach(r => _trackDeletion(r.id, 'gescannteRechnungen'));
+  state.gescannteRechnungen = (state.gescannteRechnungen || []).filter(r => String(r.kostenId) !== String(kostenId));
 }
 
 async function deleteKosten(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
+  _deleteLinkedScans(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); renderKosten(); renderBudget(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
@@ -7701,17 +7874,18 @@ function openBudgetDrilldown(katName) {
   } else {
     tbody.innerHTML = [...items].sort((a,b) => new Date(b.datum) - new Date(a.datum)).map(k => {
       const netto = k.netto ?? k.betrag;
+      // Am Handy als Karte (mobile-cards): Titel = Beschreibung, darunter Datum/Anbieter/Brutto/Status
       return `<tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.77rem">${fmtDate(k.datum)}</td>
-        <td style="font-weight:600">${k.beschr}${k.aiScanned?` <span class="badge badge-purple" style="font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg></span>`:''}</td>
-        <td style="font-size:0.82rem;color:var(--text2)">${k.anbieter||'–'}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
-        <td><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
-        <td style="display:flex;gap:4px">
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.77rem">${fmtDate(k.datum)}</td>
+        <td data-title style="font-weight:600">${esc(k.beschr)}${k.aiScanned?` <span class="badge badge-purple" style="font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg></span>`:''}</td>
+        <td data-label="${tt('Anbieter')}" style="font-size:0.82rem;color:var(--text2)">${esc(k.anbieter||'–')}</td>
+        <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
+        <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${esc(k.status)}</span></td>
+        <td><div style="display:flex;gap:4px;justify-content:flex-end">
           <button class="action-btn" title="Bearbeiten" onclick="closeModal('modal-budget-drilldown');editKosten(${k.id})">✏️</button>
           <button class="action-btn del" title="Löschen" onclick="deleteDrilldownKosten(${k.id},'${katName.replace(/'/g,"\\'")}')">🗑</button>
-        </td>
+        </div></td>
       </tr>`;
     }).join('');
   }
@@ -7723,6 +7897,7 @@ async function deleteDrilldownKosten(id, katName) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
+  _deleteLinkedScans(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save();
   renderKosten();
@@ -7772,7 +7947,7 @@ function editEigenleistung(id) {
   document.getElementById('el-von').value    = e.von    || '';
   document.getElementById('el-notiz').value  = e.notiz  || '';
   const kSel = document.getElementById('el-kat');
-  Array.from(kSel.options).forEach(o => { if (o.value === e.kat) o.selected = true; });
+  _selectValue(kSel, e.kat);
   if (document.getElementById('el-edit-id')) document.getElementById('el-edit-id').value = id;
   if (document.getElementById('el-modal-title')) document.getElementById('el-modal-title').textContent = 'Eigenleistung bearbeiten';
   openModal('modal-eigenleistung');
@@ -7813,7 +7988,10 @@ function renderKosten() {
   // Ausgaben table
   const tbody = document.getElementById('kosten-table');
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="icon">💶</div><p>Noch keine Ausgaben erfasst</p></div></td></tr>`;
+    // Bei aktiver Suche "Keine Treffer" statt "Noch keine Ausgaben" (wirkte, als waeren Daten weg)
+    tbody.innerHTML = (search && state.kosten.length)
+      ? `<tr><td colspan="8"><div class="empty"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div></td></tr>`
+      : `<tr><td colspan="8"><div class="empty"><div class="icon">💶</div><p>Noch keine Ausgaben erfasst</p></div></td></tr>`;
   } else {
     tbody.innerHTML = [...items].reverse().map(k => {
       const netto = k.netto ?? k.betrag;
@@ -7828,13 +8006,13 @@ function renderKosten() {
         else skontoBadge = `<span class="badge badge-gray" style="font-size:0.62rem;margin-left:4px" title="Skonto bis ${fmtDate(k.skontoBis)}">💰 ${k.skontoProz}%</span>`;
       }
       return `<tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
         <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${k.scanUrl||k.scanData}" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
-        <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
-        <td data-label="Status"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
+        <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
+        <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
           <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
           <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
@@ -7850,13 +8028,13 @@ function renderKosten() {
   } else {
     etbody.innerHTML = [...state.eigenleistungen].reverse().map(e => `
       <tr>
-        <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
+        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${e.kat}</span></td>
         <td data-title>
           ${e.beschr}
           ${e.notiz ? `<br><span style="font-size:0.75rem;color:var(--text3)">${e.notiz}</span>` : ''}
         </td>
-        <td data-label="Marktwert" style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
+        <td data-label="${tt('Marktwert')}" style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
         <td class="hide-mobile">${e.von || '–'}</td>
         <td style="display:flex;gap:4px">
           <button class="action-btn" onclick="editEigenleistung(${e.id})" title="Bearbeiten">✏️</button>
@@ -7962,7 +8140,18 @@ function addBudgetKat() {
 
   if (editId) {
     const idx = state.budgetKat.findIndex(k => String(k.id) === editId);
+    const altName = idx > -1 ? state.budgetKat[idx].name : null;
+    if (altName && altName !== name && state.budgetKat.some((k, i) => i !== idx && k.name === name)) {
+      showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return;
+    }
     if (idx > -1) state.budgetKat[idx] = { ...state.budgetKat[idx], name, budget, color: color || state.budgetKat[idx].color, _updatedAt: Date.now() };
+    // Umbenannt: alle Eintraege mitziehen – sonst fielen Ausgaben, Angebote, Zahlungen und
+    // Eigenleistungen aus der Kategorie heraus ("nicht zugeordnet").
+    if (altName && altName !== name) {
+      const now = Date.now();
+      ['kosten', 'eigenleistungen', 'angebote', 'zahlungen', 'gescannteRechnungen'].forEach(arr =>
+        (state[arr] || []).forEach(x => { if (x && x.kat === altName) { x.kat = name; x._updatedAt = now; } }));
+    }
   } else {
     if (state.budgetKat.find(k => k.name === name)) { showToast(`⚠️ Kategorie "${name}" existiert bereits`, 'error'); return; }
     state.budgetKat.push({ id: Date.now(), name, budget, color: color || BG_COLORS[state.budgetKat.length % BG_COLORS.length], _updatedAt: Date.now() });
@@ -8112,10 +8301,10 @@ function renderBudget() {
           </span>
           ${count > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${count} Buchungen – zum Öffnen klicken</div>` : `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">Noch keine Buchungen</div>`}
         </td>
-        <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
+        <td data-label="${tt('Geplant')}" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${share}%</span></td>
-        <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
-        <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
+        <td data-label="${tt('Ausgegeben')}" style="font-family:'JetBrains Mono',monospace">${fmt(spent)}</td>
+        <td data-label="${tt('Rest')}" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${rest>=0?'var(--success)':'var(--danger)'}">${fmt(rest)}</td>
         <td class="hide-mobile">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="flex:1;height:6px;background:var(--surface3);border-radius:99px;overflow:hidden;min-width:60px">
@@ -8134,10 +8323,10 @@ function renderBudget() {
     `<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
       <td></td>
       <td style="font-weight:800">∑ Gesamt</td>
-      <td data-label="Geplant" style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
+      <td data-label="${tt('Geplant')}" style="font-family:'JetBrains Mono',monospace;font-weight:800">${fmt(totalBudget)}</td>
       <td class="hide-mobile"><span class="badge badge-blue">100%</span></td>
-      <td data-label="Ausgegeben" style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
-      <td data-label="Rest" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
+      <td data-label="${tt('Ausgegeben')}" style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:800">${fmt(totalSpent)}</td>
+      <td data-label="${tt('Rest')}" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${totalRest>=0?'var(--success)':'var(--danger)'}">${fmt(totalRest)}</td>
       <td colspan="2" class="hide-mobile"><span class="badge ${totalPct>90?'badge-red':totalPct>70?'badge-yellow':'badge-green'}">${totalPct}%</span></td>
     </tr>`
   ].join('');
@@ -8869,7 +9058,7 @@ function addMilestone() {
   };
   if (editId) {
     const idx = state.meilensteine.findIndex(m => String(m.id) === String(editId));
-    if (idx > -1) state.meilensteine[idx] = item;
+    if (idx > -1) state.meilensteine[idx] = { ...state.meilensteine[idx], ...item, _updatedAt: Date.now() };   // Zeitplan-Felder (Abschnitt, Status, Erinnerung) behalten
   } else {
     state.meilensteine.push(item);
   }
@@ -9195,7 +9384,10 @@ function saveTask() {
 function _syncTaskNotiz(task) {
   const existing = state.notizen.find(n => n.__taskId === task.id);
   if (!task.notiz) {
-    if (existing) state.notizen = state.notizen.filter(n => n.__taskId !== task.id);
+    if (existing) {
+      _trackDeletion(existing.id, 'notizen');   // sonst kam die Notiz aus der Cloud zurueck
+      state.notizen = state.notizen.filter(n => n.__taskId !== task.id);
+    }
     return;
   }
   const noteTitle = `📋 ${task.name}${task.person ? ' · ' + task.person : ''}`;
@@ -9232,7 +9424,7 @@ function editTask(id) {
   const timeEl = document.getElementById('t-time');
   if (timeEl) { timeEl.value = t.time || ''; if (t.time) onTaskTimeChange(); }
   const pSel = document.getElementById('t-prio');
-  Array.from(pSel.options).forEach(o => { if (o.value === t.prio) o.selected = true; });
+  _selectValue(pSel, t.prio);
   if (document.getElementById('t-edit-id')) document.getElementById('t-edit-id').value = id;
   if (document.getElementById('t-modal-title')) document.getElementById('t-modal-title').textContent = 'Aufgabe bearbeiten';
   openModal('modal-task');
@@ -9253,8 +9445,9 @@ async function deleteTask(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Aufgabe löschen?'))) return;
   _trackDeletion(id, 'aufgaben');
-  // Remove synced notiz
-  state.notizen = state.notizen.filter(n => n.__taskId !== id);
+  // Verknuepfte Auto-Notiz mit Grabstein entfernen (kam sonst aus der Cloud zurueck)
+  state.notizen.filter(n => String(n.__taskId) === String(id)).forEach(n => _trackDeletion(n.id, 'notizen'));
+  state.notizen = state.notizen.filter(n => String(n.__taskId) !== String(id));
   state.aufgaben = state.aufgaben.filter(t => String(t.id) !== String(id));
   save(); renderTasks(); showToast('🗑 Aufgabe gelöscht', 'success');
 }
@@ -9315,7 +9508,7 @@ function renderTasks() {
     if (a.status === 'Erledigt' && b.status !== 'Erledigt') return 1;
     if (b.status === 'Erledigt' && a.status !== 'Erledigt') return -1;
     const po = {Hoch:0, Mittel:1, Niedrig:2};
-    const pd = (po[a.prio]||1) - (po[b.prio]||1);
+    const pd = (po[a.prio] ?? 1) - (po[b.prio] ?? 1);   // ?? statt || – sonst zaehlte 'Hoch' (0) wie 'Mittel'
     if (pd !== 0) return pd;
     if (a.datum && b.datum) return new Date(a.datum) - new Date(b.datum);
     if (a.datum) return -1;
@@ -9462,7 +9655,7 @@ function editDiary(id) {
   document.getElementById('tb-text').value   = e.text    || '';
   document.getElementById('tb-tags').value   = (e.tags||[]).join(', ');
   const wSel = document.getElementById('tb-weather');
-  Array.from(wSel.options).forEach(o => { if (o.value === e.weather) o.selected = true; });
+  _selectValue(wSel, e.weather);
   document.getElementById('tb-temp').value = e.temp != null ? e.temp : '';
   // Restore workers
   const container = document.getElementById('tb-worker-rows');
@@ -9639,7 +9832,7 @@ function renderDiarySummary() {
     </div>
 
     ${sorted.length > 0 ? `
-    <div class="table-wrap" style="margin-bottom:24px">
+    <div class="table-wrap mobile-cards no-actions" style="margin-bottom:24px">
       <div class="table-header"><div class="table-title">Stunden nach Arbeiter</div></div>
       <table>
         <thead><tr><th>Name</th><th>Einsatztage</th><th>Stunden gesamt</th><th>Ø Std./Tag</th><th>Anteil</th></tr></thead>
@@ -9648,18 +9841,18 @@ function renderDiarySummary() {
             const pct = totalAllHours > 0 ? (d.hours/totalAllHours*100).toFixed(1) : 0;
             const barW = Math.round(d.hours/Math.max(...sorted.map(x=>x[1].hours))*100);
             return `<tr>
-              <td><strong>${name}</strong></td>
-              <td style="font-family:'JetBrains Mono',monospace">${d.days} Tage</td>
-              <td>
-                <div style="display:flex;align-items:center;gap:10px">
+              <td data-title><strong>${esc(name)}</strong></td>
+              <td data-label="${tt('Einsatztage')}" style="font-family:'JetBrains Mono',monospace">${d.days} Tage</td>
+              <td data-label="${tt('Stunden')}">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:220px">
                   <div style="flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden">
                     <div style="width:${barW}%;height:100%;background:var(--accent);border-radius:99px"></div>
                   </div>
                   <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;white-space:nowrap">${d.hours.toFixed(1)} h</span>
                 </div>
               </td>
-              <td style="font-family:'JetBrains Mono',monospace">${(d.hours/d.days).toFixed(1)} h</td>
-              <td><span class="badge badge-yellow">${pct}%</span></td>
+              <td data-label="${tt('Ø Std./Tag')}" style="font-family:'JetBrains Mono',monospace">${(d.hours/d.days).toFixed(1)} h</td>
+              <td data-label="${tt('Anteil')}"><span class="badge badge-yellow">${pct}%</span></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -9672,7 +9865,7 @@ function renderDiarySummary() {
       <canvas id="diary-hours-chart" height="220"></canvas>
     </div>` : ''}
 
-    <div class="table-wrap">
+    <div class="table-wrap mobile-cards no-actions">
       <div class="table-header"><div class="table-title">Alle Einträge – Übersicht</div></div>
       <table>
         <thead><tr><th>Datum</th><th>Titel</th><th class="hide-mobile">Wetter</th><th class="hide-mobile">Arbeiter</th><th>Stunden</th></tr></thead>
@@ -9681,11 +9874,11 @@ function renderDiarySummary() {
             const ws = e.workers || [];
             const hrs = ws.reduce((s,w) => s+(w.hours||0), 0);
             return `<tr>
-              <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
-              <td>${e.title}</td>
-              <td class="hide-mobile">${e.weather}</td>
-              <td class="hide-mobile">${ws.length ? ws.map(w=>`<span class="badge badge-gray" style="margin:1px">${w.name}</span>`).join('') : '<span style="color:var(--text3)">–</span>'}</td>
-              <td style="font-family:'JetBrains Mono',monospace">${hrs > 0 ? hrs+'h' : '–'}</td>
+              <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
+              <td data-title>${esc(e.title || '')}</td>
+              <td class="hide-mobile">${esc(e.weather || '')}</td>
+              <td class="hide-mobile">${ws.length ? ws.map(w=>`<span class="badge badge-gray" style="margin:1px">${esc(w.name)}</span>`).join('') : '<span style="color:var(--text3)">–</span>'}</td>
+              <td data-label="${tt('Stunden')}" style="font-family:'JetBrains Mono',monospace">${hrs > 0 ? hrs+'h' : '–'}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -9760,7 +9953,7 @@ function editNotiz(id) {
   document.getElementById('n-text').value    = n.text    || '';
   document.getElementById('n-ergebnis').value = n.ergebnis || '';
   const cSel = document.getElementById('n-color');
-  Array.from(cSel.options).forEach(o => { if (o.value === n.color) o.selected = true; });
+  _selectValue(cSel, n.color);
   if (document.getElementById('n-edit-id')) document.getElementById('n-edit-id').value = id;
   if (document.getElementById('n-modal-title')) document.getElementById('n-modal-title').textContent = 'Notiz bearbeiten';
   openModal('modal-notiz');
@@ -9834,13 +10027,16 @@ function _pickDateiKat() {
     const allKats = [...budgetKats, ...defaults.filter(d => !budgetNames.has(d.name))];
 
     const list = document.getElementById('datei-kat-list');
-    list.innerHTML = allKats.map(k => `
-      <button onclick="closeModal('modal-datei-kat');_dateiKatResolve('${k.name.replace(/'/g,"\\'")}')"
+    // Namen ueber den Index uebergeben (nicht als Text im onclick) – sonst war eine Kategorie
+    // mit " im Namen nicht antippbar.
+    window._dateiKatListe = allKats.map(k => k.name);
+    list.innerHTML = allKats.map((k, i) => `
+      <button onclick="closeModal('modal-datei-kat');_dateiKatResolve(window._dateiKatListe[${i}])"
         style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;font-size:0.875rem;font-weight:600;color:var(--text);text-align:left;transition:all 0.15s;width:100%"
         onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
         <span style="font-size:1.2rem;width:28px;text-align:center">${k.icon}</span>
-        <span>${k.name}</span>
+        <span>${esc(k.name)}</span>
       </button>`).join('');
 
     window._dateiKatResolve = (name) => { _dateiKatReject = null; resolve(name); };
@@ -9884,7 +10080,12 @@ async function uploadDokument(input) {
     if (pct) pct.textContent  = Math.round((i / files.length) * 90) + '%';
 
     // Compress images before upload
-    if (isImage) file = await compressImage(file, 1600, 0.82);
+    // compressImage liefert { dataUrl, mediaType } – daraus eine echte Bild-Datei machen.
+    // Frueher wurde das Objekt selbst hochgeladen ("[object Object]", Groesse "NaN MB").
+    if (isImage) {
+      const c = await compressImage(file, 1600, 0.82);
+      if (c && c.dataUrl) file = await (await fetch(c.dataUrl)).blob();
+    }
 
     // Upload to Supabase Storage
     const ext      = files[i].name.split('.').pop();
@@ -9964,6 +10165,7 @@ async function deleteDokument(id) {
   if (d?.storage) {
     await supa.storage.from('dokumente').remove([d.storage]);
   }
+  _trackDeletion(id, 'dateien');   // sonst kam das Dokument aus der Cloud zurueck
   state.dateien = (state.dateien||[]).filter(d => String(d.id) !== String(id));
   save(); renderDokumente();
   showToast('🗑 Dokument gelöscht', 'success');
@@ -10034,9 +10236,9 @@ function editKontakt(id) {
   document.getElementById('c-mail').value  = k.mail   || '';
   document.getElementById('c-notiz').value = k.notiz  || '';
   const gSel = document.getElementById('c-gewerk');
-  Array.from(gSel.options).forEach(o => { if (o.value === k.gewerk) o.selected = true; });
+  _selectValue(gSel, k.gewerk);
   const sSel = document.getElementById('c-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === k.status) o.selected = true; });
+  _selectValue(sSel, k.status);
   if (document.getElementById('c-edit-id')) document.getElementById('c-edit-id').value = id;
   if (document.getElementById('c-modal-title')) document.getElementById('c-modal-title').textContent = 'Kontakt bearbeiten';
   openModal('modal-kontakt');
@@ -10064,10 +10266,10 @@ function renderKontakte() {
   tbody.innerHTML = state.kontakte.map(k => `
     <tr>
       <td data-title><strong>${esc(k.name)}</strong>${k.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(k.notiz)}</span>`:''}</td>
-      <td data-label="Gewerk"><span class="badge badge-gray">${esc(k.gewerk)}</span></td>
-      <td data-label="Telefon">${k.tel?`<a href="tel:${esc(k.tel)}" style="color:var(--accent);text-decoration:none">${esc(k.tel)}</a>`:'–'}</td>
-      <td data-label="E-Mail">${k.mail?`<a href="mailto:${esc(k.mail)}" style="color:var(--accent);text-decoration:none">${esc(k.mail)}</a>`:'–'}</td>
-      <td data-label="Status"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
+      <td data-label="${tt('Gewerk')}"><span class="badge badge-gray">${esc(k.gewerk)}</span></td>
+      <td data-label="${tt('Telefon')}">${k.tel?`<a href="tel:${esc(k.tel)}" style="color:var(--accent);text-decoration:none">${esc(k.tel)}</a>`:'–'}</td>
+      <td data-label="${tt('E-Mail')}">${k.mail?`<a href="mailto:${esc(k.mail)}" style="color:var(--accent);text-decoration:none">${esc(k.mail)}</a>`:'–'}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteKontakt(${k.id})">🗑</button>
@@ -10102,7 +10304,7 @@ function saveGanttItem() {
   };
   if (editId) {
     const idx = state.gantt.findIndex(g => String(g.id) === String(editId));
-    if (idx > -1) state.gantt[idx] = item;
+    if (idx > -1) state.gantt[idx] = { ...state.gantt[idx], ...item, _updatedAt: Date.now() };   // eingeklappt/Zeitstempel behalten
   } else {
     state.gantt.push(item);
   }
@@ -10487,7 +10689,11 @@ function refreshFotoKat(selectId, currentVal) {
   const cur = currentVal !== undefined ? currentVal : el.value;
   const existing = [...new Set([...(state.fotos||[]).map(f=>f.kat), ...(state.fotoAlben||[]).map(a=>a.kat)].filter(Boolean))];
   const all = [...new Set([...FOTO_KAT, ...existing])];
-  el.innerHTML = all.map(k => `<option value="${k}"${k===cur?' selected':''}>${k}</option>`).join('');
+  // Filter (foto-filter) braucht "Alle Kategorien" – ohne diese Option sprang der Filter
+  // still auf die erste Kategorie und Fotos anderer Kategorien wirkten verschwunden.
+  const alleTxt = (typeof _lang !== 'undefined' && _lang !== 'de' && OPTIONEN['Alle Kategorien']?.[_lang]) || 'Alle Kategorien';
+  const alle = selectId === 'foto-filter' ? `<option value=""${!cur ? ' selected' : ''}>${alleTxt}</option>` : '';
+  el.innerHTML = alle + all.map(k => `<option value="${esc(k)}"${k===cur?' selected':''}>${esc(k)}</option>`).join('');
 }
 
 let pendingPhoto     = null;
@@ -10637,6 +10843,10 @@ function openBatchPhotoModal(files, targetAlbumId) {
   } else {
     document.querySelector('#modal-foto-batch h3').textContent = '📸 Fotos hochladen';
   }
+  // Beim Hinzufuegen zu einem bestehenden Album wird keine Album-Beschreibung uebernommen ->
+  // Feld ausblenden statt Eingaben still zu verwerfen.
+  const _beschrRow = document.getElementById('fb-beschr')?.closest('.form-row');
+  if (_beschrRow) _beschrRow.style.display = targetAlbumId ? 'none' : '';
   openModal('modal-foto-batch');
 }
 
@@ -11176,9 +11386,12 @@ function renderFotos() {
   if (_fotoView === 'alben') {
     state.fotoAlben = state.fotoAlben || [];
     // Albums from fotoAlben
+    // Album zeigen, wenn das Album ODER eines seiner Fotos passt (Titel/Kategorie)
+    const _fotosVon = id => (state.fotos||[]).filter(f => f.albumId === id);
     let albums = [...state.fotoAlben].reverse().filter(a =>
-      (!filterKat || a.kat === filterKat) &&
-      (!search || (a.title||'').toLowerCase().includes(search) || (a.kat||'').toLowerCase().includes(search))
+      (!filterKat || a.kat === filterKat || _fotosVon(a.id).some(f => f.kat === filterKat)) &&
+      (!search || (a.title||'').toLowerCase().includes(search) || (a.kat||'').toLowerCase().includes(search) ||
+        _fotosVon(a.id).some(f => (f.title||'').toLowerCase().includes(search)))
     );
     // Legacy photos without albumId shown as individual virtual albums
     const legacyFotos = (state.fotos||[]).filter(f => !f.albumId &&
@@ -11187,7 +11400,9 @@ function renderFotos() {
     );
 
     if (albums.length === 0 && legacyFotos.length === 0) {
-      el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos – lade dein erstes Bild hoch!</p></div>`;
+      el.innerHTML = (search || filterKat) && ((state.fotos||[]).length || (state.fotoAlben||[]).length)
+        ? `<div class="empty" style="grid-column:1/-1"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div>`
+        : `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos – lade dein erstes Bild hoch!</p></div>`;
       return;
     }
 
@@ -11228,7 +11443,9 @@ function renderFotos() {
     (!search || (f.title||'').toLowerCase().includes(search))
   );
   if (allFotos.length === 0) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos vorhanden.</p></div>`;
+    el.innerHTML = (search || filterKat) && (state.fotos||[]).length
+      ? `<div class="empty" style="grid-column:1/-1"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div>`
+      : `<div class="empty" style="grid-column:1/-1"><div class="icon">📸</div><p>Noch keine Fotos vorhanden.</p></div>`;
     return;
   }
   el.innerHTML = [...allFotos].reverse().map(f => `
@@ -11858,7 +12075,7 @@ function savePinModal() {
   const grundrissId = parseInt(document.getElementById('gr-pin-grundriss-id').value);
   const pinId       = parseInt(document.getElementById('gr-pin-id').value) || null;
   const typ         = document.getElementById('gr-pin-typ').value;
-  const titel       = document.getElementById('gr-pin-titel').value.trim() || typ;
+  const titel       = document.getElementById('gr-pin-titel').value.trim();   // leer = Anzeige zeigt den Typ (folgt Typ-Aenderungen)
   const notiz       = document.getElementById('gr-pin-notiz').value.trim();
   const datum       = document.getElementById('gr-pin-datum').value || today();
   const modal       = document.getElementById('modal-grundriss-pin');
@@ -12045,7 +12262,12 @@ function addWartung() {
   };
   if (editId) {
     const idx = state.wartungen.findIndex(w => String(w.id) === String(editId));
-    if (idx > -1) state.wartungen[idx] = { ...state.wartungen[idx], ...item };
+    if (idx > -1) {
+      const alt = state.wartungen[idx];
+      // "erledigt" (einmalige Wartung) bleibt nur, solange Termin und Wiederholung gleich bleiben
+      item.erledigt = !!(alt.erledigt && !item.einheit && item.next === alt.next);
+      state.wartungen[idx] = { ...alt, ...item };
+    }
   } else {
     state.wartungen.push(item);
   }
@@ -12095,16 +12317,24 @@ function markWartungDone(id) {
   const w = (state.wartungen || []).find(w => String(w.id) === String(id));
   if (!w) return;
   w.last = today();
+  w._updatedAt = Date.now();
   // Wiederholend: nächsten Termin ab heute weiterstellen
   if (w.einheit && w.intervall) {
     w.next = getNextDate(today(), w.intervall, w.einheit).toISOString().slice(0,10);
+  } else {
+    // Einmalig: als erledigt markieren – blieb sonst fuer immer "ueberfaellig"
+    w.erledigt = true;
   }
   save(); renderWartung();
   showToast('✓ Erledigt – nächster Termin gesetzt', 'success');
 }
 
 function getNextDate(last, intervall, einheit) {
-  const d = new Date(last);
+  // Zu MITTAG Ortszeit rechnen: "YYYY-MM-DD" wird sonst als Mitternacht UTC gelesen, in
+  // Ortszeit verschoben und per toISOString zurueck nach UTC – ueber den Sommerzeit-
+  // Wechsel hinweg landete die naechste Wartung dann einen Tag zu frueh.
+  const _s = String(last || '');
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(_s) ? new Date(_s + 'T12:00:00') : new Date(last);
   if (einheit === 'Tage')    d.setDate(d.getDate() + intervall);
   if (einheit === 'Wochen')  d.setDate(d.getDate() + intervall * 7);
   if (einheit === 'Monate')  d.setMonth(d.getMonth() + intervall);
@@ -12176,7 +12406,9 @@ function renderWartung() {
   const list = document.getElementById('wartung-list');
 
   let overdue = 0, soon = 0, ok = 0;
+  // Erledigte einmalige Wartungen ans Ende
   const sorted = [...state.wartungen].sort((a, b) => {
+    if (!!a.erledigt !== !!b.erledigt) return a.erledigt ? 1 : -1;
     return getDaysUntil(_wartungNextDate(a))
          - getDaysUntil(_wartungNextDate(b));
   });
@@ -12194,7 +12426,8 @@ function renderWartung() {
     const nextDate = _wartungNextDate(w);
     const days     = getDaysUntil(nextDate);
     let statusClass, statusText;
-    if (days < 0)  { overdue++; statusClass = 'overdue'; statusText = `${Math.abs(days)} Tage überfällig`; }
+    if (w.erledigt) { ok++; statusClass = 'ok'; statusText = `✓ erledigt${w.last ? ' am ' + fmtDate(w.last) : ''}`; }
+    else if (days < 0)  { overdue++; statusClass = 'overdue'; statusText = `${Math.abs(days)} Tage überfällig`; }
     else if (days <= 30) { soon++;   statusClass = 'soon';    statusText = `in ${days} Tagen fällig`; }
     else                 { ok++;     statusClass = 'ok';      statusText = `in ${days} Tagen (${fmtDate(nextDate.toISOString().split('T')[0])})`; }
 
@@ -12210,7 +12443,7 @@ function renderWartung() {
         <div class="wartung-desc">${w.kat}${w.who ? ' · ' + w.who : ''}${w.kosten ? ' · ca. ' + fmt(w.kosten) : ''}</div>
         ${w.desc ? `<div style="font-size:0.78rem;color:var(--text3);margin-top:3px;line-height:1.4">${w.desc}</div>` : ''}
         <div class="wartung-next ${statusClass}">
-          ${days < 0 ? '🔴' : days <= 30 ? '🟡' : '🟢'} ${statusText}
+          ${w.erledigt ? '🟢' : days < 0 ? '🔴' : days <= 30 ? '🟡' : '🟢'} ${statusText}
           · Fällig am ${fmtDate(nextDate.toISOString().split('T')[0])}${w.last ? ' · zuletzt ' + fmtDate(w.last) : ''}
         </div>
       </div>
@@ -12345,6 +12578,8 @@ function addEinsatz() {
   const editId = parseInt(document.getElementById('einsatz-edit-id')?.value) || null;
   const datum = document.getElementById('einsatz-datum').value;
   if (!datum) { showToast('Bitte ein Datum wählen', 'warning'); return; }
+  // Namen, die schon vorher eingeteilt waren (fuer _ensureHelfer unten)
+  const _vorher = new Set(((editId && state.helfereinsaetze.find(e => String(e.id) === String(editId))) || {}).zugewiesen || []);
   const item = {
     id: editId || Date.now(),
     _updatedAt: Date.now(),
@@ -12361,7 +12596,9 @@ function addEinsatz() {
     if (idx > -1) state.helfereinsaetze[idx] = { ...state.helfereinsaetze[idx], ...item };
   } else state.helfereinsaetze.push(item);
   // getippte/zugewiesene Namen dauerhaft als Helfer merken -> Schnellauswahl wächst
-  (_einsatzAssigned || []).forEach(_ensureHelfer);
+  // Nur NEU eingetragene Namen als Helfer merken – sonst kam ein bewusst aus "Meine Helfer"
+  // geloeschter Helfer beim naechsten Speichern eines alten Helfer-Tags zurueck.
+  (_einsatzAssigned || []).filter(n => !_vorher.has(n)).forEach(_ensureHelfer);
   save(); closeModal('modal-einsatz'); resetEinsatzModal();
   showToast(editId ? '✏️ Helfer-Tag aktualisiert' : '✅ Helfer-Tag gespeichert', 'success');
   renderHelfer();
@@ -12675,10 +12912,12 @@ function buildProjectSnapshot() {
   // overdueWartungen
   const wartungen = state.wartungen || [];
   const overdueWartungen = wartungen.filter(w => {
+    if (w.erledigt) return false;
     const next = _wartungNextDate(w);
     return getDaysUntil(next) < 0;
   });
   const soonWartungen = wartungen.filter(w => {
+    if (w.erledigt) return false;
     const d = getDaysUntil(_wartungNextDate(w));
     return d >= 0 && d <= 30;
   });
@@ -12983,7 +13222,7 @@ function editProject(id) {
   document.getElementById('np-start').value   = p.settings?.start   || '';
   document.getElementById('np-end').value     = p.settings?.end     || '';
   const typeEl = document.getElementById('np-type');
-  Array.from(typeEl.options).forEach(o => { if (o.value === p.settings?.type) o.selected = true; });
+  _selectValue(typeEl, p.settings?.type);
   renderNewProjectColorPicker(p.settings?.color || '#ff9f1c');
   renderNewProjectModules(p.settings?.modules || {});
   openModal('modal-new-project');
@@ -13430,6 +13669,36 @@ function _reapplyPending(finalProjects, pending, localProjects, localDeleted, lo
   return finalProjects;
 }
 
+// ── Falsch gespeicherte Anzeige-Texte reparieren ──────────────────────────────
+// Ein Fehler in translateOptions (bis 10/2026) ersetzte die Werte mancher Auswahl-
+// felder durch ihren Anzeige-Text. Dadurch wurden z.B. "🏠 Neubau" statt "Neubau"
+// oder "🔥 Heizung" statt "Heizung" gespeichert. Hier werden solche Werte beim Laden
+// auf den richtigen Schluessel zurueckgesetzt. Liefert die Anzahl der Korrekturen.
+const _LABEL_FIX = {
+  typ:   { '🏠 Neubau': 'Neubau', '🔨 Umbau / Erweiterung': 'Umbau', '🔧 Sanierung / Renovierung': 'Sanierung', '📋 Sonstiges': 'Sonstiges',
+           'Umbau / Erweiterung': 'Umbau', 'Sanierung / Renovierung': 'Sanierung' },   // Langform aus der Ersteinrichtung
+  doku:  { '⚡ Elektro': 'Elektro', '💧 Wasser / Sanitär': 'Wasser', '🔥 Heizung / Gas': 'Heizung', '🏗️ Statik / Konstruktion': 'Statik', '📋 Sonstiges': 'Sonstiges' },
+  pin:   { '⚡ Elektro': 'Elektro', '💧 Wasser': 'Wasser', '🔥 Heizung': 'Heizung', '🔵 Gas': 'Gas', '🌀 Lüftung': 'Lüftung', '📡 Internet / TV': 'Internet/TV', '📌 Sonstiges': 'Sonstiges' },
+  farbe: { 'Standard (Weiß)': 'white', 'Gelb': '#fef9c3', 'Grün': '#dcfce7', 'Blau': '#dbeafe', 'Pink': '#fce7f3', 'Rot': '#fee2e2' },
+  phase: { 'Phase': 'phase', 'Aufgabe': 'task' },
+};
+function _fixLabelValues(proj) {
+  if (!proj) return 0;
+  let n = 0;
+  const now = Date.now();
+  const fix = (obj, key, map) => { const v = obj && obj[key]; if (typeof v === 'string' && map[v]) { obj[key] = map[v]; return true; } return false; };
+  if (proj.settings && fix(proj.settings, 'type', _LABEL_FIX.typ)) n++;
+  for (const d of (proj.dokumentation || [])) if (fix(d, 'typ', _LABEL_FIX.doku)) { d._updatedAt = now; n++; }
+  for (const g of (proj.grundrisse || [])) {
+    let changed = false;
+    for (const p of (g?.pins || [])) if (fix(p, 'typ', _LABEL_FIX.pin)) changed = true;
+    if (changed) { g._updatedAt = now; n++; }
+  }
+  for (const no of (proj.notizen || [])) if (fix(no, 'color', _LABEL_FIX.farbe)) { no._updatedAt = now; n++; }
+  for (const g of (proj.gantt || [])) if (fix(g, 'type', _LABEL_FIX.phase)) { g._updatedAt = now; n++; }
+  return n;
+}
+
 // ── Merge helpers ─────────────────────────────────────────────────────────────
 // Merge two item arrays by id.
 // If both versions have _updatedAt → newer wins entirely.
@@ -13616,12 +13885,12 @@ function startDemo() {
       { id: 3005, name: 'Parkettmuster auswählen',     status: 'Offen',     prio: 'Niedrig',  datum: '2025-12-01', notiz: 'Verantwortlich: Familie',   person: 'Familie' },
     ],
     meilensteine: [
-      { id: 4001, titel: 'Spatenstich',         datum: '2025-03-15', status: 'Erledigt',  beschr: 'Offizieller Baubeginn' },
-      { id: 4002, titel: 'Rohbau fertig',       datum: '2025-07-31', status: 'Erledigt',  beschr: 'Alle Wände gemauert, Decke betoniert' },
-      { id: 4003, titel: 'Dach dicht',          datum: '2025-09-15', status: 'In Arbeit', beschr: 'Dachstuhl steht, Eindeckung läuft' },
-      { id: 4004, titel: 'Rohinstallationen',   datum: '2025-11-30', status: 'Offen',     beschr: 'Elektro, Sanitär, Heizung roh fertig' },
-      { id: 4005, titel: 'Innenausbau fertig',  datum: '2026-05-31', status: 'Offen',     beschr: 'Böden, Fliesen, Malerarbeiten' },
-      { id: 4006, titel: 'Einzug',              datum: '2026-09-01', status: 'Offen',     beschr: 'Fertigstellung und Übergabe' },
+      { id: 4001, name: 'Spatenstich',         datum: '2025-03-15', status: 'erledigt', done: true,  beschr: 'Offizieller Baubeginn' },
+      { id: 4002, name: 'Rohbau fertig',       datum: '2025-07-31', status: 'erledigt', done: true,  beschr: 'Alle Wände gemauert, Decke betoniert' },
+      { id: 4003, name: 'Dach dicht',          datum: '2025-09-15', status: 'arbeit', beschr: 'Dachstuhl steht, Eindeckung läuft' },
+      { id: 4004, name: 'Rohinstallationen',   datum: '2025-11-30', status: 'offen',     beschr: 'Elektro, Sanitär, Heizung roh fertig' },
+      { id: 4005, name: 'Innenausbau fertig',  datum: '2026-05-31', status: 'offen',     beschr: 'Böden, Fliesen, Malerarbeiten' },
+      { id: 4006, name: 'Einzug',              datum: '2026-09-01', status: 'offen',     beschr: 'Fertigstellung und Übergabe' },
     ],
     kontakte: [
       { id: 5001, name: 'Baumeister Müller GmbH', rolle: 'Rohbau',    telefon: '+43 316 123456', email: 'office@mueller-bau.at',  notiz: 'Ansprechpartner: Ing. Müller' },
@@ -14109,6 +14378,10 @@ async function loadFromCloud() {
       _reapplyPending(finalProjects, _pendingLocal, projects, state && state._deletedIds,
                       _prevPid ?? state?.id, _lastCloudApplyTs || _sessionStartTs);
     } catch (e) { console.warn('[SYNC] Wiedereinsetzen fehlgeschlagen:', e?.message); }
+    // Falsch gespeicherte Anzeige-Texte (alter Auswahl-Fehler) reparieren – NACH dem
+    // Wiedereinsetzen, damit ungesicherte lokale Aenderungen nicht verdraengt werden.
+    let _labelFixes = 0;
+    try { finalProjects.forEach(p => { _labelFixes += _fixLabelValues(p); }); } catch (e) { console.warn('[FIX] Labels:', e?.message); }
 
     // ── Apply to app ───────────────────────────────────────────────
     projects = finalProjects;
@@ -14127,6 +14400,8 @@ async function loadFromCloud() {
     _baselineReady = true;
     for (const [k, e] of _pendingLocal) if (e.syncedAt && e.syncedAt < loadStartedAt) _pendingLocal.delete(k);
     _lastCloudApplyTs = loadStartedAt;
+    // Reparierte Werte merken + hochladen (save markiert sie als ungesichert)
+    if (_labelFixes > 0) { console.log('[FIX] ' + _labelFixes + ' Auswahl-Wert(e) repariert'); save(); }
     // Noch Ungesichertes (z.B. waehrend des Ladens eingetragen)? -> gleich hochladen
     if (_hasUnsyncedChanges()) { clearTimeout(syncTimeout); syncTimeout = setTimeout(syncToCloud, 300); }
 
@@ -14849,7 +15124,12 @@ async function saveAngebot() {
   if (!requireSub()) return;
   state.angebote = state.angebote || [];
   const editId = parseInt(document.getElementById('ang-edit-id').value) || null;
+  // Beim Bearbeiten alle Felder BEHALTEN, die das Formular nicht kennt (Anhang, konvertiert …).
+  // Frueher ging "konvertiert" verloren -> ein bereits umgewandeltes Angebot liess sich
+  // nach "Bearbeiten → Speichern" ein zweites Mal umwandeln (Budget doppelt belastet).
+  const existingAng = editId ? state.angebote.find(a => String(a.id) === String(editId)) : null;
   const item = {
+    ...(existingAng || {}),
     id:       editId || Date.now(),
     _updatedAt: Date.now(),
     beschr:   document.getElementById('ang-beschr').value || 'Angebot',
@@ -14861,10 +15141,6 @@ async function saveAngebot() {
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
-  // Bestehenden Anhang beim Bearbeiten BEHALTEN, wenn keine neue Datei gewaehlt
-  // wird (sonst wuerde er beim Speichern verschwinden).
-  const existingAng = editId ? state.angebote.find(a => String(a.id) === String(editId)) : null;
-  if (existingAng?.datei) item.datei = existingAng.datei;
   // Dateianhang – WICHTIG: grosse Roh-Base64-Blobs sprengen den lokalen
   // Speicher, wodurch das ganze Angebot nicht mehr gespeichert wird und
   // verschwindet. Daher: Bilder komprimieren, kleine PDFs inline behalten,
@@ -14916,9 +15192,9 @@ function editAngebot(id) {
   document.getElementById('ang-betrag').value   = a.betrag   || '';
   document.getElementById('ang-notiz').value    = a.notiz    || '';
   const katSel = document.getElementById('ang-kat');
-  Array.from(katSel.options).forEach(o => { if (o.value === a.kat) o.selected = true; });
+  _selectValue(katSel, a.kat);
   const sSel = document.getElementById('ang-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === a.status) o.selected = true; });
+  _selectValue(sSel, a.status);
   document.getElementById('ang-edit-id').value = id;
   document.getElementById('ang-modal-title').textContent = 'Angebot bearbeiten';
   document.getElementById('ang-to-rechnung-btn').style.display = a.status === 'Angenommen' ? '' : 'none';
@@ -14945,14 +15221,18 @@ function angebotZuRechnung() {
   const id = parseInt(document.getElementById('ang-edit-id').value);
   const a  = (state.angebote||[]).find(a => String(a.id) === String(id));
   if (!a) return;
-  if (a.konvertiert) {
+  // Status mitpruefen: aeltere Versionen haben "konvertiert" beim Bearbeiten geloescht,
+  // der Status "Umgewandelt" blieb aber stehen.
+  if (a.konvertiert || a.status === 'Umgewandelt') {
     showToast('⚠️ Dieses Angebot wurde bereits in eine Rechnung umgewandelt', 'error');
     return;
   }
   closeModal('modal-angebot');
   _pendingAngebotId = id;
-  // Pre-fill Kosten modal
-  refreshAllKatSelects(a.kat);
+  // Pre-fill Kosten modal. Kategorie ueber _pendingKostenKat vorgeben: openModal baut die
+  // Kategorie-Liste fuer eine neue Ausgabe neu auf – ein direktes refreshAllKatSelects()
+  // wurde dadurch ueberschrieben und die Ausgabe landete in der ERSTEN Kategorie.
+  _pendingKostenKat = a.kat || '';
   document.getElementById('k-beschr').value  = a.beschr;
   document.getElementById('k-anbieter').value = a.anbieter;
   document.getElementById('k-betrag').value  = a.betrag;
@@ -15145,7 +15425,10 @@ async function scanAngKI() {
     const ex = JSON.parse(m[0]);
     document.getElementById('ang-ki-beschr').value   = ex.beschr   || '';
     document.getElementById('ang-ki-anbieter').value = ex.anbieter || '';
-    document.getElementById('ang-ki-betrag').value   = ex.betrag   || '';
+    // Betrag ueber _parseBetrag: die KI liefert ihn oft als Text im deutschen Format.
+    // Ungeparst wurde "12.345,00" zu einem leeren Feld (0 €) und "15.000" zu 15 €.
+    const _b = _parseBetrag(ex.betrag);
+    document.getElementById('ang-ki-betrag').value   = _b > 0 ? _b : '';
     document.getElementById('ang-ki-datum').value    = ex.datum    || '';
     document.getElementById('ang-ki-gueltig').value  = ex.gueltig  || '';
     document.getElementById('ang-ki-notiz').value    = ex.notiz    || '';
@@ -15202,6 +15485,9 @@ function renderAngebote() {
   const tbody = document.getElementById('angebot-table');
   if (state.angebote.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Noch keine Angebote</p><button class="btn btn-primary" style="margin-top:12px" onclick="openNeuesAngebot()">+ Angebot</button></div></td></tr>`;
+    // Vergleich auch hier neu zeichnen – sonst blieb das zuletzt geloeschte Angebot
+    // (mit klickbarem ✏️/🗑) im Vergleich stehen.
+    if (_angView === 'vergleich') renderAngVergleich();
     return;
   }
 
@@ -15214,8 +15500,8 @@ function renderAngebote() {
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
       <td data-title><strong>${esc(a.beschr)}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(a.notiz)}</span>`:''}</td>
       <td class="hide-mobile" style="font-size:0.82rem">${a.anbieter||'–'}</td>
-      <td data-label="Betrag" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
-      <td data-label="Status"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
+      <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
         <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
@@ -15272,9 +15558,9 @@ function editZahlung(id) {
   document.getElementById('zp-bezahlt-datum').value = z.bezahltDatum || '';
   document.getElementById('zp-notiz').value         = z.notiz        || '';
   const katSel = document.getElementById('zp-kat');
-  Array.from(katSel.options).forEach(o => { if (o.value === z.kat) o.selected = true; });
+  _selectValue(katSel, z.kat);
   const sSel = document.getElementById('zp-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === z.status) o.selected = true; });
+  _selectValue(sSel, z.status);
   document.getElementById('zp-edit-id').value = id;
   document.getElementById('zp-modal-title').textContent = 'Zahlung bearbeiten';
   openModal('modal-zahlung');
@@ -15293,13 +15579,19 @@ function markZahlungBezahlt(id) {
   const z = (state.zahlungen||[]).find(z => String(z.id) === String(id));
   if (!z) return;
   z.status = 'Bezahlt'; z.bezahltDatum = today();
-  // Sync matching Kosten entry to "Bezahlt" if still Ausstehend
-  const match = (state.kosten||[]).find(k =>
+  // Passende offene Ausgabe mit auf "Bezahlt" setzen – aber NUR wenn eindeutig: gleicher
+  // Betrag UND gleicher Anbieter (ohne Anbieter: gleiche Kategorie) UND genau ein Treffer.
+  // Frueher reichte bei fehlendem Anbieter der Betrag -> eine fremde Rechnung (andere Firma,
+  // zufaellig gleicher Betrag) wurde still als bezahlt markiert.
+  const _norm = v => String(v || '').trim().toLowerCase();
+  const zA = _norm(z.anbieter);
+  const kandidaten = (state.kosten||[]).filter(k =>
     k.status === 'Ausstehend' &&
     Math.abs((parseFloat(k.betrag)||0) - (parseFloat(z.betrag)||0)) < 0.01 &&
-    (z.anbieter ? k.anbieter === z.anbieter : true)
+    (zA ? _norm(k.anbieter) === zA : (!!z.kat && k.kat === z.kat))
   );
-  if (match) { match.status = 'Bezahlt'; match.bezahltVon = z.bezahltVon || match.bezahltVon; }
+  const match = kandidaten.length === 1 ? kandidaten[0] : null;
+  if (match) { match.status = 'Bezahlt'; match.bezahltVon = z.bezahltVon || match.bezahltVon; match._updatedAt = Date.now(); }
   save(); renderZahlungsplan(); showToast('✅ Als bezahlt markiert', 'success');
 }
 
@@ -15433,11 +15725,11 @@ function editMangel(id) {
   document.getElementById('mg-behoben-datum').value = m.behobenDatum || '';
   document.getElementById('mg-zustaendig').value   = m.zustaendig   || '';
   const gSel = document.getElementById('mg-gewerk');
-  Array.from(gSel.options).forEach(o => { if (o.value === m.gewerk) o.selected = true; });
+  _selectValue(gSel, m.gewerk);
   const pSel = document.getElementById('mg-prio');
-  Array.from(pSel.options).forEach(o => { if (o.value === m.prio) o.selected = true; });
+  _selectValue(pSel, m.prio);
   const sSel = document.getElementById('mg-status');
-  Array.from(sSel.options).forEach(o => { if (o.value === m.status) o.selected = true; });
+  _selectValue(sSel, m.status);
   document.getElementById('mg-edit-id').value = id;
   document.getElementById('mg-modal-title').textContent = 'Mangel bearbeiten';
   // Show existing fotos in preview
@@ -15495,7 +15787,7 @@ function renderMaengel() {
     const po = { Hoch:0, Mittel:1, Niedrig:2 };
     if (a.status==='Behoben' && b.status!=='Behoben') return 1;
     if (b.status==='Behoben' && a.status!=='Behoben') return -1;
-    return (po[a.prio]||1) - (po[b.prio]||1);
+    return (po[a.prio] ?? 1) - (po[b.prio] ?? 1);   // ?? statt || – sonst zaehlte 'Hoch' (0) wie 'Mittel'
   }).map(m => `
     <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ${prioColor[m.prio]||'var(--border)'};border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);position:relative">
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px">
@@ -15565,16 +15857,16 @@ function renderGescannteRechnungen() {
 
   const items   = state.gescannteRechnungen;
   const search  = (document.getElementById('gr-search')?.value || '').toLowerCase();
-  const filterKat = document.getElementById('gr-filter-kat')?.value || '';
-
-  // Update kat filter options
+  // Kategorie-Filter ZUERST neu aufbauen, DANN lesen: gibt es die gewaehlte Kategorie nicht
+  // mehr (letzte Rechnung geloescht), faellt er auf "Alle" zurueck statt eine leere Liste zu zeigen.
   const katSel = document.getElementById('gr-filter-kat');
   if (katSel) {
     const kats = [...new Set(items.map(r => r.kat).filter(Boolean))];
     const cur  = katSel.value;
     katSel.innerHTML = `<option value="">Alle Kategorien</option>` +
-      kats.map(k => `<option value="${k}" ${k===cur?'selected':''}>${k}</option>`).join('');
+      kats.map(k => `<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(k)}</option>`).join('');
   }
+  const filterKat = katSel?.value || '';
 
   const filtered = items.filter(r =>
     (!search    || (r.beschr+r.anbieter+r.kat).toLowerCase().includes(search)) &&
@@ -15595,14 +15887,16 @@ function renderGescannteRechnungen() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="icon">${AI_SVG}</div><p>Noch keine gescannten Rechnungen.<br>Nutze den „Rechnung scannen" Button um loszulegen.</p></div></td></tr>`;
+    tbody.innerHTML = items.length
+      ? `<tr><td colspan="10"><div class="empty"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div></td></tr>`
+      : `<tr><td colspan="10"><div class="empty"><div class="icon">${AI_SVG}</div><p>Noch keine gescannten Rechnungen.<br>Nutze den „Rechnung scannen" Button um loszulegen.</p></div></td></tr>`;
     return;
   }
 
   tbody.innerHTML = [...filtered].reverse().map(r => {
     const mwstBetrag = (r.brutto||0) - (r.netto||0);
     return `<tr>
-      <td data-label="Datum" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
+      <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:nowrap">${fmtDate(r.datum)}</td>
       <td class="hide-mobile">
         ${(r.scanUrl || r.scanData)
           ? `<img src="${r.scanUrl || r.scanData}" alt="Scan" data-t="${esc(r.beschr||'')}"
@@ -15616,15 +15910,15 @@ function renderGescannteRechnungen() {
         <div style="font-weight:600;font-size:0.84rem">${esc(r.beschr)}</div>
         <span class="badge badge-purple" style="font-size:0.62rem;margin-top:2px"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>
       </td>
-      <td data-label="Anbieter" style="font-size:0.82rem;color:var(--text2)">${esc(r.anbieter||'–')}</td>
+      <td data-label="${tt('Anbieter')}" style="font-size:0.82rem;color:var(--text2)">${esc(r.anbieter||'–')}</td>
       <td class="hide-mobile"><span class="badge badge-gray">${esc(r.kat||'–')}</span></td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(r.netto||0)}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">
         ${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'}
         ${r.mwst > 0 ? `<span class="badge badge-yellow" style="font-size:0.6rem;margin-left:3px">${r.mwst}%</span>` : ''}
       </td>
-      <td data-label="Brutto" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
-      <td data-label="Status"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
+      <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(r.brutto||0)}</td>
+      <td data-label="${tt('Status')}"><span class="badge ${r.status==='Bezahlt'?'badge-green':r.status==='Ausstehend'?'badge-yellow':'badge-red'}">${r.status||'–'}</span></td>
       <td style="white-space:nowrap">
         ${r.scanUrl
           ? `<a href="${esc(r.scanUrl)}" target="_blank" rel="noopener noreferrer" class="action-btn" title="Original öffnen">🔗</a>`
@@ -15644,8 +15938,9 @@ async function deleteGescannteRechnung(id) {
   const _gr = (state.gescannteRechnungen||[]).find(x => String(x.id) === String(id));
   if (_gr && _gr.kostenId != null) {
     const _k = state.kosten.find(k => String(k.id) === String(_gr.kostenId));
-    if (_k) _k.aiScanned = false;
+    if (_k) { _k.aiScanned = false; _k._updatedAt = Date.now(); }
   }
+  _trackDeletion(id, 'gescannteRechnungen');   // sonst kam der Eintrag aus der Cloud zurueck
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');
@@ -15694,9 +15989,9 @@ function renderPersonenList() {
   el.innerHTML = state.zahlungspersonen.map(p => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:8px">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent-text);font-weight:700;font-size:0.82rem;flex-shrink:0">
-        ${p.name.charAt(0).toUpperCase()}
+        ${esc(p.name.charAt(0).toUpperCase())}
       </div>
-      <span style="flex:1;font-weight:600;font-size:0.875rem">${p.name}</span>
+      <span style="flex:1;font-weight:600;font-size:0.875rem">${esc(p.name)}</span>
       <button class="action-btn del" onclick="deleteZahlungsPerson(${p.id})">🗑</button>
     </div>`).join('');
 }
@@ -15705,7 +16000,7 @@ function refreshBezahltVonSelects(selectedVal = '') {
   state.zahlungspersonen = state.zahlungspersonen || [];
   const options = `<option value="">– Nicht zugewiesen –</option>` +
     state.zahlungspersonen.map(p =>
-      `<option value="${p.name}" ${p.name === selectedVal ? 'selected' : ''}>${p.name}</option>`
+      `<option value="${esc(p.name)}" ${p.name === selectedVal ? 'selected' : ''}>${esc(p.name)}</option>`
     ).join('');
   ['k-bezahlt-von','scan-bezahlt-von'].forEach(id => {
     const el = document.getElementById(id);
@@ -15790,12 +16085,12 @@ function renderKostenaufteilung() {
 
     <!-- Detail pro Person -->
     ${personData.map((p,i) => p.items.length > 0 ? `
-      <div class="table-wrap" style="margin-bottom:18px">
-        <div class="table-header">
+      <div class="table-wrap mobile-cards no-actions" style="margin-bottom:18px">
+        <div class="table-header" style="flex-wrap:wrap;gap:6px">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="width:28px;height:28px;border-radius:50%;background:${BG_COLORS[i%BG_COLORS.length]};display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.82rem">${p.name.charAt(0).toUpperCase()}</span>
             <div class="table-title">${p.name}</div>
-            <span class="badge badge-gray">${fmt(p.summe)}</span>
+            <span class="badge badge-gray" style="white-space:nowrap">${fmt(p.summe)}</span>
           </div>
           <span style="font-size:0.75rem;color:var(--text3)">${p.items.length} Buchungen · ${p.anteil}% des Gesamtbetrags</span>
         </div>
@@ -15804,22 +16099,22 @@ function renderKostenaufteilung() {
           <tbody>
             ${[...p.items].sort((a,b) => new Date(b.datum)-new Date(a.datum)).map(k => `
               <tr>
-                <td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
-                <td>${k.beschr}${k.anbieter?`<br><span style="font-size:0.72rem;color:var(--text3)">${k.anbieter}</span>`:''}</td>
-                <td><span class="badge badge-gray">${k.kat}</span></td>
-                <td style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
+                <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
+                <td data-title>${esc(k.beschr)}${k.anbieter?`<br><span style="font-size:0.72rem;color:var(--text3);font-weight:400">${esc(k.anbieter)}</span>`:''}</td>
+                <td data-label="${tt('Kategorie')}"><span class="badge badge-gray">${esc(k.kat)}</span></td>
+                <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
               </tr>`).join('')}
-            <tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
-              <td colspan="3" style="font-weight:800">Gesamt ${p.name}</td>
-              <td style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${BG_COLORS[i%BG_COLORS.length]}">${fmt(p.summe)}</td>
+            <tr class="mc-sum" style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
+              <td colspan="3" data-title style="font-weight:800">Gesamt ${esc(p.name)}</td>
+              <td data-label="${tt('Summe')}" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:${BG_COLORS[i%BG_COLORS.length]}">${fmt(p.summe)}</td>
             </tr>
           </tbody>
         </table>
       </div>` : '').join('')}
 
     ${unassigned.length > 0 ? `
-      <div class="table-wrap">
-        <div class="table-header">
+      <div class="table-wrap mobile-cards no-actions">
+        <div class="table-header" style="flex-wrap:wrap;gap:6px">
           <div class="table-title" style="color:var(--text3)">Nicht zugewiesen</div>
           <button class="btn btn-ghost" style="font-size:0.75rem" onclick="showPage('kosten')">In Kosten bearbeiten →</button>
         </div>
@@ -15828,10 +16123,10 @@ function renderKostenaufteilung() {
           <tbody>
             ${unassigned.slice(0,10).map(k => `
               <tr>
-                <td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
-                <td>${esc(k.beschr)}</td>
-                <td><span class="badge badge-gray">${k.kat}</span></td>
-                <td style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
+                <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(k.datum)}</td>
+                <td data-title>${esc(k.beschr)}</td>
+                <td data-label="${tt('Kategorie')}"><span class="badge badge-gray">${esc(k.kat)}</span></td>
+                <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace">${fmt(k.betrag)}</td>
               </tr>`).join('')}
             ${unassigned.length > 10 ? `<tr><td colspan="4" style="text-align:center;color:var(--text3);font-size:0.8rem;padding:10px">... und ${unassigned.length-10} weitere</td></tr>` : ''}
           </tbody>
@@ -16502,7 +16797,7 @@ async function scheduleAllReminders() {
   // ── Wartung (Push-Erinnerung, pro Wartung einstellbar)
   for (const w of (state.wartungen || [])) {
     const remind = (w.remind == null) ? '3' : String(w.remind); // Altbestand -> 3 Tage
-    if (remind === 'aus') continue;
+    if (remind === 'aus' || w.erledigt) continue;
     const nd = _wartungNextDate(w);
     if (!nd || isNaN(nd)) continue;
     const dstr = nd.toISOString().slice(0, 10);
