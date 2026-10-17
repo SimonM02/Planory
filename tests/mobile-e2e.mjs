@@ -957,6 +957,89 @@ await scenario('Englisch: Buch-Fenster übersetzt', async () => {
   return p.join(' · ');
 });
 
+await scenario('iPad/Handy quer: offenes Fenster liegt über der Seitenleiste (kein Seitenwechsel darunter)', async () => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  try {
+    await page.waitForTimeout(150);
+    const r = await page.evaluate(async () => {
+      openModal('modal-kosten'); await __warte(250);
+      const nav = [...document.querySelectorAll('.sidebar .nav-item')].find(n => n.offsetParent && n.getBoundingClientRect().width > 0);
+      if (!nav) return { keinNav: true };
+      const b = nav.getBoundingClientRect();
+      const el = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      const getroffen = el && el.closest('.nav-item') ? 'Menüpunkt' : (el && el.closest('.modal-overlay') ? 'Fenster' : (el && el.tagName));
+      closeModal('modal-kosten'); await __warte(250);
+      return { getroffen };
+    });
+    if (r.keinNav) return 'keine Seitenleiste sichtbar (Test-Annahme)';
+    return r.getroffen === 'Fenster' ? '' : `Tippen auf die Seitenleiste trifft „${r.getroffen}" – Fenster bliebe über der neuen Seite`;
+  } finally { await page.setViewportSize({ width: 390, height: 844 }); }
+});
+await scenario('iPhone-Fotoauswahl im Fenster zählt als Eingabe (☰ fragt vor dem Verwerfen)', async () => {
+  const r = await page.evaluate(async () => {
+    const alt = _nativePickImageFiles;
+    _nativePickImageFiles = async () => [new File([new Uint8Array([255, 216, 255])], 'mangel.jpg', { type: 'image/jpeg' })];
+    try {
+      openModal('modal-mangel'); await __warte(50);
+      let erhalten = 0;
+      await pickPhotosOrFile('mg-photo-input', inp => { erhalten = inp.files.length; });
+      return { erhalten, dirty: !!document.getElementById('modal-mangel')._dirty };
+    } finally { _nativePickImageFiles = alt; closeModal('modal-mangel'); await __warte(250); }
+  });
+  return r.dirty ? '' : `Foto übernommen (${r.erhalten}), aber nicht als Eingabe gemerkt – ☰ würde es ohne Rückfrage verwerfen`;
+});
+await scenario('Buch: langer Text über Seitenumbruch, viele Namen, Sonderzeichen, Dateiname', async () => {
+  if (!JSPDF) return '';
+  const r = await page.evaluate(async () => {
+    for (let i = 0; i < 50 && !window.jspdf; i++) await new Promise(res => setTimeout(res, 100));
+    if (!window.jspdf || typeof _baubuchPDF !== 'function') return { fehlt: true };
+    const lang = Array.from({ length: 700 }, (_, i) => `Satz${i} wurde betoniert.`).join(" ");
+    const namen = Array.from({ length: 43 }, (_, i) => 'Helfer' + String(i).padStart(2, '0'));
+    const bak = { tb: state.tagebuch, f: state.fotos, a: state.fotoAlben, h: state.helfereinsaetze };
+    state.tagebuch = [{ id: 1, datum: '2026-06-01', title: 'Kurzer Tag', text: 'Kurz.', workers: [] },
+                      { id: 2, datum: '2026-06-02', title: 'Langer Tag', text: lang, workers: [{ name: 'Željko Šimić', hours: 3 }, { name: 'Kovačević', hours: 2 }] },
+                      { id: 3, datum: '2026-06-03', title: 'Viele Helfer', text: '', workers: namen.map(n => ({ name: n, hours: 1 })) }];
+    state.fotos = []; state.fotoAlben = []; state.helfereinsaetze = [];
+    try {
+      const erg = await _baubuchPDF(_baubuchDaten({ titel: 'Test' }), { format: 'fotobuch', komprimieren: false });
+      const roh = erg.doc.output();
+      const groessen = [...roh.matchAll(/BT\s*\/F\d+ ([\d.]+) Tf((?:(?!\bET\b)[\s\S])*?)\(([^)]*Satz\d+[^)]*)\) Tj/g)].map(m => m[1]);   // je Textblock
+      return { groessen: [...new Set(groessen)], anzahlSatz: groessen.length,
+        // jeder Name steht im Tag („Mit dabei") UND auf der Dankesseite
+        fehlendeNamen: namen.filter(n => roh.split('(' + n).length - 1 + roh.split(' ' + n).length - 1 < 2).length,
+        kovacevic: roh.includes('Kovacevic'), utf16: /FEFF|\\376\\377/.test(roh),
+        datei: _pdfDateiname('Rechnungen-Ausgaben_' + 'Einfamilienhaus Musterhausen Zubau und Sanierung Familie Huber und noch mehr') };
+    } finally { state.tagebuch = bak.tb; state.fotos = bak.f; state.fotoAlben = bak.a; state.helfereinsaetze = bak.h; }
+  });
+  if (r.fehlt) return 'Buch-Funktion fehlt';
+  const p = [];
+  if (r.groessen.length !== 1 || r.groessen[0] !== '10.5') p.push('Text nach Seitenumbruch in anderer Schrift: ' + r.groessen.join('/'));
+  if (r.anzahlSatz < 10) p.push('Test-Annahme: zu wenig Textzeilen gefunden');
+  if (r.fehlendeNamen) p.push(`${r.fehlendeNamen} Namen fehlen auf der Dankesseite`);
+  if (!r.kovacevic) p.push('Sonderzeichen-Namen verstümmelt');
+  if (r.utf16) p.push('Text als UTF-16-Zeichensalat');
+  if (!/\.pdf$/.test(r.datei)) p.push('Dateiname ohne .pdf: ' + r.datei);
+  return p.join(' · ');
+});
+await scenario('PDF teilen scheitert in der App → ehrliche Meldung statt „gespeichert"', async () => {
+  if (!JSPDF) return '';
+  const r = await page.evaluate(async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF(); doc.text('x', 10, 10);
+    let gespeichert = false; doc.save = () => { gespeichert = true; };
+    const altCap = window.Capacitor;
+    window.Capacitor = { isNativePlatform: () => true, Plugins: {
+      Filesystem: { writeFile: async o => ({ uri: 'file:///c/' + o.path }), appendFile: async () => {} },
+      Share: { share: async () => { throw new Error('Error sharing item'); } } } };
+    try { return { ok: await _pdfAusgeben(doc, 'X.pdf', 'X'), gespeichert }; }
+    finally { window.Capacitor = altCap; }
+  });
+  const p = [];
+  if (r.ok) p.push('meldet Erfolg');
+  if (r.gespeichert) p.push('versucht Download, der in der App nicht funktioniert');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
