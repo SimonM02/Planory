@@ -5,14 +5,17 @@
   "dependencies": {
     "@capacitor/cli": "^8.4.0",
     "@capacitor/core": "^8.4.0",
+    "@capacitor/filesystem": "^8.1.5",
     "@capacitor/ios": "^8.4.0",
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.3",
     "@capacitor/status-bar": "^8.0.2",
     "stripe": "^14.0.0",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "jspdf": "^2.5.1",
     "sharp": "^0.35.0"
   }
 }

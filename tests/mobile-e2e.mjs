@@ -23,6 +23,9 @@ if (!chromium) { console.log('⏭  Playwright nicht installiert – Handy-Test �
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FILE = path.resolve(process.env.PLANORY_FILE || path.join(here, '..', 'index.html'));
 const HTML = readFileSync(FILE, 'utf8');
+// jsPDF (sonst vom CDN) lokal ausliefern, damit PDF-Tests offline laufen
+let JSPDF = null;
+try { JSPDF = readFileSync(path.join(here, '..', 'node_modules', 'jspdf', 'dist', 'jspdf.umd.min.js'), 'utf8'); } catch { /* PDF-Test wird uebersprungen */ }
 // Nicht als file:// oeffnen (startet eine leere Vorschau) – echte Adresse + Demo-Parameter
 const URL_DEMO = 'https://planory.test/index.html?demo=planory2025';
 
@@ -48,6 +51,7 @@ async function boot() {
     const u = r.request().url();
     if (u.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
     if (u.includes('supabase-js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+    if (JSPDF && u.includes('jspdf.umd.min.js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: JSPDF });
     return r.abort();
   });
   await page.goto(URL_DEMO, { waitUntil: 'domcontentloaded' });
@@ -102,6 +106,7 @@ async function scenario(name, fn) {
 }
 
 const { ctx, page, errors } = await boot();
+await page.evaluate(() => { window.__echtesConfirm = showConfirm; });   // manche Tests ersetzen die Rueckfrage
 
 // Zuerst (die Seite darf vorher noch nie geoeffnet worden sein):
 await scenario('Rechnungen: Einträge erscheinen schon beim ersten Öffnen', async () => {
@@ -776,6 +781,179 @@ await scenario('Englisch: „Neue Person" und Namensfeld sind übersetzt', async
   if (r.opt !== '➕ New person…') p.push(`Option „${r.opt}"`);
   if (r.ph !== 'Name of the new person') p.push(`Platzhalter „${r.ph}"`);
   if (r.de !== '➕ Neue Person…') p.push(`zurück auf Deutsch: „${r.de}"`);
+  return p.join(' · ');
+});
+
+// ── ☰ bei offenem Fenster · Bautagebuch-Buch · PDF teilen ──
+await scenario('☰ bei offenem Fenster: schließt es (mit Rückfrage, wenn etwas eingetippt wurde)', async () => {
+  const p = [];
+  await page.evaluate(() => { window.showConfirm = window.__echtesConfirm; closeMobileSidebar(); showPage('kosten'); openModal('modal-kosten'); });
+  await page.fill('#k-beschr', 'Getippt und verworfen');
+  // Im Demo-Modus lag das Banner ueber ☰ (Demo-Besucher kamen am Handy nicht ins Menue)
+  try { await page.click('#mobile-topbar button', { timeout: 3000 }); }
+  catch (e) { return '☰ ist verdeckt und lässt sich nicht antippen'; }
+  await page.waitForTimeout(350);
+  let r = await page.evaluate(() => ({ frage: document.getElementById('modal-app-confirm').classList.contains('open'),
+    menue: document.querySelector('.sidebar').classList.contains('mobile-open') }));
+  if (!r.frage) p.push('keine Rückfrage trotz Eingabe');
+  if (r.menue) p.push('Menü öffnete sich trotz offener Rückfrage');
+  if (r.frage) {
+    await page.click('#modal-app-confirm .modal-actions .btn-ghost');   // "Abbrechen" in der Rueckfrage
+    await page.waitForTimeout(350);
+    r = await page.evaluate(() => ({ fenster: document.getElementById('modal-kosten').classList.contains('open'),
+      wert: document.getElementById('k-beschr').value, menue: document.querySelector('.sidebar').classList.contains('mobile-open') }));
+    if (!r.fenster || r.wert !== 'Getippt und verworfen' || r.menue) p.push('„Abbrechen" in der Rückfrage: Fenster/Eingabe nicht erhalten');
+    await page.click('#mobile-topbar button');
+    await page.waitForTimeout(350);
+    await page.click('#ac-ok-btn');   // "Verwerfen"
+    await page.waitForTimeout(400);
+    r = await page.evaluate(() => ({ fenster: document.getElementById('modal-kosten').classList.contains('open'),
+      menue: document.querySelector('.sidebar').classList.contains('mobile-open'),
+      gespeichert: state.kosten.some(k => k.beschr === 'Getippt und verworfen') }));
+    if (r.fenster) p.push('nach „Verwerfen" bleibt das Fenster offen');
+    if (!r.menue) p.push('nach „Verwerfen" öffnet sich das Menü nicht');
+    if (r.gespeichert) p.push('verworfene Eingabe wurde gespeichert');
+  }
+  // ohne Eingabe: sofort schliessen
+  await page.evaluate(() => { closeMobileSidebar(); openModal('modal-kosten'); });
+  await page.waitForTimeout(100);
+  await page.click('#mobile-topbar button');
+  await page.waitForTimeout(350);
+  r = await page.evaluate(() => ({ frage: document.getElementById('modal-app-confirm').classList.contains('open'),
+    fenster: document.getElementById('modal-kosten').classList.contains('open'), menue: document.querySelector('.sidebar').classList.contains('mobile-open') }));
+  if (r.frage || r.fenster || !r.menue) p.push(`ohne Eingabe: Rückfrage ${r.frage}, Fenster offen ${r.fenster}, Menü ${r.menue}`);
+  await page.evaluate(() => closeMobileSidebar());
+  return p.join(' · ');
+});
+
+const BUCH_STAND = `window.__buchStand = (bild) => {
+  window.__buchBak = { tb: state.tagebuch, f: state.fotos, a: state.fotoAlben, h: state.helfereinsaetze };
+  state.tagebuch = [
+    { id: 1, datum: '2026-03-14', title: 'Bodenplatte 🎉', text: 'Beton gegossen, alles trocken geblieben.', weather: '☀️ Sonnig', temp: 12,
+      workers: [{ name: 'Papa', hours: 8 }, { name: 'onkel sepp', hours: 4 }] },
+    { id: 2, datum: '2026-03-02', datumBis: '2026-03-04', title: 'Aushub', text: '', workers: [] },
+    { id: 3, datum: '2026-05-01', title: 'Dachstuhl', text: 'Zimmerer war da.', workers: [{ name: 'Papa', hours: 2 }] },
+  ];
+  state.fotoAlben = [{ id: 50, title: 'Garten', datum: '2026-04-10' }];
+  state.fotos = [
+    { id: 11, datum: '2026-03-03', url: bild('#8899aa', 800, 600), title: 'IMG_1234' },
+    { id: 12, datum: '2026-03-14', url: bild('#aa8866', 600, 800), title: 'Platte fertig' },
+    { id: 15, datum: '2026-03-14', url: bild('#66aa88', 800, 600), title: '' },
+    { id: 13, albumId: 50, url: bild('#88aa66', 800, 600), title: 'Rasen' },
+    { id: 14, datum: '2025-12-01', url: bild('#aa6688', 800, 600), title: 'Grundstück' },
+  ];
+  state.helfereinsaetze = [{ id: 70, datum: '2026-03-14', zugewiesen: ['Onkel Sepp', 'Tante Mia'] }];
+};
+window.__buchZurueck = () => { const b = window.__buchBak; state.tagebuch = b.tb; state.fotos = b.f; state.fotoAlben = b.a; state.helfereinsaetze = b.h; };
+window.__bild = (farbe, w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = farbe; g.fillRect(0, 0, w, h); return c.toDataURL('image/jpeg', 0.8); };`;
+await page.evaluate(BUCH_STAND);
+
+await scenario('Buch: Inhalte stimmen (Reihenfolge, Fotos je Tag, Namen ohne Stunden, Zeitraum)', async () => {
+  const r = await page.evaluate(() => {
+    if (typeof _baubuchDaten !== 'function') return { fehlt: true };
+    __buchStand(__bild);
+    try {
+      const d = _baubuchDaten({});
+      const d2 = _baubuchDaten({ von: '2026-03-10', bis: '2026-04-30' });
+      const maerz = d.kapitel.find(k => k.monat === '2026-03');
+      return {
+        monate: d.kapitel.map(k => k.monat), maerz: maerz ? maerz.eintraege.map(e => e.titel) : [],
+        aushubFotos: (maerz?.eintraege.find(e => e.titel === 'Aushub')?.fotos || []).map(f => f.id + ':' + f.titel),
+        plattenFotos: (maerz?.eintraege.find(e => /Bodenplatte/.test(e.titel))?.fotos || []).length,
+        namen: maerz?.eintraege.find(e => /Bodenplatte/.test(e.titel))?.namen || [],
+        wetter: maerz?.eintraege.find(e => /Bodenplatte/.test(e.titel))?.wetter,
+        april: (d.kapitel.find(k => k.monat === '2026-04')?.eintraege || []).map(e => e.typ + ':' + e.titel + ':' + e.fotos.length),
+        alleNamen: d.namen, stunden: /hours|\b\d+\s?h\b/.test(JSON.stringify(d)),
+        zeitraum: d2.kapitel.map(k => k.monat + '=' + k.eintraege.map(e => e.titel).join('+')),
+        anzahl: d.anzahl, titelbild: !!d.titelbild,
+      };
+    } finally { __buchZurueck(); }
+  });
+  if (r.fehlt) return 'Buch-Funktion fehlt';
+  const p = [];
+  if (r.monate.join() !== '2025-12,2026-03,2026-04,2026-05') p.push('Kapitel: ' + r.monate.join(', '));
+  if (r.maerz.join('|') !== 'Aushub|Bodenplatte 🎉') p.push('März-Reihenfolge: ' + r.maerz.join(' | '));
+  if (r.aushubFotos.join() !== '11:') p.push('Foto im Datumsbereich falsch zugeordnet/Dateiname als Titel: ' + r.aushubFotos.join());
+  if (r.plattenFotos !== 2) p.push(`Bodenplatte hat ${r.plattenFotos} Fotos`);
+  if (r.namen.join() !== 'Papa,onkel sepp,Tante Mia') p.push('Namen: ' + r.namen.join(', '));
+  if (r.wetter !== 'Sonnig, 12 °C') p.push('Wetter: ' + r.wetter);
+  if (r.april.join() !== 'bilder:Garten:1') p.push('Fotos ohne Eintrag: ' + r.april.join());
+  if (r.stunden) p.push('Stunden stehen im Buch');
+  if (r.zeitraum.join(' ; ') !== '2026-03=Bodenplatte 🎉 ; 2026-04=Garten') p.push('Zeitraum-Filter: ' + r.zeitraum.join(' ; '));
+  if (r.anzahl.fotos !== 5 || r.anzahl.tage !== 3 || !r.titelbild) p.push('Überblick: ' + JSON.stringify(r.anzahl));
+  return p.join(' · ');
+});
+await scenario('Buch: Fotobuch- und A4-PDF werden erstellt (richtige Größe, Text ohne Emojis)', async () => {
+  if (!JSPDF) return '';   // jsPDF nicht installiert – uebersprungen
+  const r = await page.evaluate(async () => {
+    if (typeof _baubuchPDF !== 'function') return { fehlt: true };
+    for (let i = 0; i < 50 && !window.jspdf; i++) await new Promise(res => setTimeout(res, 100));
+    if (!window.jspdf) return { keinPdf: true };
+    __buchStand(__bild);
+    try {
+      const d = _baubuchDaten({ titel: 'Haus Müller' });
+      const fb = await _baubuchPDF(d, { format: 'fotobuch', komprimieren: false });
+      const a4 = await _baubuchPDF(d, { format: 'a4', komprimieren: false });
+      const roh = fb.doc.output();
+      const g = x => [Math.round(x.doc.internal.pageSize.getWidth()), Math.round(x.doc.internal.pageSize.getHeight())].join('x');
+      return { fb: g(fb), a4: g(a4), seitenFb: fb.seiten, seitenA4: a4.seiten, fehler: fb.fehler + a4.fehler,
+        titel: roh.includes('(Bodenplatte)') || roh.includes('Bodenplatte'), dach: roh.includes('Dachstuhl'),
+        namen: roh.includes('Tante Mia'), stunden: /\(8h\)|8 h\b/.test(roh), bilder: (roh.match(/\/Subtype \/Image/g) || []).length,
+        emoji: /[\u{1F300}-\u{1FAFF}☀-➿]/u.test(roh) };
+    } finally { __buchZurueck(); }
+  });
+  if (r.fehlt) return 'Buch-PDF-Funktion fehlt';
+  if (r.keinPdf) return 'jsPDF wurde nicht geladen';
+  const p = [];
+  if (r.fb !== '216x216') p.push('Fotobuch-Größe ' + r.fb);
+  if (r.a4 !== '210x297') p.push('A4-Größe ' + r.a4);
+  if (r.seitenFb % 2 || r.seitenA4 % 2) p.push(`ungerade Seitenzahl (${r.seitenFb}/${r.seitenA4})`);
+  if (r.fehler) p.push(`${r.fehler} Fotos nicht geladen`);
+  if (!r.titel || !r.dach || !r.namen) p.push('Text fehlt im PDF');
+  if (r.stunden) p.push('Stunden im PDF');
+  if (r.bilder < 6) p.push(`nur ${r.bilder} Bilder im PDF`);
+  if (r.emoji) p.push('Emojis im PDF (Zeichensalat)');
+  return p.join(' · ');
+});
+await scenario('PDF ausgeben: iPhone-App teilt über das Teilen-Menü, sonst Download', async () => {
+  if (!JSPDF) return '';
+  const r = await page.evaluate(async () => {
+    if (typeof _pdfAusgeben !== 'function') return { fehlt: true };
+    for (let i = 0; i < 50 && !window.jspdf; i++) await new Promise(res => setTimeout(res, 100));
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF(); doc.text('Hallo', 10, 10);
+    const aufrufe = [];
+    const altCap = window.Capacitor;
+    window.Capacitor = { isNativePlatform: () => true, Plugins: {
+      Filesystem: { writeFile: async o => { aufrufe.push('write:' + o.path + ':' + o.directory + ':' + o.data.slice(0, 7)); return { uri: 'file:///cache/' + o.path }; },
+                    appendFile: async () => { aufrufe.push('append'); } },
+      Share: { share: async o => { aufrufe.push('share:' + o.url); } } } };
+    let ok1;
+    try { ok1 = await _pdfAusgeben(doc, 'Test.pdf', 'Test'); } finally { window.Capacitor = altCap; }
+    let gespeichert = '';
+    doc.save = n => { gespeichert = n; };
+    const ok2 = await _pdfAusgeben(doc, 'Download.pdf', 'Download');
+    return { ok1, aufrufe, ok2, gespeichert };
+  });
+  if (r.fehlt) return 'Teilen-Funktion fehlt';
+  const p = [];
+  if (!r.ok1 || r.aufrufe[0] !== 'write:Test.pdf:CACHE:JVBERi0' || r.aufrufe[r.aufrufe.length - 1] !== 'share:file:///cache/Test.pdf') p.push('App: ' + r.aufrufe.join(' → '));
+  if (!r.ok2 || r.gespeichert !== 'Download.pdf') p.push('Browser: kein Download');
+  return p.join(' · ');
+});
+await scenario('Englisch: Buch-Fenster übersetzt', async () => {
+  const r = await page.evaluate(async () => {
+    setLang('en', false);
+    openModal('modal-baubuch'); await __warte(60);
+    const out = { h: document.querySelector('#modal-baubuch h3').textContent.trim(),
+      opt: [...document.getElementById('bb-format').options].map(o => o.textContent.trim() + '=' + o.value).join('|') };
+    closeModal('modal-baubuch'); await __warte(300);
+    setLang('de', false);
+    return out;
+  });
+  const p = [];
+  if (r.h !== '📖 Create book') p.push('Titel „' + r.h + '"');
+  if (r.opt !== 'Photo book (21 × 21 cm, with bleed)=fotobuch|A4 for printing=a4') p.push('Format: ' + r.opt);
   return p.join(' · ');
 });
 

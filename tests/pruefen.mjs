@@ -403,6 +403,16 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (/\bawait\b/.test(f.slice(0, i))) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
     if (!f.includes('_belegVormerken(')) return 'Beleg wird nicht vorgemerkt (geht verloren, wenn die App gleich geschlossen wird)';
   });
+  check(`${label}: PDFs gehen über _pdfAusgeben (Teilen-Menü in der iPhone-App)`, () => {
+    const f = extractFn(src, '_pdfAusgeben');
+    if (!f) return '_pdfAusgeben fehlt';
+    const ohne = src.replace(f, '');
+    if (/\bdoc\.save\(/.test(ohne)) return 'doc.save( außerhalb von _pdfAusgeben – lädt in der iPhone-App nicht';
+  });
+  check(`${label}: ☰ schließt offene Fenster (sonst bleibt das Fenster über der neuen Seite)`, () => {
+    const f = extractFn(src, 'toggleMobileSidebar');
+    if (!f || !f.includes('_fensterVerlassen')) return 'toggleMobileSidebar verlässt offene Fenster nicht';
+  });
   check(`${label}: „Bezahlt von" erlaubt eine neue Person`, () => {
     const f = extractFn(src, 'refreshBezahltVonSelects');
     if (!f || !f.includes('BV_NEU')) return 'Option „Neue Person…" fehlt beim Neuaufbau der Auswahl';
