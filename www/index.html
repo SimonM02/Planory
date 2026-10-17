@@ -1567,6 +1567,9 @@
       padding: calc(72px + env(safe-area-inset-top)) 14px 24px !important;
       width: 100% !important;
     }
+    /* Demo-Banner: obere Leiste (☰) darunter schieben – sonst verdeckte das Banner das Menue */
+    body.demo-aktiv #mobile-topbar { top: var(--demo-h, 38px); }
+    body.demo-aktiv .main { padding-top: calc(72px + var(--demo-h, 38px) + env(safe-area-inset-top)) !important; }
     /* Hide the floating sidebar-show btn on mobile (topbar handles it) */
     #sidebar-show-btn { display: none !important; }
     /* Don't collapse via body class on mobile – use mobile-open instead */
@@ -1641,6 +1644,7 @@
       height: 100vh;
       box-shadow: 2px 0 12px rgba(30,60,120,0.06) !important;
       overflow-y: auto !important;
+      z-index: auto !important;   /* offene Fenster liegen darueber (sonst blieb ein Fenster beim Seitenwechsel stehen) */
     }
     /* Mobile Kopfzeile + Abdunkelung ausblenden – nicht mehr noetig */
     #mobile-topbar { display: none !important; }
@@ -3116,8 +3120,9 @@
   <div class="page" id="page-tagebuch">
     <div class="page-header">
       <div><h2 data-i18n="ph_tagebuch_t">Bautagebuch</h2><p data-i18n="ph_tagebuch_s">Tagesberichte, Arbeitszeiten &amp; Mannschaft</p></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="exportTagebuchPDF()" title="Als PDF exportieren">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="openModal('modal-baubuch')" title="Erinnerungs-Buch mit Fotos erstellen">📖 Buch</button>
         <button class="btn btn-primary" onclick="openModal('modal-tagebuch')">+ Eintrag</button>
       </div>
     </div>
@@ -4454,6 +4459,39 @@
   </div>
 </div>
 
+<!-- Baubuch (Bautagebuch als Erinnerungs-Buch) -->
+<div class="modal-overlay" id="modal-baubuch">
+  <div class="modal" style="width:520px">
+    <h3>📖 Buch erstellen</h3>
+    <p style="font-size:0.84rem;color:var(--text2);margin:-4px 0 14px;line-height:1.55">Dein Bautagebuch als Erinnerungs-Buch: Fotos, was gemacht wurde und wer dabei war – zum Anschauen in ein paar Jahren.</p>
+    <div class="form-row"><label>Titel</label><input type="text" id="bb-titel" maxlength="60" oninput="baubuchVorschau()"></div>
+    <div class="form-row"><label>Untertitel (optional)</label><input type="text" id="bb-untertitel" maxlength="80" placeholder="z.B. Adresse oder „Unser Hausbau“"></div>
+    <div style="display:flex;gap:12px">
+      <div class="form-row" style="flex:1;min-width:0"><label>Von (optional)</label><input type="date" id="bb-von" data-leer style="min-width:0" onchange="baubuchVorschau()"></div>
+      <div class="form-row" style="flex:1;min-width:0"><label>Bis (optional)</label><input type="date" id="bb-bis" data-leer style="min-width:0" onchange="baubuchVorschau()"></div>
+    </div>
+    <div class="form-row"><label>Format</label>
+      <select id="bb-format">
+        <option value="fotobuch">Fotobuch (21 × 21 cm, mit Druckrand)</option>
+        <option value="a4">A4 zum Ausdrucken</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:12px;font-size:0.86rem">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="bb-fotos" checked onchange="baubuchVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Fotos</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="bb-namen" checked style="width:18px;height:18px;accent-color:var(--accent)">Wer war dabei</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="bb-wetter" checked style="width:18px;height:18px;accent-color:var(--accent)">Wetter</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="bb-rest" checked onchange="baubuchVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Fotos ohne Eintrag</label>
+    </div>
+    <div id="bb-info" style="font-size:0.8rem;color:var(--text2);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.55;margin-bottom:6px"></div>
+    <div style="font-size:0.76rem;color:var(--text3);line-height:1.5">Ergebnis ist ein PDF: selbst ausdrucken, im Copyshop binden lassen oder bei einer Fotobuch-Druckerei hochladen, die PDF-Dateien annimmt (Format „Fotobuch“).</div>
+    <div id="bb-status" style="font-size:0.84rem;font-weight:700;color:var(--accent);margin-top:10px;min-height:1.2em"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-baubuch')">Abbrechen</button>
+      <button class="btn btn-primary" id="bb-start" onclick="baubuchErstellen()">📖 Buch erstellen</button>
+    </div>
+  </div>
+</div>
+
 <!-- Dokumentation Modal -->
 <div class="modal-overlay" id="modal-doku">
   <div class="modal" style="width:560px">
@@ -5636,6 +5674,23 @@ const TEXTE = {
   "🤖 KI einlesen": { en: "🤖 AI import" },
   "🤖 Neue Rechnung scannen": { en: "🤖 Scan new invoice" },
   "Bist du sicher?": { en: "Are you sure?" },
+  "Eingaben verwerfen?": { en: "Discard your input?" },
+  "📖 Buch erstellen": { en: "📖 Create book" },
+  "📖 Buch": { en: "📖 Book" },
+  "Erinnerungs-Buch mit Fotos erstellen": { en: "Create a keepsake book with photos" },
+  "Dein Bautagebuch als Erinnerungs-Buch: Fotos, was gemacht wurde und wer dabei war – zum Anschauen in ein paar Jahren.": { en: "Your site diary as a keepsake book: photos, what was done and who was there – to look back on in a few years." },
+  "Untertitel (optional)": { en: "Subtitle (optional)" },
+  "z.B. Adresse oder „Unser Hausbau“": { en: "e.g. address or “Our house build”" },
+  "Von (optional)": { en: "From (optional)" },
+  "Bis (optional)": { en: "To (optional)" },
+  "Format": { en: "Format" },
+  "Wer war dabei": { en: "Who was there" },
+  "Fotos ohne Eintrag": { en: "Photos without entry" },
+  "Ergebnis ist ein PDF: selbst ausdrucken, im Copyshop binden lassen oder bei einer Fotobuch-Druckerei hochladen, die PDF-Dateien annimmt (Format „Fotobuch“).": { en: "The result is a PDF: print it yourself, have it bound at a copy shop or upload it to a photo book printer that accepts PDF files (format “Photo book”)." },
+  "Im gewählten Zeitraum gibt es noch keine Einträge oder Fotos": { en: "There are no entries or photos in this period yet" },
+  "⚠️ „Von\" liegt nach „Bis\"": { en: "⚠️ “From” is after “To”" },
+  "📖 Buch erstellt": { en: "📖 Book created" },
+  "Deine Eingaben in diesem Fenster gehen verloren.": { en: "What you entered in this window will be lost." },
   "Eingabe": { en: "Input" },
   "Mein Plan": { en: "My plan" },
   "Mein Konto": { en: "My account" },
@@ -6295,6 +6350,8 @@ const OPTIONEN = {
   "Phase": { en: "Phase" },
   "– Nicht zugewiesen –": { en: "– Unassigned –" },
   "➕ Neue Person…": { en: "➕ New person…" },
+  "Fotobuch (21 × 21 cm, mit Druckrand)": { en: "Photo book (21 × 21 cm, with bleed)" },
+  "A4 zum Ausdrucken": { en: "A4 for printing" },
   "Ohne MwSt (0%)": { en: "No VAT (0%)" },
   "10% MwSt": { en: "10% VAT" },
   "20% MwSt": { en: "20% VAT" },
@@ -6458,6 +6515,8 @@ else _initI18n();
 
 function openModal(id) {
   const _m = document.getElementById(id);
+  // Merker "etwas eingetippt" (fuer ☰ bei offenem Fenster) – nur bei neu geoeffnetem Fenster zuruecksetzen
+  if (_m && !(_m.classList.contains('open') && !_m.classList.contains('closing'))) _m._dirty = false;
   if (_m) { clearTimeout(_m._closeT); _m.classList.remove('closing'); }
   document.getElementById(id).classList.add('open');
   if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
@@ -6466,7 +6525,7 @@ function openModal(id) {
   const _editField = _m && _m.querySelector('input[type="hidden"][id*="edit"]');
   const _isEdit = !!((_editField && _editField.value) || (_m && _m._editId));
   const d = document.querySelector('#' + id + ' input[type="date"]');
-  if (d && !d.value && !_isEdit) d.value = today();
+  if (d && !d.value && !_isEdit && !d.hasAttribute('data-leer')) d.value = today();
   if (id === 'modal-budget-kat') {
     renderBudgetPresets();
     // Neue Kategorie (kein Edit): Standardfarbe vorbelegen
@@ -6504,6 +6563,12 @@ function openModal(id) {
   }
   // Project modals
   if (id === 'modal-project-switcher') renderProjectSwitcher();
+  if (id === 'modal-baubuch') {
+    const t = document.getElementById('bb-titel'), u = document.getElementById('bb-untertitel');
+    if (t && !t.value) t.value = state.settings?.name || (_lang === 'en' ? 'Our build' : 'Unser Bauprojekt');
+    if (u && !u.value) u.value = state.settings?.address || '';
+    baubuchVorschau();
+  }
   if (id === 'modal-new-project') {
     const isEdit = !!document.getElementById('edit-proj-id').value;
     if (!isEdit) {
@@ -6569,6 +6634,7 @@ const _FORM_MODALS = {
   'modal-milestone':     null,
   'modal-gantt':         () => { try { resetGanttModal(); } catch(e) {} },
   'modal-helfer-person': null,
+  'modal-baubuch':       () => { _bbLauf++; const st = document.getElementById('bb-status'); if (st) st.textContent = ''; const b = document.getElementById('bb-start'); if (b) b.disabled = false; },
 };
 // Sofort beim Schliessen: alle Bearbeiten-Kennungen (versteckte Felder + JS-Merker) leeren
 function _resetEditMarkers(id) {
@@ -6624,14 +6690,40 @@ function resetNotizModal() { _resetEditMarkers('modal-notiz'); }
 // WICHTIG: EIN delegierter Listener auf document statt je Overlay – so greift
 // es auch fuer Modals, die erst weiter unten im HTML stehen (existierten frueher
 // zur Registrierungszeit noch nicht → blieben beim Hintergrund-Klick offen).
-document.addEventListener('click', e => {
-  const o = e.target;
-  if (!o || !o.classList || !o.classList.contains('modal-overlay') || !o.classList.contains('open')) return;
+// Fenster so schliessen, als haette man "Abbrechen" getippt (setzt alles sauber zurueck)
+function _fensterAbbrechen(o) {
   const cancel = [...o.querySelectorAll('.modal-actions button')]
     .find(b => /abbrechen|schlie|cancel|close/i.test(b.textContent));
   if (cancel) cancel.click();
   else closeModal(o.id);
+}
+document.addEventListener('click', async e => {
+  const o = e.target;
+  if (!o || !o.classList || !o.classList.contains('modal-overlay') || !o.classList.contains('open')) return;
+  // Schon etwas eingetragen? Erst nachfragen (wie bei ☰) – ein Tipp daneben loescht sonst alles
+  if (o._dirty && o.id !== 'modal-app-confirm') {
+    const ok = await showConfirm('Deine Eingaben in diesem Fenster gehen verloren.', { title: 'Eingaben verwerfen?', okText: _lang === 'en' ? 'Discard' : 'Verwerfen' });
+    if (!ok || !o.classList.contains('open')) return;
+  }
+  _fensterAbbrechen(o);
 });
+// Echtes Tippen/Auswaehlen in einem offenen Fenster merken (Vorbelegungen per Programm zaehlen nicht)
+['input', 'change'].forEach(typ => document.addEventListener(typ, e => {
+  if (!e.isTrusted) return;
+  const o = e.target && e.target.closest && e.target.closest('.modal-overlay.open');
+  if (o && o.id !== 'modal-app-confirm') o._dirty = true;
+}, true));
+// ☰ am Handy liegt ueber offenen Fenstern: vor dem Menue das Fenster verlassen – wie
+// "Abbrechen", bei Eingaben erst nachfragen. Liefert false, wenn das Fenster bleiben soll.
+async function _fensterVerlassen() {
+  const offen = [...document.querySelectorAll('.modal-overlay.open:not(.closing)')];
+  if (offen.some(o => o.id === 'modal-app-confirm')) return false;   // laufende Rueckfrage nicht wegtippen
+  for (const o of offen.reverse()) {
+    if (o._dirty && !(await showConfirm('Deine Eingaben in diesem Fenster gehen verloren.', { title: 'Eingaben verwerfen?', okText: _lang === 'en' ? 'Discard' : 'Verwerfen' }))) return false;
+    _fensterAbbrechen(o);
+  }
+  return true;
+}
 
 // ── Datei-Drag&Drop ────────────────────────────────────────────────
 // Ueberall wo es einen Datei-Upload gibt, kann man Dateien direkt in den
@@ -6666,6 +6758,7 @@ function _wireDropZone(zone) {
       const dt = new DataTransfer();
       (inp.multiple ? [...files] : [files[0]]).forEach(f => dt.items.add(f));
       inp.files = dt.files;
+      const ov = inp.closest('.modal-overlay'); if (ov) ov._dirty = true;
       inp.dispatchEvent(new Event('change', { bubbles: true }));
     } catch (err) {
       try { showToast('Datei konnte nicht übernommen werden – bitte über den Auswählen-Knopf hinzufügen', 'error'); } catch(_){}
@@ -8746,9 +8839,11 @@ function _restoreNavGroups() {
   });
 }
 
-function toggleMobileSidebar() {
+async function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const backdrop = document.getElementById('mobile-backdrop');
+  // Offenes Eingabefenster blieb sonst ueber der neu gewaehlten Seite stehen
+  if (!sidebar.classList.contains('mobile-open') && !(await _fensterVerlassen())) return;
   const isOpen = sidebar.classList.toggle('mobile-open');
   backdrop.classList.toggle('visible', isOpen);
 }
@@ -9030,6 +9125,7 @@ async function _processScanFile(file) {
     document.getElementById('scan-loading').style.display = 'none';
     document.getElementById('scan-result').style.display  = 'block';
     document.getElementById('scan-confirm-btn').style.display = 'inline-flex';
+    document.getElementById('modal-rechnung-scan')._dirty = true;   // Scan-Ergebnis nicht ohne Rueckfrage verwerfen
     // Nach dem Scannen direkt zum Kategorie-Feld springen (muss meist noch gesetzt werden).
     _focusField('scan-kat');
 
@@ -11019,7 +11115,11 @@ async function openPhotoPicker(targetAlbumId) {
 async function pickPhotosOrFile(inputId, handlerFn) {
   const files = await _nativePickImageFiles();
   if (files === null) { const el = document.getElementById(inputId); if (el) el.click(); return; }
-  if (files.length) handlerFn({ files, value: '' });
+  if (files.length) {
+    const o = document.getElementById(inputId)?.closest('.modal-overlay');
+    if (o) o._dirty = true;   // ☰ fragt dann vor dem Verwerfen nach
+    handlerFn({ files, value: '' });
+  }
 }
 
 function addPhotos(input) {
@@ -14064,6 +14164,8 @@ function startDemo() {
   const banner = document.getElementById('demo-banner');
   banner.style.display = 'flex';
   const bh = banner.offsetHeight || 38;
+  document.body.style.setProperty('--demo-h', bh + 'px');
+  document.body.classList.add('demo-aktiv');
   document.querySelector('.sidebar').style.top     = bh + 'px';
   document.querySelector('.main')?.style && (document.querySelector('.main').style.paddingTop = (32 + bh) + 'px');
 
@@ -14131,6 +14233,7 @@ function exitDemo() {
   _demoMode = false;
   // Hide banner, reset layout offsets
   document.getElementById('demo-banner').style.display = 'none';
+  document.body.classList.remove('demo-aktiv');
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.top = '';
   const main = document.querySelector('.main');
@@ -17281,6 +17384,58 @@ window.addEventListener('beforeunload', _flushSync);
 window.addEventListener('pagehide', _flushSync); // more reliable on iOS/mobile
 
 // ── PDF EXPORT ──────────────────────────────────────────────────────────────
+// Dateiname ohne Zeichen, die Dateisysteme/Teilen-Menue nicht moegen
+function _pdfDateiname(basis) {
+  const b = Array.from(String(basis || 'Planory').replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_')).slice(0, 70).join('').replace(/_+$/, '');
+  return `${b || 'Planory'}_${today()}.pdf`;
+}
+// Text fuer jsPDF-Standardschriften: Emojis & Zeichen ausserhalb WinAnsi entfernen (wurden sonst zu Zeichensalat)
+// (Namen wie „Željko Šimić" → „Željko Šimic", „Łukasz" → „Lukasz" statt fehlender Buchstaben)
+const _PDF_OK = /[\u0009\u000A\u000D\u0020-\u007E\u00A0-\u00FF\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC\u2013\u2014\u201A\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC\u2122]/;
+const _PDF_MAP = { 'đ': 'd', 'Đ': 'D', 'ł': 'l', 'Ł': 'L', 'ı': 'i', 'ħ': 'h', 'Ħ': 'H', 'ŧ': 't', 'Ŧ': 'T', 'ŉ': "'n" };
+function _pdfText(s) {
+  const t = String(s == null ? '' : s).normalize('NFC').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D\u201E]/g, '"');
+  return Array.from(t).map(ch => {
+    if (_PDF_OK.test(ch)) return ch;
+    const m = _PDF_MAP[ch] != null ? _PDF_MAP[ch] : ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return m && Array.from(m).every(c => _PDF_OK.test(c)) ? m : '';
+  }).join('').replace(/[ \t]{2,}/g, ' ').trim();
+}
+// PDF ausgeben: in der iPhone-App ueber das Teilen-Menue (Sichern in Dateien, Drucken,
+// AirDrop, Mail) – im WebView klappte das normale Herunterladen nicht. Sonst Teilen am
+// Handy-Browser oder klassisch herunterladen. Liefert false, wenn der Nutzer abbricht.
+async function _pdfAusgeben(doc, dateiname, titel) {
+  const P = window.Capacitor?.Plugins;
+  const FS = P?.Filesystem, SH = P?.Share;
+  if (isNativeApp() && FS && SH) {
+    try {
+      const b64 = doc.output('datauristring').split(',')[1];
+      // in Stuecken schreiben (grosse Fotobuecher sprengen sonst die App-Bruecke); Vielfaches von 4
+      const STK = 3 * 1024 * 1024;
+      let res = await FS.writeFile({ path: dateiname, data: b64.slice(0, STK), directory: 'CACHE' });
+      for (let i = STK; i < b64.length; i += STK) await FS.appendFile({ path: dateiname, data: b64.slice(i, i + STK), directory: 'CACHE' });
+      if (!res || !res.uri) res = await FS.getUri({ path: dateiname, directory: 'CACHE' });
+      await SH.share({ title: titel || dateiname, url: res.uri, dialogTitle: titel || dateiname });
+      return true;
+    } catch (e) {
+      if (/cancel/i.test(e?.message || '')) return false;   // Teilen abgebrochen
+      // Herunterladen klappt im App-WebView nicht -> ehrlich melden statt "gespeichert"
+      console.warn('[PDF] Teilen fehlgeschlagen:', e?.message);
+      showToast((_lang === 'en' ? '⚠️ Could not save/share PDF: ' : '⚠️ PDF konnte nicht gespeichert/geteilt werden: ') + (e?.message || e), 'error', 5000);
+      return false;
+    }
+  }
+  try {
+    const file = new File([doc.output('blob')], dateiname, { type: 'application/pdf' });
+    const handy = isNativeApp() || (window.matchMedia && matchMedia('(pointer: coarse)').matches);
+    if (handy && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: titel || dateiname });
+      return true;
+    }
+  } catch (e) { if (e?.name === 'AbortError') return false; }
+  doc.save(dateiname);
+  return true;
+}
 function pdfHeader(doc, title, subtitle) {
   const { jsPDF } = window.jspdf;
   doc.setFillColor(41, 98, 255);
@@ -17330,7 +17485,7 @@ function exportTagebuchPDF() {
       let iy = y + 16 + textLines.length * 4.5;
       if (workers.length) {
         doc.setFontSize(7.5); doc.setTextColor(100, 100, 100);
-        doc.text(`👷 Mannschaft – ${totalH}h gesamt:  ${workers.map(w => `${w.name} (${w.hours}h)`).join('  ·  ')}`, 16, iy + 4);
+        doc.text(_pdfText(`Mannschaft – ${totalH}h gesamt:  ${workers.map(w => `${w.name} (${w.hours}h)`).join('  ·  ')}`), 16, iy + 4);
         iy += 9;
       }
       if (e.tags?.length) {
@@ -17340,8 +17495,362 @@ function exportTagebuchPDF() {
       y += blockH + 4;
     });
   }
-  doc.save(`Bautagebuch_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Bautagebuch als PDF gespeichert', 'success');
+  _pdfAusgeben(doc, _pdfDateiname(`Bautagebuch_${projName}`), 'Bautagebuch')
+    .then(ok => { if (ok) showToast('📄 Bautagebuch als PDF gespeichert', 'success'); });
+}
+
+// ══════════════════════════════════════
+// BAUBUCH – Bautagebuch als Erinnerungs-Buch (PDF mit Fotos)
+// ══════════════════════════════════════
+// Gedacht zum Anschauen in ein paar Jahren: Fotos, was gemacht wurde, wer dabei war.
+// Bewusst OHNE Stunden und Kosten. _baubuchDaten() stellt den Inhalt zusammen (ohne
+// Zeichnen – testbar), _baubuchPDF() zeichnet daraus das Buch.
+let _bbLauf = 0;   // zaehlt Erstell-Vorgaenge; Abbrechen beendet einen laufenden
+
+// Dateinamen wie "IMG_1234" oder "20250312 101530" sind keine Bildunterschrift
+function _baubuchBildtitel(t) {
+  const s = String(t || '').trim();
+  if (!s) return '';
+  if (/^(img|dsc|dscn|dcim|pxl|photo|foto|bild|image|whatsapp image|screenshot|bildschirmfoto|kamera|camera)[\s_.-]*[\d\s_.:-]*$/i.test(s)) return '';
+  if (/^[\d\s_.:-]+$/.test(s)) return '';
+  return s;
+}
+// Namen ohne Doppelte (Gross-/Kleinschreibung egal), erste Schreibweise bleibt
+function _einzigartigeNamen(liste) {
+  const seen = new Set(), out = [];
+  (liste || []).forEach(n => {
+    const name = String(n || '').trim().replace(/\s+/g, ' ');
+    const k = name.toLocaleLowerCase('de');
+    if (name && !seen.has(k)) { seen.add(k); out.push(name); }
+  });
+  return out;
+}
+function _baubuchWetter(e) {
+  const w = String(e.weather || '').trim();
+  const txt = (typeof _lang !== 'undefined' && _lang !== 'de' && OPTIONEN[w]?.[_lang]) || w;
+  const teile = [_pdfText(txt)];
+  if (e.temp != null && e.temp !== '' && isFinite(e.temp)) teile.push(String(e.temp).replace('.', _lang === 'en' ? '.' : ',') + ' °C');
+  return teile.filter(Boolean).join(', ');
+}
+
+function _baubuchDaten(opts = {}) {
+  const von = opts.von || '', bis = opts.bis || '';
+  const imZeitraum = d => !!d && (!von || d >= von) && (!bis || d <= bis);
+  const alben = new Map((state.fotoAlben || []).map(a => [String(a.id), a]));
+  const fotoDatum = f => String(f.datum || alben.get(String(f.albumId))?.datum || '').slice(0, 10);
+  const fotos = opts.fotos === false ? [] : (state.fotos || [])
+    .filter(f => f && (f.url || f.data) && imZeitraum(fotoDatum(f)))
+    .map(f => ({ id: String(f.id), src: f.url || f.data, datum: fotoDatum(f), titel: _baubuchBildtitel(f.title),
+                 albumId: f.albumId != null ? String(f.albumId) : '', album: alben.get(String(f.albumId))?.title || '' }))
+    .sort((a, b) => a.datum.localeCompare(b.datum) || a.id.localeCompare(b.id, undefined, { numeric: true }));
+  const einsaetze = state.helfereinsaetze || [];
+  const namenVon = (d1, d2) => einsaetze.filter(x => x && x.datum >= d1 && x.datum <= d2).flatMap(x => x.zugewiesen || []);
+  const benutzt = new Set();
+  const tage = (state.tagebuch || []).filter(e => e && imZeitraum(String(e.datum || '').slice(0, 10)))
+    .sort((a, b) => String(a.datum).localeCompare(String(b.datum)) || String(a.id).localeCompare(String(b.id), undefined, { numeric: true }))
+    .map(e => {
+      const start = String(e.datum).slice(0, 10);
+      const ende = e.datumBis && e.datumBis >= start ? String(e.datumBis).slice(0, 10) : start;
+      const eigene = fotos.filter(f => f.datum >= start && f.datum <= ende && !benutzt.has(f.id));
+      eigene.forEach(f => benutzt.add(f.id));
+      return { typ: 'tag', datum: start, bis: ende !== start ? ende : '', titel: e.title || '', text: e.text || '',
+               wetter: opts.wetter === false ? '' : _baubuchWetter(e),
+               namen: opts.namen === false ? [] : _einzigartigeNamen([...(e.workers || []).map(w => w && w.name), ...namenVon(start, ende)]),
+               fotos: eigene };
+    });
+  // Fotos von Tagen ohne Eintrag: nach Album bzw. Tag gruppiert als Bildseiten
+  const gruppen = new Map();
+  if (opts.restFotos !== false) fotos.filter(f => !benutzt.has(f.id)).forEach(f => {
+    const k = f.albumId ? 'a' + f.albumId : 'd' + f.datum;
+    if (!gruppen.has(k)) gruppen.set(k, { typ: 'bilder', datum: f.datum, titel: f.album || '', fotos: [] });
+    gruppen.get(k).fotos.push(f);
+  });
+  const alle = [...tage, ...gruppen.values()].sort((a, b) => a.datum.localeCompare(b.datum));
+  const kapitel = [];
+  alle.forEach(it => {
+    const m = it.datum.slice(0, 7);
+    if (!kapitel.length || kapitel[kapitel.length - 1].monat !== m) kapitel.push({ monat: m, eintraege: [] });
+    kapitel[kapitel.length - 1].eintraege.push(it);
+  });
+  const imBuch = alle.flatMap(it => it.fotos);
+  const namen = opts.namen === false ? [] : _einzigartigeNamen(tage.flatMap(t => t.namen));
+  const daten = alle.flatMap(it => [it.datum, it.bis]).filter(Boolean).sort();
+  return {
+    titel: opts.titel || state.settings?.name || '', untertitel: opts.untertitel || '',
+    zeitraum: { von: daten[0] || '', bis: daten[daten.length - 1] || '' },
+    kapitel, namen, titelbild: imBuch.length ? imBuch[imBuch.length - 1].src : '',
+    anzahl: { tage: tage.length, fotos: imBuch.length, namen: namen.length },
+  };
+}
+
+// Foto laden und als JPEG (optional auf ein Seitenverhaeltnis zugeschnitten) liefern
+async function _baubuchBild(src, aspect, maxPx) {
+  const r = await fetch(src, /^data:/i.test(src) ? {} : { mode: 'cors' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const blob = await r.blob();
+  let bild;
+  if (window.createImageBitmap) bild = await createImageBitmap(blob);
+  else bild = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bild')); i.src = URL.createObjectURL(blob); });
+  let sw = bild.width, sh = bild.height, sx = 0, sy = 0;
+  if (!sw || !sh) throw new Error('leeres Bild');
+  if (aspect) {
+    if (sw / sh > aspect) { const nw = sh * aspect; sx = (sw - nw) / 2; sw = nw; }
+    else { const nh = sw / aspect; sy = (sh - nh) / 2; sh = nh; }
+  }
+  const f = Math.min(1, maxPx / Math.max(sw, sh));
+  const w = Math.max(1, Math.round(sw * f)), h = Math.max(1, Math.round(sh * f));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+  g.drawImage(bild, sx, sy, sw, sh, 0, 0, w, h);
+  try { bild.close && bild.close(); } catch (_) {}
+  const dataUrl = c.toDataURL('image/jpeg', 0.82);
+  c.width = c.height = 0;
+  return { dataUrl, w, h };
+}
+
+async function _baubuchPDF(daten, opts = {}, fortschritt = () => {}, abbruch = () => false) {
+  const { jsPDF } = window.jspdf;
+  const en = typeof _lang !== 'undefined' && _lang === 'en';
+  const loc = en ? 'en-GB' : 'de-AT';
+  const fotobuch = opts.format !== 'a4';
+  const W = fotobuch ? 216 : 210, H = fotobuch ? 216 : 297;           // Fotobuch: 21 cm + 3 mm Druckrand je Seite
+  const R = fotobuch ? 18 : 16;                                        // Abstand zum Rand (innerhalb des Beschnitts)
+  const doc = new jsPDF({ unit: 'mm', format: [W, H], orientation: 'portrait', compress: opts.komprimieren !== false });
+  const CW = W - 2 * R;
+  const DUNKEL = [17, 21, 31], AKZENT = [255, 159, 28], GRAU = [110, 116, 128];
+  const datumLang = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const datumKurz = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' });
+  const monatName = m => new Date(m + '-15T12:00:00').toLocaleDateString(loc, { month: 'long', year: 'numeric' });
+  const zeitraumTxt = (a, b) => !a ? '' : (a.slice(0, 7) === b.slice(0, 7) ? monatName(a.slice(0, 7)) : monatName(a.slice(0, 7)) + ' – ' + monatName(b.slice(0, 7)));
+  const T = (x) => _pdfText(x);
+  const gesamtFotos = daten.anzahl.fotos + (daten.titelbild ? 1 : 0);
+  const maxPx = gesamtFotos > 80 ? 1200 : 1600;
+  let geladen = 0, fehler = 0;
+  const bild = async (src, aspect, px) => {
+    if (abbruch()) throw new Error('abgebrochen');
+    try { return await _baubuchBild(src, aspect, px || maxPx); }
+    catch (e) { fehler++; return null; }
+    finally { geladen++; fortschritt(geladen, gesamtFotos); }
+  };
+  let seite = 1;
+  const neueSeite = () => {
+    // Fusszeile aendert Schrift/Farbe – danach den laufenden Text unveraendert weiterschreiben
+    const f = doc.getFont(), fs = doc.getFontSize(), tc = doc.getTextColor();
+    doc.addPage([W, H], 'portrait'); seite++; fusszeile();
+    doc.setFont(f.fontName, f.fontStyle); doc.setFontSize(fs); doc.setTextColor(tc);
+    return R + 4;
+  };
+  const fusszeile = () => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GRAU);
+    doc.text(String(seite), W / 2, H - R / 2 - 1, { align: 'center' });
+  };
+
+  // ── Titelseite ──
+  const tb = daten.titelbild ? await bild(daten.titelbild, W / H, 1800) : null;
+  doc.setFillColor(...DUNKEL); doc.rect(0, 0, W, H, 'F');
+  if (tb) {
+    doc.addImage(tb.dataUrl, 'JPEG', 0, 0, W, H, undefined, 'FAST');
+    try { doc.setGState(new doc.GState({ opacity: 0.6 })); } catch (_) {}
+    doc.setFillColor(...DUNKEL); doc.rect(0, H * 0.58, W, H * 0.42, 'F');
+    try { doc.setGState(new doc.GState({ opacity: 1 })); } catch (_) {}
+  }
+  doc.setFillColor(...AKZENT); doc.rect(R, H * 0.66, 18, 1.6, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(fotobuch ? 28 : 30);
+  const titelZeilen = doc.splitTextToSize(T(daten.titel) || (en ? 'Our build' : 'Unser Bauprojekt'), CW);
+  doc.text(titelZeilen.slice(0, 3), R, H * 0.66 + 13);
+  let ty = H * 0.66 + 13 + Math.min(3, titelZeilen.length) * 11;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12);
+  if (daten.untertitel) { doc.text(doc.splitTextToSize(T(daten.untertitel), CW).slice(0, 2), R, ty); ty += 7; }
+  doc.setFontSize(10); doc.setTextColor(255, 220, 170);
+  doc.text(T(zeitraumTxt(daten.zeitraum.von, daten.zeitraum.bis)), R, ty + 2);
+
+  // ── Rueckblick ──
+  let y = neueSeite() + 30;
+  doc.setTextColor(...DUNKEL); doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
+  doc.text(en ? 'Looking back' : 'Ein Rückblick', R, y); y += 6;
+  doc.setFillColor(...AKZENT); doc.rect(R, y, 14, 1.2, 'F'); y += 12;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(60, 64, 72);
+  const zeilen = [
+    zeitraumTxt(daten.zeitraum.von, daten.zeitraum.bis),
+    daten.anzahl.tage ? (en ? `${daten.anzahl.tage} days in the site diary` : `${daten.anzahl.tage} Tage im Bautagebuch`) : '',
+    daten.anzahl.fotos ? (en ? `${daten.anzahl.fotos} photos` : `${daten.anzahl.fotos} Fotos`) : '',
+    daten.anzahl.namen ? (en ? `${daten.anzahl.namen} people helped` : `${daten.anzahl.namen} ${daten.anzahl.namen === 1 ? 'Mensch hat' : 'Menschen haben'} mitgeholfen`) : '',
+  ].filter(Boolean);
+  zeilen.forEach(z => { doc.text(T(z), R, y); y += 8; });
+  doc.setFontSize(8.5); doc.setTextColor(...GRAU);
+  doc.text(T((en ? 'Created with Planory on ' : 'Erstellt mit Planory am ') + datumKurz(today())), R, H - R - 6);
+
+  // ── Kapitel ──
+  const unten = H - R - 6;
+  const zeichneFotos = async (liste, kopf) => {
+    // 1 Foto: gross im Originalformat · sonst Raster (2 bzw. 3 nebeneinander, 4:3)
+    let i = 0;
+    while (i < liste.length) {
+      if (abbruch()) throw new Error('abgebrochen');
+      const rest = liste.length - i;
+      if (rest === 1 && liste.length === 1) {
+        const b = await bild(liste[i].src, null);
+        if (b) {
+          let w = CW, h = CW * b.h / b.w;
+          const maxH = Math.min(unten - y - 8, H * 0.62);
+          if (maxH < 45) { y = neueSeite(); kopf && kopf(); }
+          const mh = Math.min(unten - y - 8, H * 0.62);
+          if (h > mh) { h = mh; w = h * b.w / b.h; }
+          doc.addImage(b.dataUrl, 'JPEG', R + (CW - w) / 2, y, w, h, undefined, 'FAST');
+          y += h + 2;
+          if (liste[i].titel) { doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...GRAU); doc.text(T(liste[i].titel), R + CW / 2, y + 3, { align: 'center', maxWidth: CW }); y += 6; }
+          y += 4;
+        }
+        i++; continue;
+      }
+      const spalten = liste.length === 2 ? 2 : 3, gap = 3;   // ab 3 Fotos kompaktes 3er-Raster
+      const cw = (CW - gap * (spalten - 1)) / spalten, ch = cw * 3 / 4;
+      const reihe = liste.slice(i, i + spalten);
+      const mitTitel = reihe.some(f => f.titel);
+      if (y + ch + (mitTitel ? 6 : 0) > unten) { y = neueSeite(); kopf && kopf(); }
+      for (let j = 0; j < reihe.length; j++) {
+        const b = await bild(reihe[j].src, 4 / 3, spalten === 3 ? 900 : 1100);
+        const x = R + j * (cw + gap);
+        if (b) doc.addImage(b.dataUrl, 'JPEG', x, y, cw, ch, undefined, 'FAST');
+        else { doc.setFillColor(240, 241, 244); doc.rect(x, y, cw, ch, 'F'); }
+        if (reihe[j].titel) { doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(...GRAU); doc.text(doc.splitTextToSize(T(reihe[j].titel), cw)[0] || '', x, y + ch + 3.5); }
+      }
+      y += ch + (mitTitel ? 7 : 3);
+      i += reihe.length;
+    }
+  };
+  for (const kap of daten.kapitel) {
+    y = neueSeite() + 8;
+    doc.setTextColor(...AKZENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(fotobuch ? 22 : 24);
+    doc.text(T(monatName(kap.monat)), R, y); y += 4;
+    doc.setDrawColor(...AKZENT); doc.setLineWidth(0.5); doc.line(R, y, R + CW, y); y += 10;
+    for (const it of kap.eintraege) {
+      const datumTxt = T(it.typ === 'tag' && it.bis ? datumKurz(it.datum) + ' – ' + datumKurz(it.bis) : datumLang(it.datum));
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);   // Umbruch mit der Schrift, in der gedruckt wird
+      const textZeilen = it.text ? doc.splitTextToSize(T(it.text), CW) : [];
+      // Kopf, Text und erste Fotoreihe zusammenhalten (nicht: Text unten, Fotos auf der naechsten Seite)
+      const nF = (it.fotos || []).length;
+      const ersteReihe = !nF ? 0 : nF === 1 ? 50 : ((CW - (nF === 2 ? 3 : 6)) / (nF === 2 ? 2 : 3)) * 3 / 4 + 6;
+      const bedarf = 22 + (textZeilen.length <= 12 ? textZeilen.length * 5 : 20) + (it.namen?.length ? 6 : 0) + ersteReihe;
+      const seitenAnfang = y <= R + 30;
+      if (!seitenAnfang && y + bedarf > unten) y = neueSeite() + 4;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...GRAU);
+      doc.text(datumTxt.toUpperCase(), R, y);
+      if (it.wetter) { doc.setFont('helvetica', 'normal'); doc.text(T(it.wetter), R + CW, y, { align: 'right' }); }
+      y += 6;
+      const titel = T(it.titel);
+      if (titel) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...DUNKEL);
+        const tz = doc.splitTextToSize(titel, CW); doc.text(tz, R, y + 1); y += tz.length * 6 + 2;
+      }
+      if (textZeilen.length) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(50, 54, 62);
+        for (const z of textZeilen) { if (y + 5 > unten) y = neueSeite() + 4; doc.text(z, R, y + 1); y += 5; }
+        y += 2;
+      }
+      if (it.namen && it.namen.length) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor(...GRAU);
+        const nz = doc.splitTextToSize(T((en ? 'With us: ' : 'Mit dabei: ') + it.namen.join(', ')), CW);
+        if (y + nz.length * 4.5 > unten) y = neueSeite() + 4;
+        doc.text(nz, R, y + 1); y += nz.length * 4.5 + 2;
+      }
+      if (it.fotos && it.fotos.length) {
+        y += 2;
+        const kopf = () => { doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...GRAU);
+          doc.text(T((titel || datumTxt) + (en ? ' (continued)' : ' (Fortsetzung)')), R, y); y += 6; };
+        await zeichneFotos(it.fotos, kopf);
+      }
+      y += 8;
+    }
+  }
+
+  // ── Schluss: wer dabei war ──
+  y = neueSeite() + 30;
+  doc.setTextColor(...DUNKEL); doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+  if (daten.namen.length) {
+    doc.text(en ? 'With us were' : 'Mit dabei waren', R, y); y += 6;
+    doc.setFillColor(...AKZENT); doc.rect(R, y, 14, 1.2, 'F'); y += 12;
+    const namen = daten.namen;
+    const spalten = namen.length > 24 ? 3 : namen.length > 12 ? 2 : 1, sw = CW / spalten;
+    const zeile = spalten === 3 ? 5.8 : 7;
+    let i = 0;
+    while (i < namen.length) {
+      // so viele Zeilen, wie auf diese Seite passen – der Rest kommt auf die naechste
+      const zeilen = Math.max(1, Math.floor((unten - 16 - y) / zeile));
+      const block = namen.slice(i, i + zeilen * spalten);
+      const proSpalte = Math.ceil(block.length / spalten);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(spalten === 3 ? 10.5 : 12); doc.setTextColor(60, 64, 72);
+      block.forEach((n, k) => {
+        const sp = Math.floor(k / proSpalte), zi = k % proSpalte;
+        doc.text(doc.splitTextToSize(T(n), sw - 4)[0] || '', R + sp * sw, y + zi * zeile);
+      });
+      i += block.length;
+      y += proSpalte * zeile;
+      if (i < namen.length) y = neueSeite() + 12;
+    }
+    y += 10;
+    if (y > unten - 6) y = neueSeite() + 12;
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(12); doc.setTextColor(...AKZENT);
+    doc.text(en ? 'Thank you to everyone who helped!' : 'Danke an alle, die mitgeholfen haben!', R, y);
+  } else {
+    doc.text(T(daten.titel) || (en ? 'Our build' : 'Unser Bauprojekt'), R, y);
+  }
+  // Gerade Seitenzahl (Druckereien binden in Doppelseiten)
+  if (doc.getNumberOfPages() % 2) { doc.addPage([W, H], 'portrait'); seite++; }
+  doc.setProperties({ title: _pdfText(daten.titel), creator: 'Planory' });
+  return { doc, fehler, seiten: doc.getNumberOfPages() };
+}
+
+function _baubuchOptionen() {
+  const v = id => document.getElementById(id);
+  return { titel: (v('bb-titel')?.value || '').trim(), untertitel: (v('bb-untertitel')?.value || '').trim(),
+           von: v('bb-von')?.value || '', bis: v('bb-bis')?.value || '', format: v('bb-format')?.value || 'fotobuch',
+           fotos: v('bb-fotos')?.checked !== false, namen: v('bb-namen')?.checked !== false,
+           wetter: v('bb-wetter')?.checked !== false, restFotos: v('bb-rest')?.checked !== false };
+}
+function baubuchVorschau() {
+  const el = document.getElementById('bb-info');
+  if (!el) return;
+  try {
+    const d = _baubuchDaten(_baubuchOptionen());
+    const en = _lang === 'en';
+    el.textContent = !d.kapitel.length
+      ? (en ? 'No diary entries or photos in this period yet.' : 'Im gewählten Zeitraum gibt es noch keine Einträge oder Fotos.')
+      : (en ? `${d.anzahl.tage} diary days · ${d.anzahl.fotos} photos · ${d.kapitel.length} chapters (months)`
+            : `${d.anzahl.tage} Tagebuch-Tage · ${d.anzahl.fotos} Fotos · ${d.kapitel.length} Kapitel (Monate)`);
+  } catch (e) { el.textContent = ''; }
+}
+async function baubuchErstellen() {
+  const btn = document.getElementById('bb-start'), st = document.getElementById('bb-status');
+  if (!btn || btn.disabled) return;
+  if (!window.jspdf) { showToast('PDF-Bibliothek lädt noch…', 'error'); return; }
+  const opts = _baubuchOptionen();
+  if (opts.von && opts.bis && opts.von > opts.bis) { showToast('⚠️ „Von" liegt nach „Bis"', 'error'); return; }
+  const daten = _baubuchDaten(opts);
+  if (!daten.kapitel.length) { showToast('Im gewählten Zeitraum gibt es noch keine Einträge oder Fotos', 'error'); return; }
+  if (daten.anzahl.fotos > 150 && !(await showConfirm(
+      _lang === 'en' ? `The book contains ${daten.anzahl.fotos} photos. On a phone this can take a while and use a lot of memory – a shorter period (e.g. one year) is safer.`
+                     : `Das Buch enthält ${daten.anzahl.fotos} Fotos. Am Handy kann das dauern und viel Speicher brauchen – sicherer ist ein kürzerer Zeitraum (z.B. ein Jahr).`,
+      { title: _lang === 'en' ? 'Large book' : 'Großes Buch', okText: _lang === 'en' ? 'Create anyway' : 'Trotzdem erstellen', danger: false }))) return;
+  const lauf = ++_bbLauf;
+  btn.disabled = true;
+  if (st) st.textContent = _lang === 'en' ? 'Creating book…' : 'Buch wird erstellt…';
+  try {
+    const erg = await _baubuchPDF(daten, opts, (i, n) => {
+      if (st && lauf === _bbLauf) st.textContent = _lang === 'en' ? `Adding photos: ${i} of ${n}` : `Fotos werden eingefügt: ${i} von ${n}`;
+    }, () => lauf !== _bbLauf);
+    if (lauf !== _bbLauf) return;   // inzwischen abgebrochen
+    if (st) st.textContent = _lang === 'en' ? 'Saving…' : 'Wird gespeichert…';
+    const ok = await _pdfAusgeben(erg.doc, _pdfDateiname(`Baubuch_${daten.titel || 'Planory'}`), daten.titel || 'Baubuch');
+    if (ok) {
+      showToast(erg.fehler ? `📖 Buch erstellt (${erg.fehler} Foto(s) nicht ladbar)` : '📖 Buch erstellt', erg.fehler ? 'warning' : 'success', 4500);
+      if (lauf === _bbLauf) closeModal('modal-baubuch');
+    }
+  } catch (e) {
+    if (lauf === _bbLauf && !/abgebrochen/.test(e?.message || '')) showToast('⚠️ Buch konnte nicht erstellt werden: ' + (e?.message || e), 'error', 5000);
+  } finally {
+    if (lauf === _bbLauf) { btn.disabled = false; if (st) st.textContent = ''; }
+  }
 }
 
 function exportMaengelPDF() {
@@ -17377,8 +17886,8 @@ function exportMaengelPDF() {
       }
     }
   });
-  doc.save(`Maengelliste_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Mängel als PDF gespeichert', 'success');
+  _pdfAusgeben(doc, _pdfDateiname(`Maengelliste_${projName}`), 'Mängelliste')
+    .then(ok => { if (ok) showToast('📄 Mängel als PDF gespeichert', 'success'); });
 }
 
 function exportKostenPDF() {
@@ -17431,8 +17940,8 @@ function exportKostenPDF() {
     foot: [['', '', '', 'Gesamt (ohne Storniert)', fmt(totalNetto), '', fmt(totalBrutto), '']],
     footStyles: { fillColor: [240, 244, 255], fontStyle: 'bold', textColor: [41, 98, 255], fontSize: 7.5 }
   });
-  doc.save(`Rechnungen-Ausgaben_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Rechnungen & Ausgaben als PDF gespeichert', 'success');
+  _pdfAusgeben(doc, _pdfDateiname(`Rechnungen-Ausgaben_${projName}`), 'Rechnungen & Ausgaben')
+    .then(ok => { if (ok) showToast('📄 Rechnungen & Ausgaben als PDF gespeichert', 'success'); });
 }
 
 function exportRechnungenPDF() {
@@ -17472,8 +17981,8 @@ function exportRechnungenPDF() {
     foot: [['', '', 'Gesamt', '', fmt(totalNetto), '', fmt(totalBrutto)]],
     footStyles: { fillColor: [243, 240, 255], fontStyle: 'bold', textColor: [109, 40, 217], fontSize: 7.5 }
   });
-  doc.save(`Rechnungen_${projName.replace(/\s/g,'_')}_${today()}.pdf`);
-  showToast('📄 Gescannte Rechnungen als PDF gespeichert', 'success');
+  _pdfAusgeben(doc, _pdfDateiname(`Rechnungen_${projName}`), 'Gescannte Rechnungen')
+    .then(ok => { if (ok) showToast('📄 Gescannte Rechnungen als PDF gespeichert', 'success'); });
 }
 </script>
 
