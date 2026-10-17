@@ -1,6 +1,6 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 16.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 17.10.2026.
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -14,8 +14,9 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 16.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 86/86, mobile-e2e 49/49, sync-e2e 19/19).
-- [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → `npx cap sync ios` → Xcode:
+(pruefen 90/90, mobile-e2e 54/54, sync-e2e 19/19).
+- [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → **`npm install`** (neu: Teilen-
+      und Dateien-Plugin für PDFs) → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
       NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin).
 - [ ] What's New (Vorschlag):
@@ -24,11 +25,15 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
        • Rechnung scannen: wird sofort eingebucht, Beträge wie 1.234,56 werden erkannt,
          PDF-Rechnungen bleiben PDF, verständliche Fehlermeldungen
        • „Bezahlt von": neue Person direkt beim Erfassen eintragen
+       • NEU: Bautagebuch als Erinnerungs-Buch mit Fotos (PDF, Fotobuch oder A4)
+       • PDFs lassen sich jetzt teilen, drucken und in Dateien sichern
        • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
        • Gelöschte Einträge bleiben gelöscht
        • Bessere Darstellung am iPhone (Tabellen, Wartung, Einstellungen)
        • Fotos zoomen · Dateien per Drag & Drop · übersichtlicherer Zeitplan · Helfer-Stunden"
-- [ ] Am iPhone einmal einen PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?).
+- [ ] Am iPhone prüfen: PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?) ·
+      Bautagebuch → „📖 Buch" → Teilen-Menü erscheint → Drucken / „In Dateien sichern" ·
+      ein Eingabefenster offen lassen und ☰ tippen (Fenster schließt, bei Eingaben Rückfrage).
 - [ ] Nach dem Update: die 3 seit 14.08. bearbeiteten Ausgaben (1 davon in Simons Konto) kurz auf
       die richtige MwSt prüfen (alter Fehler: MwSt vom letzten Bearbeiten blieb hängen).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
@@ -78,8 +83,10 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       Helfer inkl. Stunden automatisch). Tagebuch evtl. reiner Text-Bericht?
 - [ ] **Notizen & Dokumente ≈ Bautagebuch** – Zweck klarer trennen (Notizen = To-dos/Gespräche,
       Tagebuch = was auf der Baustelle passiert ist).
-- [ ] Zurückgestellte Wünsche: Angebote → Budgetkategorien, mehrere Fotos je Tagebuch-Tag,
-      Tagebuch-Kategorien/Filter, Projekt-Export (Fotobuch + Tagebuch).
+- [ ] Zurückgestellte Wünsche: Angebote → Budgetkategorien, mehrere Fotos je Tagebuch-Tag
+      (heute kommen Galerie-Fotos mit gleichem Datum ins Buch), Tagebuch-Kategorien/Filter.
+- [x] Bautagebuch-Buch (PDF mit Fotos) – erledigt; Ideen dazu: Titelbild selbst wählen,
+      eigene Schrift, Vorschau in der App.
 
 ## Technik – später verbessern (bekannt, kein akuter Fehler)
 - [ ] Wird die App in der ~1 Sekunde zwischen Speichern und Cloud-Abgleich hart beendet, ist ein
