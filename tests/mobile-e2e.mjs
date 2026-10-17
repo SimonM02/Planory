@@ -1040,6 +1040,42 @@ await scenario('PDF teilen scheitert in der App → ehrliche Meldung statt „ge
   return p.join(' · ');
 });
 
+await scenario('Tippen neben ein Fenster mit Eingaben: erst Rückfrage, dann schließen', async () => {
+  await page.evaluate(() => { window.showConfirm = window.__echtesConfirm; openModal('modal-notiz'); });
+  await page.waitForTimeout(100);
+  const feld = await page.evaluate(() => { const f = document.querySelector('#modal-notiz input[type="text"], #modal-notiz textarea'); return f ? '#' + f.id : ''; });
+  if (!feld) return 'kein Eingabefeld im Notiz-Fenster (Test-Annahme)';
+  await page.fill(feld, 'Wichtige Notiz');
+  await page.evaluate(() => document.getElementById('modal-notiz').click());   // Tipp auf den Hintergrund
+  await page.waitForTimeout(350);
+  let r = await page.evaluate(() => ({ frage: document.getElementById('modal-app-confirm').classList.contains('open'), offen: document.getElementById('modal-notiz').classList.contains('open') }));
+  const p = [];
+  if (!r.frage) p.push('keine Rückfrage – Eingabe wäre weg');
+  if (r.frage) {
+    await page.click('#modal-app-confirm .modal-actions .btn-ghost');
+    await page.waitForTimeout(350);
+    r = await page.evaluate(sel => ({ offen: document.getElementById('modal-notiz').classList.contains('open'), wert: document.querySelector(sel).value }), feld);
+    if (!r.offen || r.wert !== 'Wichtige Notiz') p.push('„Abbrechen" hat das Fenster trotzdem geschlossen');
+    await page.evaluate(() => document.getElementById('modal-notiz').click());
+    await page.waitForTimeout(350);
+    await page.click('#ac-ok-btn');
+    await page.waitForTimeout(400);
+    if (await page.evaluate(() => document.getElementById('modal-notiz').classList.contains('open'))) p.push('nach „Verwerfen" bleibt das Fenster offen');
+  }
+  // ohne Eingabe schliesst ein Tipp daneben sofort
+  await page.evaluate(() => openModal('modal-notiz'));
+  await page.waitForTimeout(100);
+  await page.evaluate(() => document.getElementById('modal-notiz').click());
+  await page.waitForTimeout(350);
+  r = await page.evaluate(() => ({ frage: document.getElementById('modal-app-confirm').classList.contains('open'), offen: document.getElementById('modal-notiz').classList.contains('open') }));
+  if (r.frage || r.offen) p.push('ohne Eingabe: Fenster schließt nicht sofort');
+  return p.join(' · ');
+});
+await scenario('PDF-Text: zerlegte Umlaute (a + ¨) bleiben Umlaute', async () => {
+  const r = await page.evaluate(() => typeof _pdfText === 'function' ? _pdfText('Bäume Grün') : null);
+  return r === 'Bäume Grün' ? '' : `wurde zu „${r}"`;
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

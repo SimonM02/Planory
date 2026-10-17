@@ -6697,16 +6697,21 @@ function _fensterAbbrechen(o) {
   if (cancel) cancel.click();
   else closeModal(o.id);
 }
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
   const o = e.target;
   if (!o || !o.classList || !o.classList.contains('modal-overlay') || !o.classList.contains('open')) return;
+  // Schon etwas eingetragen? Erst nachfragen (wie bei ☰) – ein Tipp daneben loescht sonst alles
+  if (o._dirty && o.id !== 'modal-app-confirm') {
+    const ok = await showConfirm('Deine Eingaben in diesem Fenster gehen verloren.', { title: 'Eingaben verwerfen?', okText: _lang === 'en' ? 'Discard' : 'Verwerfen' });
+    if (!ok || !o.classList.contains('open')) return;
+  }
   _fensterAbbrechen(o);
 });
 // Echtes Tippen/Auswaehlen in einem offenen Fenster merken (Vorbelegungen per Programm zaehlen nicht)
 ['input', 'change'].forEach(typ => document.addEventListener(typ, e => {
   if (!e.isTrusted) return;
   const o = e.target && e.target.closest && e.target.closest('.modal-overlay.open');
-  if (o) o._dirty = true;
+  if (o && o.id !== 'modal-app-confirm') o._dirty = true;
 }, true));
 // ☰ am Handy liegt ueber offenen Fenstern: vor dem Menue das Fenster verlassen – wie
 // "Abbrechen", bei Eingaben erst nachfragen. Liefert false, wenn das Fenster bleiben soll.
@@ -17389,7 +17394,7 @@ function _pdfDateiname(basis) {
 const _PDF_OK = /[\u0009\u000A\u000D\u0020-\u007E\u00A0-\u00FF\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC\u2013\u2014\u201A\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC\u2122]/;
 const _PDF_MAP = { 'đ': 'd', 'Đ': 'D', 'ł': 'l', 'Ł': 'L', 'ı': 'i', 'ħ': 'h', 'Ħ': 'H', 'ŧ': 't', 'Ŧ': 'T', 'ŉ': "'n" };
 function _pdfText(s) {
-  const t = String(s == null ? '' : s).replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D\u201E]/g, '"');
+  const t = String(s == null ? '' : s).normalize('NFC').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D\u201E]/g, '"');
   return Array.from(t).map(ch => {
     if (_PDF_OK.test(ch)) return ch;
     const m = _PDF_MAP[ch] != null ? _PDF_MAP[ch] : ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');

@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 17.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 90/90, mobile-e2e 58/58, sync-e2e 19/19).
+(pruefen 90/90, mobile-e2e 60/60, sync-e2e 19/19).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → **`npm install`** (neu: Teilen-
       und Dateien-Plugin für PDFs) → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
