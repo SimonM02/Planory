@@ -1,3 +1,5 @@
+import { cleanupTodoistForUser } from './_todoist-lib.js';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -26,6 +28,9 @@ export default async function handler(req, res) {
   if (!verifyRes.ok || verifyData.id !== userId) {
     return res.status(403).json({ error: 'Token does not match userId' });
   }
+
+  // Todoist-Verbindung widerrufen und entfernen (falls vorhanden) – Fehler blockieren nicht
+  try { await cleanupTodoistForUser(userId); } catch (e) { /* weiter mit dem Loeschen */ }
 
   // Delete auth user via admin API
   const deleteRes = await fetch(`${SUPA_URL}/auth/v1/admin/users/${userId}`, {
