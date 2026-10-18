@@ -5713,6 +5713,7 @@ const TEXTE = {
   "🤖 Neue Rechnung scannen": { en: "🤖 Scan new invoice" },
   "Bist du sicher?": { en: "Are you sure?" },
   "Eingaben verwerfen?": { en: "Discard your input?" },
+  "— nicht geladen —": { en: "— not loaded —" },
   "Todoist-Aufgabe": { en: "Todoist task" },
   "Aufgabe in Todoist löschen?": { en: "Delete task in Todoist?" },
   "Aufgaben aus einem Todoist-Projekt direkt in Planory sehen, abhaken und bearbeiten.": { en: "See, check off and edit tasks from a Todoist project right inside Planory." },
@@ -10018,7 +10019,7 @@ function renderTasks() {
 // Die Aufgaben werden LIVE ueber api/todoist.js geladen und geaendert – sie werden nicht
 // in Planory gespeichert (kein zweiter Abgleich). In der iPhone-App vorerst ausgeblendet.
 const TD_HINWEIS = 'Planory ist nicht von Doist erstellt, mit Doist/Todoist verbunden oder von Doist unterstützt.';
-const _TD_LEER = () => ({ status: null, statusAt: 0, tasks: {}, projects: null, laden: {}, busy: new Set(), geschlossen: {} });
+const _TD_LEER = () => ({ status: null, statusAt: 0, statusGen: 0, tasks: {}, projects: null, projectsFehler: null, laden: {}, busy: new Set(), geschlossen: {}, mut: {} });
 let _td = _TD_LEER();
 let _tdEditOrig = null, _tdRequestId = null;
 function _tdHasAccount() { return !!currentUser && !_demoMode; }
@@ -10037,41 +10038,56 @@ async function _tdCall(action, payload = {}) {
   if (!r.ok) {
     const err = new Error((j && j.error) || 'http_' + r.status);
     err.code = (j && j.error) || 'http_' + r.status; err.status = r.status; err.reason = j && j.reason;
-    if (err.code === 'not_connected') _td.status = { configured: true, connected: false, reason: err.reason || 'revoked' };
+    if (err.code === 'not_connected') _tdSetzeStatus({ configured: true, connected: false, reason: err.reason || 'revoked' });
     throw err;
   }
   return j || {};
 }
+function _tdStatusAlt() { return !_td.status || Date.now() - _td.statusAt > 60000; }
 function _tdLoadStatus(force) {
   if (!_tdAvailable()) return Promise.resolve(null);
-  if (!force && _td.status && Date.now() - _td.statusAt < 60000) return Promise.resolve(_td.status);
+  if (!force && !_tdStatusAlt()) return Promise.resolve(_td.status);
   if (_td.laden.status) return _td.laden.status;
-  const lauf = _td;
+  const lauf = _td, gen = _td.statusGen;
   return (_td.laden.status = _tdCall('status')
-    .then(st => { if (lauf === _td) { _td.status = st; _td.statusAt = Date.now(); } return st; })
-    .catch(() => { if (lauf === _td) { _td.status = { configured: false, connected: false, reason: null }; _td.statusAt = Date.now(); } return null; })
+    .then(st => { if (lauf === _td && gen === _td.statusGen) { _td.status = st; _td.statusAt = Date.now(); } return st; })
+    // Fehler (offline, Stoerung) NICHT als "nicht eingerichtet" merken: letzten Stand behalten,
+    // in ~30 s erneut versuchen – sonst blieb Todoist bis zum Neuladen verschwunden
+    .catch(() => { if (lauf === _td && gen === _td.statusGen) _td.statusAt = Date.now() - 30000; return null; })
     .finally(() => { delete lauf.laden.status; }));
 }
+function _tdSetzeStatus(st) { _td.statusGen++; _td.status = st; _td.statusAt = Date.now(); }
 function _tdLoadTasks(pid, force) {
   const c = _td.tasks[pid];
   if (!force && c && !c.fehler && Date.now() - c.at < 60000) return Promise.resolve(c);
   const key = 'tasks:' + pid;
-  if (_td.laden[key]) return _td.laden[key];
-  const lauf = _td;
+  if (_td.laden[key]) {
+    if (!force) return _td.laden[key];
+    // laeuft schon (evtl. von VOR einer Aenderung) -> danach frisch laden
+    return _td.laden[key].then(() => _tdLoadTasks(pid, true));
+  }
+  const lauf = _td, mut = _td.mut[pid] || 0;
   return (_td.laden[key] = _tdCall('tasks', { project_id: pid })
-    .then(r => { if (lauf === _td) _td.tasks[pid] = { at: Date.now(), liste: r.tasks || [], truncated: !!r.truncated }; return _td.tasks[pid]; })
-    .catch(e => { if (lauf === _td) _td.tasks[pid] = { at: Date.now(), liste: (c && c.liste) || [], fehler: e.code || 'fehler' }; return _td.tasks[pid]; })
+    .then(r => {
+      // Inzwischen in Planory geaendert (abhaken, neu, loeschen …)? Dann ist diese Liste veraltet.
+      if (lauf === _td && (_td.mut[pid] || 0) === mut) _td.tasks[pid] = { at: Date.now(), liste: r.tasks || [], truncated: !!r.truncated };
+      return _td.tasks[pid];
+    })
+    .catch(e => { if (lauf === _td) { const akt = _td.tasks[pid]; _td.tasks[pid] = { at: Date.now(), liste: (akt && akt.liste) || [], fehler: e.code || 'fehler' }; } return _td.tasks[pid]; })
     .finally(() => { delete lauf.laden[key]; }));
 }
+function _tdGeaendert(pid) { _td.mut[pid] = (_td.mut[pid] || 0) + 1; }
 function _tdLoadProjects(force) {
   if (!force && _td.projects) return Promise.resolve(_td.projects);
   if (_td.laden.projects) return _td.laden.projects;
   const lauf = _td;
   return (_td.laden.projects = _tdCall('projects')
-    .then(r => { if (lauf === _td) _td.projects = r.projects || []; return _td.projects; })
-    .catch(() => null)
+    .then(r => { if (lauf === _td) { _td.projects = r.projects || []; _td.projectsFehler = null; } return _td.projects; })
+    // Fehler merken – sonst fragte die Einstellungen-Seite in einer Endlosschleife erneut an
+    .catch(e => { if (lauf === _td) _td.projectsFehler = { at: Date.now(), code: (e && e.code) || 'fehler' }; return null; })
     .finally(() => { delete lauf.laden.projects; }));
 }
+function tdProjekteNeu() { _td.projectsFehler = null; _tdLoadProjects(true).then(() => renderTodoistCard()); renderTodoistCard(); }
 function _tdRerender() {
   const aktiv = document.querySelector('.page.active');
   if (aktiv && aktiv.id === 'page-aufgaben') renderTodoistSection();
@@ -10086,14 +10102,15 @@ function renderTodoistSection() {
   const aus = () => { el.style.display = 'none'; el.innerHTML = ''; };
   if (!_tdAvailable()) return aus();
   const st = _td.status;
-  if (!st) { aus(); _tdLoadStatus().then(_tdRerender); return; }
+  if (_tdStatusAlt() && !_td.laden.status) _tdLoadStatus().then(() => { if (_td.status) _tdRerender(); });
+  if (!st) return aus();
   if (!st.configured || taskPersonFilter) return aus();
   const pid = state.settings && state.settings.todoistProjectId;
   const pname = (state.settings && state.settings.todoistProjectName) || 'Todoist';
   const rahmen = inner => { el.style.display = ''; el.innerHTML = `<div class="table-wrap" style="margin:0">${inner}
     <div style="padding:8px 14px 12px;font-size:0.68rem;color:var(--text3)">${esc(tt(TD_HINWEIS))}</div></div>`; };
   if (!st.connected) {
-    if (!pid) return aus();
+    if (!pid || !st.reason) return aus();   // nur nach echtem Ablauf/Widerruf, nicht nach bewusstem Trennen
     return rahmen(`<div style="padding:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
       <div style="font-size:0.86rem;color:var(--text2)">⚠️ ${esc(tt('Todoist-Verbindung abgelaufen'))}</div>
       <button class="btn btn-primary" onclick="tdConnect()">${esc(tt('Neu verbinden'))}</button></div>`);
@@ -10189,6 +10206,7 @@ async function tdToggleTask(id) {
   renderTodoistSection();
   try {
     await _tdCall(warZu ? 'reopen' : 'close', { id: t.id });
+    _tdGeaendert(pid);
     if (!warZu && t.due && t.due.recurring) {   // wiederkehrend: Todoist schiebt auf den naechsten Termin
       betroffen.forEach(x => delete zu[x]);
       await _tdLoadTasks(pid, true);
@@ -10207,8 +10225,10 @@ async function tdDeleteTask(id) {
   if (!(await showConfirm(tt('Aufgabe in Todoist löschen?')))) return;
   try {
     await _tdCall('delete', { id: t.id });
-    const weg = _tdNachkommen(c.liste, t.id);
-    c.liste = c.liste.filter(x => !weg.has(x.id));
+    _tdGeaendert(pid);
+    const akt = _td.tasks[pid] || c;   // Liste kann inzwischen neu geladen worden sein
+    const weg = _tdNachkommen(akt.liste, t.id);
+    akt.liste = akt.liste.filter(x => !weg.has(x.id));
     showToast('🗑 ' + tt('In Todoist gelöscht'), 'success');
   } catch (e) { showToast('⚠️ ' + tt('Todoist: Änderung nicht gespeichert'), 'error'); }
   renderTodoistSection();
@@ -10270,6 +10290,7 @@ async function tdSaveTask() {
   if (btn) btn.disabled = true;
   try {
     const r = await _tdCall(id ? 'update' : 'add', payload);
+    if (pid) _tdGeaendert(pid);
     const c = pid && _td.tasks[pid];
     if (c && r.task) {
       const i = c.liste.findIndex(x => x.id === r.task.id);
@@ -10289,8 +10310,8 @@ function renderTodoistCard() {
   if (!card || !body) return;
   if (!_tdAvailable()) { card.style.display = 'none'; return; }
   const st = _td.status;
-  if (!st) { card.style.display = 'none'; _tdLoadStatus().then(_tdRerender); return; }
-  if (!st.configured) { card.style.display = 'none'; return; }
+  if (_tdStatusAlt() && !_td.laden.status) _tdLoadStatus().then(() => { if (_td.status) _tdRerender(); });
+  if (!st || !st.configured) { card.style.display = 'none'; return; }
   card.style.display = '';
   const hinweis = `<div style="font-size:0.72rem;color:var(--text3);line-height:1.5">${esc(tt(TD_HINWEIS))} ${esc(tt('Todoist-Aufgaben werden nicht in Planory gespeichert.'))}
     <a href="/datenschutz.html" target="_blank" rel="noopener" style="color:inherit">${esc(tt('Datenschutz'))}</a></div>`;
@@ -10302,14 +10323,17 @@ function renderTodoistCard() {
   }
   const pid = (state.settings && state.settings.todoistProjectId) || '';
   const projekte = _td.projects;
-  if (!projekte) _tdLoadProjects().then(() => { const a = document.querySelector('.page.active'); if (a && a.id === 'page-settings') renderTodoistCard(); });
+  const pf = _td.projectsFehler && Date.now() - _td.projectsFehler.at < 60000 ? _td.projectsFehler : null;
+  if (!projekte && !pf && !_td.laden.projects) _tdLoadProjects().then(() => { const a = document.querySelector('.page.active'); if (a && a.id === 'page-settings') renderTodoistCard(); });
   const optionen = (projekte || []).map(p => `<option value="${esc(p.id)}" ${p.id === pid ? 'selected' : ''}>${'– '.repeat(p.depth)}${esc(p.name)}${p.inbox ? ' (Inbox)' : ''}</option>`).join('');
   const unbekannt = pid && projekte && !projekte.some(p => p.id === pid) ? `<option value="${esc(pid)}" selected>${esc(state.settings.todoistProjectName || pid)}</option>` : '';
   body.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><span class="badge badge-green">✓ ${esc(tt('Verbunden'))}</span></div>
     <div class="form-row" style="margin:0"><label>${esc(tt('Todoist-Projekt für'))} „${esc(state.settings.name || '')}“</label>
       <select id="td-projekt" onchange="tdSetProject(this.value)" ${projekte ? '' : 'disabled'}>
-        <option value="">${esc(tt(projekte ? '— kein Todoist-Projekt —' : 'Lade Projekte…'))}</option>${unbekannt}${optionen}
+        <option value="">${esc(tt(projekte ? '— kein Todoist-Projekt —' : pf ? '— nicht geladen —' : 'Lade Projekte…'))}</option>${unbekannt}${optionen}
       </select></div>
+    ${pf && !projekte ? `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:0.82rem;color:var(--text2)">⚠️ ${esc(tt('Todoist ist gerade nicht erreichbar.'))}
+      <button class="btn btn-ghost" style="font-size:0.78rem" onclick="tdProjekteNeu()">${esc(tt('Erneut versuchen'))}</button></div>` : ''}
     <div><button class="btn btn-ghost" style="font-size:0.8rem" onclick="tdDisconnect()">${esc(tt('Verbindung trennen'))}</button></div>${hinweis}`;
 }
 async function tdConnect() {
@@ -10334,8 +10358,8 @@ async function tdDisconnect() {
   if (!(await showConfirm(tt('Todoist trennen? Deine Aufgaben in Todoist bleiben erhalten.'), { okText: tt('Trennen') }))) return;
   try {
     await _tdCall('disconnect');
-    _td.status = { configured: true, connected: false, reason: null }; _td.statusAt = Date.now();
-    _td.tasks = {}; _td.projects = null;
+    _tdSetzeStatus({ configured: true, connected: false, reason: null });
+    _td.tasks = {}; _td.projects = null; _td.projectsFehler = null;
     showToast(tt('Todoist getrennt – entferne Planory bei Bedarf auch in Todoist unter Einstellungen → Integrationen.'), 'success', 6000);
   } catch (e) { showToast('⚠️ ' + tt('Todoist: Änderung nicht gespeichert'), 'error'); }
   renderTodoistCard();
@@ -10348,7 +10372,7 @@ async function _tdHandleReturn() {
   if (r.t === 'finish' && r.n) {
     try {
       await _tdCall('finish', { n: r.n });
-      _td.status = { configured: true, connected: true, reason: null }; _td.statusAt = Date.now();
+      _tdSetzeStatus({ configured: true, connected: true, reason: null });
       showToast('✅ ' + tt('Todoist verbunden – wähle jetzt das Projekt'), 'success', 4500);
       showPage('settings');
       renderTodoistCard();
@@ -10399,7 +10423,10 @@ function addWorkerRow(prefillName = '', prefillHours = '') {
 
 // ── Fotos zum Tagebuch-Eintrag ──────────────────────────────────────────────
 let tbPendingFiles = [], tbPendingPhotos = [], tbFotosBleiben = [];
+let tbFotosStart = [];               // Fotos beim Oeffnen zum Bearbeiten (nur diese duerfen als "entfernt" gelten)
+let _tbLauf = 0, _tbHochladen = false;
 function addDiaryPhotos(input) {
+  if (_tbHochladen) { input.value = ''; return; }   // waehrend des Hochladens nichts aendern
   Array.from(input.files || []).forEach(file => {
     if (!(file.type || '').startsWith('image/')) return;
     tbPendingFiles.push(file);
@@ -10418,14 +10445,15 @@ function renderDiaryPhotoPreviews() {
   const bild = (src, onx) => `
     <div style="position:relative;display:inline-block">
       <img src="${esc(src || '')}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border);background:var(--surface2)">
-      <button type="button" onclick="${onx}" title="Entfernen"
-        style="position:absolute;top:-5px;right:-5px;background:var(--danger);border:none;color:white;border-radius:50%;width:17px;height:17px;font-size:0.6rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+      ${_tbHochladen ? '' : `<button type="button" onclick="${onx}" title="Entfernen"
+        style="position:absolute;top:-5px;right:-5px;background:var(--danger);border:none;color:white;border-radius:50%;width:17px;height:17px;font-size:0.6rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>`}
     </div>`;
   c.innerHTML = tbFotosBleiben.map((f, i) => bild(f.url || f.data, `tbFotosBleiben.splice(${i},1);renderDiaryPhotoPreviews()`)).join('')
     + tbPendingPhotos.map((p, i) => bild(p.data, `tbPendingPhotos.splice(${i},1);tbPendingFiles.splice(${i},1);renderDiaryPhotoPreviews()`)).join('');
 }
 function _resetDiaryPhotos() {
-  tbPendingFiles = []; tbPendingPhotos = []; tbFotosBleiben = [];
+  _tbLauf++;   // laufendes Hochladen gilt als abgebrochen
+  tbPendingFiles = []; tbPendingPhotos = []; tbFotosBleiben = []; tbFotosStart = [];
   const c = document.getElementById('tb-photo-previews'); if (c) c.innerHTML = '';
 }
 // Foto eines Eintrags gross anzeigen (Lightbox mit Zoom)
@@ -10442,7 +10470,9 @@ function openDiaryFoto(id, i) {
 async function addDiary() {
   if (!requireSub()) return;
   const btn = document.getElementById('tb-save-btn');
-  if (btn && btn.disabled) return;   // laeuft schon (Doppelklick)
+  if (_tbHochladen || (btn && btn.disabled)) return;   // laeuft schon (Doppelklick)
+  // Alles VOR dem Hochladen festhalten – waehrend des Uploads kann das Fenster
+  // abgebrochen/zurueckgesetzt werden, dann darf nichts (Falsches) gespeichert werden.
   const workers = [];
   document.querySelectorAll('#tb-worker-rows > div').forEach(row => {
     const name  = row.querySelector('.tb-worker-name')?.value?.trim();
@@ -10452,34 +10482,54 @@ async function addDiary() {
   const editId = parseInt(document.getElementById('tb-edit-id')?.value) || null;
   const _tbDatum = document.getElementById('tb-datum').value || today();
   const _tbBis   = document.getElementById('tb-datum-bis')?.value || '';
-  // Neue Fotos hochladen (mit Fortschritt), vorhandene behalten soweit nicht entfernt
-  const neu = [];
-  if (tbPendingFiles.length) {
-    const alt = btn ? btn.textContent : '';
-    if (btn) btn.disabled = true;
-    try {
-      for (let i = 0; i < tbPendingFiles.length; i++) {
-        if (btn) btn.textContent = (_lang === 'en' ? 'Uploading photos ' : 'Fotos werden hochgeladen ') + (i + 1) + '/' + tbPendingFiles.length + '…';
-        try {
-          const f = tbPendingFiles[i];
-          const { url, path } = await uploadPhotoToStorage(f, 'tagebuch');
-          neu.push({ url, path: path || null, name: f.name || '' });
-        } catch (e) { showToast('⚠️ ' + (e?.message || e), 'error'); }
-      }
-    } finally { if (btn) { btn.disabled = false; btn.textContent = alt; } }
-  }
-  const altEintrag = editId ? state.tagebuch.find(e => String(e.id) === String(editId)) : null;
-  const fotos = [...tbFotosBleiben, ...neu];
-  const entfernt = (altEintrag?.fotos || []).filter(f => f.path && !fotos.some(g => g.path === f.path));
-  const item = {
-    id:      editId || _neueId(),
-    datum:   _tbDatum,
-    datumBis: (_tbBis && _tbBis >= _tbDatum) ? _tbBis : null,
+  const felder = {
     title:   document.getElementById('tb-title').value || 'Eintrag',
     text:    document.getElementById('tb-text').value,
     weather: document.getElementById('tb-weather').value,
     temp:    document.getElementById('tb-temp').value ? parseFloat(document.getElementById('tb-temp').value) : null,
     tags:    document.getElementById('tb-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+  };
+  const dateien = tbPendingFiles.slice(), bleiben = tbFotosBleiben.slice(), start = tbFotosStart.slice();
+  const lauf = ++_tbLauf;
+  // Neue Fotos hochladen (mit Fortschritt)
+  const neu = [];
+  if (dateien.length) {
+    const alt = btn ? btn.textContent : '';
+    if (btn) btn.disabled = true;
+    _tbHochladen = true; renderDiaryPhotoPreviews();
+    try {
+      for (let i = 0; i < dateien.length; i++) {
+        if (lauf !== _tbLauf) break;   // abgebrochen
+        if (btn) btn.textContent = (_lang === 'en' ? 'Uploading photos ' : 'Fotos werden hochgeladen ') + (i + 1) + '/' + dateien.length + '…';
+        try {
+          const f = dateien[i];
+          const { url, path } = await uploadPhotoToStorage(f, 'tagebuch');
+          neu.push({ url, path: path || null, name: f.name || '' });
+        } catch (e) { showToast('⚠️ ' + (e?.message || e), 'error'); }
+      }
+    } finally { _tbHochladen = false; if (btn) { btn.disabled = false; btn.textContent = alt; } }
+    const m = document.getElementById('modal-tagebuch');
+    if (lauf !== _tbLauf || !m || !m.classList.contains('open') || m.classList.contains('closing')) {
+      // Waehrend des Hochladens abgebrochen: nichts speichern, Hochgeladenes wieder entfernen
+      neu.forEach(f => f.path && deletePhotoFromStorage(f.path));
+      return;
+    }
+  }
+  const altEintrag = editId ? state.tagebuch.find(e => String(e.id) === String(editId)) : null;
+  const schl = f => f.path || f.url;
+  const aktFotos = (altEintrag && altEintrag.fotos) || [];
+  // Fotos, die ein anderes Geraet inzwischen entfernt hat, nicht zurueckbringen;
+  // Fotos, die ein anderes Geraet inzwischen hinzugefuegt hat, behalten.
+  const bleibenAkt = editId ? bleiben.filter(f => aktFotos.some(g => schl(g) === schl(f))) : bleiben;
+  const vonAnderen = aktFotos.filter(f => !start.includes(schl(f)));
+  const fotos = [...bleibenAkt, ...vonAnderen, ...neu];
+  // Nur hier bewusst entfernte Fotos loeschen (die beim Oeffnen da waren)
+  const entfernt = aktFotos.filter(f => f.path && start.includes(schl(f)) && !fotos.some(g => schl(g) === schl(f)));
+  const item = {
+    id:      editId || _neueId(),
+    datum:   _tbDatum,
+    datumBis: (_tbBis && _tbBis >= _tbDatum) ? _tbBis : null,
+    ...felder,
     workers,
     fotos,
     _updatedAt: Date.now()
@@ -10501,6 +10551,7 @@ async function addDiary() {
   if (document.getElementById('tb-modal-title')) document.getElementById('tb-modal-title').textContent = 'Tagebucheintrag';
   renderDiary();
 }
+
 
 function editDiary(id) {
   const e = state.tagebuch.find(e => String(e.id) === String(id));
@@ -10527,7 +10578,9 @@ function editDiary(id) {
   });
   if (document.getElementById('tb-edit-id')) document.getElementById('tb-edit-id').value = id;
   if (document.getElementById('tb-modal-title')) document.getElementById('tb-modal-title').textContent = 'Eintrag bearbeiten';
+  _tbLauf++;
   tbPendingFiles = []; tbPendingPhotos = []; tbFotosBleiben = [...(e.fotos || [])];
+  tbFotosStart = (e.fotos || []).map(f => f.path || f.url);
   renderDiaryPhotoPreviews();
   openModal('modal-tagebuch');
 }

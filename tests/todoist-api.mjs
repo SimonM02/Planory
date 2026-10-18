@@ -76,6 +76,7 @@ globalThis.fetch = async (url, opts = {}) => {
     if (body.grant_type === 'refresh_token') {
       W.oauth.refreshCalls++;
       if (W.oauth.delay) await new Promise(r => setTimeout(r, W.oauth.delay));
+      if (W.oauth.clientFehler) return json(401, { error: 'invalid_client' });
       if (W.oauth.refreshFail || !W.oauth.refreshValid.has(body.refresh_token)) return json(400, { error: 'invalid_grant' });
       W.oauth.refreshValid.delete(body.refresh_token);
       const n = W.oauth.refreshCalls; const acc = 'acc-r' + n, ref = 'ref-r' + n;
@@ -326,6 +327,28 @@ await check('CORS nur für planory.at; ohne Einrichtung unsichtbar; keine Tokens
     if (st.body.configured !== false || ta.status !== 501) p.push('ohne Einrichtung: ' + JSON.stringify(st.body) + ' / ' + ta.status);
   } finally { process.env.TODOIST_CLIENT_SECRET = alt; }
   return p.join(' · ');
+});
+
+await check('Falsches Client-Secret beim Erneuern löscht die Verbindung NICHT (nur invalid_grant)', async () => {
+  await verbinde();
+  W.rows[0].expires_at = new Date(Date.now() - 1000).toISOString();
+  W.tasks = [{ id: 'T1', project_id: 'P2', content: 'x' }];
+  W.oauth.clientFehler = true;
+  const r = await post('jwt-A', { action: 'tasks', project_id: 'P2' });
+  const p = [];
+  if (r.status !== 502) p.push('Antwort ' + r.status + ' ' + JSON.stringify(r.body));
+  if (!W.rows[0].access_token_enc || !W.rows[0].refresh_token_enc) p.push('Zugangsdaten gelöscht');
+  if (W.rows[0].refresh_lock_until) p.push('Sperre bleibt hängen');
+  return p.join(' · ');
+});
+await check('Umbenennen einer nicht abhakbaren Aufgabe behält „* "', async () => {
+  await verbinde();
+  W.tasks = [{ id: 'T7', project_id: 'P2', content: '* Überschrift', due: null }];
+  const r = await post('jwt-A', { action: 'update', id: 'T7', content: 'Neue Überschrift' });
+  const sent = W.apiCalls.filter(c => c.method === 'POST' && c.pfad === '/tasks/T7').at(-1);
+  if (r.status !== 200 || !sent || sent.body.content !== '* Neue Überschrift') return 'gesendet: ' + JSON.stringify(sent && sent.body);
+  if (!r.body.task.uncompletable) return 'Antwort nicht mehr „nicht abhakbar"';
+  return '';
 });
 
 console.log('\n  PLANORY – Todoist-Schnittstelle');

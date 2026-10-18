@@ -89,8 +89,14 @@ async function oauthToken(body) {
     r = await fetchMitTimeout(`${TD_OAUTH}/access_token`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: env('TODOIST_CLIENT_ID'), client_secret: env('TODOIST_CLIENT_SECRET'), ...body }) });
   } catch (e) { throw httpErr(502, 'todoist_unavailable'); }
-  if (r.status === 400 || r.status === 401 || r.status === 403) throw httpErr(401, 'invalid_grant');
-  if (!r.ok) throw httpErr(502, 'todoist_unavailable');
+  if (!r.ok) {
+    // Nur "invalid_grant" heisst: diese Anmeldung ist ungueltig. Alles andere (z.B. falsches
+    // Client-Secret = invalid_client, Stoerung) darf die gespeicherten Zugangsdaten NICHT loeschen.
+    let j = null; try { j = await r.json(); } catch (e) {}
+    if (r.status < 500 && j && j.error === 'invalid_grant') throw httpErr(401, 'invalid_grant');
+    if (r.status < 500) console.warn('[todoist] OAuth-Fehler', r.status, (j && j.error) || '');
+    throw httpErr(502, 'todoist_unavailable');
+  }
   const j = await r.json();
   if (!j || !j.access_token) throw httpErr(502, 'todoist_unavailable');
   return j;

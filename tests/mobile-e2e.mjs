@@ -1125,7 +1125,7 @@ await scenario('Bautagebuch: Fotos hochladen, anzeigen, bearbeiten, abbrechen, i
 });
 
 // ── Todoist (nur Web): nachgebauter Server unter /api/todoist ──
-const TD = { calls: [], fail: null, status: { configured: true, connected: true, reason: null }, tasks: [] };
+const TD = { calls: [], fail: null, status: { configured: true, connected: true, reason: null }, tasks: [], projektFehler: false, tasksDelay: 0 };
 const TD_TASKS = () => [
   { id: 'T1', content: '<img src=x onerror="window.__xss=1">Fenster bestellen', description: 'Beim Tischler', priority: 4, parent_id: null, child_order: 1, due: { date: '2026-01-05', time: null, recurring: false, string: '5 Jan' }, url: 'https://app.todoist.com/app/task/T1', uncompletable: false },
   { id: 'T2', content: 'Wöchentlich Baustelle prüfen', description: '', priority: 1, parent_id: null, child_order: 2, due: { date: '2099-01-01', time: null, recurring: true, string: 'every week' }, url: 'https://app.todoist.com/app/task/T2', uncompletable: false },
@@ -1139,6 +1139,8 @@ await page.route('**/api/todoist', async route => {
   TD.calls.push(b);
   const send = (status, body) => route.fulfill({ status, contentType: 'application/json', headers: hdr, body: JSON.stringify(body) });
   if (TD.fail && TD.fail.action === b.action) { const f = TD.fail; TD.fail = null; return send(f.status, f.body); }
+  if (b.action === 'projects' && TD.projektFehler) return send(502, { error: 'todoist_unavailable' });
+  if (b.action === 'tasks' && TD.tasksDelay) { const snap = JSON.parse(JSON.stringify(TD.tasks)); await new Promise(r => setTimeout(r, TD.tasksDelay)); return send(200, { tasks: snap, truncated: false }); }
   switch (b.action) {
     case 'status': return send(200, TD.status);
     case 'tasks': return send(200, { tasks: TD.tasks, truncated: false });
@@ -1159,7 +1161,7 @@ const TD_AN = `window.__tdAn = (projekt = 'P2') => {
 window.__tdAus = () => { const v = window.__tdVorher; currentUser = v.u; _tdHasAccount = v.h; state.settings.todoistProjectId = v.pid; state.settings.todoistProjectName = v.pn; _tdReset(); };
 window.__bis = async (fn, ms = 3000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (fn()) return true; await new Promise(r => setTimeout(r, 50)); } return false; };`;
 await page.evaluate(TD_AN);
-const tdReset = (status = { configured: true, connected: true, reason: null }) => { TD.calls = []; TD.fail = null; TD.status = status; TD.tasks = TD_TASKS(); };
+const tdReset = (status = { configured: true, connected: true, reason: null }) => { TD.calls = []; TD.fail = null; TD.status = status; TD.tasks = TD_TASKS(); TD.projektFehler = false; TD.tasksDelay = 0; };
 
 await scenario('Todoist: Aufgaben erscheinen unter „Aus Todoist" (sicher, ins Handy-Format passend)', async () => {
   tdReset();
@@ -1301,6 +1303,134 @@ await scenario('Todoist: Rückkehr nach der Anmeldung schließt die Verbindung a
   if (!TD.calls.some(c => c.action === 'finish' && c.n === 'abc') || !r.verbunden) p.push('finish nicht aufgerufen/verbunden');
   if (!r.from || !r.hinweis) p.push('Englisch fehlt');
   if (!r.speichern) p.push('Aufgabe „Speichern" wurde übersetzt');
+  return p.join(' · ');
+});
+
+await scenario('Todoist: Projektliste nicht ladbar → keine Endlosschleife, „Erneut versuchen"', async () => {
+  tdReset(); TD.projektFehler = true;
+  const r = await page.evaluate(async () => {
+    __tdAn();
+    try {
+      showPage('settings'); renderTodoistCard();
+      await new Promise(r => setTimeout(r, 1500));
+      return { knopf: document.getElementById('td-card-body').textContent.includes('Erneut versuchen') };
+    } finally { __tdAus(); }
+  });
+  const n = TD.calls.filter(c => c.action === 'projects').length;
+  const p = [];
+  if (n > 2) p.push(`${n} Anfragen in 1,5 s (Endlosschleife)`);
+  if (!r.knopf) p.push('kein „Erneut versuchen"');
+  return p.join(' · ');
+});
+await scenario('Todoist: bewusst getrennt → kein „abgelaufen"; Status-Fehler blendet nicht dauerhaft aus', async () => {
+  tdReset();
+  const r = await page.evaluate(async () => {
+    __tdAn(); const altConfirm = window.showConfirm; window.showConfirm = async () => true;
+    try {
+      showPage('settings'); renderTodoistCard(); await __bis(() => !!document.getElementById('td-projekt'));
+      await tdDisconnect();
+      showPage('aufgaben'); await new Promise(r => setTimeout(r, 300));
+      const nachTrennen = document.getElementById('td-section').style.display;
+      // Status-Abfrage scheitert einmal (offline) -> danach darf Todoist nicht dauerhaft "nicht eingerichtet" sein
+      _tdReset(); window.__tdStatusFehler = true;
+      return { nachTrennen };
+    } finally { window.showConfirm = altConfirm; __tdAus(); }
+  });
+  TD.fail = { action: 'status', status: 502, body: { error: 'todoist_unavailable' } };
+  const r2 = await page.evaluate(async () => {
+    __tdAn();
+    try {
+      await _tdLoadStatus();
+      const nachFehler = _td.status && _td.status.configured === false;
+      const bald = Date.now() - _td.statusAt > 25000;   // naechster Versuch in ~30 s statt nie
+      await _tdLoadStatus(true);
+      return { nachFehler, bald, jetzt: !!(_td.status && _td.status.configured) };
+    } finally { __tdAus(); }
+  });
+  const p = [];
+  if (r.nachTrennen !== 'none') p.push('nach bewusstem Trennen steht „abgelaufen"');
+  if (r2.nachFehler) p.push('ein Fehler merkt sich „nicht eingerichtet"');
+  if (!r2.bald) p.push('kein baldiger neuer Versuch');
+  if (!r2.jetzt) p.push('Status kommt nicht wieder');
+  return p.join(' · ');
+});
+await scenario('Todoist: Neu laden nach Änderung nimmt nicht die alte, laufende Antwort', async () => {
+  tdReset(); TD.tasksDelay = 400;
+  const r = await page.evaluate(async () => {
+    __tdAn();
+    try {
+      const alt = _tdLoadTasks('P2');                 // laeuft (liefert den alten Stand)
+      await new Promise(r => setTimeout(r, 100));
+      window.__tdNeuStand = true;
+      return { gestartet: true };
+    } finally { /* Fortsetzung unten */ }
+  });
+  TD.tasks = TD.tasks.map(t => t.id === 'T2' ? { ...t, due: { ...t.due, date: '2099-01-08' } } : t);   // Todoist hat weitergeschoben
+  const r2 = await page.evaluate(async () => {
+    try {
+      _tdGeaendert('P2');
+      await _tdLoadTasks('P2', true);
+      return { datum: (_td.tasks.P2.liste.find(t => t.id === 'T2') || {}).due?.date };
+    } finally { __tdAus(); }
+  });
+  const n = TD.calls.filter(c => c.action === 'tasks').length;
+  const p = [];
+  if (r2.datum !== '2099-01-08') p.push(`zeigt altes Datum ${r2.datum}`);
+  if (n < 2) p.push('kein frischer Abruf');
+  return p.join(' · ');
+});
+await scenario('Tagebuch-Fotos: Abbrechen während des Hochladens speichert nichts und räumt auf', async () => {
+  const r = await page.evaluate(async () => {
+    if (typeof addDiaryPhotos !== 'function') return { fehlt: true };
+    const datei = async () => { const c = document.createElement('canvas'); c.width = 50; c.height = 50; const b = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.8)); return new File([b], 'x.jpg', { type: 'image/jpeg' }); };
+    const id = _neueId();
+    state.tagebuch.push({ id, datum: '2026-09-01', title: 'Mit Fotos', text: 'Wichtiger Text', weather: '☀️ Sonnig', tags: ['a'], workers: [],
+      fotos: [{ url: 'data:image/png;base64,AA', path: 'test/alt1' }, { url: 'data:image/png;base64,BB', path: 'test/alt2' }] });
+    const altUp = uploadPhotoToStorage, altDel = deletePhotoFromStorage;
+    const geloescht = [];
+    uploadPhotoToStorage = async f => { await new Promise(r => setTimeout(r, 400)); return { url: 'data:image/png;base64,CC', path: 'test/neu1' }; };
+    deletePhotoFromStorage = async p => { geloescht.push(p); };
+    try {
+      editDiary(id); await new Promise(r => setTimeout(r, 50));
+      addDiaryPhotos({ files: [await datei()], value: '' }); await new Promise(r => setTimeout(r, 100));
+      const laeuft = addDiary(); await new Promise(r => setTimeout(r, 120));
+      const keinX = document.querySelectorAll('#tb-photo-previews button').length === 0;
+      [...document.querySelectorAll('#modal-tagebuch .modal-actions button')].find(b => /abbrechen/i.test(b.textContent)).click();
+      await laeuft; await new Promise(r => setTimeout(r, 300));
+      const e = state.tagebuch.find(x => x.id === id);
+      return { titel: e.title, text: e.text, fotos: e.fotos.length, geloescht, keinX };
+    } finally { uploadPhotoToStorage = altUp; deletePhotoFromStorage = altDel; state.tagebuch = state.tagebuch.filter(x => x.id !== id); }
+  });
+  if (r.fehlt) return 'Foto-Upload fehlt';
+  const p = [];
+  if (r.titel !== 'Mit Fotos' || r.text !== 'Wichtiger Text' || r.fotos !== 2) p.push(`Eintrag verändert: ${r.titel} / ${r.text} / ${r.fotos} Fotos`);
+  if (r.geloescht.includes('test/alt1') || r.geloescht.includes('test/alt2')) p.push('vorhandene Fotos gelöscht');
+  if (!r.geloescht.includes('test/neu1')) p.push('hochgeladenes Foto nicht aufgeräumt');
+  if (!r.keinX) p.push('✕ während des Hochladens bedienbar');
+  return p.join(' · ');
+});
+await scenario('Tagebuch-Fotos: Foto von anderem Gerät bleibt beim Speichern erhalten', async () => {
+  const r = await page.evaluate(async () => {
+    if (typeof addDiaryPhotos !== 'function') return { fehlt: true };
+    const id = _neueId();
+    state.tagebuch.push({ id, datum: '2026-09-02', title: 'Zwei Geräte', text: '', workers: [], fotos: [{ url: 'data:image/png;base64,AA', path: 'test/a' }] });
+    const altDel = deletePhotoFromStorage, geloescht = [];
+    deletePhotoFromStorage = async p => { geloescht.push(p); };
+    try {
+      editDiary(id); await new Promise(r => setTimeout(r, 50));
+      // anderes Geraet fuegt waehrenddessen ein Foto hinzu (Realtime ersetzt den Eintrag)
+      const i = state.tagebuch.findIndex(x => x.id === id);
+      state.tagebuch[i] = { ...state.tagebuch[i], fotos: [...state.tagebuch[i].fotos, { url: 'data:image/png;base64,YY', path: 'test/remote' }] };
+      document.getElementById('tb-text').value = 'Tippfehler korrigiert';
+      await addDiary(); await new Promise(r => setTimeout(r, 250));
+      const e = state.tagebuch.find(x => x.id === id);
+      return { pfade: e.fotos.map(f => f.path), geloescht };
+    } finally { deletePhotoFromStorage = altDel; state.tagebuch = state.tagebuch.filter(x => x.id !== id); }
+  });
+  if (r.fehlt) return 'Foto-Upload fehlt';
+  const p = [];
+  if (!r.pfade.includes('test/remote')) p.push('Foto vom anderen Gerät verschwunden');
+  if (r.geloescht.length) p.push('Dateien gelöscht: ' + r.geloescht.join(','));
   return p.join(' · ');
 });
 

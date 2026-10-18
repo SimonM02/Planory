@@ -122,10 +122,14 @@ async function aktion(uid, a, b) {
     case 'update': {
       const tid = id(b.id);
       const body = felder(b, false);
-      if ('due_date' in body || 'due_string' in body) {
+      if ('due_date' in body || 'due_string' in body || 'content' in body) {
+        const roh = (await tdFetch(uid, 'GET', `/tasks/${encodeURIComponent(tid)}`)) || {};
+        const akt = normTask(roh);
         // Datum von wiederkehrenden Aufgaben / Aufgaben mit Uhrzeit nie ueberschreiben (Wiederholung ginge verloren)
-        const akt = normTask((await tdFetch(uid, 'GET', `/tasks/${encodeURIComponent(tid)}`)) || {});
-        if (akt.due && (akt.due.recurring || akt.due.time)) throw httpErr(409, 'date_locked', { reason: akt.due.recurring ? 'recurring' : 'timed' });
+        if (('due_date' in body || 'due_string' in body) && akt.due && (akt.due.recurring || akt.due.time))
+          throw httpErr(409, 'date_locked', { reason: akt.due.recurring ? 'recurring' : 'timed' });
+        // Nicht abhakbare Aufgaben ("* " am Anfang) bleiben es auch nach dem Umbenennen
+        if ('content' in body && akt.uncompletable && !body.content.startsWith('* ')) body.content = '* ' + body.content;
       }
       if (!Object.keys(body).length) throw httpErr(400, 'bad_request');
       const t = await tdFetch(uid, 'POST', `/tasks/${encodeURIComponent(tid)}`, { body });
