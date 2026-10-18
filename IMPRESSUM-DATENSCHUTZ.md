@@ -27,10 +27,10 @@ Gewerbebehörde: [Bezirkshauptmannschaft/Magistrat]
 Mitglied der WKO: [ja/nein]
 UID: [falls vorhanden] -->
 
-**Online-Streitbeilegung:** Die EU-Plattform zur Online-Streitbeilegung findest
-du unter https://ec.europa.eu/consumers/odr. Wir sind nicht verpflichtet und
-nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungs-
-stelle teilzunehmen.
+**Verbraucherstreitbeilegung:** Wir sind nicht verpflichtet und nicht bereit, an
+Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+(Die EU-Plattform zur Online-Streitbeilegung wurde am 20.07.2025 abgeschaltet –
+der frühere Link darauf wurde deshalb entfernt.)
 
 ---
 

@@ -4048,10 +4048,20 @@
       <div id="tb-worker-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
       <button type="button" class="btn btn-ghost" style="width:100%;font-size:0.8rem" onclick="addWorkerRow()">+ Arbeiter hinzufügen</button>
     </div>
+    <div class="form-row">
+      <label>Fotos</label>
+      <div id="tb-photo-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+      <div onclick="pickPhotosOrFile('tb-photo-input', addDiaryPhotos)"
+        style="border:1.5px dashed var(--border);border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-size:0.82rem;color:var(--text2);transition:all 0.15s"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        <input type="file" id="tb-photo-input" accept="image/*" multiple style="display:none" onchange="addDiaryPhotos(this)">
+        📷 Fotos hinzufügen
+      </div>
+    </div>
     <div class="form-row"><label>Tags (kommagetrennt)</label><input type="text" id="tb-tags" placeholder="Rohbau, Betonage"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-tagebuch');resetDiaryModal()">Abbrechen</button>
-      <button class="btn btn-primary" onclick="addDiary()">Speichern</button>
+      <button class="btn btn-primary" id="tb-save-btn" onclick="addDiary()">Speichern</button>
     </div>
   </div>
 </div>
@@ -6619,7 +6629,7 @@ const _FORM_MODALS = {
   'modal-zahlung':       null,
   'modal-task':          null,
   'modal-kontakt':       null,
-  'modal-tagebuch':      () => { const r = document.getElementById('tb-worker-rows'); if (r) r.innerHTML = ''; },
+  'modal-tagebuch':      () => { const r = document.getElementById('tb-worker-rows'); if (r) r.innerHTML = ''; _resetDiaryPhotos(); },
   'modal-notiz':         null,
   'modal-doku':          () => { dokuPendingPhotos = []; dokuPendingFiles = []; try { renderDokuPhotoPreviews(); } catch(e) {} },
   'modal-wartung':       () => { try { resetWartungModal(); } catch(e) {} },
@@ -9938,8 +9948,52 @@ function addWorkerRow(prefillName = '', prefillHours = '') {
   container.appendChild(row);
 }
 
-function addDiary() {
+// ── Fotos zum Tagebuch-Eintrag ──────────────────────────────────────────────
+let tbPendingFiles = [], tbPendingPhotos = [], tbFotosBleiben = [];
+function addDiaryPhotos(input) {
+  Array.from(input.files || []).forEach(file => {
+    if (!(file.type || '').startsWith('image/')) return;
+    tbPendingFiles.push(file);
+    const vorschau = { data: '' };
+    tbPendingPhotos.push(vorschau);
+    const r = new FileReader();
+    r.onload = e => { vorschau.data = e.target.result; renderDiaryPhotoPreviews(); };
+    r.readAsDataURL(file);
+  });
+  input.value = '';
+  renderDiaryPhotoPreviews();
+}
+function renderDiaryPhotoPreviews() {
+  const c = document.getElementById('tb-photo-previews');
+  if (!c) return;
+  const bild = (src, onx) => `
+    <div style="position:relative;display:inline-block">
+      <img src="${esc(src || '')}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border);background:var(--surface2)">
+      <button type="button" onclick="${onx}" title="Entfernen"
+        style="position:absolute;top:-5px;right:-5px;background:var(--danger);border:none;color:white;border-radius:50%;width:17px;height:17px;font-size:0.6rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`;
+  c.innerHTML = tbFotosBleiben.map((f, i) => bild(f.url || f.data, `tbFotosBleiben.splice(${i},1);renderDiaryPhotoPreviews()`)).join('')
+    + tbPendingPhotos.map((p, i) => bild(p.data, `tbPendingPhotos.splice(${i},1);tbPendingFiles.splice(${i},1);renderDiaryPhotoPreviews()`)).join('');
+}
+function _resetDiaryPhotos() {
+  tbPendingFiles = []; tbPendingPhotos = []; tbFotosBleiben = [];
+  const c = document.getElementById('tb-photo-previews'); if (c) c.innerHTML = '';
+}
+// Foto eines Eintrags gross anzeigen (Lightbox mit Zoom)
+function openDiaryFoto(id, i) {
+  const e = (state.tagebuch || []).find(x => String(x.id) === String(id));
+  const f = e && (e.fotos || [])[i];
+  if (!f) return;
+  document.getElementById('lightbox-img').src = f.url || f.data || '';
+  document.getElementById('lightbox-title').textContent = e.title || (_lang === 'en' ? 'Site diary' : 'Bautagebuch');
+  document.getElementById('lightbox-meta').textContent = fmtDate(e.datum) + ((e.fotos || []).length > 1 ? ` · ${i + 1}/${e.fotos.length}` : '');
+  document.getElementById('lightbox').classList.add('open');
+}
+
+async function addDiary() {
   if (!requireSub()) return;
+  const btn = document.getElementById('tb-save-btn');
+  if (btn && btn.disabled) return;   // laeuft schon (Doppelklick)
   const workers = [];
   document.querySelectorAll('#tb-worker-rows > div').forEach(row => {
     const name  = row.querySelector('.tb-worker-name')?.value?.trim();
@@ -9949,8 +10003,27 @@ function addDiary() {
   const editId = parseInt(document.getElementById('tb-edit-id')?.value) || null;
   const _tbDatum = document.getElementById('tb-datum').value || today();
   const _tbBis   = document.getElementById('tb-datum-bis')?.value || '';
+  // Neue Fotos hochladen (mit Fortschritt), vorhandene behalten soweit nicht entfernt
+  const neu = [];
+  if (tbPendingFiles.length) {
+    const alt = btn ? btn.textContent : '';
+    if (btn) btn.disabled = true;
+    try {
+      for (let i = 0; i < tbPendingFiles.length; i++) {
+        if (btn) btn.textContent = (_lang === 'en' ? 'Uploading photos ' : 'Fotos werden hochgeladen ') + (i + 1) + '/' + tbPendingFiles.length + '…';
+        try {
+          const f = tbPendingFiles[i];
+          const { url, path } = await uploadPhotoToStorage(f, 'tagebuch');
+          neu.push({ url, path: path || null, name: f.name || '' });
+        } catch (e) { showToast('⚠️ ' + (e?.message || e), 'error'); }
+      }
+    } finally { if (btn) { btn.disabled = false; btn.textContent = alt; } }
+  }
+  const altEintrag = editId ? state.tagebuch.find(e => String(e.id) === String(editId)) : null;
+  const fotos = [...tbFotosBleiben, ...neu];
+  const entfernt = (altEintrag?.fotos || []).filter(f => f.path && !fotos.some(g => g.path === f.path));
   const item = {
-    id:      editId || Date.now(),
+    id:      editId || _neueId(),
     datum:   _tbDatum,
     datumBis: (_tbBis && _tbBis >= _tbDatum) ? _tbBis : null,
     title:   document.getElementById('tb-title').value || 'Eintrag',
@@ -9958,15 +10031,20 @@ function addDiary() {
     weather: document.getElementById('tb-weather').value,
     temp:    document.getElementById('tb-temp').value ? parseFloat(document.getElementById('tb-temp').value) : null,
     tags:    document.getElementById('tb-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    workers
+    workers,
+    fotos,
+    _updatedAt: Date.now()
   };
   if (editId) {
     const idx = state.tagebuch.findIndex(e => String(e.id) === String(editId));
-    if (idx > -1) state.tagebuch[idx] = { ...item, fotos: state.tagebuch[idx].fotos };
+    if (idx > -1) state.tagebuch[idx] = { ...state.tagebuch[idx], ...item };
+    else state.tagebuch.push(item);
   } else {
     state.tagebuch.push(item);
   }
   save(); closeModal('modal-tagebuch');
+  _resetDiaryPhotos();
+  entfernt.forEach(f => deletePhotoFromStorage(f.path));   // erst nach dem Speichern aufraeumen
   showToast(editId ? '✏️ Eintrag aktualisiert' : '✅ Tagebucheintrag gespeichert', 'success');
   ['tb-datum','tb-datum-bis','tb-title','tb-text','tb-tags','tb-temp'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('tb-worker-rows').innerHTML = '';
@@ -10000,6 +10078,8 @@ function editDiary(id) {
   });
   if (document.getElementById('tb-edit-id')) document.getElementById('tb-edit-id').value = id;
   if (document.getElementById('tb-modal-title')) document.getElementById('tb-modal-title').textContent = 'Eintrag bearbeiten';
+  tbPendingFiles = []; tbPendingPhotos = []; tbFotosBleiben = [...(e.fotos || [])];
+  renderDiaryPhotoPreviews();
   openModal('modal-tagebuch');
 }
 
@@ -10007,8 +10087,10 @@ async function deleteDiary(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
   _trackDeletion(id, 'tagebuch');
+  const weg = state.tagebuch.find(e => String(e.id) === String(id));
   state.tagebuch = state.tagebuch.filter(e => String(e.id) !== String(id));
   save(); renderDiary();
+  (weg?.fotos || []).forEach(f => f.path && deletePhotoFromStorage(f.path));
   showToast('🗑 Eintrag gelöscht', 'success');
 }
 
@@ -10088,12 +10170,17 @@ function renderDiary() {
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${workers.map(w => `
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;display:flex;gap:8px;align-items:center">
-                <span style="font-size:0.84rem">${w.name}</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent)">${w.hours}h</span>
+                <span style="font-size:0.84rem">${esc(w.name)}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent)">${esc(w.hours)}h</span>
               </div>`).join('')}
           </div>
         </div>` : ''}
-      ${(e.tags||[]).length ? `<div class="diary-tags">${(e.tags||[]).map(t=>`<span class="badge badge-gray">${t}</span>`).join('')}</div>` : ''}
+      ${(e.fotos||[]).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">${(e.fotos||[]).slice(0, 4).map((f, i) => `
+        <div style="position:relative;width:72px;height:72px;flex-shrink:0;cursor:pointer" onclick="openDiaryFoto(${e.id},${i})">
+          <img src="${esc(f.url || f.data || '')}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:var(--surface2)">
+          ${i === 3 && e.fotos.length > 4 ? `<div style="position:absolute;inset:0;border-radius:8px;background:rgba(15,29,48,0.55);color:white;font-weight:800;display:flex;align-items:center;justify-content:center">+${e.fotos.length - 4}</div>` : ''}
+        </div>`).join('')}</div>` : ''}
+      ${(e.tags||[]).length ? `<div class="diary-tags">${(e.tags||[]).map(t=>`<span class="badge badge-gray">${esc(t)}</span>`).join('')}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -14529,6 +14616,7 @@ async function _migrateEmbeddedFiles() {
       await migratePhotoList(proj.fotos, 'galerie');
       for (const d of (proj.dokumentation || [])) await migratePhotoList(d.fotos, 'dokumentation');
       for (const m of (proj.maengel || []))      await migratePhotoList(m.fotos, 'maengel');
+      for (const t of (proj.tagebuch || []))     await migratePhotoList(t.fotos, 'tagebuch');
       // 4) Alte Dokumente (Base64 statt Storage-Pfad)
       for (const dat of (proj.dateien || [])) {
         if (!_isEmbeddedFile(dat.data)) continue;
@@ -17551,7 +17639,10 @@ function _baubuchDaten(opts = {}) {
     .map(e => {
       const start = String(e.datum).slice(0, 10);
       const ende = e.datumBis && e.datumBis >= start ? String(e.datumBis).slice(0, 10) : start;
-      const eigene = fotos.filter(f => f.datum >= start && f.datum <= ende && !benutzt.has(f.id));
+      // eigene Fotos des Eintrags zuerst, dann Galerie-Fotos mit passendem Datum
+      const direkt = opts.fotos === false ? [] : (e.fotos || []).filter(f => f && (f.url || f.data))
+        .map((f, i) => ({ id: 'tb' + e.id + '_' + i, src: f.url || f.data, datum: start, titel: '', albumId: '', album: '' }));
+      const eigene = [...direkt, ...fotos.filter(f => f.datum >= start && f.datum <= ende && !benutzt.has(f.id))];
       eigene.forEach(f => benutzt.add(f.id));
       return { typ: 'tag', datum: start, bis: ende !== start ? ende : '', titel: e.title || '', text: e.text || '',
                wetter: opts.wetter === false ? '' : _baubuchWetter(e),

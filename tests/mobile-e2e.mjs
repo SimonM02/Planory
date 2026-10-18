@@ -1076,6 +1076,54 @@ await scenario('PDF-Text: zerlegte Umlaute (a + ¨) bleiben Umlaute', async () =
   return r === 'Bäume Grün' ? '' : `wurde zu „${r}"`;
 });
 
+await scenario('Bautagebuch: Fotos hochladen, anzeigen, bearbeiten, abbrechen, ins Buch, löschen', async () => {
+  const r = await page.evaluate(async () => {
+    if (typeof addDiaryPhotos !== 'function') return { fehlt: true };
+    const datei = async farbe => { const c = document.createElement('canvas'); c.width = 300; c.height = 200; const g = c.getContext('2d');
+      g.fillStyle = farbe; g.fillRect(0, 0, 300, 200); const b = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.8));
+      return new File([b], farbe.slice(1) + '.jpg', { type: 'image/jpeg' }); };
+    showPage('tagebuch'); openModal('modal-tagebuch');
+    document.getElementById('tb-title').value = 'Foto-Tag';
+    addDiaryPhotos({ files: [await datei('#aa0000'), await datei('#00aa00')], value: '' });
+    await __warte(300);
+    const vorschau = document.querySelectorAll('#tb-photo-previews img').length;
+    await addDiary(); await __warte(300);
+    const e = state.tagebuch.find(x => x.title === 'Foto-Tag');
+    const inListe = [...document.querySelectorAll('#diary-list .diary-entry')].find(d => d.textContent.includes('Foto-Tag'))?.querySelectorAll('img').length || 0;
+    editDiary(e.id); await __warte(100);
+    const vorschauEdit = document.querySelectorAll('#tb-photo-previews img').length;
+    const erstes = e.fotos[0].url;
+    tbFotosBleiben.splice(0, 1); renderDiaryPhotoPreviews();
+    addDiaryPhotos({ files: [await datei('#0000aa')], value: '' }); await __warte(300);
+    await addDiary(); await __warte(300);
+    const e2 = state.tagebuch.find(x => x.title === 'Foto-Tag');
+    openModal('modal-tagebuch'); addDiaryPhotos({ files: [await datei('#888888')], value: '' }); await __warte(200);
+    [...document.querySelectorAll('#modal-tagebuch .modal-actions button')].find(b => /abbrechen/i.test(b.textContent)).click(); await __warte(300);
+    openModal('modal-tagebuch'); await __warte(50);
+    const nachAbbruch = document.querySelectorAll('#tb-photo-previews img').length + tbPendingFiles.length;
+    closeModal('modal-tagebuch'); await __warte(250);
+    const tag = _baubuchDaten({}).kapitel.flatMap(k => k.eintraege).find(x => x.titel === 'Foto-Tag');
+    e2.fotos.forEach((f, i) => { f.path = 'test/tb' + i; });
+    const geloescht = []; const alt = deletePhotoFromStorage; deletePhotoFromStorage = async p => { geloescht.push(p); };
+    window.showConfirm = async () => true;
+    try { await deleteDiary(e2.id); } finally { deletePhotoFromStorage = alt; window.showConfirm = window.__echtesConfirm; }
+    return { vorschau, anzahl: e.fotos.length, inListe, vorschauEdit, anzahl2: e2.fotos.length, ersteWeg: !e2.fotos.some(f => f.url === erstes),
+             nachAbbruch, buchErstes: !!tag && tag.fotos[0]?.src === e2.fotos[0].url, buchAnzahl: tag ? tag.fotos.length : 0, geloescht: geloescht.length,
+             noch: state.tagebuch.some(x => x.title === 'Foto-Tag') };
+  });
+  if (r.fehlt) return 'kein Foto-Upload im Bautagebuch';
+  const p = [];
+  if (r.vorschau !== 2) p.push(`Vorschau zeigt ${r.vorschau} statt 2 Fotos`);
+  if (r.anzahl !== 2) p.push(`gespeichert ${r.anzahl} statt 2 Fotos`);
+  if (r.inListe !== 2) p.push(`Liste zeigt ${r.inListe} Fotos`);
+  if (r.vorschauEdit !== 2) p.push(`Bearbeiten zeigt ${r.vorschauEdit} Fotos`);
+  if (r.anzahl2 !== 2 || !r.ersteWeg) p.push(`nach Bearbeiten ${r.anzahl2} Fotos, entferntes weg: ${r.ersteWeg}`);
+  if (r.nachAbbruch) p.push('Abbrechen lässt Fotos im Fenster stehen');
+  if (!r.buchErstes || r.buchAnzahl < 2) p.push('Buch: Fotos des Eintrags fehlen');
+  if (r.geloescht !== 2 || r.noch) p.push(`Löschen: ${r.geloescht} Dateien entfernt, Eintrag noch da: ${r.noch}`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
