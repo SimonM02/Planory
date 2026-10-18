@@ -1124,6 +1124,186 @@ await scenario('Bautagebuch: Fotos hochladen, anzeigen, bearbeiten, abbrechen, i
   return p.join(' · ');
 });
 
+// ── Todoist (nur Web): nachgebauter Server unter /api/todoist ──
+const TD = { calls: [], fail: null, status: { configured: true, connected: true, reason: null }, tasks: [] };
+const TD_TASKS = () => [
+  { id: 'T1', content: '<img src=x onerror="window.__xss=1">Fenster bestellen', description: 'Beim Tischler', priority: 4, parent_id: null, child_order: 1, due: { date: '2026-01-05', time: null, recurring: false, string: '5 Jan' }, url: 'https://app.todoist.com/app/task/T1', uncompletable: false },
+  { id: 'T2', content: 'Wöchentlich Baustelle prüfen', description: '', priority: 1, parent_id: null, child_order: 2, due: { date: '2099-01-01', time: null, recurring: true, string: 'every week' }, url: 'https://app.todoist.com/app/task/T2', uncompletable: false },
+  { id: 'T3', content: 'Speichern', description: '', priority: 2, parent_id: 'T1', child_order: 1, due: null, url: 'https://app.todoist.com/app/task/T3', uncompletable: false },
+];
+await page.route('**/api/todoist', async route => {
+  const req = route.request();
+  const hdr = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization', 'access-control-allow-methods': 'POST, OPTIONS' };
+  if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: hdr });
+  const b = req.postDataJSON() || {};
+  TD.calls.push(b);
+  const send = (status, body) => route.fulfill({ status, contentType: 'application/json', headers: hdr, body: JSON.stringify(body) });
+  if (TD.fail && TD.fail.action === b.action) { const f = TD.fail; TD.fail = null; return send(f.status, f.body); }
+  switch (b.action) {
+    case 'status': return send(200, TD.status);
+    case 'tasks': return send(200, { tasks: TD.tasks, truncated: false });
+    case 'projects': return send(200, { projects: [{ id: 'P1', name: 'Inbox', depth: 0, inbox: true }, { id: 'P2', name: 'Hausbau', depth: 0 }, { id: 'P3', name: 'Elektro', depth: 1, parent_id: 'P2' }] });
+    case 'close': case 'reopen': case 'delete': case 'disconnect': return send(200, { ok: true });
+    case 'update': { const t = TD.tasks.find(x => x.id === b.id) || { id: b.id }; const n = { ...t, ...(b.content ? { content: b.content } : {}), ...(b.priority ? { priority: b.priority } : {}) }; return send(200, { task: n }); }
+    case 'add': return send(200, { task: { id: 'N1', content: b.content, description: b.description || '', priority: b.priority || 1, parent_id: null, child_order: 9, due: b.due_date ? { date: b.due_date, time: null, recurring: false, string: '' } : null, url: 'https://app.todoist.com/app/task/N1', uncompletable: false } });
+    case 'finish': return send(200, { connected: true });
+    default: return send(400, { error: 'bad_request' });
+  }
+});
+const TD_AN = `window.__tdAn = (projekt = 'P2') => {
+  window.__tdVorher = { u: currentUser, h: _tdHasAccount, pid: state.settings.todoistProjectId, pn: state.settings.todoistProjectName };
+  currentUser = { id: '33333333-3333-4333-8333-333333333333', email: 'test@planory.test', created_at: new Date().toISOString() };
+  _tdHasAccount = () => true; _tdReset();
+  state.settings.todoistProjectId = projekt; state.settings.todoistProjectName = 'Hausbau';
+};
+window.__tdAus = () => { const v = window.__tdVorher; currentUser = v.u; _tdHasAccount = v.h; state.settings.todoistProjectId = v.pid; state.settings.todoistProjectName = v.pn; _tdReset(); };
+window.__bis = async (fn, ms = 3000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (fn()) return true; await new Promise(r => setTimeout(r, 50)); } return false; };`;
+await page.evaluate(TD_AN);
+const tdReset = (status = { configured: true, connected: true, reason: null }) => { TD.calls = []; TD.fail = null; TD.status = status; TD.tasks = TD_TASKS(); };
+
+await scenario('Todoist: Aufgaben erscheinen unter „Aus Todoist" (sicher, ins Handy-Format passend)', async () => {
+  tdReset();
+  const r = await page.evaluate(async () => {
+    if (typeof renderTodoistSection !== 'function') return { fehlt: true };
+    __tdAn(); window.showConfirm = window.__echtesConfirm;
+    try {
+      showPage('aufgaben');
+      const da = await __bis(() => document.querySelectorAll('#td-section input[type=checkbox]').length === 3);
+      const sec = document.getElementById('td-section');
+      const raus = [...sec.querySelectorAll('button, a')].filter(b => b.getBoundingClientRect().right > innerWidth + 1).length;
+      return { da, kopf: sec.textContent.includes('Aus Todoist'), text: sec.textContent.includes('<img src=x'), xss: !!window.__xss,
+               rekurrent: sec.textContent.includes('every week'), ueberfaellig: sec.textContent.includes('Überfällig'), raus, hinweis: sec.textContent.includes('nicht von Doist') };
+    } finally { __tdAus(); }
+  });
+  if (r.fehlt) return 'Todoist-Bereich fehlt';
+  const p = [];
+  if (!r.da || !r.kopf) p.push('Aufgaben nicht angezeigt');
+  if (!r.text || r.xss) p.push('Aufgabentext nicht sicher als Text ausgegeben');
+  if (!r.rekurrent || !r.ueberfaellig) p.push('Wiederholung/Fälligkeit fehlt');
+  if (r.raus) p.push(`${r.raus} Knöpfe außerhalb des Bildschirms`);
+  if (!r.hinweis) p.push('Hinweis „nicht von Doist" fehlt');
+  return p.join(' · ');
+});
+await scenario('Todoist: Abhaken schickt „close"; Fehler nimmt das Häkchen zurück', async () => {
+  tdReset();
+  const r1 = await page.evaluate(async () => {
+    if (typeof tdToggleTask !== 'function') return { fehlt: true };
+    __tdAn();
+    try {
+      showPage('aufgaben'); await __bis(() => document.querySelectorAll('#td-section input[type=checkbox]').length === 3);
+      await tdToggleTask('T1');
+      return { zu: !!(_td.geschlossen.P2 || {}).T1, kind: !!(_td.geschlossen.P2 || {}).T3 };
+    } finally { __tdAus(); }
+  });
+  if (r1.fehlt) return 'Abhaken fehlt';
+  const close = TD.calls.find(c => c.action === 'close');
+  tdReset(); TD.fail = { action: 'close', status: 502, body: { error: 'todoist_unavailable' } };
+  const r2 = await page.evaluate(async () => {
+    __tdAn();
+    try { showPage('aufgaben'); await __bis(() => document.querySelectorAll('#td-section input[type=checkbox]').length === 3);
+      await tdToggleTask('T1'); return { zu: !!(_td.geschlossen.P2 || {}).T1 }; } finally { __tdAus(); }
+  });
+  const p = [];
+  if (!close || close.id !== 'T1') p.push('kein „close" an Todoist');
+  if (!r1.zu || !r1.kind) p.push('abgehakt nicht angezeigt (inkl. Unteraufgabe)');
+  if (r2.zu) p.push('nach Fehler bleibt das Häkchen');
+  return p.join(' · ');
+});
+await scenario('Todoist: Bearbeiten schickt nur Geändertes; wiederkehrendes Datum gesperrt; Neu & Löschen', async () => {
+  tdReset();
+  const r = await page.evaluate(async () => {
+    if (typeof tdEditTask !== 'function') return { fehlt: true };
+    __tdAn(); const altConfirm = window.showConfirm; window.showConfirm = async () => true;
+    const aufgabenVorher = state.aufgaben.length;
+    try {
+      showPage('aufgaben'); await __bis(() => document.querySelectorAll('#td-section input[type=checkbox]').length === 3);
+      tdEditTask('T2'); await new Promise(r => setTimeout(r, 50));
+      const gesperrt = document.getElementById('td-datum').disabled && document.getElementById('td-lock-hint').style.display !== 'none';
+      document.getElementById('td-name').value = 'Wöchentlich Baustelle prüfen!';
+      await tdSaveTask(); await new Promise(r => setTimeout(r, 250));
+      tdNewTask(); await new Promise(r => setTimeout(r, 50));
+      document.getElementById('td-name').value = 'Neue Sache';
+      await tdSaveTask(); await new Promise(r => setTimeout(r, 250));
+      const neuDa = document.getElementById('td-section').textContent.includes('Neue Sache');
+      await tdDeleteTask('T1');
+      return { gesperrt, neuDa, weg: !(_td.tasks.P2.liste || []).some(t => t.id === 'T1' || t.id === 'T3'), aufgaben: state.aufgaben.length - aufgabenVorher };
+    } finally { window.showConfirm = altConfirm; __tdAus(); }
+  });
+  if (r.fehlt) return 'Bearbeiten fehlt';
+  const p = [];
+  const upd = TD.calls.find(c => c.action === 'update');
+  if (!r.gesperrt) p.push('Datum der wiederkehrenden Aufgabe nicht gesperrt');
+  if (!upd || JSON.stringify(Object.keys(upd).sort()) !== '["action","content","id"]') p.push('Ändern schickt: ' + JSON.stringify(upd));
+  const add = TD.calls.find(c => c.action === 'add');
+  if (!add || add.project_id !== 'P2' || 'due_date' in add || !r.neuDa) p.push('Neu: ' + JSON.stringify(add));
+  if (!TD.calls.some(c => c.action === 'delete' && c.id === 'T1') || !r.weg) p.push('Löschen (inkl. Unteraufgabe)');
+  if (r.aufgaben) p.push('Todoist-Aufgaben landen in den Planory-Aufgaben');
+  return p.join(' · ');
+});
+await scenario('Todoist: abgelaufene Verbindung zeigt „Neu verbinden"; Einstellungen mit Projektwahl', async () => {
+  tdReset({ configured: true, connected: false, reason: 'revoked' });
+  const r = await page.evaluate(async () => {
+    if (typeof renderTodoistCard !== 'function') return { fehlt: true };
+    __tdAn();
+    try {
+      showPage('aufgaben'); await __bis(() => document.getElementById('td-section').textContent.includes('Neu verbinden'));
+      const neu = document.getElementById('td-section').textContent.includes('Neu verbinden');
+      _td.status = { configured: true, connected: true, reason: null }; _td.statusAt = Date.now();
+      showPage('settings'); await __bis(() => document.querySelectorAll('#td-projekt option').length > 2);
+      const optionen = [...document.querySelectorAll('#td-projekt option')].map(o => o.value).join();
+      tdSetProject('P3');
+      return { neu, optionen, gesetzt: state.settings.todoistProjectId, karte: document.getElementById('td-card').style.display !== 'none' };
+    } finally { __tdAus(); }
+  });
+  if (r.fehlt) return 'Einstellungen fehlen';
+  const p = [];
+  if (!r.neu) p.push('„Neu verbinden" fehlt');
+  if (!r.karte || r.optionen !== ',P1,P2,P3') p.push('Projektwahl: ' + r.optionen);
+  if (r.gesetzt !== 'P3') p.push('Projekt nicht gespeichert');
+  return p.join(' · ');
+});
+await scenario('Todoist: in der iPhone-App unsichtbar und keine Anfragen', async () => {
+  tdReset();
+  const r = await page.evaluate(async () => {
+    if (typeof renderTodoistSection !== 'function') return { fehlt: true };
+    __tdAn(); const altCap = window.Capacitor;
+    window.Capacitor = { isNativePlatform: () => true, Plugins: {} };
+    try {
+      showPage('aufgaben'); renderTodoistSection(); showPage('settings'); renderTodoistCard();
+      await new Promise(r => setTimeout(r, 400));
+      return { sec: document.getElementById('td-section').style.display, card: document.getElementById('td-card').style.display };
+    } finally { window.Capacitor = altCap; __tdAus(); }
+  });
+  if (r.fehlt) return 'Todoist-Bereich fehlt';
+  const p = [];
+  if (r.sec !== 'none' || r.card !== 'none') p.push('in der App sichtbar');
+  if (TD.calls.length) p.push(`${TD.calls.length} Anfragen in der App`);
+  return p.join(' · ');
+});
+await scenario('Todoist: Rückkehr nach der Anmeldung schließt die Verbindung ab; Englisch', async () => {
+  tdReset({ configured: true, connected: false, reason: null });
+  const r = await page.evaluate(async () => {
+    if (typeof _tdHandleReturn !== 'function') return { fehlt: true };
+    __tdAn();
+    try {
+      sessionStorage.setItem('planoryTodoist', JSON.stringify({ t: 'finish', n: 'abc', grund: '', at: Date.now() }));
+      await _tdHandleReturn();
+      const verbunden = !!(_td.status && _td.status.connected);
+      setLang('en', false); showPage('aufgaben');
+      await __bis(() => document.querySelectorAll('#td-section input[type=checkbox]').length === 3);
+      const en = document.getElementById('td-section').textContent;
+      setLang('de', false);
+      return { verbunden, from: en.includes('From Todoist'), speichern: en.includes('Speichern'), hinweis: en.includes('not created by') };
+    } finally { __tdAus(); }
+  });
+  if (r.fehlt) return 'Rückkehr-Funktion fehlt';
+  const p = [];
+  if (!TD.calls.some(c => c.action === 'finish' && c.n === 'abc') || !r.verbunden) p.push('finish nicht aufgerufen/verbunden');
+  if (!r.from || !r.hinweis) p.push('Englisch fehlt');
+  if (!r.speichern) p.push('Aufgabe „Speichern" wurde übersetzt');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

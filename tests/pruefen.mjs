@@ -413,6 +413,16 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     const f = extractFn(src, 'toggleMobileSidebar');
     if (!f || !f.includes('_fensterVerlassen')) return 'toggleMobileSidebar verlässt offene Fenster nicht';
   });
+  check(`${label}: Todoist nur im Web (in der iPhone-App ausgeblendet, nicht im Demo-Modus)`, () => {
+    const a = extractFn(src, '_tdAvailable'), h = extractFn(src, '_tdHasAccount');
+    if (!a || !a.includes('isNativeApp()')) return '_tdAvailable blendet die App nicht aus (Apple 5.2.2)';
+    if (!h || !h.includes('_demoMode')) return '_tdHasAccount prüft den Demo-Modus nicht';
+    if (/todoist[^"'\s]*\.(svg|png)/i.test(src)) return 'Todoist-Logo eingebunden (Markenrichtlinien)';
+    const s2 = extractFn(src, 'tdSaveTask');
+    if (!s2 || /state\.aufgaben/.test(s2)) return 'Todoist-Aufgaben landen in den Planory-Aufgaben';
+    const r = extractFn(src, 'renderTodoistSection');
+    if (!r || /\$\{t\.(content|description)\}/.test(r)) return 'Todoist-Text wird ungeschützt ausgegeben';
+  });
   check(`${label}: „Bezahlt von" erlaubt eine neue Person`, () => {
     const f = extractFn(src, 'refreshBezahltVonSelects');
     if (!f || !f.includes('BV_NEU')) return 'Option „Neue Person…" fehlt beim Neuaufbau der Auswahl';
@@ -547,6 +557,23 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (!/const API_BASE = 'https:\/\//.test(src)) return 'API_BASE fehlt oder ist relativ';
   });
 }
+
+// Rechtstexte & Todoist-Server
+check('Datenschutz nennt die Todoist-Anbindung', () => {
+  const d = read('datenschutz.html');
+  if (!/Todoist/.test(d)) return 'datenschutz.html erwähnt Todoist nicht';
+});
+check('Impressum ohne Link zur abgeschalteten EU-Streitbeilegungsplattform', () => {
+  const d = read('impressum.html');
+  if (d.includes('ec.europa.eu/consumers/odr')) return 'veralteter OS-Link (Plattform seit 20.07.2025 abgeschaltet)';
+});
+check('Todoist-Server: verschlüsselt, CORS nur planory.at, keine Tokens im Log', () => {
+  let a = '', l = '';
+  try { a = read('api/todoist.js'); l = read('api/_todoist-lib.js'); } catch (e) { return 'api/todoist.js fehlt'; }
+  if (!l.includes('aes-256-gcm') || !l.includes('sha256')) return 'Zugangsdaten nicht verschlüsselt/gehasht';
+  if (/Allow-Origin', '\*'/.test(a)) return 'CORS für alle Seiten offen';
+  if (/console\.(log|warn|error)\([^)]*token/i.test(a + l)) return 'Token im Log';
+});
 
 // ───────────────────────────────────────────────────────────────────
 // Ausgabe
