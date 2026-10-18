@@ -1,6 +1,6 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 17.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 18.10.2026.
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 17.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 90/90, mobile-e2e 60/60, sync-e2e 19/19).
+(pruefen 95/95, mobile-e2e 67/67, sync-e2e 19/19, todoist-api 12/12).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → **`npm install`** (neu: Teilen-
       und Dateien-Plugin für PDFs) → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
@@ -25,6 +25,7 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
        • Rechnung scannen: wird sofort eingebucht, Beträge wie 1.234,56 werden erkannt,
          PDF-Rechnungen bleiben PDF, verständliche Fehlermeldungen
        • „Bezahlt von": neue Person direkt beim Erfassen eintragen
+       • NEU: Fotos direkt im Bautagebuch-Eintrag
        • NEU: Bautagebuch als Erinnerungs-Buch mit Fotos (PDF, Fotobuch oder A4)
        • PDFs lassen sich jetzt teilen, drucken und in Dateien sichern
        • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
@@ -38,6 +39,19 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       die richtige MwSt prüfen (alter Fehler: MwSt vom letzten Bearbeiten blieb hängen).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
+
+## Todoist-Anbindung (Web) – Code fertig, Einrichtung bei Simon
+- [ ] Todoist → Einstellungen → Integrationen → Entwickler (App Management Console): App
+      **„Planory“** anlegen. „Todoist“ darf NICHT im Namen stehen. Weiterleitungs-Adresse
+      (OAuth redirect URL): `https://bauplan-weld.vercel.app/api/todoist`. Client-ID + Client-Secret kopieren.
+- [ ] Vercel → Projekt → Settings → Environment Variables (Production, „Sensitive“):
+      `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET`, `TODOIST_TOKEN_KEY` (Schlüssel macht Claude),
+      danach neu ausrollen (Redeploy).
+- [ ] Einmal selbst testen: Einstellungen → Todoist → verbinden → Projekt wählen → Aufgaben →
+      eine Aufgabe abhaken → wieder trennen.
+- [ ] Vor einer iPhone-Version mit Todoist: kurze schriftliche Bestätigung von Doist einholen
+      (Apple-Richtlinie 5.2.2) – in der App ist Todoist bis dahin ausgeblendet.
+- [x] Datenbank-Tabelle `todoist_verbindungen` angelegt (RLS an, nur Server-Zugriff).
 
 ## Authentifizierungs-E-Mails (Supabase) – Texte fertig, Einbau bei Simon
 - [ ] „Confirm signup" + „Reset password" (+ übrige) ins **Supabase → Authentication →
@@ -89,6 +103,13 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       eigene Schrift, Vorschau in der App.
 
 ## Technik – später verbessern (bekannt, kein akuter Fehler)
+- [ ] **Sicherheit:** `api/push-subscribe.js` liest die Nutzer-ID aus dem Login-Token, ohne die
+      Signatur zu prüfen → mit einem gefälschten Token könnte man Push-Nachrichten eines anderen
+      Kontos abonnieren. Fix: Token wie in `api/ki.js` über Supabase prüfen (nächster Punkt).
+- [ ] `privacy.html` ist veraltet (info@planory.app) und evtl. noch im App Store verlinkt →
+      auf `datenschutz.html` umleiten oder aktualisieren.
+- [ ] Rechtlich prüfen lassen: Widerrufs-Button („Vertrag widerrufen“, § 13a FAGG seit
+      01.10.2026) und AGB/Widerrufsbelehrung für das Web-Abo (Stripe).
 - [ ] Wird die App in der ~1 Sekunde zwischen Speichern und Cloud-Abgleich hart beendet, ist ein
       eben eingetragener Eintrag beim nächsten Start weg (lokal Ungesichertes wird bewusst nicht
       wiederbelebt, damit Gelöschtes nicht zurückkommt). Lösung: ungesicherte Einträge dauerhaft
