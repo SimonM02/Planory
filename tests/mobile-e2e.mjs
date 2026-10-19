@@ -2167,7 +2167,7 @@ await scenario('Aufgaben: wiederkehrende Hauptaufgabe verschiebt die Termine ihr
 });
 
 await scenario('Aufgaben: „Demnächst" am Computer als Tages-Spalten nebeneinander, Uhrzeit statt doppeltem Datum', async () => {
-  const d = await boot({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  const d = await boot({ viewport: { width: 1920, height: 1000 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
   let r;
   try {
     r = await d.page.evaluate(() => {
@@ -2177,7 +2177,12 @@ await scenario('Aufgaben: „Demnächst" am Computer als Tages-Spalten nebeneina
       const erste = document.querySelector('#task-list-container .tk-spalte .tk-gkopf')?.textContent || '';
       const estrich = document.querySelector('#task-list-container .tk-row[data-task="3002"]')?.innerText || '';
       const symbole = [...document.querySelectorAll('#tk-nav .tk-nav-item .tk-ic')].slice(0, 3).every(e => e.querySelector('svg'));
-      return { nebeneinander, erste, estrich, symbole };
+      // auch mit (fast) leeren Tagen: Bereich nutzt die Hoehe und die Breite
+      const vorher = state.aufgaben; state.aufgaben = state.aufgaben.filter(t => t.id === 3002); renderTasks();
+      const b = document.querySelector('#task-list-container .tk-board').getBoundingClientRect();
+      const rand = document.querySelector('#page-aufgaben .page-header').getBoundingClientRect().right;
+      const breite = rand - b.right, hoehe = b.height; state.aufgaben = vorher; renderTasks();
+      return { nebeneinander, erste, estrich, symbole, hoehe, breite };
     });
     if (d.errors.length) r.fehler = d.errors.join(' · ');
   } finally { await d.ctx.close(); }
@@ -2187,6 +2192,8 @@ await scenario('Aufgaben: „Demnächst" am Computer als Tages-Spalten nebeneina
   if (!/Heute/.test(r.erste)) p.push(`erste Spalte „${r.erste}" (Heute fehlt)`);
   if (!/16:00/.test(r.estrich) || /📅/.test(r.estrich)) p.push(`Karte zeigt „${r.estrich.replace(/\n/g, ' ')}"`);
   if (!r.symbole) p.push('Navigation noch mit Emoji-Symbolen');
+  if (r.hoehe < 440) p.push(`Bereich nur ${Math.round(r.hoehe)} px hoch`);
+  if (r.breite > 6) p.push(`Bereich endet ${Math.round(r.breite)} px vor dem rechten Rand`);
   return p.join(' · ');
 });
 
