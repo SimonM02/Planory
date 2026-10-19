@@ -437,6 +437,99 @@
     .pl-progress { margin-left:0; }
     .pl-leer { padding-left:44px; }
   }
+  /* ── Aufgaben (wie Todoist) ── */
+  .tk-layout { display:grid; grid-template-columns:230px minmax(0, 1fr); gap:28px; align-items:start; max-width:1100px; }
+  .tk-nav { position:sticky; top:16px; display:flex; flex-direction:column; gap:2px; }
+  .tk-nav-item { display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; border-radius:8px; cursor:pointer; font-family:inherit; font-size:0.88rem; font-weight:600; color:var(--text2); text-align:left; }
+  .tk-nav-item:hover { background:var(--surface2); }
+  .tk-nav-item.on { background:var(--accent-light, rgba(255,159,28,.14)); color:var(--accent); }
+  .tk-ic { width:20px; text-align:center; font-weight:800; flex-shrink:0; }
+  .tk-nl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tk-cnt { font-size:0.74rem; color:var(--text3); font-weight:600; }
+  .tk-nav-item.on .tk-cnt { color:var(--accent); }
+  .tk-nav-kopf { display:flex; align-items:center; justify-content:space-between; margin:14px 0 4px; padding:0 10px; font-size:0.72rem; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; }
+  .tk-nav-kopf button { background:none; border:none; color:var(--text3); font-size:1.05rem; font-weight:700; cursor:pointer; padding:0 4px; }
+  .tk-nav-kopf button:hover { color:var(--accent); }
+  .tk-nav-neu { color:var(--text3); font-weight:500; }
+  .tk-inhalt { min-width:0; max-width:760px; }
+  .tk-kopfzeile { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .tk-kopf-links { min-width:0; flex:1; }
+  .tk-titel { font-size:1.35rem; font-weight:800; color:var(--text); margin:0; }
+  .tk-sub { font-size:0.8rem; color:var(--text3); margin-top:3px; }
+  .tk-person { font-size:0.8rem; padding:5px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text2); cursor:pointer; max-width:170px; }
+  .tk-katkopf { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .tk-kathash { font-size:1.3rem; font-weight:800; }
+  #page-aufgaben .tk-katname { font-size:1.3rem; font-weight:800; color:var(--text); background:transparent !important; border:none !important; border-bottom:1.5px solid transparent !important; border-radius:0 !important; box-shadow:none !important; padding:2px 0; min-width:120px; flex:1; font-family:inherit; outline:none; }
+  #page-aufgaben .tk-katname:focus { border-bottom-color:var(--accent) !important; }
+  .tk-farben { display:inline-flex; gap:5px; }
+  .tk-farbe { width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+  .tk-farbe.on { border-color:var(--text); }
+  .tk-katdel { background:none; border:none; cursor:pointer; color:var(--text3); opacity:.6; font-size:0.95rem; }
+  .tk-katdel:hover { opacity:1; }
+  .tk-gruppe { margin-bottom:18px; }
+  .tk-gkopf { font-size:0.85rem; font-weight:800; color:var(--text); padding:0 0 7px; border-bottom:1px solid var(--border); margin-bottom:2px; }
+  .tk-gdat { color:var(--text3); font-weight:600; margin-left:6px; font-size:0.78rem; }
+  .tk-row { display:flex; align-items:flex-start; gap:10px; padding:9px 4px; border-bottom:1px solid var(--surface2); border-radius:6px; }
+  .tk-row:hover { background:var(--surface2); }
+  .tk-check { width:20px; height:20px; margin-top:1px; flex-shrink:0; border-radius:50%; border:2px solid var(--text3); background:transparent; cursor:pointer; padding:0; position:relative;
+    display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:0.66rem; font-weight:900; font-family:inherit; transition:background .15s, transform .12s; }
+  .tk-check::before { content:''; position:absolute; inset:-8px; }
+  .tk-check:hover { transform:scale(1.08); }
+  .tk-check.tk-p-hoch { border-color:#ef4444; background:rgba(239,68,68,.10); }
+  .tk-check.tk-p-mittel { border-color:#f59e0b; background:rgba(245,158,11,.10); }
+  .tk-check.tk-p-niedrig { border-color:var(--text3); }
+  .tk-done .tk-check { background:var(--text3) !important; border-color:var(--text3) !important; }
+  .tk-main { flex:1; min-width:0; cursor:pointer; }
+  .tk-name { font-size:0.9rem; color:var(--text); line-height:1.35; overflow-wrap:anywhere; }
+  .tk-done .tk-name { text-decoration:line-through; color:var(--text3); }
+  .tk-notiz { font-size:0.76rem; color:var(--text3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tk-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:4px; }
+  .tk-chip { font-size:0.72rem; color:var(--text3); white-space:nowrap; background:none; border:none; padding:0; font-family:inherit; }
+  .tk-sub-btn { cursor:pointer; font-weight:700; color:var(--text2); background:var(--surface2); padding:1px 7px; border-radius:6px; }
+  .tk-d-ueber { color:var(--danger); font-weight:700; }
+  .tk-d-heute { color:#16a34a; font-weight:700; }
+  body.dark-mode .tk-d-heute { color:#4ade80; }
+  .tk-d-morgen { color:#ea580c; font-weight:700; }
+  .tk-d-woche { color:#7c3aed; font-weight:600; }
+  body.dark-mode .tk-d-woche { color:#a78bfa; }
+  .tk-act { display:flex; gap:2px; opacity:0; transition:opacity .15s; flex-shrink:0; }
+  .tk-row:hover .tk-act, .tk-act:focus-within { opacity:1; }
+  .tk-act button { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.82rem; padding:3px 5px; border-radius:6px; font-family:inherit; }
+  .tk-act button:hover { background:var(--surface3, var(--border)); }
+  .tk-kinder { margin-left:30px; }
+  .tk-unter .tk-name { font-size:0.86rem; }
+  .tk-add { display:flex; align-items:center; gap:10px; padding:7px 4px; }
+  .tk-plus { width:20px; text-align:center; color:var(--accent); font-weight:800; font-size:1rem; flex-shrink:0; }
+  #page-aufgaben .tk-add input { flex:1; font-size:0.86rem; color:var(--text); font-family:inherit; outline:none; padding:4px 0; background:transparent !important; border:none !important; border-bottom:1.5px solid transparent !important; border-radius:0 !important; box-shadow:none !important; }
+  #page-aufgaben .tk-add input:focus { border-bottom-color:var(--accent) !important; }
+  .tk-add-mini { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.8rem; font-family:inherit; padding:2px 0 2px 30px; }
+  .tk-add-mini:hover { color:var(--accent); }
+  .tk-erl { margin-top:12px; }
+  .tk-erl-btn { background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:700; color:var(--text3); padding:4px 0; }
+  .tk-leer { text-align:center; color:var(--text3); font-size:0.86rem; padding:26px 10px 14px; }
+  .tk-leer-ic { font-size:2rem; margin-bottom:6px; }
+  .tk-mu-liste { display:flex; flex-direction:column; gap:2px; margin-bottom:6px; }
+  .tk-mu { display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text); padding:3px 2px; }
+  .tk-mu span { color:var(--text3); width:14px; text-align:center; }
+  .tk-mu-done { color:var(--text3); text-decoration:line-through; }
+  .tk-mu button { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--text3); }
+  @media (max-width:900px) {
+    .tk-layout { grid-template-columns:1fr; gap:10px; }
+    .tk-nav { position:static; flex-direction:row; overflow-x:auto; gap:6px; padding-bottom:6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .tk-nav::-webkit-scrollbar { display:none; }
+    .tk-nav-item { width:auto; flex-shrink:0; border:1px solid var(--border); border-radius:99px; padding:6px 12px; background:var(--surface); }
+    .tk-nav-item.on { border-color:var(--accent); }
+    .tk-nl { overflow:visible; max-width:160px; text-overflow:ellipsis; }
+    .tk-nav-kopf { display:none; }
+    .tk-act { opacity:.5; }
+    .tk-act-edit { display:none; }   /* am Handy: Antippen der Zeile = bearbeiten */
+    .tk-inhalt { max-width:none; }
+    .tk-kopfzeile { flex-wrap:wrap; align-items:center; }
+    .tk-person { max-width:none; padding:4px 8px; }
+    .tk-gruppe { margin-bottom:12px; }
+    #page-aufgaben .tk-katname { min-width:0 !important; flex:1 1 calc(100% - 34px); }
+    .tk-kopf-links { flex:1 1 100%; }
+  }
   /* ── Kostenentwicklung ── */
   .kc-chart { position:relative; height:280px; margin-top:6px; }
   .kc-cat { display:grid; grid-template-columns:240px minmax(0, 520px); gap:36px; align-items:center; margin-top:10px; }
@@ -3160,50 +3253,21 @@
   <div class="page" id="page-aufgaben">
     <div class="page-header">
       <div><h2 data-i18n="ph_aufgaben_t">Aufgaben</h2><p data-i18n="ph_aufgaben_s">To-Dos und offene Punkte</p></div>
-      <button class="btn btn-primary" onclick="_populateTaskPersonList();openModal('modal-task')">+ Aufgabe</button>
+      <button class="btn btn-primary" onclick="tkNeu()">+ Aufgabe</button>
     </div>
 
-    <!-- Stats row -->
-    <div class="cards-grid" style="margin-bottom:20px" id="task-stats-cards">
-      <div class="card" style="border-left:4px solid var(--danger)">
-        <div class="card-label">Hoch · Offen</div>
-        <div class="card-value red" id="task-count-hoch">0</div>
-      </div>
-      <div class="card" style="border-left:4px solid var(--warning)">
-        <div class="card-label">Mittel · Offen</div>
-        <div class="card-value yellow" id="task-count-mittel">0</div>
-      </div>
-      <div class="card" style="border-left:4px solid var(--text3)">
-        <div class="card-label">Niedrig · Offen</div>
-        <div class="card-value" id="task-count-niedrig">0</div>
-      </div>
-      <div class="card" style="border-left:4px solid var(--success)">
-        <div class="card-label">Erledigt</div>
-        <div class="card-value green" id="task-count-done">0</div>
-      </div>
+    <!-- Aufgaben wie Todoist: links Ansichten + Kategorien, rechts die Liste -->
+    <div class="tk-layout">
+      <nav class="tk-nav" id="tk-nav" data-noi18n aria-label="Aufgaben-Ansichten"></nav>
+      <section class="tk-inhalt">
+        <div class="tk-kopfzeile">
+          <div class="tk-kopf-links"><div id="tk-kopf"></div><div class="tk-sub" id="tk-sub"></div></div>
+          <select id="task-person-filter" class="tk-person" data-noi18n onchange="setTaskPersonFilter(this.value)" aria-label="Person"></select>
+        </div>
+        <div id="task-list-container" data-noi18n></div>
+        <div id="td-section" data-noi18n style="display:none;margin-top:20px"></div>
+      </section>
     </div>
-
-    <!-- Filter tabs -->
-    <div class="chart-tabs" style="margin-bottom:12px">
-      <button class="chart-tab active" id="task-filter-all"   onclick="setTaskFilter('all',this)">Alle</button>
-      <button class="chart-tab"        id="task-filter-open"  onclick="setTaskFilter('open',this)">Offen</button>
-      <button class="chart-tab"        id="task-filter-hoch"  onclick="setTaskFilter('hoch',this)">🔴 Hoch</button>
-      <button class="chart-tab"        id="task-filter-today" onclick="setTaskFilter('today',this)">📅 Heute fällig</button>
-      <button class="chart-tab"        id="task-filter-done"  onclick="setTaskFilter('done',this)">✅ Erledigt</button>
-    </div>
-
-    <!-- Person filter -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <span style="font-size:0.8rem;color:var(--text2);white-space:nowrap">👤 Person:</span>
-      <select id="task-person-filter" onchange="setTaskPersonFilter(this.value)"
-        style="font-size:0.82rem;padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;background:white;color:var(--text);cursor:pointer;min-width:160px">
-        <option value="">Alle Personen</option>
-      </select>
-    </div>
-
-    <!-- Task list -->
-    <div id="task-list-container"></div>
-    <div id="td-section" data-noi18n style="display:none;margin-top:20px"></div>
   </div>
 
   <!-- BAUTAGEBUCH -->
@@ -4081,17 +4145,36 @@
     <h3 id="t-modal-title">Aufgabe hinzufügen</h3>
     <input type="hidden" id="t-edit-id">
     <div class="form-row"><label>Aufgabe</label><input type="text" id="t-name" autocomplete="off" placeholder="z.B. Angebot einholen"></div>
+    <input type="hidden" id="t-parent-id">
+    <div class="form-row" id="t-kat-row"><label>Kategorie</label>
+      <select id="t-kat" data-noi18n onchange="tkKatAuswahl(this)"><option value="">📥 Eingang</option></select>
+    </div>
     <div class="form-row"><label>Priorität</label>
-      <select id="t-prio"><option>Hoch</option><option>Mittel</option><option>Niedrig</option></select>
+      <select id="t-prio"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select>
     </div>
     <div class="form-row">
-      <label>Fällig am</label>
+      <label>Fällig am · Uhrzeit</label>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="date" id="t-datum" style="flex:1">
         <input type="time" id="t-time" style="width:108px" title="Erinnerungszeit (optional)" onchange="onTaskTimeChange()">
         <span title="Benachrichtigung zur eingestellten Zeit" style="font-size:1rem;cursor:default">🔔</span>
       </div>
       <div id="t-notif-status" style="font-size:0.72rem;margin-top:5px;display:none"></div>
+    </div>
+    <div class="form-row"><label>Wiederholen</label>
+      <select id="t-wdh" onchange="onTaskWdhChange()">
+        <option value="" selected>Nicht wiederholen</option>
+        <option value="taeglich">Täglich</option>
+        <option value="werktags">Werktags (Mo–Fr)</option>
+        <option value="woechentlich">Wöchentlich</option>
+        <option value="zweiwoechentlich">Alle 2 Wochen</option>
+        <option value="monatlich">Monatlich</option>
+        <option value="jaehrlich">Jährlich</option>
+      </select>
+    </div>
+    <div class="form-row" id="t-unter-row"><label>Unteraufgaben</label>
+      <div id="t-unter-liste" class="tk-mu-liste" data-noi18n></div>
+      <input type="text" id="t-unter-neu" autocomplete="off" placeholder="Unteraufgabe eintippen + Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();tkModalUnterAdd(this)}">
     </div>
     <div class="form-row">
       <label>Zugewiesen an</label>
@@ -4816,7 +4899,7 @@ const EMPTY_PROJECT = () => ({
   dokumentation: [], wartungen: [], abhaengigkeiten: [],
   angebote: [], zahlungen: [], maengel: [], gescannteRechnungen: [], zahlungspersonen: [],
   dateien: [], grundrisse: [],
-  helfer: [], helfereinsaetze: [],
+  helfer: [], helfereinsaetze: [], aufgabenKat: [],
   _deletedIds: {}   // tombstone: { "id": deletedAtTimestamp }
 });
 
@@ -4855,7 +4938,7 @@ const ITEM_TYPES = [
   'tagebuch','notizen','kontakte','gantt','fotos','fotoAlben',
   'dokumentation','angebote','zahlungen','zahlungsplan','zahlungspersonen',
   'maengel','wartungen','gewerke','personen','abhaengigkeiten',
-  'gescannteRechnungen','dateien','grundrisse','helfer','helfereinsaetze'
+  'gescannteRechnungen','dateien','grundrisse','helfer','helfereinsaetze','aufgabenKat'
 ];
 
 // Record a deletion — immediately removes from Supabase so realtime can't resurrect it
@@ -4891,7 +4974,7 @@ function saveAll() {
   // (_budgetKatTs) mehr noetig – das war nur fuer die alte Snapshot-Speicherung.
   const STAMP_FIELDS = ['kosten','aufgaben','notizen','maengel','angebote','zahlungen',
                         'kontakte','dokumentation','meilensteine','wartungen','tagebuch','budgetKat',
-                        'helfer','helfereinsaetze'];
+                        'helfer','helfereinsaetze','aufgabenKat'];
   STAMP_FIELDS.forEach(f => { if (Array.isArray(state[f])) state[f] = _stampUpdatedAt(state[f]); });
 
   // _order auf budgetKat stempeln, damit die vom Nutzer gewaehlte Reihenfolge
@@ -5058,7 +5141,7 @@ const PAGE_HINTS = {
   kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus.',
   budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest.',
   meilensteine:   'Definiere wichtige Bauphasen mit Terminen. Überfällige Meilensteine werden automatisch rot markiert.',
-  aufgaben:       'Deine Baustellenliste – Aufgaben mit Priorität, Fälligkeit und Status.',
+  aufgaben:       'Wie in Todoist: links „Heute", „Demnächst" und deine Kategorien. Kreis antippen = erledigt (bei wiederkehrenden Aufgaben springt das Datum weiter). Unteraufgaben über „⑂+", schnell anlegen mit der Zeile „+ Aufgabe hinzufügen".',
   tagebuch:       'Tagesberichte mit Mannschaft und Stunden. Das aktuelle Wetter wird beim Anlegen automatisch geladen (Adresse in Einstellungen nötig).',
   dokumente:      'Notizen für schnelle Hinweise, plus Dokumentenablage für Baupläne, Genehmigungen und Verträge (max. 5 MB je Datei).',
   kontakte:       'Alle Handwerker und Ansprechpartner – mit Gewerk, Telefon, E-Mail und Status.',
@@ -5080,7 +5163,7 @@ const PAGE_HINTS_EN = {
   kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
   budget:         'Split your budget across trades and see at a glance where you are over or under.',
   meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
-  aufgaben:       'Your site to-do list – tasks with priority, due date and status.',
+  aufgaben:       'Like Todoist: “Today”, “Upcoming” and your categories on the left. Tap the circle to complete (recurring tasks move to their next date). Add subtasks with “⑂+”, add tasks quickly with “+ Add task”.',
   tagebuch:       'Daily reports with crew and hours. The current weather is loaded automatically when you add an entry (address required in settings).',
   dokumente:      'Notes for quick reminders, plus document storage for plans, permits and contracts (max. 5 MB per file).',
   kontakte:       'All tradespeople and contacts – with trade, phone, email and status.',
@@ -6421,6 +6504,37 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Aufgaben-Ansichten": { en: "Task views" },
+  "Person": { en: "Person" },
+  "Alle Personen": { en: "All people" },
+  "+ Neue Kategorie…": { en: "+ New category…" },
+  "Als erledigt markieren": { en: "Mark as done" },
+  "Als offen markieren": { en: "Mark as open" },
+  "Aufgabe hinzufügen…": { en: "Add task…" },
+  "Demnächst": { en: "Upcoming" },
+  "Eingang": { en: "Inbox" },
+  "Entfernen": { en: "Remove" },
+  "Fällig am · Uhrzeit": { en: "Due date · time" },
+  "Für heute ist alles erledigt.": { en: "All done for today." },
+  "Kategorie gelöscht": { en: "Category deleted" },
+  "Kategorie löschen": { en: "Delete category" },
+  "Keine Aufgaben ohne Kategorie.": { en: "No tasks without a category." },
+  "Meine Kategorien": { en: "My categories" },
+  "Morgen": { en: "Tomorrow" },
+  "Name der Kategorie": { en: "Category name" },
+  "Name der neuen Kategorie": { en: "Name of the new category" },
+  "Neue Kategorie": { en: "New category" },
+  "Noch keine Aufgaben in dieser Kategorie.": { en: "No tasks in this category yet." },
+  "Nächster Termin": { en: "Next date" },
+  "Später": { en: "Later" },
+  "Unteraufgabe eintippen + Enter": { en: "Type a subtask + Enter" },
+  "Unteraufgabe hinzufügen": { en: "Add subtask" },
+  "Unteraufgabe hinzufügen…": { en: "Add subtask…" },
+  "Unteraufgaben": { en: "Subtasks" },
+  "Werktags (Mo–Fr)": { en: "Weekdays (Mon–Fri)" },
+  "nächste 14 Tage": { en: "next 14 days" },
+  "offene Aufgabe": { en: "open task" },
+  "offene Aufgaben": { en: "open tasks" },
   "Ø pro Buchung": { en: "Avg per booking" },
   "Größte Ausgabe": { en: "Largest expense" },
   "Anzahl Buchungen": { en: "Number of bookings" },
@@ -6987,7 +7101,7 @@ const _FORM_MODALS = {
   'modal-kosten':        () => { try { clearKostenBeleg(); _bvNeuZu('k-bezahlt-von'); toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e) {} },
   'modal-angebot':       () => { try { resetAngModal(); } catch(e) {} },
   'modal-zahlung':       null,
-  'modal-task':          null,
+  'modal-task':          () => { _tkUnterNeu = []; try { _tkModalSichtbarkeit(); } catch (e) {} },
   'modal-kontakt':       null,
   'modal-tagebuch':      () => { const r = document.getElementById('tb-worker-rows'); if (r) r.innerHTML = ''; _resetDiaryPhotos(); },
   'modal-notiz':         null,
@@ -7943,7 +8057,7 @@ const AI_SVG = `<svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1
 const QUICK_ACTIONS = [
   { key:'scan',          icon:AI_SVG, label:'Rechnung scannen',  en:'Scan invoice',     run:"openModal('modal-rechnung-scan')" },
   { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    en:'Add expense',      run:"openModal('modal-kosten')" },
-  { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"_populateTaskPersonList();openModal('modal-task')" },
+  { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"tkNeu()" },
   { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', en:'Site diary entry', run:"openModal('modal-tagebuch')" },
   { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"openPhotoPicker()" },
   { key:'angebot',       icon:'📋', label:'Angebot erfassen',    en:'Add quote',        run:"openNeuesAngebot()" },
@@ -8075,8 +8189,9 @@ function renderDashboard() {
   // open tasks
   // Dringende zuerst (Prioritaet, dann Faelligkeit) – frueher die 5 aeltesten, neue dringende fehlten
   const _po = { Hoch: 0, Mittel: 1, Niedrig: 2 };
-  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt')
-    .sort((a, b) => ((_po[a.prio] ?? 1) - (_po[b.prio] ?? 1)) || String(a.datum || '9999').localeCompare(String(b.datum || '9999')))
+  const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt' && !(t.parentId && state.aufgaben.some(p => String(p.id) === String(t.parentId))))
+    .sort((a, b) => { const f = t => (t.datum && t.datum <= _tkHeute()) ? 0 : 1;   // heute/ueberfaellig zuerst
+      return (f(a) - f(b)) || ((_po[a.prio] ?? 1) - (_po[b.prio] ?? 1)) || String(a.datum || '9999').localeCompare(String(b.datum || '9999')); })
     .slice(0, 5);
   const ttbody = document.getElementById('dash-tasks');
   if (openTasks.length === 0) {
@@ -9956,29 +10071,54 @@ function renderMilestones() {
     </div>`).join('');
 }
 
-// ──────────────── TASKS ────────────────
-function addTask() {
-  if (!requireSub()) return;
-  const editId = parseInt(document.getElementById('t-edit-id')?.value) || null;
-  const item = {
-    id:     editId || Date.now(),
-    name:   document.getElementById('t-name').value || 'Aufgabe',
-    prio:   document.getElementById('t-prio').value,
-    datum:  document.getElementById('t-datum').value,
-    notiz:  document.getElementById('t-notiz').value,
-    status: editId ? (state.aufgaben.find(t=>t.id===editId)?.status || 'Offen') : 'Offen'
+// ──────────────── AUFGABEN (aufgebaut wie Todoist) ────────────────
+// Kategorien (state.aufgabenKat), Unteraufgaben (parentId), Ansichten Heute/Demnaechst/Eingang,
+// Wiederholung (wdh) und Uhrzeit. Fehlende Felder bedeuten das Bisherige (alte Daten bleiben gueltig).
+const TK_FARBEN = ['#3d6ff8','#ff9f1c','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#64748b'];
+const TK_WDH = { taeglich:'Täglich', werktags:'Werktags (Mo–Fr)', woechentlich:'Wöchentlich', zweiwoechentlich:'Alle 2 Wochen', monatlich:'Monatlich', jaehrlich:'Jährlich' };
+let tkAnsicht = 'heute';
+try { tkAnsicht = localStorage.getItem('planoryTkAnsicht') || 'heute'; } catch (e) {}
+const _tkZu = new Set();          // zugeklappte Hauptaufgaben (Unteraufgaben verborgen)
+let _tkErledigtAuf = false;       // „Erledigt (n)" aufgeklappt
+let _tkUnterNeu = [];             // im Fenster neu eingetippte Unteraufgaben (werden beim Speichern angelegt)
+const _tkUnterAuf = new Set();    // Hauptaufgaben mit offenem Eingabefeld „Unteraufgabe hinzufügen"
+let _tkTagOffen = '';             // Demnaechst: Tag mit offenem Eingabefeld
+
+// Lokales Datum (nicht UTC): sonst ist kurz nach Mitternacht „Heute" noch gestern
+function _tkLokal(ts) { const d = ts == null ? new Date() : new Date(ts); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _tkHeute() { return _tkLokal(); }
+// Farben kommen aus synchronisierten Daten -> nur echte Farbwerte in style-Attribute
+function _tkFarbe(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#64748b'; }
+function _tkFind(id) { return (state.aufgaben || []).find(t => String(t.id) === String(id)); }
+function _tkKat(id) { return id ? (state.aufgabenKat || []).find(k => String(k.id) === String(id)) : null; }
+function _tkDone(t) { return t.status === 'Erledigt'; }
+function _tkKinder(id) { return (state.aufgaben || []).filter(t => t.parentId && String(t.parentId) === String(id)); }
+function _tkHatEltern(t) { return !!(t.parentId && _tkFind(t.parentId)); }
+function _tkKatVon(t) { const e = _tkHatEltern(t) ? _tkFind(t.parentId) : t; return _tkKat(e.katId) ? String(e.katId) : ''; }
+function _tkPlusTage(d, n) { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+
+// Naechster Termin einer wiederkehrenden Aufgabe – immer NACH heute (eine nachgeholte, ueberfaellige
+// Aufgabe rutscht nicht wieder in „Ueberfaellig"). Monatsende: 31. -> letzter Tag des Monats.
+function _tkNaechsterTermin(datum, wdh) {
+  const heute = _tkHeute();
+  const p = s => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  let dt = p(_plDatumOk(datum) ? datum : heute);
+  const tag0 = dt.getUTCDate();
+  const schritt = () => {
+    if (wdh === 'taeglich') dt.setUTCDate(dt.getUTCDate() + 1);
+    else if (wdh === 'werktags') { do { dt.setUTCDate(dt.getUTCDate() + 1); } while (dt.getUTCDay() === 0 || dt.getUTCDay() === 6); }
+    else if (wdh === 'woechentlich') dt.setUTCDate(dt.getUTCDate() + 7);
+    else if (wdh === 'zweiwoechentlich') dt.setUTCDate(dt.getUTCDate() + 14);
+    else if (wdh === 'monatlich' || wdh === 'jaehrlich') {
+      const y = dt.getUTCFullYear() + (wdh === 'jaehrlich' ? 1 : 0), m = dt.getUTCMonth() + (wdh === 'monatlich' ? 1 : 0);
+      const letzter = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      dt = new Date(Date.UTC(y, m, Math.min(tag0, letzter)));
+    } else dt.setUTCDate(dt.getUTCDate() + 1);
   };
-  if (editId) {
-    const idx = state.aufgaben.findIndex(t => String(t.id) === String(editId));
-    if (idx > -1) state.aufgaben[idx] = item;
-  } else {
-    state.aufgaben.push(item);
-  }
-  save(); closeModal('modal-task');
-  ['t-name','t-datum','t-notiz'].forEach(id => document.getElementById(id).value = '');
-  if (document.getElementById('t-edit-id')) document.getElementById('t-edit-id').value = '';
-  if (document.getElementById('t-modal-title')) document.getElementById('t-modal-title').textContent = 'Aufgabe hinzufügen';
-  renderTasks();
+  let n = 0;
+  do { schritt(); n++; } while (dt.toISOString().slice(0, 10) <= heute && n < 200000);
+  const erg = dt.toISOString().slice(0, 10);
+  return erg > heute ? erg : _tkNaechsterTermin(heute, wdh);
 }
 
 function _getTaskPersons() {
@@ -9992,11 +10132,11 @@ function _personDropdownFilter(val) {
   const q = (val||'').trim().toLowerCase();
   const matches = q ? all.filter(n => n.toLowerCase().includes(q)) : all;
   if (matches.length === 0) { dd.style.display = 'none'; return; }
-  dd.innerHTML = matches.map(n => `
-    <div onmousedown="document.getElementById('t-person').value='${n.replace(/'/g,"\\'")}';_personDropdownHide()"
+  dd.innerHTML = matches.map((n, i) => `
+    <div data-i="${i}" onmousedown="document.getElementById('t-person').value=this.dataset.n;_personDropdownHide()" data-n="${esc(n)}"
       style="padding:9px 14px;cursor:pointer;font-size:0.875rem;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.1s"
       onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background=''">
-      👤 ${n}
+      👤 ${esc(n)}
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -10007,36 +10147,114 @@ function _personDropdownHide() {
 }
 
 function _populateTaskPersonList() {
-  // Populate task name autocomplete
   const ndl = document.getElementById('t-name-list');
   if (ndl) {
     const taskNames = [...new Set((state.aufgaben||[]).map(t => t.name).filter(Boolean))];
-    ndl.innerHTML = taskNames.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+    ndl.innerHTML = taskNames.map(n => `<option value="${esc(n)}">`).join('');
   }
+}
+
+// ── Fenster „Aufgabe" ──
+function _tkKatOptionen(sel, wert) {
+  if (!sel) return;
+  const kats = state.aufgabenKat || [];
+  sel.innerHTML = `<option value="">📥 ${esc(tt('Eingang'))}</option>` +
+    kats.map(k => `<option value="${esc(k.id)}">#  ${esc(k.name)}</option>`).join('') +
+    `<option value="__neu">${esc(tt('+ Neue Kategorie…'))}</option>`;
+  sel.value = _tkKat(wert) ? String(wert) : '';
+  sel.dataset.prev = sel.value;
+}
+async function tkKatAuswahl(sel) {
+  if (sel.value !== '__neu') { sel.dataset.prev = sel.value; return; }
+  const name = await showPrompt(tt('Name der neuen Kategorie'), '', { title: tt('Neue Kategorie') });
+  if (!name || !String(name).trim()) { sel.value = sel.dataset.prev || ''; return; }
+  const k = _tkKatAnlegen(String(name).trim());
+  _tkKatOptionen(sel, k.id);
+  const m = document.getElementById('modal-task'); if (m) m._dirty = true;
+}
+function _tkModalUnterRender() {
+  const box = document.getElementById('t-unter-liste');
+  if (!box) return;
+  const id = document.getElementById('t-edit-id').value;
+  const alt = id ? _tkKinder(id) : [];
+  box.innerHTML = alt.map(k => `<div class="tk-mu ${_tkDone(k) ? 'tk-mu-done' : ''}"><span>${_tkDone(k) ? '✓' : '○'}</span>${esc(k.name)}</div>`).join('') +
+    _tkUnterNeu.map((n, i) => `<div class="tk-mu"><span>○</span>${esc(n)}<button type="button" onclick="_tkUnterNeu.splice(${i},1);_tkModalUnterRender()" title="${esc(tt('Entfernen'))}">✕</button></div>`).join('');
+}
+function tkModalUnterAdd(inp) {
+  const v = inp.value.trim(); if (!v) return;
+  _tkUnterNeu.push(v); inp.value = '';
+  const m = document.getElementById('modal-task'); if (m) m._dirty = true;
+  _tkModalUnterRender();
+}
+function onTaskWdhChange() {
+  const d = document.getElementById('t-datum');
+  if (document.getElementById('t-wdh').value && d && !d.value) d.value = _tkHeute();
+}
+// Fenster fuer eine neue Aufgabe vorbereiten (Kategorie/Datum je nach Ansicht vorbelegt)
+function tkNeu(vorgabe = {}) {
+  _populateTaskPersonList();
+  resetTaskModal();
+  openModal('modal-task');
+  const kat = vorgabe.katId != null ? vorgabe.katId : (tkAnsicht.startsWith('kat:') ? tkAnsicht.slice(4) : '');
+  _tkKatOptionen(document.getElementById('t-kat'), kat);
+  if (vorgabe.datum !== undefined) document.getElementById('t-datum').value = vorgabe.datum;
+  else if (tkAnsicht.startsWith('kat:') || tkAnsicht === 'eingang') document.getElementById('t-datum').value = '';
+  else document.getElementById('t-datum').value = _tkHeute();
+  if (vorgabe.parentId) {
+    document.getElementById('t-parent-id').value = vorgabe.parentId;
+    const p = _tkFind(vorgabe.parentId); if (p) _tkKatOptionen(document.getElementById('t-kat'), p.katId);
+  }
+  _tkModalSichtbarkeit();
+}
+function _tkModalSichtbarkeit() {
+  const istUnter = !!document.getElementById('t-parent-id').value;
+  const r = document.getElementById('t-unter-row'); if (r) r.style.display = istUnter ? 'none' : '';
+  const k = document.getElementById('t-kat-row'); if (k) k.style.display = istUnter ? 'none' : '';
+  _tkModalUnterRender();
 }
 
 function saveTask() {
   if (!requireSub()) return;
-  const editId = parseInt(document.getElementById('t-edit-id').value) || null;
+  const editId = document.getElementById('t-edit-id').value || null;
   const name = document.getElementById('t-name').value.trim();
   if (!name) { showToast('⚠️ Bitte eine Aufgabe eingeben', 'error'); return; }
+  const offenEin = document.getElementById('t-unter-neu');
+  if (offenEin && offenEin.value.trim()) { _tkUnterNeu.push(offenEin.value.trim()); offenEin.value = ''; }
+  const alt = editId ? _tkFind(editId) : null;
+  const parentId = alt ? (alt.parentId || '') : (document.getElementById('t-parent-id').value || '');
+  const eltern = parentId ? _tkFind(parentId) : null;
+  let katId = document.getElementById('t-kat')?.value || '';
+  if (katId === '__neu' || !_tkKat(katId)) katId = '';
+  if (eltern) katId = _tkKat(eltern.katId) ? String(eltern.katId) : '';
   const item = {
-    id:         editId || Date.now(),
+    ...(alt || {}),
+    id:         alt ? alt.id : _neueId(),
     name,
     prio:       document.getElementById('t-prio').value,
     datum:      document.getElementById('t-datum').value || '',
     time:       document.getElementById('t-time')?.value || '',
     person:     document.getElementById('t-person').value.trim() || '',
     notiz:      document.getElementById('t-notiz').value.trim() || '',
-    status:     editId ? (state.aufgaben.find(t => String(t.id) === String(editId))?.status || 'Offen') : 'Offen',
+    status:     alt ? (alt.status || 'Offen') : 'Offen',
+    katId,
+    parentId:   eltern ? eltern.id : '',
+    wdh:        document.getElementById('t-wdh')?.value || '',
     _updatedAt: Date.now()
   };
-  if (editId) {
+  if (!item.katId) delete item.katId;
+  if (!item.parentId) delete item.parentId;
+  if (!item.wdh) delete item.wdh;
+  if (alt) {
     const idx = state.aufgaben.findIndex(t => String(t.id) === String(editId));
     if (idx > -1) state.aufgaben[idx] = item;
+    // Kategorie der Hauptaufgabe gilt auch fuer ihre Unteraufgaben
+    if (String(alt.katId || '') !== String(item.katId || '')) _tkKinder(item.id).forEach(k => { if (item.katId) k.katId = item.katId; else delete k.katId; k._updatedAt = Date.now(); });
   } else {
     state.aufgaben.push(item);
   }
+  _tkUnterNeu.forEach(n => state.aufgaben.push({ id: _neueId(), name: n, prio: 'Mittel', datum: '', time: '', person: '', notiz: '', status: 'Offen',
+    parentId: item.id, ...(item.katId ? { katId: item.katId } : {}), _updatedAt: Date.now() }));
+  _tkUnterNeu = [];
   _syncTaskNotiz(item);
   save();
   scheduleTaskReminders();
@@ -10061,59 +10279,95 @@ function _syncTaskNotiz(task) {
   if (existing) {
     // Always update title; only overwrite text if user hasn't manually edited it
     existing.title = noteTitle;
-    existing.datum = today();
+    existing.datum = _tkHeute();
     if (!existing.__userEdited) existing.text = autoText;
   } else {
-    state.notizen.push({ id: Date.now() + (Math.random() * 999 | 0),
+    state.notizen.push({ id: _neueId(),
       title: noteTitle, text: autoText, color: '#eff4ff',
-      datum: today(), __taskId: task.id, __userEdited: false });
+      datum: _tkHeute(), __taskId: task.id, __userEdited: false });
   }
 }
 
 function resetTaskModal() {
-  ['t-name','t-datum','t-time','t-notiz','t-person'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['t-name','t-datum','t-time','t-notiz','t-person','t-parent-id'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('t-edit-id').value = '';
-  document.getElementById('t-modal-title').textContent = 'Aufgabe hinzufügen';
+  document.getElementById('t-modal-title').textContent = tt('Aufgabe hinzufügen');
+  const w = document.getElementById('t-wdh'); if (w) w.value = '';
   const hint = document.getElementById('t-notif-status');
   if (hint) hint.style.display = 'none';
+  _tkUnterNeu = [];
+  _tkKatOptionen(document.getElementById('t-kat'), '');
+  _tkModalSichtbarkeit();
 }
 
 function editTask(id) {
-  const t = state.aufgaben.find(t => String(t.id) === String(id));
+  const t = _tkFind(id);
   if (!t) return;
   _populateTaskPersonList();
+  _tkUnterNeu = [];
   document.getElementById('t-name').value   = t.name   || '';
   document.getElementById('t-datum').value  = t.datum  || '';
   document.getElementById('t-notiz').value  = t.notiz  || '';
   document.getElementById('t-person').value = t.person || '';
+  document.getElementById('t-parent-id').value = t.parentId || '';
   const timeEl = document.getElementById('t-time');
   if (timeEl) { timeEl.value = t.time || ''; if (t.time) onTaskTimeChange(); }
-  const pSel = document.getElementById('t-prio');
-  _selectValue(pSel, t.prio);
-  if (document.getElementById('t-edit-id')) document.getElementById('t-edit-id').value = id;
-  if (document.getElementById('t-modal-title')) document.getElementById('t-modal-title').textContent = 'Aufgabe bearbeiten';
+  _selectValue(document.getElementById('t-prio'), t.prio);
+  _selectValue(document.getElementById('t-wdh'), t.wdh || '');
+  _tkKatOptionen(document.getElementById('t-kat'), t.katId);
+  document.getElementById('t-edit-id').value = id;
+  document.getElementById('t-modal-title').textContent = tt('Aufgabe bearbeiten');
   openModal('modal-task');
+  _tkModalSichtbarkeit();
 }
 
+// Abhaken (bleibt gratis – kein requireSub). Hauptaufgabe abhaken = als Ganzes erledigt (inkl.
+// Unteraufgaben). Wiederkehrende Aufgabe: springt auf den naechsten Termin und bleibt offen.
 function toggleTask(id) {
-  const t = state.aufgaben.find(t => String(t.id) === String(id));
+  const t = _tkFind(id);
   if (t) {
-    t.status = t.status === 'Erledigt' ? 'Offen' : 'Erledigt';
-    t._updatedAt = Date.now();
-    _syncTaskNotiz(t);
-    showToast(t.status === 'Erledigt' ? '✅ Aufgabe erledigt' : '↩️ Aufgabe wieder offen', 'success');
+    const jetzt = Date.now();
+    if (!_tkDone(t) && t.wdh) {
+      const vorher = t.datum;
+      t.datum = _tkNaechsterTermin(t.datum, t.wdh);
+      t.status = 'Offen'; t._updatedAt = jetzt;
+      // Unteraufgaben wieder oeffnen und ihre Termine um denselben Abstand verschieben
+      const tage = _plDatumOk(vorher) ? Math.round((Date.parse(t.datum + 'T12:00:00Z') - Date.parse(vorher + 'T12:00:00Z')) / 864e5) : 0;
+      _tkKinder(t.id).forEach(k => {
+        let geaendert = false;
+        if (_tkDone(k)) { k.status = 'Offen'; delete k.erledigtAm; geaendert = true; }
+        if (tage && _plDatumOk(k.datum)) { k.datum = _tkPlusTage(k.datum, tage); geaendert = true; }
+        if (geaendert) { k._updatedAt = jetzt; _syncTaskNotiz(k); }
+      });
+      _syncTaskNotiz(t);
+      showToast('🔁 ' + tt('Nächster Termin') + ': ' + fmtDate(t.datum), 'success');
+    } else {
+      const fertig = !_tkDone(t);
+      t.status = fertig ? 'Erledigt' : 'Offen';
+      if (fertig) t.erledigtAm = jetzt; else delete t.erledigtAm;
+      t._updatedAt = jetzt;
+      _syncTaskNotiz(t);
+      if (fertig) _tkKinder(t.id).forEach(k => { if (!_tkDone(k)) { k.status = 'Erledigt'; k.erledigtAm = jetzt; k._updatedAt = jetzt; _syncTaskNotiz(k); } });
+      showToast(fertig ? '✅ Aufgabe erledigt' : '↩️ Aufgabe wieder offen', 'success');
+    }
+    try { scheduleTaskReminders(); } catch (e) {}
   }
   save(); renderTasks();
 }
 
 async function deleteTask(id) {
   if (!requireSub()) return;
-  if (!(await showConfirm('Aufgabe löschen?'))) return;
-  _trackDeletion(id, 'aufgaben');
-  // Verknuepfte Auto-Notiz mit Grabstein entfernen (kam sonst aus der Cloud zurueck)
-  state.notizen.filter(n => String(n.__taskId) === String(id)).forEach(n => _trackDeletion(n.id, 'notizen'));
-  state.notizen = state.notizen.filter(n => String(n.__taskId) !== String(id));
-  state.aufgaben = state.aufgaben.filter(t => String(t.id) !== String(id));
+  const kinder = _tkKinder(id);
+  const frage = kinder.length
+    ? (_lang === 'en' ? `Delete this task and its ${kinder.length} subtask${kinder.length === 1 ? '' : 's'}?` : `Aufgabe samt ${kinder.length === 1 ? '1 Unteraufgabe' : kinder.length + ' Unteraufgaben'} löschen?`)
+    : 'Aufgabe löschen?';
+  if (!(await showConfirm(frage))) return;
+  const weg = new Set([String(id), ...kinder.map(k => String(k.id))]);
+  weg.forEach(x => _trackDeletion(x, 'aufgaben'));
+  // Verknuepfte Auto-Notizen mit Grabstein entfernen (kamen sonst aus der Cloud zurueck)
+  state.notizen.filter(n => weg.has(String(n.__taskId))).forEach(n => _trackDeletion(n.id, 'notizen'));
+  state.notizen = state.notizen.filter(n => !weg.has(String(n.__taskId)));
+  state.aufgaben = state.aufgaben.filter(t => !weg.has(String(t.id)));
   save(); renderTasks(); showToast('🗑 Aufgabe gelöscht', 'success');
 }
 
@@ -10122,8 +10376,6 @@ let taskPersonFilter = '';
 
 function setTaskFilter(f, btn) {
   taskFilter = f;
-  document.querySelectorAll('.chart-tab[id^="task-filter"]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
   renderTasks();
 }
 
@@ -10132,112 +10384,238 @@ function setTaskPersonFilter(val) {
   renderTasks();
 }
 
+// ── Kategorien ──
+function _tkKatAnlegen(name) {
+  state.aufgabenKat = state.aufgabenKat || [];
+  const k = { id: _neueId(), name, color: TK_FARBEN[state.aufgabenKat.length % TK_FARBEN.length], order: state.aufgabenKat.length, _updatedAt: Date.now() };
+  state.aufgabenKat.push(k);
+  save();
+  return k;
+}
+function tkKatNeu() {
+  if (!requireSub()) return;
+  const k = _tkKatAnlegen(tt('Neue Kategorie'));
+  tkZeige('kat:' + k.id);
+  const inp = document.getElementById('tk-kat-name');
+  if (inp) { try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); } inp.select(); }
+}
+function tkKatUmbenennen(id, val) {
+  const k = _tkKat(id); const v = String(val || '').trim();
+  if (!k || !v) { renderTasks(); return; }
+  k.name = v; k._updatedAt = Date.now(); save();
+  const nl = document.querySelector('#tk-nav .tk-nav-item.on .tk-nl'); if (nl) nl.textContent = v;
+}
+function tkKatFarbe(id, farbe) { const k = _tkKat(id); if (!k) return; k.color = farbe; k._updatedAt = Date.now(); save(); renderTasks(); }
+async function tkKatLoeschen(id) {
+  if (!requireSub()) return;
+  const k = _tkKat(id); if (!k) return;
+  const betroffen = state.aufgaben.filter(t => String(t.katId || '') === String(id));
+  const n = betroffen.filter(t => !t.parentId).length;
+  const frage = _lang === 'en'
+    ? `Delete category “${k.name}”?${n ? ` Its ${n} task${n === 1 ? '' : 's'} will move to the Inbox.` : ''}`
+    : `Kategorie „${k.name}“ löschen?${n ? ` ${n === 1 ? 'Die Aufgabe kommt' : 'Die ' + n + ' Aufgaben kommen'} in den Eingang.` : ''}`;
+  if (!(await showConfirm(frage))) return;
+  betroffen.forEach(t => { delete t.katId; t._updatedAt = Date.now(); });
+  _trackDeletion(k.id, 'aufgabenKat');
+  state.aufgabenKat = state.aufgabenKat.filter(x => x !== k);
+  tkAnsicht = 'eingang';
+  save(); renderTasks();
+  showToast('🗑 ' + tt('Kategorie gelöscht'), 'success');
+}
+
+// ── Ansichten ──
+function tkZeige(ansicht) {
+  tkAnsicht = ansicht;
+  try { localStorage.setItem('planoryTkAnsicht', ansicht); } catch (e) {}
+  _tkErledigtAuf = false; _tkTagOffen = '';
+  renderTasks();
+}
+function tkKlappe(id) { const k = String(id); if (_tkZu.has(k)) _tkZu.delete(k); else _tkZu.add(k); renderTasks(); }
+function tkUnterNeu(id) {
+  _tkZu.delete(String(id)); _tkUnterAuf.add(String(id)); renderTasks();
+  const inp = document.querySelector(`#task-list-container .tk-add[data-parent="${id}"] input`);
+  if (inp) { try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); } }
+}
+// Schnell anlegen (Enter): Kategorie/Datum/Hauptaufgabe kommen aus der Ansicht
+function tkSchnell(inp) {
+  if (!requireSub()) return;
+  const name = inp.value.trim(); if (!name) return;
+  const parent = inp.dataset.parent ? _tkFind(inp.dataset.parent) : null;
+  const kat = parent ? (_tkKat(parent.katId) ? String(parent.katId) : '') : (inp.dataset.kat && _tkKat(inp.dataset.kat) ? inp.dataset.kat : '');
+  const t = { id: _neueId(), name, prio: 'Mittel', datum: inp.dataset.datum || '', time: '', person: '', notiz: '', status: 'Offen', _updatedAt: Date.now() };
+  if (kat) t.katId = kat;
+  if (parent) t.parentId = parent.id;
+  if (taskPersonFilter) t.person = taskPersonFilter;   // sonst verschwaende sie sofort aus der gefilterten Liste
+  state.aufgaben.push(t);
+  inp.onblur = null; inp.value = '';
+  save(); try { scheduleTaskReminders(); } catch (e) {}
+  if (parent) _tkUnterAuf.add(String(parent.id));
+  const sel = parent ? `.tk-add[data-parent="${parent.id}"] input` : (inp.dataset.datum && tkAnsicht === 'demnaechst' ? `.tk-add[data-tag="${inp.dataset.datum}"] input` : '.tk-add-haupt input');
+  renderTasks();
+  const neu = document.querySelector('#task-list-container ' + sel);
+  if (neu) { try { neu.focus({ preventScroll: true }); } catch (e) {} }
+}
+// Leeres Unteraufgaben-Feld verlassen: nur diese Zeile schliessen (kein Neuzeichnen -> der Klick
+// auf ein anderes Feld bleibt erhalten)
+function _tkUnterBlur(inp, id) {
+  if (!inp.isConnected || inp.value.trim()) return;
+  _tkUnterAuf.delete(String(id));
+  const row = inp.closest('.tk-add');
+  setTimeout(() => { if (row && row.isConnected && !row.contains(document.activeElement)) row.remove(); }, 150);
+}
+function tkSchnellTag(datum) {
+  _tkTagOffen = datum; renderTasks();
+  const inp = document.querySelector(`#task-list-container .tk-add[data-tag="${datum}"] input`);
+  if (inp) inp.focus();
+}
+
+function _tkWoTag(d) {
+  const t = new Date(d + 'T12:00:00Z').getUTCDay();
+  return (_lang === 'en' ? ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] : ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'])[t];
+}
+function _tkDatumChip(t) {
+  if (!t.datum) return '';
+  const heute = _tkHeute(), morgen = _tkPlusTage(heute, 1), done = _tkDone(t);
+  const kurz = d => { const [y, m, dd] = d.split('-'); return `${+dd}.${+m}.` + (y !== heute.slice(0, 4) ? y : ''); };
+  let cls = 'tk-d-spaeter', txt = kurz(t.datum);
+  if (!done && t.datum < heute) { cls = 'tk-d-ueber'; }
+  else if (t.datum === heute) { cls = 'tk-d-heute'; txt = tt('Heute'); }
+  else if (t.datum === morgen) { cls = 'tk-d-morgen'; txt = tt('Morgen'); }
+  else if (t.datum > heute && t.datum <= _tkPlusTage(heute, 6)) { cls = 'tk-d-woche'; txt = _tkWoTag(t.datum); }
+  return `<span class="tk-chip ${cls}">📅 ${esc(txt)}${t.time ? ' · ' + esc(t.time) : ''}</span>`;
+}
+
 function renderTasks() {
   try { renderTodoistSection(); } catch (e) { console.warn('[todoist]', e?.message); }
-  // Stats
-  const open   = state.aufgaben.filter(t => t.status !== 'Erledigt');
-  const done   = state.aufgaben.filter(t => t.status === 'Erledigt');
-  const hCount = open.filter(t => t.prio === 'Hoch').length;
-  const mCount = open.filter(t => t.prio === 'Mittel').length;
-  const lCount = open.filter(t => t.prio === 'Niedrig').length;
-  ['task-count-hoch','task-count-mittel','task-count-niedrig','task-count-done'].forEach((id,i) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = [hCount, mCount, lCount, done.length][i];
-  });
+  state.aufgabenKat = state.aufgabenKat || [];
+  const kats = [...state.aufgabenKat].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (tkAnsicht.startsWith('kat:') && !_tkKat(tkAnsicht.slice(4))) tkAnsicht = 'heute';
+  const heute = _tkHeute(), bis = _tkPlusTage(heute, 14);
 
-  // Populate person filter dropdown
+  // Personen-Filter
   const pSel = document.getElementById('task-person-filter');
   if (pSel) {
     const persons = [...new Set(state.aufgaben.map(t => t.person).filter(Boolean))].sort();
-    const cur = pSel.value;
-    pSel.innerHTML = '<option value="">Alle Personen</option>' +
-      persons.map(p => `<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
     if (!persons.includes(taskPersonFilter)) taskPersonFilter = '';
+    pSel.innerHTML = `<option value="">${esc(tt('Alle Personen'))}</option>` +
+      persons.map(p => `<option value="${esc(p)}"${p === taskPersonFilter ? ' selected' : ''}>${esc(p)}</option>`).join('');
+    pSel.style.display = persons.length ? '' : 'none';
+  }
+  const alle = state.aufgaben.filter(t => !taskPersonFilter || t.person === taskPersonFilter);
+  const offen = alle.filter(t => !_tkDone(t));
+  const zHeute = offen.filter(t => t.datum && t.datum <= heute).length;
+  const zDemn = offen.filter(t => t.datum && t.datum > heute && t.datum <= bis).length;
+  const zKat = id => offen.filter(t => !_tkHatEltern(t) && _tkKatVon(t) === id).length;
+
+  // Navigation (links; am Handy als wischbare Leiste)
+  const nav = document.getElementById('tk-nav');
+  if (nav) nav.setAttribute('aria-label', tt('Aufgaben-Ansichten'));
+  if (pSel) pSel.setAttribute('aria-label', tt('Person'));
+  if (nav) {
+    const item = (key, ic, label, n, farbe) => `<button type="button" class="tk-nav-item ${tkAnsicht === key ? 'on' : ''}" onclick="tkZeige('${key}')">
+      <span class="tk-ic" ${farbe ? `style="color:${farbe}"` : ''}>${ic}</span><span class="tk-nl">${esc(label)}</span>${n ? `<span class="tk-cnt">${n}</span>` : ''}</button>`;
+    nav.innerHTML = item('heute', '📅', tt('Heute'), zHeute) + item('demnaechst', '🗓', tt('Demnächst'), zDemn) + item('eingang', '📥', tt('Eingang'), zKat('')) +
+      `<div class="tk-nav-kopf"><span>${esc(tt('Meine Kategorien'))}</span><button type="button" onclick="tkKatNeu()" title="${esc(tt('Neue Kategorie'))}">+</button></div>` +
+      kats.map(k => item('kat:' + k.id, '#', k.name, zKat(String(k.id)), _tkFarbe(k.color))).join('') +
+      `<button type="button" class="tk-nav-item tk-nav-neu" onclick="tkKatNeu()"><span class="tk-ic">+</span><span class="tk-nl">${esc(tt('Kategorie'))}</span></button>`;
   }
 
-  const today = new Date(); today.setHours(0,0,0,0);
+  // Zeilen
+  const po = { Hoch: 0, Mittel: 1, Niedrig: 2 };
+  const sortier = (a, b) => (String(a.datum || '9999') + (a.time || '99')).localeCompare(String(b.datum || '9999') + (b.time || '99')) || ((po[a.prio] ?? 1) - (po[b.prio] ?? 1)) || (Number(a.id) - Number(b.id));
+  const zeigeKat = tkAnsicht === 'heute' || tkAnsicht === 'demnaechst';
+  const zeile = (t, opt = {}) => {
+    const done = _tkDone(t), kinder = opt.unter ? [] : _tkKinder(t.id).filter(k => !taskPersonFilter || k.person === taskPersonFilter);
+    const kDone = kinder.filter(_tkDone).length, auf = !_tkZu.has(String(t.id));
+    const kat = zeigeKat && !(opt.unter && !opt.mitEltern) ? _tkKat(_tkKatVon(t)) : null;   // unter der Hauptaufgabe nicht doppelt
+    const eltern = opt.mitEltern && _tkHatEltern(t) ? _tkFind(t.parentId) : null;
+    const prio = { Hoch: 'hoch', Mittel: 'mittel', Niedrig: 'niedrig' }[t.prio] || 'mittel';
+    const meta = [
+      kinder.length ? `<button type="button" class="tk-chip tk-sub-btn" onclick="event.stopPropagation();tkKlappe(${t.id})" title="${esc(tt('Unteraufgaben'))}">⑂ ${kDone}/${kinder.length} ${auf ? '▾' : '▸'}</button>` : '',
+      _tkDatumChip(t),
+      t.wdh ? `<span class="tk-chip" title="${esc(tt(TK_WDH[t.wdh] || ''))}">🔁 ${esc(tt(TK_WDH[t.wdh] || ''))}</span>` : '',
+      t.person ? `<span class="tk-chip">👤 ${esc(t.person)}</span>` : '',
+      eltern ? `<span class="tk-chip">↳ ${esc(eltern.name)}</span>` : '',
+      kat ? `<span class="tk-chip" style="color:${_tkFarbe(kat.color)}"># <span style="color:var(--text3)">${esc(kat.name)}</span></span>` : '',
+    ].join('');
+    return `<div class="tk-row ${done ? 'tk-done' : ''} ${opt.unter ? 'tk-unter' : ''}" data-task="${t.id}">
+      <button type="button" class="tk-check tk-p-${prio}" onclick="event.stopPropagation();toggleTask(${t.id})" aria-label="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}" title="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}">${done ? '✓' : ''}</button>
+      <div class="tk-main" onclick="editTask(${t.id})">
+        <div class="tk-name">${esc(t.name)}</div>
+        ${t.notiz ? `<div class="tk-notiz">${esc(String(t.notiz).split('\n')[0])}</div>` : ''}
+        ${meta ? `<div class="tk-meta">${meta}</div>` : ''}
+      </div>
+      <div class="tk-act">
+        ${!opt.unter && !_tkHatEltern(t) ? `<button type="button" onclick="event.stopPropagation();tkUnterNeu(${t.id})" title="${esc(tt('Unteraufgabe hinzufügen'))}">⑂+</button>` : ''}
+        <button type="button" class="tk-act-edit" onclick="event.stopPropagation();editTask(${t.id})" title="${esc(tt('Bearbeiten'))}">✏️</button>
+        <button type="button" onclick="event.stopPropagation();deleteTask(${t.id})" title="${esc(tt('Löschen'))}">🗑</button>
+      </div>
+    </div>` + ((kinder.length && auf) || (!opt.unter && _tkUnterAuf.has(String(t.id))) ? `<div class="tk-kinder">
+      ${[...kinder].sort((a, b) => (_tkDone(a) - _tkDone(b)) || sortier(a, b)).map(k => zeile(k, { unter: true })).join('')}
+      ${!opt.unter && _tkUnterAuf.has(String(t.id)) ? `<div class="tk-add tk-add-unter" data-parent="${t.id}"><span class="tk-plus">+</span><input placeholder="${esc(tt('Unteraufgabe hinzufügen…'))}" data-parent="${t.id}" onkeydown="if(event.key==='Enter')tkSchnell(this)" onblur="_tkUnterBlur(this, '${t.id}')"></div>` : ''}
+    </div>` : '');
+  };
+  const addHaupt = (daten = {}) => `<div class="tk-add tk-add-haupt"><span class="tk-plus">+</span><input placeholder="${esc(tt('Aufgabe hinzufügen…'))}" ${daten.kat ? `data-kat="${esc(daten.kat)}"` : ''} ${daten.datum ? `data-datum="${daten.datum}"` : ''} onkeydown="if(event.key==='Enter')tkSchnell(this)"></div>`;
+  const gruppe = (titel, inhalt, extra = '') => `<div class="tk-gruppe"><div class="tk-gkopf">${titel}${extra}</div>${inhalt}</div>`;
+  // Liste fuer eine Datums-Ansicht: Hauptaufgaben mit ihren Unteraufgaben, passende Unteraufgaben
+  // anderer (nicht passender) Hauptaufgaben einzeln mit Hinweis „↳ Hauptaufgabe"
+  const datumsListe = (treffer, sichtbar = treffer) => {
+    const ids = new Set(sichtbar.map(t => String(t.id)));
+    return treffer.filter(t => !(_tkHatEltern(t) && ids.has(String(t.parentId)))).sort(sortier)
+      .map(t => _tkHatEltern(t) ? zeile(t, { unter: true, mitEltern: true }) : zeile(t)).join('');
+  };
+  const erledigtBlock = liste => liste.length ? `<div class="tk-erl">
+      <button type="button" class="tk-erl-btn" onclick="_tkErledigtAuf=!_tkErledigtAuf;renderTasks()">${_tkErledigtAuf ? '▾' : '▸'} ✓ ${esc(tt('Erledigt'))} (${liste.length})</button>
+      ${_tkErledigtAuf ? liste.sort((a, b) => (b.erledigtAm || 0) - (a.erledigtAm || 0)).map(t => zeile(t)).join('') : ''}</div>` : '';
+  const leer = (ic, text) => `<div class="tk-leer"><div class="tk-leer-ic">${ic}</div><div>${esc(text)}</div></div>`;
 
-  // Filter
-  let items = [...state.aufgaben];
-  if (taskFilter === 'open')  items = items.filter(t => t.status !== 'Erledigt');
-  if (taskFilter === 'hoch')  items = items.filter(t => t.prio === 'Hoch' && t.status !== 'Erledigt');
-  if (taskFilter === 'done')  items = items.filter(t => t.status === 'Erledigt');
-  if (taskFilter === 'today') items = items.filter(t => {
-    if (!t.datum || t.status === 'Erledigt') return false;
-    const d = new Date(t.datum); d.setHours(0,0,0,0);
-    return d <= today;
-  });
-  if (taskPersonFilter) items = items.filter(t => t.person === taskPersonFilter);
-
-  // Sort: high prio first, then by date, done last
-  items.sort((a,b) => {
-    if (a.status === 'Erledigt' && b.status !== 'Erledigt') return 1;
-    if (b.status === 'Erledigt' && a.status !== 'Erledigt') return -1;
-    const po = {Hoch:0, Mittel:1, Niedrig:2};
-    const pd = (po[a.prio] ?? 1) - (po[b.prio] ?? 1);   // ?? statt || – sonst zaehlte 'Hoch' (0) wie 'Mittel'
-    if (pd !== 0) return pd;
-    if (a.datum && b.datum) return new Date(a.datum) - new Date(b.datum);
-    if (a.datum) return -1;
-    if (b.datum) return 1;
-    return 0;
-  });
-
+  let titel = '', sub = '', html = '', kopfExtra = '';
+  if (tkAnsicht === 'heute') {
+    titel = tt('Heute');
+    const ueber = offen.filter(t => t.datum && t.datum < heute), heu = offen.filter(t => t.datum === heute);
+    sub = `${zHeute} ${tt(zHeute === 1 ? 'Aufgabe' : 'Aufgaben')}`;
+    const sicht = [...ueber, ...heu];
+    if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber, sicht));
+    html += gruppe(`${esc(fmtDate(heute))} · ${esc(tt('Heute'))}`, heu.length ? datumsListe(heu, sicht) : (ueber.length ? '' : leer('🎉', tt('Für heute ist alles erledigt.'))) ) + addHaupt({ datum: heute });
+    const heuteErl = alle.filter(t => _tkDone(t) && t.erledigtAm && _tkLokal(t.erledigtAm) === heute && !_tkHatEltern(t));
+    html += erledigtBlock(heuteErl);
+  } else if (tkAnsicht === 'demnaechst') {
+    titel = tt('Demnächst');
+    sub = `${zDemn} ${tt(zDemn === 1 ? 'Aufgabe' : 'Aufgaben')} · ${tt('nächste 14 Tage')}`;
+    const sicht = offen.filter(t => t.datum && t.datum > heute);
+    for (let i = 1; i <= 14; i++) {
+      const d = _tkPlusTage(heute, i), tr = offen.filter(t => t.datum === d);
+      if (!tr.length && i > 7) continue;
+      const kopf = `${esc(i === 1 ? tt('Morgen') : _tkWoTag(d))} <span class="tk-gdat">${esc(fmtDate(d))}</span>`;
+      html += gruppe(kopf, datumsListe(tr, sicht) + (_tkTagOffen === d
+        ? `<div class="tk-add" data-tag="${d}"><span class="tk-plus">+</span><input placeholder="${esc(tt('Aufgabe hinzufügen…'))}" data-datum="${d}" onkeydown="if(event.key==='Enter')tkSchnell(this)"></div>`
+        : `<div class="tk-add" data-tag="${d}"><button type="button" class="tk-add-mini" onclick="tkSchnellTag('${d}')">+ ${esc(tt('Aufgabe'))}</button></div>`));
+    }
+    const spaeter = offen.filter(t => t.datum && t.datum > bis);
+    if (spaeter.length) html += gruppe(esc(tt('Später')), datumsListe(spaeter, sicht));
+  } else {
+    const katId = tkAnsicht === 'eingang' ? '' : tkAnsicht.slice(4);
+    const kat = _tkKat(katId);
+    const passt = t => !taskPersonFilter || t.person === taskPersonFilter || _tkKinder(t.id).some(k => k.person === taskPersonFilter);
+    const top = state.aufgaben.filter(t => !_tkHatEltern(t) && _tkKatVon(t) === katId && passt(t));
+    const o = top.filter(t => !_tkDone(t)).sort(sortier), e = top.filter(_tkDone);
+    if (kat) {
+      titel = '';
+      kopfExtra = `<div class="tk-katkopf">
+        <span class="tk-kathash" style="color:${_tkFarbe(kat.color)}">#</span>
+        <input id="tk-kat-name" class="tk-katname" value="${esc(kat.name)}" onchange="tkKatUmbenennen(${kat.id}, this.value)" aria-label="${esc(tt('Name der Kategorie'))}">
+        <span class="tk-farben">${TK_FARBEN.map(f => `<button type="button" class="tk-farbe ${f === kat.color ? 'on' : ''}" style="background:${f}" onclick="tkKatFarbe(${kat.id}, '${f}')" aria-label="${esc(tt('Farbe'))}"></button>`).join('')}</span>
+        <button type="button" class="tk-katdel" onclick="tkKatLoeschen(${kat.id})" title="${esc(tt('Kategorie löschen'))}">🗑</button>
+      </div>`;
+    } else titel = tt('Eingang');
+    sub = `${o.length} ${tt(o.length === 1 ? 'offene Aufgabe' : 'offene Aufgaben')}`;
+    html = (o.length ? o.map(t => zeile(t)).join('') : leer('📝', tt(kat ? 'Noch keine Aufgaben in dieser Kategorie.' : 'Keine Aufgaben ohne Kategorie.'))) + addHaupt({ kat: katId }) + erledigtBlock(e);
+  }
+  const kopf = document.getElementById('tk-kopf');
+  if (kopf) kopf.innerHTML = kopfExtra || `<h3 class="tk-titel">${esc(titel)}</h3>`;
+  const subEl = document.getElementById('tk-sub'); if (subEl) subEl.textContent = sub;
   const container = document.getElementById('task-list-container');
-  if (!container) return;
-
-  if (items.length === 0) {
-    container.innerHTML = `<div class="empty"><div class="icon">✅</div><p>${taskFilter === 'done' ? 'Noch keine erledigten Aufgaben' : 'Noch keine Aufgaben'}</p>${taskFilter === 'done' ? '' : `<button class="btn btn-primary" style="margin-top:12px" onclick="_populateTaskPersonList();openModal('modal-task')">+ Aufgabe anlegen</button>`}</div>`;
-    return;
-  }
-
-  const prioColors = { Hoch: 'var(--danger)', Mittel: 'var(--warning)', Niedrig: 'var(--text3)' };
-  const prioBg     = { Hoch: 'var(--danger-light)', Mittel: 'var(--warning-light)', Niedrig: 'var(--surface2)' };
-
-  container.innerHTML = items.map(t => {
-    const isDone   = t.status === 'Erledigt';
-    const dueDate  = t.datum ? new Date(t.datum) : null;
-    if (dueDate) dueDate.setHours(0,0,0,0);
-    const isOverdue = dueDate && !isDone && dueDate < today;
-    const isDueToday = dueDate && !isDone && dueDate.getTime() === today.getTime();
-
-    const timeLabel = t.time ? ` ${t.time} Uhr` : '';
-    let dueBadge = '';
-    if (isOverdue)  dueBadge = `<span class="badge badge-red" style="font-size:0.65rem">⚠️ Überfällig${timeLabel}</span>`;
-    else if (isDueToday) dueBadge = `<span class="badge badge-yellow" style="font-size:0.65rem">📅 Heute${timeLabel}</span>`;
-    else if (dueDate) dueBadge = `<span class="badge badge-gray" style="font-size:0.65rem">${fmtDate(t.datum)}${timeLabel}</span>`;
-    if (t.time && !isDone) dueBadge += `<span style="font-size:0.65rem;color:var(--text3)" title="Erinnerung gesetzt">🔔</span>`;
-
-    return `
-    <div style="background:var(--surface);border:1.5px solid ${isDone?'var(--border)':isOverdue?'#fecaca':'var(--border)'};border-radius:14px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;box-shadow:var(--shadow);transition:all 0.2s;opacity:${isDone?'0.65':'1'}"
-      onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='var(--shadow)'">
-
-      <!-- Checkbox -->
-      <div onclick="toggleTask(${t.id})"
-        style="width:24px;height:24px;border-radius:50%;border:2px solid ${isDone?'var(--success)':prioColors[t.prio]||'var(--border)'};background:${isDone?'var(--success)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px;transition:all 0.15s"
-        title="${isDone?'Als offen markieren':'Als erledigt markieren'}">
-        ${isDone?'<span style="color:white;font-size:0.8rem">✓</span>':''}
-      </div>
-
-      <!-- Content -->
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-          <span style="font-weight:700;font-size:0.92rem;color:var(--text);${isDone?'text-decoration:line-through;color:var(--text3)':''}">${t.name}</span>
-          <span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:0.68rem;font-weight:700;background:${prioBg[t.prio]};color:${prioColors[t.prio]}">${t.prio}</span>
-          ${dueBadge}
-          ${t.person?`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:0.68rem;font-weight:600;background:#f0f9ff;color:#0369a1">👤 ${t.person}</span>`:''}
-          ${isDone?'<span class="badge badge-green" style="font-size:0.65rem">Erledigt</span>':''}
-        </div>
-        ${t.notiz?`<div style="font-size:0.8rem;color:var(--text2);margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:7px;line-height:1.55;white-space:pre-wrap">${t.notiz}</div>`:''}
-      </div>
-
-      <!-- Actions -->
-      <div style="display:flex;gap:4px;flex-shrink:0;align-items:flex-start">
-        ${isDone ? `<button class="btn btn-ghost" onclick="toggleTask(${t.id})" style="font-size:0.72rem;padding:4px 10px;white-space:nowrap" title="Wieder öffnen">↩ Öffnen</button>` : ''}
-        <button class="action-btn" onclick="editTask(${t.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteTask(${t.id})" title="Löschen">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
+  if (container) container.innerHTML = html;
 }
 
 // ══════════════════════════════════════
@@ -14935,7 +15313,7 @@ function _mergeProjects(localProjects, cloudProjects) {
   if (!Array.isArray(localProjects) || localProjects.length === 0) return cloudProjects;
   const ARRS = ['kosten','aufgaben','dokumentation','budgetKat','notizen','maengel',
                 'angebote','zahlungsplan','kontakte','gewerke','personen','dokumente','fotos',
-                'meilensteine','gantt','abhaengigkeiten','wartungen','tagebuch','helfer','helfereinsaetze'];
+                'meilensteine','gantt','abhaengigkeiten','wartungen','tagebuch','helfer','helfereinsaetze','aufgabenKat'];
   const result = cloudProjects.map(cp => {
     const lp = localProjects.find(p => p.id === cp.id);
     if (!lp) return cp;
@@ -15046,12 +15424,25 @@ function startDemo() {
       { id: 2006, datum: '2025-09-01', beschr: 'Elektro Rohinstallation',   kat: 'Elektro',      netto: 12500, betrag: 15000, mwst: 20, status: 'Ausstehend' },
       { id: 2007, datum: '2025-09-15', beschr: 'Sanitär Rohinstallation',   kat: 'Sanitär',      netto: 16667, betrag: 20000, mwst: 20, status: 'Ausstehend' },
     ],
+    // Aufgaben relativ zu heute, damit „Heute" und „Demnächst" im Demo lebendig sind
+    aufgabenKat: [
+      { id: 3101, name: 'Küche',    color: '#ff9f1c', order: 0 },
+      { id: 3102, name: 'Elektro',  color: '#3d6ff8', order: 1 },
+      { id: 3103, name: 'Behörden', color: '#10b981', order: 2 },
+    ],
     aufgaben: [
-      { id: 3001, name: 'Fensterangebot einholen',     status: 'Offen',     prio: 'Hoch',     datum: '2025-10-15', notiz: 'Verantwortlich: Simon',     person: 'Simon' },
-      { id: 3002, name: 'Estrich Termin fixieren',     status: 'Offen',     prio: 'Mittel',   datum: '2025-11-01', notiz: 'Verantwortlich: Bauleiter', person: 'Bauleiter' },
-      { id: 3003, name: 'Fliesenleger beauftragen',    status: 'In Arbeit', prio: 'Hoch',     datum: '2025-10-30', notiz: 'Verantwortlich: Simon',     person: 'Simon' },
-      { id: 3004, name: 'Heizungsplanung abzeichnen',  status: 'Erledigt',  prio: 'Hoch',     datum: '2025-08-20', notiz: 'Verantwortlich: Planer',    person: 'Planer' },
-      { id: 3005, name: 'Parkettmuster auswählen',     status: 'Offen',     prio: 'Niedrig',  datum: '2025-12-01', notiz: 'Verantwortlich: Familie',   person: 'Familie' },
+      { id: 3001, name: 'Fensterangebot einholen',     status: 'Offen',     prio: 'Hoch',     datum: _tkPlusTage(today(), -2), notiz: 'Verantwortlich: Simon',     person: 'Simon' },
+      { id: 3002, name: 'Estrich Termin fixieren',     status: 'Offen',     prio: 'Mittel',   datum: today(), time: '16:00', notiz: 'Verantwortlich: Bauleiter', person: 'Bauleiter' },
+      { id: 3003, name: 'Fliesenleger beauftragen',    status: 'In Arbeit', prio: 'Hoch',     datum: _tkPlusTage(today(), 3), notiz: 'Verantwortlich: Simon', person: 'Simon', katId: 3101 },
+      { id: 3004, name: 'Heizungsplanung abzeichnen',  status: 'Erledigt',  prio: 'Hoch',     datum: _tkPlusTage(today(), -20), notiz: 'Verantwortlich: Planer', person: 'Planer', katId: 3103 },
+      { id: 3005, name: 'Parkettmuster auswählen',     status: 'Offen',     prio: 'Niedrig',  datum: _tkPlusTage(today(), 9), notiz: 'Verantwortlich: Familie', person: 'Familie' },
+      { id: 3006, name: 'Küche bestellen',             status: 'Offen',     prio: 'Hoch',     datum: _tkPlusTage(today(), 5), notiz: '', katId: 3101 },
+      { id: 3007, name: 'Maße für Küchenplaner',       status: 'Erledigt',  prio: 'Mittel',   datum: '', notiz: '', katId: 3101, parentId: 3006 },
+      { id: 3008, name: 'Arbeitsplatte aussuchen',     status: 'Offen',     prio: 'Mittel',   datum: '', notiz: '', katId: 3101, parentId: 3006 },
+      { id: 3009, name: 'Geräte auswählen',            status: 'Offen',     prio: 'Mittel',   datum: _tkPlusTage(today(), 1), notiz: '', katId: 3101, parentId: 3006 },
+      { id: 3010, name: 'Steckdosen und Lichtschalter zählen', status: 'Offen', prio: 'Mittel', datum: today(), notiz: '', katId: 3102 },
+      { id: 3011, name: 'Baustelle kontrollieren',     status: 'Offen',     prio: 'Mittel',   datum: _tkPlusTage(today(), 2), time: '08:00', wdh: 'woechentlich', notiz: '' },
+      { id: 3012, name: 'Fertigstellungsanzeige vorbereiten', status: 'Offen', prio: 'Niedrig', datum: '', notiz: '', katId: 3103 },
     ],
     gantt: [
       { id: 4101, name: 'Rohbau',          start: '2025-03-01', end: '2025-07-31', status: 'Erledigt' },
