@@ -1471,17 +1471,17 @@ await scenario('Zeitplan: Punkte stehen im passenden Abschnitt – nichts doppel
     const demoOk = (state.meilensteine || []).filter(m => m.id >= 4001 && m.id <= 4006)
       .every(m => el.querySelector(`.pl-sec[data-sec] .pl-item[data-item="${m.id}"]`));
     const ohneBlock = /Weitere Punkte|Ohne Abschnitt/.test(txt) ? (state.meilensteine || []).filter(m => !m.ganttId || !state.gantt.some(g => String(g.id) === String(m.ganttId))).map(m => m.name + '/' + (m.datum || '-')).join(', ') : '';
-    return { ohne: ohneBlock, kreis: /Kreis antippen/.test(txt), demoOk,
-      hinweis: /Tippe auf den Status/.test(txt), dots: el.querySelectorAll('.pl-dot').length, btn: el.querySelectorAll('.pl-stbtn').length };
+    return { ohne: ohneBlock, kreis: /Kreis antippen = Status/.test(txt), demoOk,
+      hinweis: /Kreis antippen: Offen → In Arbeit → Erledigt/.test(txt), dots: el.querySelectorAll('.pl-dot').length, btn: el.querySelectorAll('.pl-stbtn').length };
   });
   const p = [];
   if (r.ohne) p.push('Block „Weitere Punkte/Ohne Abschnitt" erscheint, obwohl alles zuordenbar ist: ' + r.ohne);
   if (!r.demoOk) p.push('Demo-Punkte nicht im passenden Abschnitt');
-  if (r.kreis || !r.hinweis) p.push('alter Hinweis „Kreis antippen" statt Status-Hinweis');
+  if (r.kreis || !r.hinweis) p.push('Hinweis zum Status fehlt oder ist der alte („Kreis antippen = Status ändern")');
   if (r.dots || !r.btn) p.push(`Status noch als Kreis (${r.dots}) statt Schaltfläche (${r.btn})`);
   return p.join(' · ');
 });
-await scenario('Zeitplan: Status-Schaltfläche schaltet mit Text weiter (Offen → In Arbeit → Erledigt)', async () => {
+await scenario('Zeitplan: Status-Kreis schaltet weiter (Offen → In Arbeit → Erledigt), mit Beschriftung', async () => {
   const r = await page.evaluate(() => {
     showPage('planung');
     const m = state.meilensteine.find(x => x.id === 4004);
@@ -1490,14 +1490,15 @@ await scenario('Zeitplan: Status-Schaltfläche schaltet mit Text weiter (Offen �
     for (let i = 0; i < 3; i++) {
       const b = document.querySelector(`#plan-timeline .pl-item[data-item="4004"] .pl-stbtn`);
       if (!b) return { fehlt: true };
-      texte.push(b.textContent.trim()); b.click();
+      texte.push(b.getAttribute('aria-label') + (document.querySelector('#plan-timeline .pl-item[data-item="4004"] .pl-tag-arbeit') ? ' +Etikett' : ''));
+      b.click();
     }
     const glocke = !!document.querySelector('#plan-timeline .pl-item[data-item="4004"] .pl-bell');
     m.status = vorher; m.done = vorher === 'erledigt'; renderZeitplan();
     return { texte, glocke };
   });
   if (r.fehlt) return 'keine Status-Schaltfläche';
-  const soll = ['○ Offen', '● In Arbeit', '✓ Erledigt'];
+  const soll = ['Status: Offen', 'Status: In Arbeit +Etikett', 'Status: Erledigt'];
   if (JSON.stringify(r.texte) !== JSON.stringify(soll)) return `Texte: ${r.texte.join(' | ')}`;
   return r.glocke ? '' : '🔔 fehlt bei Punkt mit Datum';
 });
@@ -1806,6 +1807,38 @@ await scenario('Budget: Ring im Datenschutz-Modus verborgen, ohne Budget kein vo
   if (r.ohne.mitte !== '–' || (r.ohne.daten && r.ohne.daten !== '0,1')) p.push(`ohne Budget: Mitte „${r.ohne.mitte}", Ring ${r.ohne.daten}`);
   if (/Budget auf einen Blick|Geplant und ausgegeben/.test(r.en)) p.push('Englisch: ' + r.en);
   return p.join(' · ');
+});
+
+await scenario('Zeitplan am Computer (dunkel): ein Punkt = eine Zeile, kompakt, keine Eingabe-Balken', async () => {
+  const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  let r;
+  try {
+    r = await d.page.evaluate(() => {
+      document.body.classList.add('dark-mode'); showPage('planung');
+      const tl = document.getElementById('plan-timeline');
+      const zeilen = [...tl.querySelectorAll('.pl-item')].map(it => {
+        const mitte = el => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+        const k = mitte(it.querySelector('.pl-stbtn')), n = mitte(it.querySelector('.pl-iname')), dt = mitte(it.querySelector('.pl-idate'));
+        return Math.max(Math.abs(k - n), Math.abs(dt - n));
+      });
+      const bg = el => getComputedStyle(el).backgroundColor;
+      const durchsichtig = [tl.querySelector('.pl-iname'), tl.querySelector('.pl-secname'), tl.querySelector('.pl-addrow input')]
+        .every(el => /rgba\(0, 0, 0, 0\)|transparent/.test(bg(el)));
+      return { breite: tl.getBoundingClientRect().width, versatz: Math.max(...zeilen), anzahl: zeilen.length, durchsichtig };
+    });
+    if (d.errors.length) r.fehler = d.errors.join(' · ');
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (r.fehler) p.push('JS-Fehler: ' + r.fehler);
+  if (r.breite > 861) p.push(`Zeitplan ${Math.round(r.breite)} px breit`);
+  if (!r.anzahl || r.versatz > 10) p.push(`Status, Name und Datum nicht in einer Zeile (Versatz ${Math.round(r.versatz)} px)`);
+  if (!r.durchsichtig) p.push('Eingabefelder zeigen im Dunkelmodus einen Balken');
+  return p.join(' · ');
+});
+await scenario('Zeitplan am Handy: nichts ragt über den Rand', async () => {
+  const r = await page.evaluate(() => { showPage('planung'); const tl = document.getElementById('plan-timeline');
+    return [...tl.querySelectorAll('.pl-item, .pl-sechead')].filter(e => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > innerWidth + 1).length; });
+  return r ? `${r} Zeilen ragen über den Rand` : '';
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
