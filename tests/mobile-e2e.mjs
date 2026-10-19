@@ -34,9 +34,9 @@ const URL_DEMO = 'https://planory.test/index.html?demo=planory2025';
 
 const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {});
 
-async function boot() {
+async function boot(geraet = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true,
-    hasTouch: true, locale: 'de-AT', timezoneId: 'Europe/Vienna', serviceWorkers: 'block' });
+    hasTouch: true, locale: 'de-AT', timezoneId: 'Europe/Vienna', serviceWorkers: 'block', ...geraet });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message || e)));
@@ -1651,19 +1651,26 @@ await scenario('Ausgaben: bestehende Eigenleistungen werden einmalig übernommen
     const n1 = _eigenleistungenUebernehmen(state), n2 = _eigenleistungenUebernehmen(state);
     const neu = state.kosten.filter(k => k.id === 982007);
     const ok = neu.length === 1 && neu[0].imBudget === false && neu[0].betrag === 900;
+    const mitNotiz = (() => { state.eigenleistungen.push({ id: 98201, datum: '2026-08-02', beschr: 'Fliesen', kat: '', wert: 300, von: '', notiz: 'mit Papa' });
+      _eigenleistungenUebernehmen(state); const k = state.kosten.find(x => x.id === 982017); return k && k.beschr; })();
     window.showConfirm = async () => true;
     await deleteKosten(982007);
     window.showConfirm = window.__echtesConfirm;
-    delete state.eigenleistungen[0]._migriert;   // z.B. alte App speichert die Eigenleistung neu
-    const n3 = _eigenleistungenUebernehmen(state);
+    const quelleWeg = !state.eigenleistungen.some(e => e.id === 98200) && !!state._deletedIds['98200'];
+    // alte App-Version hat die Eigenleistung noch und speichert sie neu (ohne Merker)
+    state.eigenleistungen.push({ id: 98200, datum: '2026-08-01', beschr: 'Dämmung selbst', kat: state.budgetKat[0].name, wert: 900, von: 'Simon', notiz: '' });
+    _eigenleistungenUebernehmen(state);
     const wieder = state.kosten.some(k => k.id === 982007);
+    state.kosten = state.kosten.filter(k => k.id !== 982017);
     state.eigenleistungen = [];
-    return { n1, n2, ok, wieder, n3 };
+    return { n1, n2, ok, wieder, quelleWeg, mitNotiz };
   });
   if (r.fehlt) return 'Übernahme fehlt';
   const p = [];
   if (r.n1 !== 1 || r.n2 !== 0 || !r.ok) p.push(`Übernahme: ${r.n1}/${r.n2}, ok=${r.ok}`);
   if (r.wieder) p.push('gelöschte übernommene Ausgabe kam wieder');
+  if (!r.quelleWeg) p.push('alte Eigenleistung bleibt nach dem Löschen der Ausgabe bestehen');
+  if (!/mit Papa/.test(r.mitNotiz || '')) p.push(`Notiz der Eigenleistung geht verloren („${r.mitNotiz}")`);
   return p.join(' · ');
 });
 await scenario('Budget: Grafik (Ring + Balken je Kategorie) mit Zahlen, ohne „nicht im Budget"', async () => {
@@ -1692,6 +1699,113 @@ await scenario('Budget: Grafik (Ring + Balken je Kategorie) mit Zahlen, ohne „
 await scenario('Zahlungstermine: verständlicher Text statt „Abschlagszahlungen"', async () => {
   const t = await page.evaluate(() => { showPage('zahlungsplan'); return document.getElementById('page-zahlungsplan').innerText; });
   return /Abschlagszahlung/.test(t) ? 'Text „Abschlagszahlungen" noch da' : '';
+});
+
+await scenario('Zeitplan: Datum tippen (Computer) – erst nach dem Verlassen speichern/zeichnen, kein halbes Datum', async () => {
+  // Am Computer tippt man das Datum ein (am Handy kommt ein Kalender) -> eigenes Desktop-Fenster
+  const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  let r, waehrend;
+  try {
+    const sid = await d.page.evaluate(() => { showPage('planung'); planAddSection(); return state.gantt[state.gantt.length - 1].id; });
+    await d.page.waitForTimeout(400);
+    const feld = d.page.locator(`#plan-timeline .pl-sec[data-sec="${sid}"] .pl-span input[type=date]`).first();
+    await feld.focus();
+    await feld.pressSequentially('01012027', { delay: 40 });   // feuert schon nach der 1. Jahresziffer „change" (0002-01-01)
+    waehrend = await d.page.evaluate(() => document.activeElement && document.activeElement.type);
+    await d.page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await d.page.waitForTimeout(400);
+    r = await d.page.evaluate(id => { const s = state.gantt.find(g => g.id === id);
+      return { start: s.start, text: document.querySelector(`#plan-timeline .pl-sec[data-sec="${id}"] .pl-range`)?.textContent || '' }; }, sid);
+    if (d.errors.length) r.fehler = d.errors.join(' · ');
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (r.fehler) p.push('JS-Fehler: ' + r.fehler);
+  if (waehrend !== 'date') p.push('Fokus ging beim Tippen verloren');
+  if (r.start !== '2027-01-01') p.push(`gespeichert: ${r.start}`);
+  if (!/1\.1\.2027/.test(r.text)) p.push(`Zeitraum-Text nicht aktualisiert: ${r.text.trim()}`);
+  return p.join(' · ');
+});
+await scenario('Zeitplan: Punkt lässt sich verschieben (auch „Ohne Abschnitt"), falsche Zuordnung rückgängig', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('planung');
+    const m = state.meilensteine.find(x => x.id === 4003), alt = m.ganttId;
+    const sel = document.querySelector('#plan-timeline .pl-item[data-item="4003"] select.pl-move');
+    if (!sel) return { fehlt: true };
+    sel.value = 'ohne'; sel.dispatchEvent(new Event('change', { bubbles: true }));
+    renderZeitplan();   // darf NICHT automatisch zurueckgeordnet werden
+    const ohne = !!document.querySelector('#plan-timeline .pl-ohne .pl-item[data-item="4003"]');
+    const sel2 = document.querySelector('#plan-timeline .pl-ohne .pl-item[data-item="4003"] select.pl-assign');
+    sel2.value = '4104'; sel2.dispatchEvent(new Event('change', { bubbles: true }));
+    const verschoben = String(m.ganttId) === '4104' && !!document.querySelector('#plan-timeline .pl-sec[data-sec="4104"] .pl-item[data-item="4003"]');
+    m.ganttId = alt; renderZeitplan();
+    // Namen nur als ganzes Wort/Wortanfang: „Bau" greift nicht bei „Baugenehmigung"
+    state.gantt.push({ id: 4199, name: 'Bau', start: '', end: '' });
+    state.meilensteine.push({ id: 4198, name: 'Baugenehmigung', datum: '', status: 'offen' }, { id: 4197, name: 'Dachstuhl fertig', datum: '' });
+    // kaputtes Datum (z.B. von der KI) darf die Seite nicht leeren
+    state.gantt.push({ id: 4196, name: 'Kaputt', start: '2026-3-5', end: '' });
+    let fehler = '';
+    try { renderZeitplan(); } catch (e) { fehler = e.message; }
+    const bau = state.meilensteine.find(x => x.id === 4198).ganttId, dach = state.meilensteine.find(x => x.id === 4197).ganttId;
+    state.meilensteine = state.meilensteine.filter(x => x.id !== 4198 && x.id !== 4197); state.gantt = state.gantt.filter(g => g.id !== 4199 && g.id !== 4196);
+    renderZeitplan();
+    return { ohne, verschoben, bau, dach, fehler, karten: document.querySelectorAll('#plan-timeline .pl-sec').length };
+  });
+  if (r.fehlt) return 'keine Verschieben-Auswahl bei den Punkten';
+  const p = [];
+  if (!r.ohne) p.push('„Ohne Abschnitt" wird sofort wieder automatisch zugeordnet');
+  if (!r.verschoben) p.push('Zuordnen aus „Ohne Abschnitt" klappt nicht');
+  if (r.bau) p.push('„Baugenehmigung" landete im Abschnitt „Bau"');
+  if (String(r.dach) !== '4102') p.push(`„Dachstuhl fertig" nicht bei „Dach" (${r.dach})`);
+  if (r.fehler) p.push('Absturz bei kaputtem Datum: ' + r.fehler);
+  return p.join(' · ');
+});
+await scenario('Bautagebuch: automatischer Wetter-Abruf überschreibt Getipptes nicht, „Abrufen" schon', async () => {
+  const r = await page.evaluate(async () => {
+    const altFetch = window.fetch, alt = showToast, adr = state.settings.address;
+    window.fetch = async (u) => ({ json: async () => String(u).includes('geocoding') ? { results: [{ name: 'Wels', latitude: 48.16, longitude: 14.03 }] } : { current: { weathercode: 61, temperature_2m: 7.4 } } });
+    showToast = () => {};
+    try {
+      state.settings.address = '4600 Wels';
+      showPage('tagebuch'); openModal('modal-tagebuch');
+      document.getElementById('tb-temp').value = '12';   // selbst eingetragen, bevor der Abruf fertig ist
+      await new Promise(res => setTimeout(res, 900));
+      const auto = { temp: document.getElementById('tb-temp').value, wetter: document.getElementById('tb-weather').value };
+      await fetchWetter(true);
+      const manuell = { temp: document.getElementById('tb-temp').value, wetter: document.getElementById('tb-weather').value };
+      return { auto, manuell };
+    } finally {
+      window.fetch = altFetch; showToast = alt; state.settings.address = adr;
+      const m = document.getElementById('modal-tagebuch'); m._dirty = false; closeModal('modal-tagebuch');
+    }
+  });
+  const p = [];
+  if (r.auto.temp !== '12') p.push(`getippte Temperatur überschrieben (${r.auto.temp})`);
+  if (!/Regen/.test(r.auto.wetter)) p.push(`Wetter nicht automatisch gesetzt (${r.auto.wetter})`);
+  if (r.manuell.temp !== '7.4') p.push(`„Abrufen" setzt die Temperatur nicht (${r.manuell.temp})`);
+  return p.join(' · ');
+});
+await scenario('Budget: Ring im Datenschutz-Modus verborgen, ohne Budget kein voller Ring, Titel auf Englisch', async () => {
+  const r = await page.evaluate(() => {
+    showPage('budget');
+    document.body.classList.add('privacy-mode');
+    const ring = document.querySelector('.bg-ring'), cs = getComputedStyle(ring);
+    const verborgen = /blur/.test(cs.filter) && cs.pointerEvents === 'none';
+    document.body.classList.remove('privacy-mode');
+    const altKat = state.budgetKat; state.budgetKat = [];
+    renderBudget();
+    const c = document.getElementById('bg-ring-chart')._chart;
+    const ohne = { mitte: document.getElementById('bg-ring-pct').textContent, daten: c ? c.data.datasets[0].data.join(',') : '' };
+    state.budgetKat = altKat;
+    setLang('en', false); showPage('budget');
+    const en = document.querySelector('.bg-blick .table-title').textContent + ' | ' + document.querySelector('#bg-kat-grafik .bg-zl').textContent;
+    setLang('de', false); showPage('budget');
+    return { verborgen, ohne, en };
+  });
+  const p = [];
+  if (!r.verborgen) p.push('Ring zeigt Beträge im Datenschutz-Modus');
+  if (r.ohne.mitte !== '–' || (r.ohne.daten && r.ohne.daten !== '0,1')) p.push(`ohne Budget: Mitte „${r.ohne.mitte}", Ring ${r.ohne.daten}`);
+  if (/Budget auf einen Blick|Geplant und ausgegeben/.test(r.en)) p.push('Englisch: ' + r.en);
+  return p.join(' · ');
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);

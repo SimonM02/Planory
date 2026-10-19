@@ -393,6 +393,8 @@
   .pl-bell { cursor:pointer; font-size:0.98rem; opacity:.55; background:none; border:none; padding:2px 4px; }
   .pl-bell.on { opacity:1; }
   .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.98rem; opacity:.6; flex-shrink:0; padding:4px; }
+  .pl-iact { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+  .pl-move { width:34px; height:30px; padding:0; text-align:center; text-align-last:center; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text3); font-size:0.95rem; cursor:pointer; -webkit-appearance:none; appearance:none; font-family:inherit; }
   .pl-addrow { display:flex; align-items:center; gap:10px; padding:10px 16px; }
   .pl-addrow .pl-plus { width:22px; text-align:center; color:var(--accent); font-weight:800; font-size:1.1rem; flex-shrink:0; }
   .pl-addrow input { flex:1; border:none; background:transparent; font-size:0.9rem; color:var(--text); font-family:inherit; outline:none; }
@@ -412,6 +414,7 @@
     .pl-range { margin-left:24px; }
     .pl-progress { margin-left:0; }
     .pl-idel { margin-top:2px; }
+    .pl-move { width:34px; height:32px; }
   }
   /* Ein/Aus-Schalter (Startseite: Beträge, KI-Berater) */
   .sw-toggle { display:inline-flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:700; color:var(--text2); padding:4px 0; }
@@ -423,6 +426,7 @@
   .sw-toggle.sw-dark[aria-checked="false"] .sw-track { background:rgba(255,255,255,0.25); }
   #privacy-pill { display:none; position:fixed; left:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:300; background:var(--surface); color:var(--text); border:1.5px solid var(--border); border-radius:99px; padding:8px 14px; font-size:0.8rem; font-weight:700; box-shadow:var(--shadow-md); cursor:pointer; font-family:inherit; }
   body.privacy-mode #privacy-pill { display:block; }
+  @media (min-width:1025px) { #privacy-pill { left:50%; transform:translateX(-50%); } }
   /* Budget auf einen Blick */
   .bg-blick-inhalt { display:flex; gap:20px; align-items:center; padding:16px 20px; flex-wrap:wrap; }
   .bg-ring { position:relative; width:170px; height:170px; flex-shrink:0; margin:0 auto; }
@@ -2874,7 +2878,7 @@
 
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
       <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">💶 Budget</div>
-      <button id="privacy-btn" class="sw-toggle" role="switch" aria-checked="true" onclick="togglePrivacy()" title="Beträge auf allen Seiten verbergen/anzeigen">
+      <button id="privacy-btn" class="sw-toggle" role="switch" aria-checked="true" aria-label="Beträge anzeigen" onclick="togglePrivacy()" title="Beträge auf allen Seiten verbergen/anzeigen">
         <span class="sw-label">👁 Beträge sichtbar</span><span class="sw-track"><span class="sw-knob"></span></span>
       </button>
     </div>
@@ -2931,7 +2935,7 @@
     <!-- KI-Berater ausgeblendet: schmale Leiste an derselben Stelle -->
     <div id="ki-advisor-off" style="display:none;margin-top:28px;border:1.5px dashed var(--border);border-radius:14px;padding:12px 16px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <span style="font-size:0.85rem;color:var(--text2);font-weight:600">🤖 KI-Berater ausgeblendet</span>
-      <button class="sw-toggle" role="switch" aria-checked="false" onclick="toggleKIPanel()"><span class="sw-label">KI-Berater anzeigen</span><span class="sw-track"><span class="sw-knob"></span></span></button>
+      <button class="sw-toggle" role="switch" aria-checked="false" aria-label="KI-Berater anzeigen" onclick="toggleKIPanel()"><span class="sw-label">KI-Berater anzeigen</span><span class="sw-track"><span class="sw-knob"></span></span></button>
     </div>
     <!-- KI-BAUBERATER PANEL -->
     <div id="ki-advisor-panel" style="margin-top:28px;border-radius:16px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-md)">
@@ -2945,7 +2949,7 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-        <button id="ki-panel-btn" class="sw-toggle sw-dark" role="switch" aria-checked="true" onclick="toggleKIPanel()" title="KI-Bauberater ausblenden"><span class="sw-label">Ausblenden</span><span class="sw-track"><span class="sw-knob"></span></span></button>
+        <button id="ki-panel-btn" class="sw-toggle sw-dark" role="switch" aria-checked="true" aria-label="KI-Berater anzeigen" onclick="toggleKIPanel()" title="KI-Bauberater ausblenden"><span class="sw-label">Ausblenden</span><span class="sw-track"><span class="sw-knob"></span></span></button>
         <button onclick="runKIAnalysis()" id="ki-analyze-btn"
           style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);padding:6px 14px;border-radius:6px;font-family:'Hanken Grotesk',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.12s"
           onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
@@ -3058,8 +3062,8 @@
     <div class="table-wrap bg-blick" style="margin-bottom:24px">
       <div class="table-header"><div class="table-title">📊 Budget auf einen Blick</div></div>
       <div class="bg-blick-inhalt">
-        <div class="bg-ring"><canvas id="bg-ring-chart" aria-label="Budget-Verbrauch"></canvas>
-          <div class="bg-ring-mitte"><strong id="bg-ring-pct" data-private>0%</strong><span>verbraucht</span></div></div>
+        <div class="bg-ring" data-private><canvas id="bg-ring-chart" role="img" aria-label="Budget-Verbrauch"></canvas>
+          <div class="bg-ring-mitte"><strong id="bg-ring-pct">0%</strong><span>verbraucht</span></div></div>
         <div class="bg-zahlen">
           <div class="bg-zahl"><span class="bg-punkt" style="background:var(--text3)"></span><div><div class="bg-zl">Gesamtbudget</div><div class="bg-zw" id="bg-total-budget" data-private>€ 0</div></div></div>
           <div class="bg-zahl"><span class="bg-punkt" style="background:#ff9f1c"></span><div><div class="bg-zl">Ausgegeben</div><div class="bg-zw red" id="bg-total-spent" data-private>€ 0</div></div></div>
@@ -3790,7 +3794,7 @@
         <input type="checkbox" id="k-im-budget" checked style="width:20px;height:20px;accent-color:var(--accent);flex-shrink:0;margin:0">
         Im Budget berücksichtigen
       </label>
-      <div style="font-size:0.75rem;color:var(--text3);margin:4px 0 0 30px;line-height:1.45">Abhaken z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.</div>
+      <div style="font-size:0.75rem;color:var(--text3);margin:4px 0 0 30px;line-height:1.45">Haken entfernen z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-row"><label>Skonto (%)</label><input type="number" id="k-skonto-proz" placeholder="z.B. 2" step="0.1" min="0" oninput="updateSkontoPreview('k')"></div>
@@ -4948,7 +4952,8 @@ function _eigenleistungenUebernehmen(proj) {
     if (!isFinite(id)) return;
     if (!proj.kosten.some(k => String(k.id) === String(id)) && !geloescht[id] && !geloescht[String(id)]) {
       const wert = parseFloat(e.wert) || 0;
-      proj.kosten.push({ id, datum: e.datum || today(), beschr: e.beschr || 'Eigenleistung', kat: e.kat || '',
+      const notiz = String(e.notiz || '').trim();
+      proj.kosten.push({ id, datum: e.datum || today(), beschr: (e.beschr || 'Eigenleistung') + (notiz ? ' – ' + notiz : ''), kat: e.kat || '',
         mwst: 0, netto: wert, betrag: wert, status: 'Bezahlt', bezahltVon: '', anbieter: e.von || '',
         skontoProz: 0, skontoBis: '', imBudget: false, ausEigenleistung: true, _updatedAt: Date.now() });
     }
@@ -5095,34 +5100,50 @@ const _plZeitraumOffen = new Set();   // Abschnitte, deren Datumsfelder aufgekla
 // 1) Datum liegt im Zeitraum (ohne Ende: bis zum Beginn des naechsten Abschnitts);
 //    passen mehrere, gewinnt der Name ("Rohbau fertig" -> "Rohbau"), sonst das naechste Ende.
 // 2) Ohne passenden Zeitraum: ueber den Namen. Rest bleibt "Ohne Abschnitt".
+const PL_OHNE = 'ohne';   // bewusst „Ohne Abschnitt" (wird nicht automatisch zugeordnet)
+// Nur echte Kalenderdaten (halb getippte Werte wie "0002-01-01" zaehlen nicht)
+function _plDatumOk(d) {
+  if (typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const j = +d.slice(0, 4); if (j < 1900 || j > 2200) return false;
+  const t = new Date(d + 'T12:00:00Z');
+  return !isNaN(t) && t.toISOString().slice(0, 10) === d;
+}
 function _plTagDavor(d) { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); }
 function _plZuordnen() {
   const secs = state.gantt || [], miles = state.meilensteine || [];
   if (!secs.length || !miles.length) return 0;
-  const mitStart = secs.filter(s => s.start).sort((a, b) => a.start < b.start ? -1 : (a.start > b.start ? 1 : 0));
+  const mitStart = secs.filter(s => _plDatumOk(s.start)).sort((a, b) => a.start < b.start ? -1 : (a.start > b.start ? 1 : 0));
   const bis = s => {
-    if (s.end) return s.end;
+    if (_plDatumOk(s.end)) return s.end;
     const nx = mitStart.find(x => x.start > s.start);
     return nx ? _plTagDavor(nx.start) : '9999-12-31';
   };
   const norm = v => String(v || '').toLowerCase().trim();
+  // Abschnittsname als eigenes Wort (ab 4 Zeichen auch als Wortanfang: „Dach" -> „Dachstuhl fertig"),
+  // damit z.B. „Bau" nicht in „Baugenehmigung" greift
+  const passt = (text, sn) => {
+    const w = sn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^\\p{L}\\p{N}])' + w + (sn.length >= 4 ? '' : '($|[^\\p{L}\\p{N}])'), 'u').test(text);
+  };
   const nameTreffer = (m, liste) => {
     const n = norm(m.name);
-    return liste.filter(s => { const sn = norm(s.name); return sn.length >= 3 && n.includes(sn); })
+    return liste.filter(s => { const sn = norm(s.name); return sn.length >= 3 && passt(n, sn); })
                 .sort((a, b) => norm(b.name).length - norm(a.name).length)[0];
   };
   let n = 0;
   miles.forEach(m => {
     if (m.ganttId) return;
     let ziel = null;
-    if (m.datum) {
+    if (_plDatumOk(m.datum)) {
       const kand = mitStart.filter(s => m.datum >= s.start && m.datum <= bis(s));
       ziel = kand.length > 1
         ? (nameTreffer(m, kand) || kand.slice().sort((a, b) => (bis(a) < bis(b) ? -1 : 1))[0])
         : kand[0];
     }
     if (!ziel) ziel = nameTreffer(m, secs);
-    if (ziel) { m.ganttId = ziel.id; m._updatedAt = Date.now(); n++; }
+    // Zeitstempel nur minimal erhoehen: aendert ein anderes Geraet den Punkt gleichzeitig,
+    // gewinnt dessen Aenderung – die Zuordnung passiert dann einfach beim naechsten Anzeigen.
+    if (ziel) { m.ganttId = ziel.id; m._updatedAt = (Number(m._updatedAt) || 0) + 1; n++; }
   });
   return n;
 }
@@ -5163,15 +5184,22 @@ function renderZeitplan() {
         </div>
         <div class="pl-imeta">
           <button type="button" class="pl-stbtn pl-st-${st}" onclick="planCycle(${m.id})" title="${escA(tt('Tippen: Status weiterschalten'))}">${PL_ST_MARK[st]} ${tt(PL_ST_LABEL[st])}</button>
-          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)" aria-label="${escA(tt('Termin'))}">
+          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)" onblur="_plNachDatum()" aria-label="${escA(tt('Termin'))}">
           ${m.datum?`<button type="button" class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="${escA(tt(remOn?'Erinnerung an – tippen zum Ausschalten':'Erinnerung aus – tippen zum Einschalten'))}">${remOn?'🔔':'🔕'}</button>`:''}
         </div>
-        ${ohneAbschnitt && sortedSecs.length ? `<select class="pl-assign" onchange="planAssign(${m.id},this.value)">
+        ${ohneAbschnitt && sortedSecs.length ? `<select class="pl-assign" data-noi18n onchange="planAssign(${m.id},this.value)">
           <option value="">${tt('Abschnitt wählen…')}</option>
           ${sortedSecs.map(s => `<option value="${s.id}">${escA(s.name)}</option>`).join('')}
         </select>` : ''}
       </div>
-      <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
+      <div class="pl-iact">
+        <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
+        ${!ohneAbschnitt && sortedSecs.length ? `<select class="pl-move" data-noi18n onchange="planAssign(${m.id},this.value)" title="${escA(tt('In anderen Abschnitt verschieben'))}" aria-label="${escA(tt('In anderen Abschnitt verschieben'))}">
+          <option value="" selected disabled>⇄</option>
+          ${sortedSecs.map(s => `<option value="${s.id}" ${String(s.id)===String(m.ganttId)?'disabled':''}>${escA(s.name)}${String(s.id)===String(m.ganttId)?' ✓':''}</option>`).join('')}
+          <option value="${PL_OHNE}">${escA(tt('Ohne Abschnitt'))}</option>
+        </select>` : ''}
+      </div>
     </div>`;
   };
 
@@ -5194,10 +5222,10 @@ function renderZeitplan() {
           <span class="pl-count">${done}/${total} ${_lang==='en'?'done':'erledigt'}</span>
           <button class="pl-secdel" onclick="planDelSection(${s.id})" title="${escA(tt('Abschnitt löschen'))}">🗑</button>
         </div>
-        <button type="button" class="pl-range ${s.start||s.end?'':'pl-range-leer'}" onclick="planToggleZeitraum(${s.id})">📅 ${_plZeitraumText(s)} <span class="pl-range-edit">· ${tt(offen?'Fertig':'Zeitraum ändern')}</span></button>
+        <button type="button" class="pl-range ${s.start||s.end?'':'pl-range-leer'}" onclick="planToggleZeitraum(${s.id})">📅 ${_plZeitraumText(s)} <span class="pl-range-edit">· ${tt(offen?'Zeitraum schließen':'Zeitraum ändern')}</span></button>
         ${offen ? `<div class="pl-span">
-          <label><span class="pl-span-lbl">${_lang==='en'?'from':'von'}</span><input type="date" value="${s.start||''}" onchange="planSetSecStart(${s.id},this.value)"></label>
-          <label><span class="pl-span-lbl">${_lang==='en'?'to':'bis'}</span><input type="date" value="${s.end||''}" onchange="planSetSecEnd(${s.id},this.value)"></label>
+          <label><span class="pl-span-lbl">${_lang==='en'?'from':'von'}</span><input type="date" value="${s.start||''}" onchange="planSetSecStart(${s.id},this.value)" onblur="_plNachDatum()"></label>
+          <label><span class="pl-span-lbl">${_lang==='en'?'to':'bis'}</span><input type="date" value="${s.end||''}" onchange="planSetSecEnd(${s.id},this.value)" onblur="_plNachDatum()"></label>
         </div>` : ''}
         ${total ? `<div class="pl-progress"><div class="pl-progress-bar" style="width:${pct}%"></div></div>` : ''}
       </div>
@@ -5213,7 +5241,7 @@ function renderZeitplan() {
     el.innerHTML = `<div class="pl-empty">
       <div class="pl-empty-ic">🗓️</div>
       <div class="pl-empty-t">${tt('Noch kein Zeitplan')}</div>
-      <div class="pl-empty-s">${tt('Lege deine erste Bauphase an (z.B. „Fundament") und füge darin Unterpunkte mit Datum hinzu.')}</div>
+      <div class="pl-empty-s">${tt('Lege deine erste Bauphase an (z.B. „Fundament") und füge darin Punkte mit Datum hinzu.')}</div>
       <button class="btn btn-primary" onclick="planAddSection()" style="margin-top:16px">${tt('+ Erste Phase anlegen')}</button>
     </div>`;
     return;
@@ -5266,7 +5294,11 @@ function planAddSection() {
 }
 async function planDelSection(id) {
   if (!requireSub()) return;
-  if (!(await showConfirm('Abschnitt inkl. seiner Unterpunkte löschen?'))) return;
+  const anz = (state.meilensteine || []).filter(m => String(m.ganttId) === String(id)).length;
+  const frage = _lang === 'en'
+    ? (anz ? `Delete this section and the ${anz} item${anz === 1 ? '' : 's'} in it?` : 'Delete this section?')
+    : (anz ? `Abschnitt samt ${anz === 1 ? 'dem 1 Punkt' : 'den ' + anz + ' Punkten'} darin löschen?` : 'Abschnitt löschen?');
+  if (!(await showConfirm(frage))) return;
   (state.meilensteine || []).filter(m => String(m.ganttId) === String(id)).forEach(m => _trackDeletion(m.id, 'meilensteine'));
   state.meilensteine = (state.meilensteine || []).filter(m => String(m.ganttId) !== String(id));
   _trackDeletion(id, 'gantt');
@@ -5276,11 +5308,31 @@ async function planDelSection(id) {
   showToast('🗑 Abschnitt gelöscht', 'success');
 }
 function planRenameSection(id, val){ const s = _plSec(id); if (s) { s.name = val; s._updatedAt = Date.now(); save(); } }
-function planSetSecStart(id, val){ const s = _plSec(id); if (s) { s.start = val; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
-function planSetSecEnd(id, val){ const s = _plSec(id); if (s) { s.end = val; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
+// Datumsfelder: Am Computer feuert „change" schon beim Tippen (nach der ersten Ziffer des Jahres).
+// Deshalb nur speichern und erst neu zeichnen, wenn das Feld verlassen wurde – sonst ginge der
+// Rest der Eingabe verloren und ein halbes Datum (z.B. 0002-01-01) bliebe stehen.
+let _plDatumGeaendert = false, _plRenderT = null;
+function _plNachDatum() {
+  if (!_plDatumGeaendert) return;
+  clearTimeout(_plRenderT);
+  _plRenderT = setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.type === 'date' && a.closest && a.closest('#plan-timeline')) return;   // gleich im naechsten Datumsfeld
+    _plDatumGeaendert = false;
+    renderZeitplan();
+  }, 120);
+}
+function planSetSecStart(id, val){ const s = _plSec(id); if (s) { s.start = val; s._updatedAt = Date.now(); _plDatumGeaendert = true; save(); } }
+function planSetSecEnd(id, val){ const s = _plSec(id); if (s) { s.end = val; s._updatedAt = Date.now(); _plDatumGeaendert = true; save(); } }
 function planToggleSection(id){ const s = _plSec(id); if (s) { s.collapsed = !s.collapsed; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
 function planToggleZeitraum(id){ const k = String(id); if (_plZeitraumOffen.has(k)) _plZeitraumOffen.delete(k); else _plZeitraumOffen.add(k); renderZeitplan(); }
-function planAssign(id, secId){ const m = _plItem(id); if (!m || !secId || !_plSec(secId)) return; m.ganttId = _plSec(secId).id; m._updatedAt = Date.now(); save(); renderZeitplan(); }
+function planAssign(id, secId){
+  const m = _plItem(id); if (!m || !secId) return;
+  if (secId === PL_OHNE) m.ganttId = PL_OHNE;            // bleibt bewusst ohne Abschnitt
+  else if (_plSec(secId)) m.ganttId = _plSec(secId).id;
+  else return;
+  m._updatedAt = Date.now(); save(); renderZeitplan();
+}
 
 function planAddItem(sectionId, name) {
   if (!requireSub()) return;
@@ -5295,13 +5347,13 @@ function planAddItem(sectionId, name) {
 }
 async function planDelItem(id) {
   if (!requireSub()) return;
-  if (!(await showConfirm('Diesen Unterpunkt löschen?'))) return;
+  if (!(await showConfirm('Diesen Punkt löschen?'))) return;
   _trackDeletion(id, 'meilensteine');
   state.meilensteine = (state.meilensteine || []).filter(m => String(m.id) !== String(id));
   save(); renderZeitplan();
 }
 function planRenameItem(id, val){ const m = _plItem(id); if (m) { m.name = val; m._updatedAt = Date.now(); save(); } }
-function planSetItemDate(id, val){ const m = _plItem(id); if (m) { m.datum = val; m._updatedAt = Date.now(); save(); renderZeitplan(); } }
+function planSetItemDate(id, val){ const m = _plItem(id); if (m) { m.datum = val; m._updatedAt = Date.now(); _plDatumGeaendert = true; save(); } }
 function planCycle(id) {
   const m = _plItem(id); if (!m) return;
   const nx = PL_STATES[(PL_STATES.indexOf(_plItemStatus(m)) + 1) % 3];
@@ -5465,7 +5517,7 @@ const TEXTE = {
   "Bitte in den Browser-Einstellungen → Datenschutz → Benachrichtigungen für diese Seite erlauben": { en: "Please allow notifications for this site in your browser settings → Privacy → Notifications" },
   "Bitte zuerst anmelden": { en: "Please sign in first" },
   "Datei konnte nicht geladen werden": { en: "File could not be loaded" },
-  "Diesen Unterpunkt löschen?": { en: "Delete this sub-item?" },
+  "Diesen Punkt löschen?": { en: "Delete this item?" },
   "Dokument löschen?": { en: "Delete document?" },
   "Eigenleistung löschen?": { en: "Delete own-work entry?" },
   "Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in „Rechnungen & Ausgaben\" bleibt erhalten.)": { en: "Remove entry from the invoice list?\n(The expense in \"Invoices & expenses\" is kept.)" },
@@ -5684,9 +5736,15 @@ const TEXTE = {
   "Erinnerung an – tippen zum Ausschalten": { en: "Reminder on – tap to turn off" },
   "Erinnerung aus – tippen zum Einschalten": { en: "Reminder off – tap to turn on" },
   "Abschnitt wählen…": { en: "Choose section…" },
+  "In anderen Abschnitt verschieben": { en: "Move to another section" },
+  "📊 Budget auf einen Blick": { en: "📊 Budget at a glance" },
+  "Geplant und ausgegeben je Kategorie": { en: "Planned and spent per category" },
+  "verbraucht": { en: "used" },
+  "Budget-Verbrauch": { en: "Budget usage" },
   "Abschnitt löschen": { en: "Delete section" },
   "Kein Zeitraum festgelegt": { en: "No period set" },
   "Zeitraum ändern": { en: "Change period" },
+  "Zeitraum schließen": { en: "Close" },
   "Name des Abschnitts": { en: "Section name" },
   "Neuer Abschnitt": { en: "New section" },
   "Noch keine Punkte": { en: "No items yet" },
@@ -5696,7 +5754,7 @@ const TEXTE = {
   "überfällig": { en: "overdue" },
   "Gesamt-Fortschritt": { en: "Overall progress" },
   "Noch kein Zeitplan": { en: "No schedule yet" },
-  "Lege deine erste Bauphase an (z.B. „Fundament\") und füge darin Unterpunkte mit Datum hinzu.": { en: "Create your first building phase (e.g. \"Foundation\") and add sub-items with dates." },
+  "Lege deine erste Bauphase an (z.B. „Fundament\") und füge darin Punkte mit Datum hinzu.": { en: "Create your first building phase (e.g. \"Foundation\") and add items with dates." },
   "+ Erste Phase anlegen": { en: "+ Create first phase" },
   "Beginn": { en: "Start" },
   "Ende": { en: "End" },
@@ -5849,7 +5907,7 @@ const TEXTE = {
   "Nicht im Budget": { en: "Not in budget" },
   "z. B. Eigenleistung": { en: "e.g. own work" },
   "Im Budget berücksichtigen": { en: "Count towards budget" },
-  "Abhaken z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.": { en: "Untick e.g. for own work or gifts – it then does not count towards the budget but stays in the list." },
+  "Haken entfernen z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.": { en: "Untick e.g. for own work or gifts – it then does not count towards the budget but stays in the list." },
   "Hier planst du Zahlungen, die noch kommen – z. B. Teilzahlungen an den Baumeister nach Baufortschritt. Planory erinnert dich vor der Fälligkeit. Hakst du eine Zahlung ab, wird die passende offene Rechnung auf „Bezahlt\" gesetzt.": { en: "Plan upcoming payments here – e.g. part payments to the builder as construction progresses. Planory reminds you before they are due. When you tick off a payment, the matching open invoice is set to \"Paid\"." },
   "🙈 Beträge verborgen": { en: "🙈 Amounts hidden" },
   "👁 Beträge sichtbar": { en: "👁 Amounts visible" },
@@ -5859,6 +5917,7 @@ const TEXTE = {
   "KI-Berater eingeblendet": { en: "AI advisor shown" },
   "🤖 KI-Berater ausgeblendet": { en: "🤖 AI advisor hidden" },
   "KI-Berater anzeigen": { en: "Show AI advisor" },
+  "Beträge anzeigen": { en: "Show amounts" },
   "Ausblenden": { en: "Hide" },
   "💶 Budget": { en: "💶 Budget" },
   "Beträge auf allen Seiten verbergen/anzeigen": { en: "Hide/show amounts on all pages" },
@@ -6801,7 +6860,7 @@ function openModal(id) {
   }
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
-    _tbWetterGewaehlt = false;
+    _tbWetterGewaehlt = false; _tbWetterLauf++;
     setTimeout(() => fetchWetter(false), 300);
     try { renderWetterChips(); } catch (e) {}
     const dEl = document.getElementById('tb-datum');
@@ -8297,11 +8356,20 @@ function _deleteLinkedScans(kostenId) {
   state.gescannteRechnungen = (state.gescannteRechnungen || []).filter(r => String(r.kostenId) !== String(kostenId));
 }
 
+// Aus einer Eigenleistung uebernommene Ausgabe geloescht? Die alte Eigenleistung mitloeschen –
+// sonst koennte sie (z.B. nach dem Bearbeiten in einer alten App-Version) wieder zur Ausgabe werden.
+function _eigenleistungsQuelleLoeschen(kostenId) {
+  const quelle = (state.eigenleistungen || []).find(e => String(Number(e.id) * 10 + 7) === String(kostenId));
+  if (!quelle) return;
+  _trackDeletion(quelle.id, 'eigenleistungen');
+  state.eigenleistungen = state.eigenleistungen.filter(e => e !== quelle);
+}
 async function deleteKosten(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
   _deleteLinkedScans(id);
+  _eigenleistungsQuelleLoeschen(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); _renderKostenAnsichten(); showToast('🗑 Ausgabe gelöscht', 'success');
 }
@@ -8372,6 +8440,7 @@ async function deleteDrilldownKosten(id, katName) {
   if (!(await showConfirm('Ausgabe löschen?'))) return;
   _trackDeletion(id, 'kosten');
   _deleteLinkedScans(id);
+  _eigenleistungsQuelleLoeschen(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save();
   renderKosten();
@@ -8605,18 +8674,20 @@ function _kurzEuro(v) { const a = Math.abs(v); return a >= 1e6 ? '€ ' + (v / 1
 function _zeichneBudgetGrafik(totalBudget, totalSpent) {
   const pctEl = document.getElementById('bg-ring-pct');
   const ueber = totalBudget > 0 && totalSpent > totalBudget;
-  if (pctEl) { pctEl.textContent = (totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0) + '%'; pctEl.style.color = ueber ? 'var(--danger)' : ''; }
+  if (pctEl) { pctEl.textContent = totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) + '%' : '–'; pctEl.style.color = ueber ? 'var(--danger)' : ''; }
   const C = window.Chart, ring = document.getElementById('bg-ring-chart'), bar = document.getElementById('bg-bar-chart');
+  if (ring) ring.setAttribute('aria-label', tt('Budget-Verbrauch'));
   if (!C || !ring || !bar) return;
   const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
   const txt = css('--text2') || '#555', grid = css('--border') || '#e5e7eb', leer = css('--surface3') || css('--surface2') || '#eef0f4';
   if (ring._chart) ring._chart.destroy();
   ring._chart = new C(ring, { type: 'doughnut',
     data: { labels: [tt('Ausgegeben'), tt('Verbleibend')],
-      datasets: [{ data: [totalBudget > 0 ? Math.min(totalSpent, totalBudget) : totalSpent, Math.max(0, totalBudget - totalSpent)],
+      // ohne Budget: grauer Ring (ein voller Ring mit „–" in der Mitte waere irrefuehrend)
+      datasets: [{ data: totalBudget > 0 ? [Math.min(totalSpent, totalBudget), Math.max(0, totalBudget - totalSpent)] : [0, 1],
         backgroundColor: [ueber ? (css('--danger') || '#dc2626') : '#ff9f1c', leer], borderWidth: 0 }] },
     options: { cutout: '74%', responsive: true, maintainAspectRatio: true, animation: { duration: 350 },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) } } } } });
+      plugins: { legend: { display: false }, tooltip: { enabled: totalBudget > 0, callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) } } } } });
   const kats = (state.budgetKat || []).map(k => ({ name: String(k.name || ''), budget: parseFloat(k.budget) || 0, color: k.color || '#3d6ff8',
     spent: state.kosten.filter(x => x.kat === k.name && _imBudget(x)).reduce((s, x) => s + (parseFloat(x.betrag) || 0), 0) }));
   const box = document.getElementById('bg-kat-grafik');
@@ -8666,7 +8737,7 @@ function renderBudget() {
   document.getElementById('bg-total-rest').textContent   = fmt(totalRest);
   document.getElementById('bg-total-rest').className     = 'bg-zw ' + (totalRest >= 0 ? 'green' : 'red');
   try { _zeichneBudgetGrafik(totalBudget, totalSpent); } catch (e) { console.warn('[budget-grafik]', e?.message); }
-  document.getElementById('bg-total-pct').textContent    = `${totalPct}% verbraucht`;
+  document.getElementById('bg-total-pct').textContent    = `${totalPct}% ${tt('verbraucht')}`;
   document.getElementById('bg-unassigned').textContent   = fmt(unassigned);
   document.getElementById('bg-pct-label').textContent    = `${fmt(totalBudget)} Gesamtbudget`;
   document.getElementById('bg-kat-count').textContent    = `${state.budgetKat.length} Kategorien`;
@@ -9158,7 +9229,7 @@ function _setzePrivacy(verborgen, melden) {
   try { localStorage.setItem('planoryPrivacy', verborgen ? '1' : '0'); } catch (e) {}
   const b = document.getElementById('privacy-btn');
   if (b) {
-    b.setAttribute('aria-checked', verborgen ? 'false' : 'true');
+    b.setAttribute('aria-checked', verborgen ? 'false' : 'true'); b.setAttribute('aria-label', tt('Beträge anzeigen'));
     const l = b.querySelector('.sw-label'); if (l) l.textContent = verborgen ? tt('🙈 Beträge verborgen') : tt('👁 Beträge sichtbar');
   }
   if (melden) showToast(verborgen ? tt('🙈 Beträge werden auf allen Seiten verborgen') : tt('👁 Beträge sind wieder sichtbar'), 'success');
@@ -9170,7 +9241,7 @@ function _setzeKI(aus, melden) {
   if (leiste) leiste.style.display = aus ? 'flex' : 'none';
   try { localStorage.setItem('planoryKIaus', aus ? '1' : '0'); } catch (e) {}
   const b = document.getElementById('ki-panel-btn');
-  if (b) b.setAttribute('aria-checked', aus ? 'false' : 'true');
+  if (b) { b.setAttribute('aria-checked', aus ? 'false' : 'true'); b.setAttribute('aria-label', tt('KI-Berater anzeigen')); }
   if (melden) showToast(aus ? tt('KI-Berater ausgeblendet') : tt('KI-Berater eingeblendet'), 'success');
 }
 function toggleKIPanel() {
@@ -9638,7 +9709,7 @@ async function generateKIMeilensteine(regen = false) {
   const existingMS = (state.meilensteine||[]).map(m => `- ${m.name} (${m.datum||'kein Datum'})${m.done?' ✓':''}`).join('\n  ') || 'keine';
   const existingPhasen = (state.gantt||[]).map(g => `- ${g.name} (${g.start||'?'} – ${g.end||'?'})`).join('\n  ') || 'keine';
   const offeneAufgaben = (state.aufgaben||[]).filter(t=>t.status!=='Erledigt').length;
-  const bezahlt = (state.kosten||[]).reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
+  const bezahlt = (state.kosten||[]).filter(_imBudget).reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
 
   const prompt = `Du bist ein erfahrener Bauprojektmanager in Österreich.
 
@@ -9760,8 +9831,8 @@ function importKIZeitplan() {
     const g = {
       id:     _neueId(),
       name:   nameEl?.value  || p.name,
-      start:  startEl?.value || p.start,
-      end:    endEl?.value   || p.end,
+      start:  _plDatumOk(startEl?.value) ? startEl.value : (_plDatumOk(p.start) ? p.start : ''),
+      end:    _plDatumOk(endEl?.value)   ? endEl.value   : (_plDatumOk(p.end) ? p.end : ''),
       type:   'phase',
       status: 'Offen',
       notiz:  p.budgetKat ? 'Budgetkategorie: ' + p.budgetKat : '',
@@ -9780,7 +9851,7 @@ function importKIZeitplan() {
     state.meilensteine.push({
       id:     _neueId(),
       name:   nameEl?.value  || m.name,
-      datum:  datumEl?.value || m.datum,
+      datum:  _plDatumOk(datumEl?.value) ? datumEl.value : (_plDatumOk(m.datum) ? m.datum : ''),
       text:   m.text || '',
       status: 'offen',
       done:   false,
@@ -10654,7 +10725,7 @@ function editDiary(id) {
   document.getElementById('tb-tags').value   = (e.tags||[]).join(', ');
   const wSel = document.getElementById('tb-weather');
   _selectValue(wSel, e.weather);
-  _tbWetterGewaehlt = true;   // gespeichertes Wetter nicht automatisch ueberschreiben
+  _tbWetterGewaehlt = true; _tbWetterLauf++;   // gespeichertes Wetter nicht automatisch ueberschreiben
   renderWetterChips();
   document.getElementById('tb-temp').value = e.temp != null ? e.temp : '';
   // Restore workers
@@ -10692,6 +10763,7 @@ async function deleteDiary(id) {
 // Wetter als antippbare Felder (das unsichtbare #tb-weather haelt weiter den Wert)
 const WETTER = ['☀️ Sonnig', '⛅ Bewölkt', '🌧️ Regen', '❄️ Schnee', '🌬️ Wind', '⛈️ Gewitter'];
 let _tbWetterGewaehlt = false;   // selbst gewaehlt -> automatischer Abruf ueberschreibt nicht
+let _tbWetterLauf = 0;           // je Oeffnen des Fensters neu -> spaete Antworten landen nicht im falschen Eintrag
 function renderWetterChips() {
   const box = document.getElementById('tb-wetter-chips'), sel = document.getElementById('tb-weather');
   if (!box || !sel) return;
@@ -10712,8 +10784,9 @@ function waehleWetter(w) {
 // frueher kam bei fehlender/unbekannter Adresse jedes Mal eine rote Fehlermeldung.
 async function fetchWetter(manuell = false) {
   const btn = document.getElementById('tb-wetter-btn');
+  const lauf = _tbWetterLauf;
   const fehler = msg => { if (manuell) showToast(msg, 'error'); };
-  const fertig = () => { if (btn) { btn.textContent = '🌡️ Abrufen'; btn.disabled = false; } };
+  const fertig = () => { if (btn) { btn.textContent = tt('🌡️ Abrufen'); btn.disabled = false; } };
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
     const address = state.settings?.address || '';
@@ -10747,9 +10820,11 @@ async function fetchWetter(manuell = false) {
     for (const [min,max,lbl] of wxMap) { if (code >= min && code <= max) { label = lbl; break; } }
     // Fenster inzwischen zu oder Wetter schon selbst gewaehlt? Dann nichts ueberschreiben.
     const m = document.getElementById('modal-tagebuch');
-    if (!manuell && (_tbWetterGewaehlt || !m || !m.classList.contains('open'))) { fertig(); return; }
-    _selectValue(document.getElementById('tb-weather'), label);
-    if (temp != null) document.getElementById('tb-temp').value = Math.round(temp * 10) / 10;
+    if (!manuell && (lauf !== _tbWetterLauf || !m || !m.classList.contains('open') || document.getElementById('tb-edit-id')?.value)) { fertig(); return; }
+    // Automatisch nur ergaenzen, was noch leer ist – selbst Gewaehltes/Getipptes bleibt stehen
+    const tempEl = document.getElementById('tb-temp');
+    if (manuell || !_tbWetterGewaehlt) _selectValue(document.getElementById('tb-weather'), label);
+    if (temp != null && tempEl && (manuell || tempEl.value === '')) tempEl.value = Math.round(temp * 10) / 10;
     renderWetterChips();
     if (manuell) showToast(`🌡️ ${loc.name}: ${label} · ${temp}°C`, 'success');
   } catch(e) {
@@ -18657,7 +18732,7 @@ function exportKostenPDF() {
         else if (s === 'Storniert') data.cell.styles.textColor = [220, 38, 38];
       }
     },
-    foot: [['', '', '', 'Gesamt (ohne Storniert)', fmt(totalNetto), '', fmt(totalBrutto), '']],
+    foot: [['', '', '', state.kosten.some(k => k.imBudget === false) ? 'Gesamt im Budget (ohne Storniert)' : 'Gesamt (ohne Storniert)', fmt(totalNetto), '', fmt(totalBrutto), '']],
     footStyles: { fillColor: [240, 244, 255], fontStyle: 'bold', textColor: [41, 98, 255], fontSize: 7.5 }
   });
   _pdfAusgeben(doc, _pdfDateiname(`Rechnungen-Ausgaben_${projName}`), 'Rechnungen & Ausgaben')
