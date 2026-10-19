@@ -1841,6 +1841,35 @@ await scenario('Zeitplan am Handy: nichts ragt über den Rand', async () => {
   return r ? `${r} Zeilen ragen über den Rand` : '';
 });
 
+await scenario('Kostenentwicklung: Kategorien mit Namen (nicht „€0, €1"), App-Schrift, Ring mit Summe + Liste', async () => {
+  if (!CHART) return '';
+  const r = await page.evaluate(async () => {
+    showPage('kostenchart');
+    const tab = m => [...document.querySelectorAll('#page-kostenchart .chart-tab')].find(b => b.getAttribute('onclick').includes(m));
+    tab('category').click(); await new Promise(res => setTimeout(res, 300));
+    const kats = [...new Set(state.kosten.filter(_imBudget).map(k => k.kat))];
+    const top = [...document.querySelectorAll('#top-list .kc-name')].map(e => e.textContent);
+    const liste = [...document.querySelectorAll('#kc-cat-list .kc-name')].map(e => e.textContent);
+    const ring = document.getElementById('cost-cat-chart')?._chart;
+    const summe = document.getElementById('kc-cat-sum')?.textContent || '';
+    const schrift = window.Chart ? String(Chart.defaults.font.family) : '';
+    tab('monthly').click(); await new Promise(res => setTimeout(res, 300));
+    const balken = document.getElementById('cost-chart')._chart;
+    const ticks = balken ? balken.scales.y.ticks.map(t => t.label).join(' ') : '';
+    return { kats, top, liste, ring: !!ring, rand: ring ? ring.data.datasets[0].borderColor : '', summe, schrift, ticks,
+      breit: document.getElementById('page-kostenchart').scrollWidth <= innerWidth + 1 };
+  });
+  const p = [];
+  if (!r.top.length || r.top.some(n => /^€\d/.test(n)) || !r.top.every(n => r.kats.includes(n))) p.push(`Top-Liste: ${r.top.join(', ') || 'leer'}`);
+  if (r.liste.length !== r.kats.length) p.push(`Legende ${r.liste.length} statt ${r.kats.length} Kategorien`);
+  if (!r.ring || !/\d/.test(r.summe)) p.push('Ring/Summe fehlt');
+  if (/^#1a1814$/i.test(r.rand)) p.push('schwarzer Rand am Ring');
+  if (!/Hanken/.test(r.schrift)) p.push(`Diagramm-Schrift: ${r.schrift}`);
+  if (/€\d/.test(r.ticks.replace(/\s/g, '')) && !/€ /.test(r.ticks)) p.push('Achse ohne Kurzformat');
+  if (!r.breit) p.push('Seite ragt über den Rand');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

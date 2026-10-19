@@ -437,6 +437,34 @@
     .pl-progress { margin-left:0; }
     .pl-leer { padding-left:44px; }
   }
+  /* ── Kostenentwicklung ── */
+  .kc-chart { position:relative; height:280px; margin-top:6px; }
+  .kc-cat { display:grid; grid-template-columns:240px minmax(0, 520px); gap:36px; align-items:center; margin-top:10px; }
+  .kc-ring { position:relative; width:240px; height:240px; }
+  .kc-ring canvas { width:240px !important; height:240px !important; }
+  .kc-ring-mitte { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  .kc-ring-mitte span { font-size:0.72rem; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .kc-ring-mitte strong { font-size:1.15rem; font-weight:800; color:var(--text); margin-top:2px; }
+  .kc-legend { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .kc-li { display:grid; grid-template-columns:12px 1fr auto 46px; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid var(--surface2); font-size:0.86rem; }
+  .kc-li:last-child { border-bottom:none; }
+  .kc-dot { width:10px; height:10px; border-radius:3px; }
+  .kc-name { color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .kc-val { color:var(--text); font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .kc-pct { color:var(--text3); font-size:0.78rem; text-align:right; font-variant-numeric:tabular-nums; }
+  .kc-top { display:flex; flex-direction:column; gap:14px; }
+  .kc-top-kopf { display:flex; justify-content:space-between; gap:10px; font-size:0.86rem; margin-bottom:6px; }
+  .kc-bar { height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+  .kc-bar > div { height:100%; border-radius:99px; transition:width .35s ease; }
+  .kc-stat { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--surface2); font-size:0.84rem; color:var(--text2); }
+  .kc-stat:last-child { border-bottom:none; }
+  .kc-stat strong { color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+  @media (max-width:700px) {
+    .kc-chart { height:230px; }
+    .kc-cat { grid-template-columns:1fr; gap:14px; justify-items:center; }
+    .kc-legend { width:100%; }
+    .kc-ring, .kc-ring canvas { width:210px !important; height:210px !important; }
+  }
   /* Ein/Aus-Schalter (Startseite: Beträge, KI-Berater) */
   .sw-toggle { display:inline-flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:700; color:var(--text2); padding:4px 0; }
   .sw-track { width:38px; height:22px; border-radius:99px; background:var(--success); position:relative; transition:background .2s; flex-shrink:0; }
@@ -3539,12 +3567,17 @@
         <button class="chart-tab" onclick="switchChart('cumulative',this)">Kumulativ</button>
         <button class="chart-tab" onclick="switchChart('category',this)">Nach Kategorie</button>
       </div>
-      <canvas id="cost-chart" height="260"></canvas>
+      <div id="kc-chart-wrap" class="kc-chart" data-private><canvas id="cost-chart"></canvas></div>
+      <div id="kc-cat" class="kc-cat" style="display:none">
+        <div class="kc-ring" data-private><canvas id="cost-cat-chart" role="img" aria-label="Ausgaben nach Kategorie"></canvas>
+          <div class="kc-ring-mitte"><span>Gesamt</span><strong id="kc-cat-sum">€ 0</strong></div></div>
+        <div class="kc-legend" id="kc-cat-list"></div>
+      </div>
     </div>
     <div class="two-col">
       <div class="chart-container">
-        <div class="table-title" style="margin-bottom:16px">Top-Ausgaben</div>
-        <canvas id="top-chart" height="200"></canvas>
+        <div class="table-title" style="margin-bottom:14px">Top-Kategorien</div>
+        <div id="top-list" class="kc-top"></div>
       </div>
       <div class="chart-container">
         <div class="table-title" style="margin-bottom:8px">Statistik</div>
@@ -6387,6 +6420,15 @@ const TEXTE = {
   "Kumulativ": { en: "Cumulative" },
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
+  "Top-Kategorien": { en: "Top categories" },
+  "Ø pro Buchung": { en: "Avg per booking" },
+  "Größte Ausgabe": { en: "Largest expense" },
+  "Anzahl Buchungen": { en: "Number of bookings" },
+  "Ausgaben pro Monat": { en: "Spending per month" },
+  "Kumulierte Kosten": { en: "Cumulative costs" },
+  "Budget": { en: "Budget" },
+  "Ohne Kategorie": { en: "No category" },
+  "Ausgaben nach Kategorie": { en: "Spending by category" },
   "Statistik": { en: "Statistics" },
   "+ Stockwerk hinzufügen": { en: "+ Add floor" },
   "🏗️ Statik": { en: "🏗️ Structure" },
@@ -12622,130 +12664,133 @@ function switchChart(mode, btn) {
   renderKostenChart();
 }
 
+// Kategorie-Farbe wie im Budget (sonst aus einer ruhigen Palette)
+const CHART_COLORS = ['#3d6ff8','#ff9f1c','#10b981','#8b5cf6','#ef4444','#06b6d4','#f59e0b','#ec4899','#64748b','#84cc16'];
+function _katFarbe(name, i) {
+  const k = (state.budgetKat || []).find(x => x.name === name);
+  return (k && k.color) || CHART_COLORS[i % CHART_COLORS.length];
+}
+// Gemeinsames Aussehen aller Diagramme: App-Schrift, Farben aus dem Hell/Dunkel-Thema
+function _chartTheme() {
+  const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+  if (window.Chart) { Chart.defaults.font.family = "'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif"; Chart.defaults.color = css('--text3') || '#94a3b8'; }
+  return { txt: css('--text3') || '#94a3b8', grid: css('--border') || '#e5e7eb', accent: css('--accent') || '#ff9f1c',
+           danger: css('--danger') || '#dc2626', surface: css('--surface') || '#ffffff' };
+}
+function _tooltipStil(th) {
+  return { backgroundColor: 'rgba(15,23,42,0.92)', titleColor: '#fff', bodyColor: '#e2e8f0', padding: 10, cornerRadius: 8, displayColors: false,
+           titleFont: { weight: '700', size: 12 }, bodyFont: { size: 12 } };
+}
+
 function renderKostenChart() {
-  if (state.kosten.length === 0) {
-    const ctx = document.getElementById('cost-chart');
-    if (ctx) ctx.getContext('2d').clearRect(0,0,ctx.width,ctx.height);
-    document.getElementById('cost-stats').innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Noch keine Ausgaben erfasst.</p>';
+  const paid = state.kosten.filter(_imBudget);
+  const wrap = document.getElementById('kc-chart-wrap'), cat = document.getElementById('kc-cat');
+  if (!paid.length) {
+    const c = document.getElementById('cost-chart'); if (c && c._chart) { c._chart.destroy(); c._chart = null; }
+    if (wrap) wrap.style.display = 'none'; if (cat) cat.style.display = 'none';
+    document.getElementById('top-list').innerHTML = '';
+    document.getElementById('cost-stats').innerHTML = `<p style="color:var(--text3);font-size:0.85rem">${tt('Noch keine Ausgaben erfasst.')}</p>`;
     return;
   }
+  const th = _chartTheme();
+  const total = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
+  const byCat = {};
+  paid.forEach(k => { const n = k.kat || tt('Ohne Kategorie'); byCat[n] = (byCat[n]||0) + (parseFloat(k.betrag)||0); });
+  const kats = Object.entries(byCat).sort((a,b) => b[1]-a[1]).map(([name, wert], i) => ({ name, wert, farbe: _katFarbe(name, i) }));
 
-  const paid = state.kosten.filter(_imBudget);
-
+  const istKat = currentChartMode === 'category';
+  if (wrap) wrap.style.display = istKat ? 'none' : '';
+  if (cat) cat.style.display = istKat ? '' : 'none';
   if (currentChartMode === 'monthly') {
-    // group by month
     const byMonth = {};
-    paid.forEach(k => {
-      const d = new Date(k.datum);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      byMonth[key] = (byMonth[key]||0) + (parseFloat(k.betrag)||0);
-    });
+    paid.forEach(k => { const d = new Date(k.datum); if (isNaN(d)) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; byMonth[key] = (byMonth[key]||0) + (parseFloat(k.betrag)||0); });
     const labels = Object.keys(byMonth).sort();
-    const data = labels.map(l => byMonth[l]);
-    const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-    const prettyLabels = labels.map(l => { const [y,m] = l.split('-'); return monthNames[parseInt(m)-1] + ' ' + y; });
-    drawBarChart('cost-chart', prettyLabels, data, 'Ausgaben pro Monat (€)');
-
+    const monthNames = _lang === 'en' ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    drawBarChart('cost-chart', labels.map(l => { const [y,m] = l.split('-'); return monthNames[parseInt(m)-1] + ' ' + y.slice(2); }), labels.map(l => byMonth[l]), tt('Ausgaben pro Monat'), th);
   } else if (currentChartMode === 'cumulative') {
-    const sorted = [...paid].sort((a,b) => new Date(a.datum)-new Date(b.datum));
-    const labels = sorted.map(k => fmtDate(k.datum));
+    const sorted = [...paid].filter(k => !isNaN(new Date(k.datum))).sort((a,b) => new Date(a.datum)-new Date(b.datum));
     let cum = 0;
     const data = sorted.map(k => { cum += parseFloat(k.betrag)||0; return cum; });
     const budget = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
-    drawLineChart('cost-chart', labels, data, 'Kumulierte Kosten (€)', budget);
-
-  } else if (currentChartMode === 'category') {
-    const byCat = {};
-    paid.forEach(k => { byCat[k.kat] = (byCat[k.kat]||0) + (parseFloat(k.betrag)||0); });
-    const labels = Object.keys(byCat);
-    const data = labels.map(l => byCat[l]);
-    drawDoughnutChart('cost-chart', labels, data);
+    drawLineChart('cost-chart', sorted.map(k => fmtDate(k.datum)), data, tt('Kumulierte Kosten'), budget, th);
+  } else {
+    drawDoughnutChart('cost-cat-chart', kats, total, th);
   }
 
-  // top spending chart
-  const byCat2 = {};
-  paid.forEach(k => { byCat2[k.kat] = (byCat2[k.kat]||0) + (parseFloat(k.betrag)||0); });
-  const sorted2 = Object.entries(byCat2).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  drawBarChart('top-chart', sorted2.map(x=>x[0]), sorted2.map(x=>x[1]), 'Top Kategorien (€)', true);
-
-  // stats
-  const total = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
-  const avg = paid.length ? total/paid.length : 0;
-  const max = paid.reduce((m,k) => Math.max(m, parseFloat(k.betrag)||0), 0);
-  const budgetTotal = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
-  const pct = budgetTotal > 0 ? (total/budgetTotal*100).toFixed(1) : '–';
-  document.getElementById('cost-stats').innerHTML = [
-    ['Gesamtausgaben', fmt(total)],
-    ['Ø pro Buchung', fmt(avg)],
-    ['Größte Ausgabe', fmt(max)],
-    ['Budgetverbrauch', pct !== '–' ? pct+'%' : '–'],
-    ['Anzahl Buchungen', paid.length],
-  ].map(([l,v]) => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:0.82rem;color:var(--text2)">${l}</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--accent)">${v}</span>
+  // Top-Kategorien als Balkenliste (Name, Betrag, Anteil)
+  const max = kats.length ? kats[0].wert : 0;
+  document.getElementById('top-list').innerHTML = kats.slice(0, 6).map(k => `
+    <div class="kc-top-row">
+      <div class="kc-top-kopf"><span class="kc-name">${esc(k.name)}</span><span class="kc-val" data-private>${fmt(k.wert)}</span></div>
+      <div class="kc-bar"><div style="width:${max > 0 ? Math.max(2, k.wert / max * 100) : 0}%;background:${k.farbe}"></div></div>
     </div>`).join('');
+
+  // Kennzahlen
+  const avg = paid.length ? total/paid.length : 0;
+  const maxB = paid.reduce((m,k) => Math.max(m, parseFloat(k.betrag)||0), 0);
+  const budgetTotal = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
+  const pct = budgetTotal > 0 ? total / budgetTotal * 100 : null;
+  document.getElementById('cost-stats').innerHTML = [
+    [tt('Gesamtausgaben'), fmt(total), true],
+    [tt('Ø pro Buchung'), fmt(avg), true],
+    [tt('Größte Ausgabe'), fmt(maxB), true],
+    [tt('Budgetverbrauch'), pct == null ? '–' : pct.toFixed(1).replace('.', _lang === 'en' ? '.' : ',') + ' %', false, pct != null && pct > 100],
+    [tt('Anzahl Buchungen'), paid.length, false],
+  ].map(([l, v, priv, rot]) => `
+    <div class="kc-stat"><span>${l}</span><strong ${priv ? 'data-private' : ''} style="${rot ? 'color:var(--danger)' : ''}">${v}</strong></div>`).join('');
 }
 
-const CHART_COLORS = ['#c8a96e','#64a0f0','#5cb85c','#e8a838','#d95fab','#5cc8c8','#e85858','#b8c86e','#a06ed9'];
-
-function chartDefaults() {
-  return {
-    plugins: { legend: { labels: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } } } },
-    scales: {
-      x: { ticks: { color: '#94a3b8', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#e2e8f4' } },
-      y: { ticks: { color: '#94a3b8', font: { family: 'DM Mono', size: 10 }, callback: v => '€'+v.toLocaleString('de-AT') }, grid: { color: '#e2e8f4' } }
-    }
-  };
-}
-
-function drawBarChart(canvasId, labels, data, label, horizontal=false) {
+function drawBarChart(canvasId, labels, data, label, th = _chartTheme()) {
   const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
+  if (!canvas || !window.Chart) return;
   if (canvas._chart) canvas._chart.destroy();
   canvas._chart = new Chart(canvas, {
     type: 'bar',
-    data: { labels, datasets: [{ label, data, backgroundColor: CHART_COLORS.slice(0,data.length), borderRadius: 6, borderSkipped: false }] },
-    options: { ...chartDefaults(), indexAxis: horizontal ? 'y' : 'x', plugins: { legend: { display: false } }, responsive: true }
+    data: { labels, datasets: [{ label, data, backgroundColor: th.accent, hoverBackgroundColor: th.accent + 'cc', borderRadius: 6, borderSkipped: false, maxBarThickness: 44 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { ..._tooltipStil(th), callbacks: { label: c => fmt(c.raw) } } },
+      scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: th.txt, font: { size: 11 } } },
+                y: { beginAtZero: true, grid: { color: th.grid }, border: { display: false }, ticks: { color: th.txt, font: { size: 11 }, maxTicksLimit: 5, callback: v => _kurzEuro(v) } } } }
   });
 }
 
-function drawLineChart(canvasId, labels, data, label, budget) {
+function drawLineChart(canvasId, labels, data, label, budget, th = _chartTheme()) {
   const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
+  if (!canvas || !window.Chart) return;
   if (canvas._chart) canvas._chart.destroy();
   const datasets = [{
-    label, data,
-    borderColor: '#c8a96e', backgroundColor: 'rgba(200,169,110,0.12)',
-    fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#c8a96e'
+    label, data, borderColor: th.accent, borderWidth: 2.5, fill: true, tension: 0.35,
+    pointRadius: data.length > 25 ? 0 : 3, pointHoverRadius: 5, pointBackgroundColor: th.accent,
+    backgroundColor: ctx => { const { chart } = ctx; const a = chart.chartArea; if (!a) return th.accent + '22';
+      const g = chart.ctx.createLinearGradient(0, a.top, 0, a.bottom); g.addColorStop(0, th.accent + '55'); g.addColorStop(1, th.accent + '00'); return g; }
   }];
-  if (budget > 0) {
-    datasets.push({
-      label: 'Budget',
-      data: labels.map(() => budget),
-      borderColor: '#d9534f', borderDash: [6,4], pointRadius: 0,
-      backgroundColor: 'transparent'
-    });
-  }
+  if (budget > 0) datasets.push({ label: tt('Budget'), data: labels.map(() => budget), borderColor: th.danger, borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false });
   canvas._chart = new Chart(canvas, {
-    type: 'line',
-    data: { labels, datasets },
-    options: { ...chartDefaults(), responsive: true }
+    type: 'line', data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 350 }, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', align: 'end', labels: { color: th.txt, usePointStyle: true, pointStyle: 'line', boxWidth: 18, font: { size: 11 } } },
+                 tooltip: { ..._tooltipStil(th), displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } },
+      scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: th.txt, font: { size: 10 }, maxTicksLimit: 6, maxRotation: 0 } },
+                y: { beginAtZero: true, grid: { color: th.grid }, border: { display: false }, ticks: { color: th.txt, font: { size: 11 }, maxTicksLimit: 5, callback: v => _kurzEuro(v) } } } }
   });
 }
 
-function drawDoughnutChart(canvasId, labels, data) {
+// Ring mit Summe in der Mitte + eigene Liste daneben (Farbe, Name, Betrag, Anteil)
+function drawDoughnutChart(canvasId, kats, total, th = _chartTheme()) {
   const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
+  const sum = document.getElementById('kc-cat-sum'); if (sum) sum.textContent = fmt(total);
+  const list = document.getElementById('kc-cat-list');
+  if (list) list.innerHTML = kats.map(k => `
+    <div class="kc-li"><span class="kc-dot" style="background:${k.farbe}"></span><span class="kc-name">${esc(k.name)}</span>
+      <span class="kc-val" data-private>${fmt(k.wert)}</span><span class="kc-pct">${total > 0 ? Math.round(k.wert / total * 100) : 0} %</span></div>`).join('');
+  if (!canvas || !window.Chart) return;
   if (canvas._chart) canvas._chart.destroy();
   canvas._chart = new Chart(canvas, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data, backgroundColor: CHART_COLORS, borderWidth: 2, borderColor: '#1a1814' }] },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'right', labels: { color: '#9a9284', font: { family: 'DM Mono', size: 11 } } } },
-      scales: { x: { display: false }, y: { display: false } }
-    }
+    data: { labels: kats.map(k => k.name), datasets: [{ data: kats.map(k => k.wert), backgroundColor: kats.map(k => k.farbe), borderWidth: 3, borderColor: th.surface, hoverOffset: 6, borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: true, cutout: '72%', animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { ..._tooltipStil(th), callbacks: { label: c => fmt(c.raw) + ' · ' + (total > 0 ? Math.round(c.raw / total * 100) : 0) + ' %' } } } }
   });
 }
 
