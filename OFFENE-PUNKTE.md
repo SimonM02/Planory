@@ -1,6 +1,6 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 18.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 18.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 95/95, mobile-e2e 72/72, sync-e2e 19/19, todoist-api 14/14).
+(pruefen 96/96, mobile-e2e 72/72, sync-e2e 19/19, todoist-api 14/14, push-api 4/4).
 - [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → **`npm install`** (neu: Teilen-
       und Dateien-Plugin für PDFs) → `npx cap sync ios` → Xcode:
       **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
@@ -103,9 +103,10 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       eigene Schrift, Vorschau in der App.
 
 ## Technik – später verbessern (bekannt, kein akuter Fehler)
-- [ ] **Sicherheit:** `api/push-subscribe.js` liest die Nutzer-ID aus dem Login-Token, ohne die
-      Signatur zu prüfen → mit einem gefälschten Token könnte man Push-Nachrichten eines anderen
-      Kontos abonnieren. Fix: Token wie in `api/ki.js` über Supabase prüfen (nächster Punkt).
+- [x] **Sicherheit (19.10.2026 behoben):** `push-subscribe`, `native-token-register`, `push-test`
+      und `stripe-portal` lasen die Nutzer-ID nur aus dem Login-Token, ohne es zu prüfen – mit
+      einem gefälschten Token hätte man u. a. das Stripe-Kundenportal eines fremden Kontos öffnen
+      können. Jetzt prüft Supabase jedes Token (`api/_auth.js`), Test `tests/push-api.mjs`.
 - [ ] `privacy.html` ist veraltet (info@planory.app) und evtl. noch im App Store verlinkt →
       auf `datenschutz.html` umleiten oder aktualisieren.
 - [ ] Rechtlich prüfen lassen: Widerrufs-Button („Vertrag widerrufen“, § 13a FAGG seit

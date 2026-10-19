@@ -1,3 +1,4 @@
+import { nutzerAusToken } from './_auth.js';
 const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 
 export default async function handler(req, res) {
@@ -7,22 +8,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
-  if (!token) return res.status(401).json({ error: 'unauthorized' });
-
-  // Decode user_id from JWT payload (Supabase JWTs are signed RS256 – sub = user uuid)
-  let userId;
-  try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
-    userId = payload.sub;
-    if (!userId) throw new Error('no sub');
-    // Basic expiry check
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return res.status(401).json({ error: 'token expired' });
-    }
-  } catch (e) {
-    return res.status(401).json({ error: 'invalid token: ' + e.message });
-  }
+  // Anmeldung echt pruefen (nicht nur das Token auslesen – sonst ginge eine fremde ID)
+  const user = await nutzerAusToken(req.headers.authorization);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+  const userId = user.id;
 
   const { subscription } = req.body;
   if (!subscription) return res.status(400).json({ error: 'subscription required' });

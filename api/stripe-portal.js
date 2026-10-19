@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { nutzerAusToken } from './_auth.js';
 
 const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 
@@ -9,17 +10,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
-  if (!token) return res.status(401).json({ error: 'unauthorized' });
-
-  let userId;
-  try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
-    userId = payload.sub;
-    if (!userId) throw new Error('no sub');
-  } catch (e) {
-    return res.status(401).json({ error: 'invalid token' });
-  }
+  // Anmeldung echt pruefen (nicht nur das Token auslesen – sonst ginge eine fremde ID)
+  const user = await nutzerAusToken(req.headers.authorization);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+  const userId = user.id;
 
   const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const hdrs = { Authorization: `Bearer ${svcKey}`, apikey: svcKey };

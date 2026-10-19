@@ -567,6 +567,11 @@ check('Impressum ohne Link zur abgeschalteten EU-Streitbeilegungsplattform', () 
   const d = read('impressum.html');
   if (d.includes('ec.europa.eu/consumers/odr')) return 'veralteter OS-Link (Plattform seit 20.07.2025 abgeschaltet)';
 });
+check('Server-Funktionen prüfen die Anmeldung echt (kein bloßes Auslesen des Tokens)', () => {
+  const dateien = fs.readdirSync('api').filter(f => f.endsWith('.js'));
+  const schlecht = dateien.filter(f => /split\(['"]\.['"]\)\[1\]/.test(read('api/' + f)));
+  if (schlecht.length) return 'Token nur ausgelesen (fremde ID möglich): ' + schlecht.join(', ');
+});
 check('Todoist-Server: verschlüsselt, CORS nur planory.at, keine Tokens im Log', () => {
   let a = '', l = '';
   try { a = read('api/todoist.js'); l = read('api/_todoist-lib.js'); } catch (e) { return 'api/todoist.js fehlt'; }
