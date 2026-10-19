@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 106/106, mobile-e2e 103/103, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
+(pruefen 111/111, mobile-e2e 107/107, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
 - [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
       1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
          installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
@@ -25,28 +25,31 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
          **@capacitor/camera**, **@capacitor/share** und **@capacitor/filesystem** stehen
       5. Xcode: **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
          NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin)
-- [ ] What's New (Vorschlag):
-      „• Wichtige Fehlerbehebung: neue Einträge gehen nach dem Speichern nicht mehr verloren
-       • Abbrechen und Bearbeiten zuverlässig – nichts wird mehr versehentlich überschrieben
-       • Rechnung scannen: wird sofort eingebucht, Beträge wie 1.234,56 werden erkannt,
-         PDF-Rechnungen bleiben PDF, verständliche Fehlermeldungen
-       • „Bezahlt von": neue Person direkt beim Erfassen eintragen
-       • NEU: Fotos direkt im Bautagebuch-Eintrag
-       • NEU: Bautagebuch als Erinnerungs-Buch mit Fotos (PDF, Fotobuch oder A4)
-       • PDFs lassen sich jetzt teilen, drucken und in Dateien sichern
-       • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
-       • Gelöschte Einträge bleiben gelöscht
-       • Bessere Darstellung am iPhone (Tabellen, Wartung, Einstellungen)
-       • NEU: Aufgaben wie Todoist – Kategorien, Unteraufgaben, „Heute“ & „Demnächst“, Wiederholung
-       • Zeitplan neu: klarer aufgebaut, Status per Tipp, Punkte landen automatisch im passenden Abschnitt
-       • Budget als Grafik · Startseite mit Schaltern für Beträge und KI-Berater
-       • Ausgaben „nicht im Budget" (z. B. Eigenleistung) per Häkchen
-       • Bautagebuch: Wetter per Antippen, keine störende Fehlermeldung mehr
-       • Fotos zoomen · Dateien per Drag & Drop · Helfer-Stunden"
+- [ ] What's New (final):
+      „Großes Update:
+       • NEU: Aufgaben wie in Todoist – eigene Kategorien, Unteraufgaben, „Heute“ und „Demnächst“,
+         wiederkehrende Aufgaben und Uhrzeit
+       • Zeitplan neu: übersichtlicher, Status per Tipp, Punkte landen automatisch im richtigen Abschnitt
+       • Budget und Kostenentwicklung als klare Grafiken
+       • Ausgaben „nicht im Budget“ (z. B. Eigenleistung) per Häkchen
+       • Startseite: Schalter für Beträge und KI-Berater
+       • Bautagebuch: Fotos im Eintrag, Wetter per Antippen und als Erinnerungs-Buch (PDF)
+       • PDFs und Fotos teilen, drucken oder in Dateien sichern
+       • Rechnung scannen schneller und zuverlässiger, „Bezahlt von“ direkt eintragen
+       • Viele Verbesserungen und Fehlerbehebungen – Einträge gehen nicht mehr verloren“
 - [ ] Am iPhone prüfen: PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?) ·
       Bautagebuch → „📖 Buch" → Teilen-Menü erscheint → Drucken / „In Dateien sichern" ·
       ein Eingabefenster offen lassen und ☰ tippen (Fenster schließt, bei Eingaben Rückfrage) ·
-      Zeitplan „+ Abschnitt" (springt zum neuen Abschnitt) · Bautagebuch „+ Eintrag" (Wetter-Felder).
+      Zeitplan „+ Abschnitt" (springt zum neuen Abschnitt) · Bautagebuch „+ Eintrag" (Wetter-Felder) ·
+      Foto öffnen → „⬇ Herunterladen“ (Teilen-Menü erscheint, kein Festhängen) · Demo starten: Banner
+      „✕ Demo beenden“ steht unter der Uhrzeit und ist antippbar · Abo-Seite zeigt die Apple-Preise ·
+      Aufgaben: Kategorie anlegen, Unteraufgabe, „Demnächst“.
+- [ ] Vercel → Projekt → Settings → Environment Variables: steht `APNS_BUNDLE_ID` drin, muss der Wert
+      `com.planory.bauassistent` sein (die Anleitung nannte früher fälschlich `com.planory.bau` – dann
+      kommen keine Push-Mitteilungen an). Fehlt die Variable, passt es automatisch.
+- Hinweis bis alle v1.3 haben: Bearbeitet jemand in der alten App v1.2 eine Aufgabe, verliert sie
+  Kategorie/Unteraufgabe/Wiederholung (die alte App kennt diese Felder nicht) – kein Datenverlust
+  am Inhalt, nur die neue Zuordnung. Mit v1.3 ist das erledigt.
 - Hinweis: Alte Eigenleistungen werden beim ersten Öffnen mit der neuen Version automatisch zu
   Ausgaben „nicht im Budget" (einmalig; die alten Daten bleiben als Sicherung erhalten).
 - [ ] Nach dem Update: die 3 seit 14.08. bearbeiteten Ausgaben (1 davon in Simons Konto) kurz auf

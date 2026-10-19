@@ -558,7 +558,7 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
   });
   const fn = name => { const i = src.indexOf('function ' + name + '('); if (i < 0) return ''; const j = src.indexOf('\nfunction ', i + 10); return src.slice(i, j < 0 ? undefined : j); };
   check(`${label}: Budget-Summen zählen „nicht im Budget" nicht mit`, () => {
-    if (!/function _imBudget\(k\)\s*\{[^}]*imBudget !== false/.test(src)) return '_imBudget fehlt';
+    if (!/function _imBudget\(k\)\s*\{[\s\S]{0,200}?imBudget === false\) return false/.test(src)) return '_imBudget fehlt';
     const ohne = ['renderBudget', 'renderDashboard', 'openBudgetDrilldown', 'buildProjectSnapshot', 'exportKostenPDF'].filter(f => !fn(f).includes('_imBudget'));
     if (ohne.length) return 'ohne _imBudget: ' + ohne.join(', ');
   });
@@ -578,6 +578,16 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     const z = fn('_plZuordnen');
     if (!z) return '_plZuordnen fehlt';
     if (!z.includes('if (m.ganttId) return;')) return 'Punkte mit (noch unbekanntem) Abschnitt könnten umgehängt werden';
+  });
+  check(`${label}: Zeitplan speichert beim Anzeigen nichts (überschreibt keine Änderungen anderer Geräte)`, () => {
+    const r = fn('renderZeitplan');
+    if (!r) return 'renderZeitplan fehlt';
+    if (/\bsave\(\)/.test(r)) return 'renderZeitplan ruft save() auf';
+    if (/_plZuordnen\(true\)/.test(r)) return 'renderZeitplan speichert die Zuordnung';
+  });
+  check(`${label}: iPhone-App lädt Dateien über „Teilen" (kein <a download> im App-WebView)`, () => {
+    const ohne = ['downloadLightboxPhoto', 'downloadGrPinFoto', 'openAngebotDatei', '_oeffnePdf', 'openDokument'].filter(f => !fn(f).includes('_dateiTeilen'));
+    if (ohne.length) return 'ohne _dateiTeilen: ' + ohne.join(', ');
   });
 }
 

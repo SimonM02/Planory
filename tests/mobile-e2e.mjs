@@ -1470,7 +1470,9 @@ await scenario('Zeitplan: Punkte stehen im passenden Abschnitt – nichts doppel
     const txt = el.innerText;
     const demoOk = (state.meilensteine || []).filter(m => m.id >= 4001 && m.id <= 4006)
       .every(m => el.querySelector(`.pl-sec[data-sec] .pl-item[data-item="${m.id}"]`));
-    const ohneBlock = /Weitere Punkte|Ohne Abschnitt/.test(txt) ? (state.meilensteine || []).filter(m => !m.ganttId || !state.gantt.some(g => String(g.id) === String(m.ganttId))).map(m => m.name + '/' + (m.datum || '-')).join(', ') : '';
+    const zu = typeof _plZuordnen === 'function' && _plZuordnen() instanceof Map ? _plZuordnen() : new Map();
+    const eff = m => m.ganttId ? String(m.ganttId) : (zu.get(String(m.id)) || '');
+    const ohneBlock = (el.querySelector('.pl-ohne') || /Weitere Punkte/.test(txt)) ? (state.meilensteine || []).filter(m => !eff(m) || !state.gantt.some(g => String(g.id) === eff(m))).map(m => m.name + '/' + (m.datum || '-')).join(', ') || 'Block ohne Punkte' : '';
     return { ohne: ohneBlock, kreis: /Kreis antippen = Status/.test(txt), demoOk,
       hinweis: /Kreis antippen: Offen → In Arbeit → Erledigt/.test(txt), dots: el.querySelectorAll('.pl-dot').length, btn: el.querySelectorAll('.pl-stbtn').length };
   });
@@ -1746,7 +1748,8 @@ await scenario('Zeitplan: Punkt lässt sich verschieben (auch „Ohne Abschnitt"
     state.gantt.push({ id: 4196, name: 'Kaputt', start: '2026-3-5', end: '' });
     let fehler = '';
     try { renderZeitplan(); } catch (e) { fehler = e.message; }
-    const bau = state.meilensteine.find(x => x.id === 4198).ganttId, dach = state.meilensteine.find(x => x.id === 4197).ganttId;
+    const zu = _plZuordnen();
+    const bau = _plAbschnittVon(state.meilensteine.find(x => x.id === 4198), zu), dach = _plAbschnittVon(state.meilensteine.find(x => x.id === 4197), zu);
     state.meilensteine = state.meilensteine.filter(x => x.id !== 4198 && x.id !== 4197); state.gantt = state.gantt.filter(g => g.id !== 4199 && g.id !== 4196);
     renderZeitplan();
     return { ohne, verschoben, bau, dach, fehler, karten: document.querySelectorAll('#plan-timeline .pl-sec').length };
@@ -2195,6 +2198,92 @@ await scenario('Aufgaben: „Demnächst" am Computer als Tages-Spalten nebeneina
   if (r.hoehe < 440) p.push(`Bereich nur ${Math.round(r.hoehe)} px hoch`);
   if (r.breite > 6) p.push(`Bereich endet ${Math.round(r.breite)} px vor dem rechten Rand`);
   return p.join(' · ');
+});
+
+await scenario('Englisch: Zeitplan-Knopf, Budget, Kostenentwicklung, Bautagebuch-Auswertung, Zahlungstermine', async () => {
+  const r = await page.evaluate(() => {
+    state.zahlungen = state.zahlungen || [];
+    state.zahlungen.push({ id: 9910001, beschr: '<b>TK Rate</b>', kat: 'Rohbau', faellig: _tkPlusTage(today(), 3), betrag: 100, status: 'Offen' });
+    setLang('en', false);
+    const texte = {};
+    showPage('planung'); texte.zeitplan = document.getElementById('plan-header-btns').innerText;
+    showPage('budget'); texte.budget = document.getElementById('page-budget').innerText;
+    showPage('kostenchart'); texte.kosten = document.getElementById('top-list').innerText;
+    showPage('tagebuch'); try { switchDiaryTab('summary', document.getElementById('diary-tab-summary')); } catch (e) {}
+    texte.tagebuch = document.getElementById('page-tagebuch').innerText;
+    showPage('zahlungsplan'); texte.zahlung = document.getElementById('page-zahlungsplan').innerText;
+    const fett = !!document.querySelector('#page-zahlungsplan b');
+    setLang('de', false); showPage('dashboard');
+    state.zahlungen = state.zahlungen.filter(z => z.id !== 9910001);
+    return { texte, fett };
+  });
+  const p = [];
+  const deutsch = { zeitplan: /\+ Abschnitt\b/, budget: /Buchungen|zum Öffnen|Kategorien\b|Gesamtbudget|\bRohbau\b(?! NEU)/, kosten: /\bRohbau\b(?! NEU)/,
+    tagebuch: /Arbeitsstunden gesamt|über alle Einträge|Stunden nach Arbeiter|Alle Einträge/, zahlung: /Fällig:|In \d+ Tagen/ };
+  for (const [k, re] of Object.entries(deutsch)) { const t = r.texte[k] || '', m = t.match(re); if (m) p.push(`${k}: „${t.slice(Math.max(0, m.index - 60), m.index + 30).replace(/\n/g, ' ')}"`); }
+  if (r.fett) p.push('Zahlungstermin-Text wird als HTML ausgeführt');
+  return p.join(' · ');
+});
+
+await scenario('Zeitplan: Anzeigen verändert keine Daten; Abschnitt löschen nimmt die angezeigten Punkte mit', async () => {
+  const r = await page.evaluate(async () => {
+    state.gantt.push({ id: 4190, name: 'TK Garten', start: '2031-01-01', end: '2031-12-31' });
+    state.meilensteine.push({ id: 4191, name: 'TK Hecke', datum: '2031-05-01', status: 'offen' });
+    const vorher = JSON.stringify(state.meilensteine);
+    let gespeichert = 0; const altSave = window.save; window.save = (...a) => { gespeichert++; return altSave(...a); };
+    showPage('planung');
+    window.save = altSave;
+    const unveraendert = JSON.stringify(state.meilensteine) === vorher && gespeichert === 0;
+    const angezeigt = !!document.querySelector('#plan-timeline .pl-sec[data-sec="4190"] .pl-item[data-item="4191"]');
+    window.showConfirm = async () => true;
+    await planDelSection(4190);
+    window.showConfirm = window.__echtesConfirm;
+    const mitWeg = !state.meilensteine.some(m => m.id === 4191) && !!state._deletedIds['4191'];
+    state.meilensteine = state.meilensteine.filter(m => m.id !== 4191); state.gantt = state.gantt.filter(g => g.id !== 4190);
+    return { unveraendert, angezeigt, mitWeg };
+  });
+  const p = [];
+  if (!r.unveraendert) p.push('Anzeigen hat Punkte verändert/gespeichert');
+  if (!r.angezeigt) p.push('Punkt nicht im passenden Abschnitt angezeigt');
+  if (!r.mitWeg) p.push('Löschen des Abschnitts ließ den angezeigten Punkt stehen');
+  return p.join(' · ');
+});
+await scenario('Alte App v1.2: übernommene Eigenleistung bleibt außerhalb des Budgets; Unteraufgabe behält Hauptaufgabe', async () => {
+  const r = await page.evaluate(async () => {
+    state.eigenleistungen = [{ id: 98300, datum: '2026-08-01', beschr: 'Selbst', kat: state.budgetKat[0].name, wert: 700, _migriert: true }];
+    // so sieht die Ausgabe aus, nachdem die alte App sie bearbeitet hat (imBudget/ausEigenleistung fehlen)
+    const k = { id: 983007, datum: '2026-08-01', beschr: 'Selbst', kat: state.budgetKat[0].name, mwst: 0, netto: 700, betrag: 700, status: 'Bezahlt' };
+    const imBudget = _imBudget(k);
+    state.eigenleistungen = [];
+    // Unteraufgabe bearbeiten, deren Hauptaufgabe (noch) nicht da ist
+    state.aufgaben.push({ id: 9920001, name: 'TK Waise', prio: 'Mittel', status: 'Offen', datum: '', parentId: 99999999 });
+    editTask(9920001); await saveTask();
+    const parent = (_tkFind(9920001) || {}).parentId;
+    state.aufgaben = state.aufgaben.filter(t => t.id !== 9920001);
+    return { imBudget, parent };
+  });
+  const p = [];
+  if (r.imBudget) p.push('übernommene Eigenleistung zählt wieder ins Budget');
+  if (String(r.parent) !== '99999999') p.push(`Unteraufgabe verlor die Hauptaufgabe (${r.parent})`);
+  return p.join(' · ');
+});
+await scenario('iPhone-App: Foto/Datei „Herunterladen" öffnet das Teilen-Menü statt festzustecken', async () => {
+  const r = await page.evaluate(async () => {
+    const altCap = window.Capacitor, aufrufe = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {
+      Filesystem: { writeFile: async o => { aufrufe.push('write:' + o.path); return { uri: 'file:///cache/' + o.path }; }, appendFile: async () => {}, getUri: async o => ({ uri: 'file:///cache/' + o.path }) },
+      Share: { share: async o => { aufrufe.push('share:' + o.url); } } } };
+    let klick = 0; const altClick = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { klick++; };
+    try {
+      document.getElementById('lightbox-img').src = 'data:image/png;base64,iVBORw0KGgo=';
+      document.getElementById('lightbox-title').textContent = 'Baustelle Tag 1';
+      downloadLightboxPhoto();
+      await new Promise(res => setTimeout(res, 100));
+      return { aufrufe, klick };
+    } finally { window.Capacitor = altCap; HTMLAnchorElement.prototype.click = altClick; }
+  });
+  if (r.klick) return 'nutzt <a download> in der App';
+  return r.aufrufe.some(a => a.startsWith('share:file:///cache/Baustelle_Tag_1')) ? '' : `kein Teilen: ${r.aufrufe.join(', ')}`;
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);

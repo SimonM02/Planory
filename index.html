@@ -518,6 +518,7 @@
   body.dark-mode .tk-d-woche { color:#a78bfa; }
   .tk-act { display:flex; gap:2px; opacity:0; transition:opacity .15s; flex-shrink:0; }
   .tk-row:hover .tk-act, .tk-act:focus-within { opacity:1; }
+  @media (hover:none) { .tk-act { opacity:.55; } .pl-iact { opacity:.7; } }
   .tk-act button { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.82rem; padding:3px 5px; border-radius:6px; font-family:inherit; }
   .tk-act button:hover { background:var(--surface3, var(--border)); }
   .tk-kinder { margin-left:30px; }
@@ -809,7 +810,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.32);
-    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
     z-index: 100;
     align-items: center;
     justify-content: center;
@@ -1369,7 +1370,7 @@
     position: fixed;
     inset: 0;
     background: rgba(15,29,48,0.45);
-    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
     z-index: 100;
     align-items: center;
     justify-content: center;
@@ -1587,7 +1588,7 @@
   .photo-upload-area small { font-size: 0.75rem; color: var(--text3); }
 
   /* LIGHTBOX */
-  .lightbox { display: none; position: fixed; inset: 0; background: rgba(10,18,35,0.92); backdrop-filter: blur(10px); z-index: 200; align-items: center; justify-content: center; flex-direction: column; }
+  .lightbox { display: none; position: fixed; inset: 0; background: rgba(10,18,35,0.92); -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px); z-index: 200; align-items: center; justify-content: center; flex-direction: column; }
   .lightbox.open { display: flex; }
   .lightbox img { max-width: 90vw; max-height: 80vh; border-radius: 14px; object-fit: contain; box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
   .lightbox-info { margin-top: 16px; text-align: center; }
@@ -1788,8 +1789,9 @@
       width: 100% !important;
     }
     /* Demo-Banner: obere Leiste (☰) darunter schieben – sonst verdeckte das Banner das Menue */
-    body.demo-aktiv #mobile-topbar { top: var(--demo-h, 38px); }
-    body.demo-aktiv .main { padding-top: calc(72px + var(--demo-h, 38px) + env(safe-area-inset-top)) !important; }
+    /* Demo-Banner traegt den Notch-Abstand selbst (in --demo-h enthalten) */
+    body.demo-aktiv #mobile-topbar { top: var(--demo-h, 38px); height: 56px; padding-top: 0; }
+    body.demo-aktiv .main { padding-top: calc(72px + var(--demo-h, 38px)) !important; }
     /* Hide the floating sidebar-show btn on mobile (topbar handles it) */
     #sidebar-show-btn { display: none !important; }
     /* Don't collapse via body class on mobile – use mobile-open instead */
@@ -2255,7 +2257,7 @@
     position: fixed;
     inset: 0;
     background: rgba(15,20,35,0.88);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
     z-index: 200;
     align-items: center;
     justify-content: center;
@@ -2270,13 +2272,17 @@
   .lightbox.lb-zoomed #lightbox-img { cursor: grab; }
   .lightbox.lb-dragging #lightbox-img { transition: none; cursor: grabbing; }
   .lb-zoombar { position: fixed; top: 18px; left: 18px; z-index: 10001; display: flex; gap: 6px; }
-  .lb-zoombar button { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 8px; width: 38px; height: 34px; font-size: 1.05rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(6px); font-family: inherit; }
+  .lb-zoombar button { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 8px; width: 38px; height: 34px; font-size: 1.05rem; font-weight: 700; cursor: pointer; -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px); font-family: inherit; }
   .lb-zoombar button:hover { background: rgba(255,255,255,0.22); }
   .lightbox-info { margin-top: 16px; text-align: center; }
   .lightbox-info strong { font-size: 1rem; color: white; }
   .lightbox-info small { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-left: 10px; }
   .lightbox-close { position: absolute; top: 20px; right: 24px; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 8px 12px; border-radius: 8px; }
   .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+  /* iPhone: Bedienelemente nicht unter Statusleiste/Notch */
+  .lightbox-close { top: calc(20px + env(safe-area-inset-top)); }
+  .lb-zoombar { top: calc(18px + env(safe-area-inset-top)); }
+  #lb-download { top: calc(18px + env(safe-area-inset-top)) !important; }
 
   /* COST CHART */
   .chart-container {
@@ -2434,7 +2440,7 @@
     #landing-overlay .lp-btn:hover{transform:translateY(-1px)}
     #landing-overlay .lp-btn-primary{background:var(--lp-accent);color:#1a1a2e}
     #landing-overlay .lp-btn-ghost{background:transparent;color:var(--lp-text);border:1.5px solid var(--lp-border)}
-    #landing-overlay .lp-header{position:sticky;top:0;background:rgba(17,21,31,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--lp-border);z-index:10}
+    #landing-overlay .lp-header{position:sticky;top:0;background:rgba(17,21,31,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--lp-border);z-index:10}
     #landing-overlay .lp-nav{display:flex;align-items:center;justify-content:space-between;height:64px}
     #landing-overlay .lp-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem}
     #landing-overlay .lp-logo .lp-mark{width:34px;height:34px;border-radius:9px;background:#11151f;border:1px solid var(--lp-border);display:flex;align-items:center;justify-content:center;color:var(--lp-accent);font-size:1rem}
@@ -2900,7 +2906,7 @@
 <!-- SIDEBAR -->
 <div id="mobile-backdrop" onclick="closeMobileSidebar()"></div>
 <!-- Demo Mode Banner -->
-<div id="demo-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(90deg,#f59e0b,#ea6c19);color:white;padding:8px 16px;font-size:0.82rem;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:none;align-items:center;justify-content:center;gap:12px">
+<div id="demo-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(90deg,#f59e0b,#ea6c19);color:white;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;font-size:0.82rem;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:none;align-items:center;justify-content:center;gap:12px">
   <span>🚀 Demo-Modus – Daten werden nicht gespeichert</span>
   <button onclick="exitDemo()"
     style="background:rgba(255,255,255,0.25);color:white;border:1.5px solid rgba(255,255,255,0.5);padding:3px 12px;border-radius:6px;font-family:'Hanken Grotesk',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer"
@@ -4661,11 +4667,11 @@
 <div id="gr-zoom-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(10,14,22,0.96);align-items:center;justify-content:center;overflow:hidden;touch-action:none">
   <div style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3">
     <div style="display:flex;gap:8px">
-      <button onclick="grZoomBy(-0.5)" title="Verkleinern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">−</button>
-      <button onclick="grZoomBy(0.5)" title="Vergrößern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;backdrop-filter:blur(6px)">+</button>
-      <button onclick="grZoomReset()" title="Zurücksetzen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(6px)">⟲</button>
+      <button onclick="grZoomBy(-0.5)" title="Verkleinern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">−</button>
+      <button onclick="grZoomBy(0.5)" title="Vergrößern" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.4rem;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">+</button>
+      <button onclick="grZoomReset()" title="Zurücksetzen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.1rem;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">⟲</button>
     </div>
-    <button onclick="closeGrundrissZoom()" title="Schließen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.2rem;cursor:pointer;backdrop-filter:blur(6px)">✕</button>
+    <button onclick="closeGrundrissZoom()" title="Schließen" style="width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-size:1.2rem;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">✕</button>
   </div>
   <div id="gr-zoom-stage" style="position:relative;transform-origin:center center;will-change:transform;cursor:grab;line-height:0"></div>
   <div style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,0.6);font-size:0.75rem;pointer-events:none">Ziehen zum Verschieben · Zwei Finger oder +/− zum Zoomen</div>
@@ -4678,8 +4684,8 @@
     <button type="button" onclick="lbZoomBy(0.5)" title="Vergrößern">+</button>
     <button type="button" onclick="lbZoomReset()" title="Zurücksetzen">⟲</button>
   </div>
-  <button onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
-    style="position:fixed;top:18px;right:58px;z-index:10001;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:8px;padding:6px 12px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;backdrop-filter:blur(6px)"
+  <button id="lb-download" onclick="event.stopPropagation();downloadLightboxPhoto()" title="Herunterladen"
+    style="position:fixed;top:18px;right:58px;z-index:10001;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:8px;padding:6px 12px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)"
     onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
     ⬇ Herunterladen
   </button>
@@ -5241,7 +5247,7 @@ function showPlanTab(tab, btn) {
   const btns = document.getElementById('plan-header-btns');
   if (btns) btns.innerHTML =
     `<button class="btn btn-ghost" onclick="generateKIMeilensteine()" style="border-color:#7c3aed;color:#7c3aed"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> KI-Zeitplan</button>`
-    + `<button class="btn btn-primary" onclick="planAddSection()">+ Abschnitt</button>`;
+    + `<button class="btn btn-primary" onclick="planAddSection()">${tt('+ Abschnitt')}</button>`;
   renderZeitplan();
 }
 
@@ -5273,9 +5279,13 @@ function _plDatumOk(d) {
   return !isNaN(t) && t.toISOString().slice(0, 10) === d;
 }
 function _plTagDavor(d) { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); }
-function _plZuordnen() {
+// Liefert die Zuordnung Punkt-ID -> Abschnitt-ID NUR FUER DIE ANZEIGE (aendert nichts):
+// frueher wurde beim Anzeigen gespeichert – das konnte eine gleichzeitige Aenderung eines anderen
+// Geraets (z.B. alte App) ueberschreiben. Gespeichert wird nur auf Wunsch (speichern=true, KI-Import).
+function _plZuordnen(speichern = false) {
+  const zu = new Map();
   const secs = state.gantt || [], miles = state.meilensteine || [];
-  if (!secs.length || !miles.length) return 0;
+  if (!secs.length || !miles.length) return zu;
   const mitStart = secs.filter(s => _plDatumOk(s.start)).sort((a, b) => a.start < b.start ? -1 : (a.start > b.start ? 1 : 0));
   const bis = s => {
     if (_plDatumOk(s.end)) return s.end;
@@ -5294,7 +5304,6 @@ function _plZuordnen() {
     return liste.filter(s => { const sn = norm(s.name); return sn.length >= 3 && passt(n, sn); })
                 .sort((a, b) => norm(b.name).length - norm(a.name).length)[0];
   };
-  let n = 0;
   miles.forEach(m => {
     if (m.ganttId) return;
     let ziel = null;
@@ -5305,12 +5314,14 @@ function _plZuordnen() {
         : kand[0];
     }
     if (!ziel) ziel = nameTreffer(m, secs);
-    // Zeitstempel nur minimal erhoehen: aendert ein anderes Geraet den Punkt gleichzeitig,
-    // gewinnt dessen Aenderung – die Zuordnung passiert dann einfach beim naechsten Anzeigen.
-    if (ziel) { m.ganttId = ziel.id; m._updatedAt = (Number(m._updatedAt) || 0) + 1; n++; }
+    if (!ziel) return;
+    zu.set(String(m.id), String(ziel.id));
+    if (speichern) { m.ganttId = ziel.id; m._updatedAt = Date.now(); }
   });
-  return n;
+  return zu;
 }
+// Abschnitt eines Punktes: gespeicherter Abschnitt, sonst die automatische Zuordnung
+function _plAbschnittVon(m, zu) { return m.ganttId ? String(m.ganttId) : (zu.get(String(m.id)) || ''); }
 function _plZeitraumText(s) {
   if (s.start && s.end) return fmtDate(s.start) + ' – ' + fmtDate(s.end);
   if (s.start) return (_lang==='en'?'from ':'ab ') + fmtDate(s.start);
@@ -5321,7 +5332,7 @@ function _plZeitraumText(s) {
 function renderZeitplan() {
   const el = document.getElementById('plan-timeline');
   if (!el) return;
-  if (_plZuordnen()) save();
+  const zu = _plZuordnen();
   const secs  = state.gantt || [];
   const miles = state.meilensteine || [];
   const escA = s => (s==null?'':String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'));
@@ -5360,7 +5371,7 @@ function renderZeitplan() {
         <span class="pl-iact">
           ${!ohneAbschnitt && sortedSecs.length ? `<select class="pl-move" data-noi18n onchange="planAssign(${m.id},this.value)" title="${escA(tt('In anderen Abschnitt verschieben'))}" aria-label="${escA(tt('In anderen Abschnitt verschieben'))}">
             <option value="" selected disabled>⇄</option>
-            ${sortedSecs.map(s => `<option value="${s.id}" ${String(s.id)===String(m.ganttId)?'disabled':''}>${escA(s.name)}${String(s.id)===String(m.ganttId)?' ✓':''}</option>`).join('')}
+            ${sortedSecs.map(s => `<option value="${s.id}" ${String(s.id)===_plAbschnittVon(m, zu)?'disabled':''}>${escA(s.name)}${String(s.id)===_plAbschnittVon(m, zu)?' ✓':''}</option>`).join('')}
             <option value="${PL_OHNE}">${escA(tt('Ohne Abschnitt'))}</option>
           </select>` : ''}
           <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
@@ -5375,7 +5386,7 @@ function renderZeitplan() {
     </div>`;
 
   const sectionCard = (s) => {
-    const items = miles.filter(m => String(m.ganttId||'') === String(s.id)).sort(_byDate('datum'));
+    const items = miles.filter(m => _plAbschnittVon(m, zu) === String(s.id)).sort(_byDate('datum'));
     const total = items.length;
     const done  = items.filter(m => _plItemStatus(m)==='erledigt').length;
     const pct   = total ? Math.round(done/total*100) : 0;
@@ -5413,7 +5424,7 @@ function renderZeitplan() {
     return;
   }
 
-  const ungrouped  = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId))).sort(_byDate('datum'));
+  const ungrouped  = miles.filter(m => { const a = _plAbschnittVon(m, zu); return !a || !secs.some(s => String(s.id) === a); }).sort(_byDate('datum'));
   const allTotal = miles.length;
   const allDone  = miles.filter(m => _plItemStatus(m)==='erledigt').length;
   const allPct   = allTotal ? Math.round(allDone/allTotal*100) : 0;
@@ -5460,13 +5471,16 @@ function planAddSection() {
 }
 async function planDelSection(id) {
   if (!requireSub()) return;
-  const anz = (state.meilensteine || []).filter(m => String(m.ganttId) === String(id)).length;
+  // was im Abschnitt angezeigt wird (gespeichert oder automatisch zugeordnet), wird mitgeloescht
+  const zu = _plZuordnen();
+  const drin = m => _plAbschnittVon(m, zu) === String(id);
+  const anz = (state.meilensteine || []).filter(drin).length;
   const frage = _lang === 'en'
     ? (anz ? `Delete this section and the ${anz} item${anz === 1 ? '' : 's'} in it?` : 'Delete this section?')
     : (anz ? `Abschnitt samt ${anz === 1 ? 'dem 1 Punkt' : 'den ' + anz + ' Punkten'} darin löschen?` : 'Abschnitt löschen?');
   if (!(await showConfirm(frage))) return;
-  (state.meilensteine || []).filter(m => String(m.ganttId) === String(id)).forEach(m => _trackDeletion(m.id, 'meilensteine'));
-  state.meilensteine = (state.meilensteine || []).filter(m => String(m.ganttId) !== String(id));
+  (state.meilensteine || []).filter(drin).forEach(m => _trackDeletion(m.id, 'meilensteine'));
+  state.meilensteine = (state.meilensteine || []).filter(m => !drin(m));
   _trackDeletion(id, 'gantt');
   state.gantt = (state.gantt || []).filter(g => String(g.id) !== String(id));
   _plZeitraumOffen.delete(String(id));
@@ -6531,6 +6545,31 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "+ Abschnitt": { en: "+ Section" },
+  "Buchung": { en: "booking" },
+  "Alle Kategorien": { en: "All categories" },
+  "Heute fällig": { en: "Due today" },
+  "Fällig": { en: "Due" },
+  "Mannschaft": { en: "Crew" },
+  "Stunden gesamt": { en: "Total hours" },
+  "Noch keine Einträge vorhanden.": { en: "No entries yet." },
+  "Arbeitsstunden gesamt": { en: "Total working hours" },
+  "über alle Einträge": { en: "across all entries" },
+  "Arbeitstage": { en: "Working days" },
+  "Tage mit Mannschaft": { en: "Days with crew" },
+  "Verschiedene Arbeiter": { en: "Different workers" },
+  "Personen eingesetzt": { en: "people deployed" },
+  "Ø Stunden / Tag": { en: "Avg hours / day" },
+  "pro Einsatztag": { en: "per working day" },
+  "Stunden nach Arbeiter": { en: "Hours per worker" },
+  "Tag": { en: "day" },
+  "Arbeitsstunden pro Monat": { en: "Working hours per month" },
+  "Alle Einträge – Übersicht": { en: "All entries – overview" },
+  "Arbeiter": { en: "Workers" },
+  "bis (optional)": { en: "to (optional)" },
+  "PDF oder Bild hierher ziehen oder oben auswählen": { en: "Drag a PDF or image here or choose above" },
+  "Schnellzugriff anpassen": { en: "Customize quick access" },
+  "Estrich & Böden": { en: "Screed & floors" },
   "Aufgaben-Ansichten": { en: "Task views" },
   "Person": { en: "Person" },
   "Alle Personen": { en: "All people" },
@@ -7007,6 +7046,8 @@ function setLang(lang, save = true) {
   document.documentElement.lang = _lang;
   applyStaticTranslations();
   try { _tdRerender(); } catch (e) {}
+  // schon angezeigte Seiten-Hinweise in der neuen Sprache neu aufbauen
+  try { document.querySelectorAll('[id^="page-hint-"]').forEach(h => { const id = h.id.slice(10); h.remove(); showPageHint(id); }); } catch (e) {}
   const sel = document.getElementById('lang-select');
   if (sel) sel.value = _lang;
   if (save && typeof currentUser !== 'undefined' && currentUser && typeof syncToCloud === 'function') {
@@ -8338,7 +8379,14 @@ async function _uploadBeleg(base64) {
 // Eintraege (auch in der Cloud) getroffen.
 // Zaehlt eine Ausgabe zum Budget? (nicht storniert und nicht als „nicht im Budget" markiert –
 // z. B. Eigenleistung oder Geschenke). Ueberall verwenden, wo Budget/Ausgaben summiert werden.
-function _imBudget(k) { return !!k && k.status !== 'Storniert' && k.imBudget !== false; }
+function _imBudget(k) {
+  if (!k || k.status === 'Storniert' || k.imBudget === false) return false;
+  // aus einer Eigenleistung uebernommen (ID e.id*10+7)? Bleibt ausserhalb des Budgets, auch wenn
+  // die alte App v1.2 die Ausgabe bearbeitet und dabei „imBudget" verloren hat
+  const n = Number(k.id);
+  if (n % 10 === 7 && (state.eigenleistungen || []).some(e => Number(e.id) * 10 + 7 === n)) return false;
+  return true;
+}
 let _lastNewId = 0;
 function _neueId() { const t = Date.now(); _lastNewId = t > _lastNewId ? t : _lastNewId + 1; return _lastNewId; }
 
@@ -8365,6 +8413,7 @@ const PDF_THUMB = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http:/
 const DOC_THUMB = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#e2e8f0"/><path d="M16 11h11l7 7v19H16z" fill="#fff" stroke="#64748b" stroke-width="2"/><path d="M20 24h10M20 29h10M20 34h6" stroke="#64748b" stroke-width="2"/></svg>');
 function _belegThumb(x) { const s = x && (x.scanUrl || x.scanData); return _istPdfSrc(s) ? PDF_THUMB : s; }
 function _oeffnePdf(src) {
+  if (isNativeApp() && !/^https?:/i.test(String(src))) { _dateiTeilen(src, 'Beleg.pdf', 'Beleg'); return; }
   let url = src;
   if (/^data:/i.test(src)) {
     const b = atob(String(src).split(',')[1] || ''), a = new Uint8Array(b.length);
@@ -8877,6 +8926,8 @@ async function deleteBudgetKat(id) {
 const BG_COLORS = ['#3d6ff8','#7b5cfa','#0d9488','#ea6c19','#ef4444','#f59e0b','#22c55e','#e879f9','#06b6d4','#84cc16'];
 
 // Grafik auf der Budget-Seite (Chart.js ist geladen): Ring = Verbrauch, Balken = geplant/ausgegeben
+// Standard-Kategorien (Rohbau, Innenausbau …) werden deutsch gespeichert – in der Anzeige uebersetzen
+function _katName(n) { if (_lang === 'de' || !n) return n; const t = TEXTE[n] || OPTIONEN[n]; return (t && t[_lang]) || n; }
 function _kurzEuro(v) { const a = Math.abs(v); return a >= 1e6 ? '€ ' + (v / 1e6).toFixed(1).replace('.', ',') + ' Mio' : a >= 1000 ? '€ ' + Math.round(v / 1000) + 'k' : '€ ' + Math.round(v); }
 function _zeichneBudgetGrafik(totalBudget, totalSpent) {
   const pctEl = document.getElementById('bg-ring-pct');
@@ -8906,13 +8957,13 @@ function _zeichneBudgetGrafik(totalBudget, totalSpent) {
   const schmal = window.innerWidth <= 600;
   const kurz = n => n.length > (schmal ? 16 : 26) ? n.slice(0, schmal ? 15 : 25) + '…' : n;
   bar._chart = new C(bar, { type: 'bar',
-    data: { labels: kats.map(k => [kurz(k.name), fmt(k.spent) + ' / ' + _kurzEuro(k.budget)]),
+    data: { labels: kats.map(k => [kurz(_katName(k.name)), fmt(k.spent) + ' / ' + _kurzEuro(k.budget)]),
       datasets: [
         { label: tt('Geplant'), data: kats.map(k => k.budget), backgroundColor: kats.map(k => k.color + '33'), borderColor: kats.map(k => k.color), borderWidth: 1, borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.75 },
         { label: tt('Ausgegeben'), data: kats.map(k => k.spent), backgroundColor: kats.map(k => k.budget > 0 && k.spent > k.budget ? (css('--danger') || '#dc2626') : k.color), borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.75 } ] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
       plugins: { legend: { position: 'top', align: 'start', labels: { boxWidth: 12, boxHeight: 12, color: txt, font: { size: 11 } } },
-        tooltip: { callbacks: { title: c => kats[c[0].dataIndex].name, label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } },
+        tooltip: { callbacks: { title: c => _katName(kats[c[0].dataIndex].name), label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } },
       scales: { x: { beginAtZero: true, grid: { color: grid }, ticks: { color: txt, font: { size: 10 }, maxTicksLimit: schmal ? 4 : 6, callback: v => _kurzEuro(v) } },
                 y: { grid: { display: false }, ticks: { color: txt, font: { size: schmal ? 10 : 11 } } } } } });
 }
@@ -8946,8 +8997,8 @@ function renderBudget() {
   try { _zeichneBudgetGrafik(totalBudget, totalSpent); } catch (e) { console.warn('[budget-grafik]', e?.message); }
   document.getElementById('bg-total-pct').textContent    = `${totalPct}% ${tt('verbraucht')}`;
   document.getElementById('bg-unassigned').textContent   = fmt(unassigned);
-  document.getElementById('bg-pct-label').textContent    = `${fmt(totalBudget)} Gesamtbudget`;
-  document.getElementById('bg-kat-count').textContent    = `${state.budgetKat.length} Kategorien`;
+  document.getElementById('bg-pct-label').textContent    = `${fmt(totalBudget)} ${tt('Gesamtbudget')}`;
+  document.getElementById('bg-kat-count').textContent    = `${state.budgetKat.length} ${tt(state.budgetKat.length === 1 ? 'Kategorie' : 'Kategorien')}`;
 
   if (state.budgetKat.length === 0) {
     document.getElementById('bg-segment-bar').innerHTML = '<div style="width:100%;background:var(--surface3);height:100%"></div>';
@@ -8969,7 +9020,7 @@ function renderBudget() {
     const pct = totalBudget > 0 ? (kat.budget / totalBudget * 100).toFixed(0) : 0;
     return `<div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text2);font-weight:600">
       <span style="width:10px;height:10px;border-radius:3px;background:${kat.color || BG_COLORS[i % BG_COLORS.length]};flex-shrink:0;display:inline-block"></span>
-      ${kat.name} <span style="color:var(--text3);font-weight:400">${pct}%</span>
+      ${esc(_katName(kat.name))} <span style="color:var(--text3);font-weight:400">${pct}%</span>
     </div>`;
   }).join('');
 
@@ -8986,7 +9037,7 @@ function renderBudget() {
       <span data-drag="1" draggable="true" ondragstart="_budgDragStart(event,${i})" title="Zum Verschieben ziehen" style="cursor:grab;color:var(--text3);font-size:1rem;padding:0 6px 0 2px;flex-shrink:0;user-select:none" onclick="event.stopPropagation()">⠿</span>
       <div class="budget-bar-label" style="display:flex;align-items:center;gap:6px">
         <span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0"></span>
-        <span onclick="openBudgetDrilldown('${kat.name.replace(/'/g,"\\'")}') ">${kat.name}</span>
+        <span onclick="openBudgetDrilldown('${kat.name.replace(/'/g,"\\'")}') ">${esc(_katName(kat.name))}</span>
         ${count > 0 ? `<span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text3)">${count}×</span>` : ''}
       </div>
       <div class="budget-bar-track" onclick="openBudgetDrilldown('${kat.name.replace(/'/g,"\\'")}')"><div class="budget-bar-fill" style="width:${pct}%;background:${color}"></div></div>
@@ -9011,9 +9062,9 @@ function renderBudget() {
         <td>
           <span style="display:inline-flex;align-items:center;gap:8px;font-weight:700">
             <span style="width:10px;height:10px;border-radius:3px;background:${color};flex-shrink:0;display:inline-block"></span>
-            ${kat.name}
+            ${esc(_katName(kat.name))}
           </span>
-          ${count > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${count} Buchungen – zum Öffnen klicken</div>` : `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">Noch keine Buchungen</div>`}
+          ${count > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${count} ${tt(count === 1 ? 'Buchung' : 'Buchungen')} – ${tt('zum Öffnen klicken')}</div>` : `<div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text3);margin-top:2px;margin-left:18px">${tt('Noch keine Buchungen')}</div>`}
         </td>
         <td data-label="${tt('Geplant')}" style="font-family:'JetBrains Mono',monospace">${fmt(kat.budget)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${share}%</span></td>
@@ -9425,6 +9476,7 @@ function _updateDarkModeToggle(on) {
     if (localStorage.getItem('darkMode') === null) {
       document.body.classList.toggle('dark-mode', e.matches);
       _updateDarkModeToggle(e.matches);
+      try { _applyStatusBarStyle(); } catch (e2) {}
     }
   });
 })();
@@ -9449,6 +9501,7 @@ function _setzeKI(aus, melden) {
   try { localStorage.setItem('planoryKIaus', aus ? '1' : '0'); } catch (e) {}
   const b = document.getElementById('ki-panel-btn');
   if (b) { b.setAttribute('aria-checked', aus ? 'false' : 'true'); b.setAttribute('aria-label', tt('KI-Berater anzeigen')); }
+  const b2 = document.querySelector('#ki-advisor-off [role=switch]'); if (b2) b2.setAttribute('aria-label', tt('KI-Berater anzeigen'));
   if (melden) showToast(aus ? tt('KI-Berater ausgeblendet') : tt('KI-Berater eingeblendet'), 'success');
 }
 function toggleKIPanel() {
@@ -10066,7 +10119,7 @@ function importKIZeitplan() {
       _updatedAt: Date.now()
     });
   });
-  _plZuordnen();
+  _plZuordnen(true);   // beim KI-Import (bewusste Aktion) die Zuordnung auch speichern
 
   save();
   closeModal('modal-ki-zeitplan');
@@ -10265,7 +10318,7 @@ function saveTask() {
     notiz:      document.getElementById('t-notiz').value.trim() || '',
     status:     alt ? (alt.status || 'Offen') : 'Offen',
     katId,
-    parentId:   eltern ? eltern.id : '',
+    parentId:   eltern ? eltern.id : parentId,   // Hauptaufgabe (noch) nicht geladen -> Verknuepfung behalten
     wdh:        document.getElementById('t-wdh')?.value || '',
     _updatedAt: Date.now()
   };
@@ -11350,13 +11403,13 @@ function renderDiary() {
         <button class="action-btn" onclick="editDiary(${e.id})" title="Bearbeiten">✏️</button>
         <button class="action-btn del" onclick="deleteDiary(${e.id})">🗑</button>
       </div>
-      <div class="diary-date">${fmtDate(e.datum)}${e.datumBis && e.datumBis !== e.datum ? ' – ' + fmtDate(e.datumBis) : ''} · ${esc(e.weather)}${e.temp != null ? ` · ${e.temp}°C` : ''}</div>
+      <div class="diary-date">${fmtDate(e.datum)}${e.datumBis && e.datumBis !== e.datum ? ' – ' + fmtDate(e.datumBis) : ''} · ${esc(_katName(e.weather))}${e.temp != null ? ` · ${e.temp}°C` : ''}</div>
       <div class="diary-title">${esc(e.title)}</div>
       <div class="diary-text">${esc(e.text||'').replace(/\n/g,'<br>')}</div>
       ${workers.length ? `
         <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px">
           <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">
-            👷 Mannschaft · ${totalHours} Stunden gesamt
+            👷 ${tt('Mannschaft')} · ${_lang === 'en' ? totalHours + ' hours total' : totalHours + ' Stunden gesamt'}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${workers.map(w => `
@@ -11379,7 +11432,7 @@ function renderDiary() {
 function renderDiarySummary() {
   const el = document.getElementById('diary-summary');
   if (state.tagebuch.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="icon">📊</div><p>Noch keine Einträge vorhanden.</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">📊</div><p>${tt('Noch keine Einträge vorhanden.')}</p></div>`;
     return;
   }
 
@@ -11417,39 +11470,39 @@ function renderDiarySummary() {
   el.innerHTML = `
     <div class="cards-grid" style="margin-bottom:24px">
       <div class="card">
-        <div class="card-label">Arbeitsstunden gesamt</div>
+        <div class="card-label">${tt('Arbeitsstunden gesamt')}</div>
         <div class="card-value yellow">${totalAllHours.toFixed(1)} h</div>
-        <div class="card-sub">über alle Einträge</div>
+        <div class="card-sub">${tt('über alle Einträge')}</div>
       </div>
       <div class="card">
-        <div class="card-label">Arbeitstage</div>
+        <div class="card-label">${tt('Arbeitstage')}</div>
         <div class="card-value">${daysWithWorkers}</div>
-        <div class="card-sub">Tage mit Mannschaft</div>
+        <div class="card-sub">${tt('Tage mit Mannschaft')}</div>
       </div>
       <div class="card">
-        <div class="card-label">Verschiedene Arbeiter</div>
+        <div class="card-label">${tt('Verschiedene Arbeiter')}</div>
         <div class="card-value">${sorted.length}</div>
-        <div class="card-sub">Personen eingesetzt</div>
+        <div class="card-sub">${tt('Personen eingesetzt')}</div>
       </div>
       <div class="card">
-        <div class="card-label">Ø Stunden / Tag</div>
+        <div class="card-label">${tt('Ø Stunden / Tag')}</div>
         <div class="card-value">${daysWithWorkers ? (totalAllHours/daysWithWorkers).toFixed(1) : '0'} h</div>
-        <div class="card-sub">pro Einsatztag</div>
+        <div class="card-sub">${tt('pro Einsatztag')}</div>
       </div>
     </div>
 
     ${sorted.length > 0 ? `
     <div class="table-wrap mobile-cards no-actions" style="margin-bottom:24px">
-      <div class="table-header"><div class="table-title">Stunden nach Arbeiter</div></div>
+      <div class="table-header"><div class="table-title">${tt('Stunden nach Arbeiter')}</div></div>
       <table>
-        <thead><tr><th>Name</th><th>Einsatztage</th><th>Stunden gesamt</th><th>Ø Std./Tag</th><th>Anteil</th></tr></thead>
+        <thead><tr><th>${tt('Name')}</th><th>${tt('Einsatztage')}</th><th>${tt('Stunden gesamt')}</th><th>${tt('Ø Std./Tag')}</th><th>${tt('Anteil')}</th></tr></thead>
         <tbody>
           ${sorted.map(([name, d]) => {
             const pct = totalAllHours > 0 ? (d.hours/totalAllHours*100).toFixed(1) : 0;
             const barW = Math.round(d.hours/Math.max(...sorted.map(x=>x[1].hours))*100);
             return `<tr>
               <td data-title><strong>${esc(name)}</strong></td>
-              <td data-label="${tt('Einsatztage')}" style="font-family:'JetBrains Mono',monospace">${d.days} Tage</td>
+              <td data-label="${tt('Einsatztage')}" style="font-family:'JetBrains Mono',monospace">${d.days} ${tt(d.days === 1 ? 'Tag' : 'Tage')}</td>
               <td data-label="${tt('Stunden')}">
                 <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:220px">
                   <div style="flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden">
@@ -11468,14 +11521,14 @@ function renderDiarySummary() {
 
     ${monthKeys.length > 1 ? `
     <div class="chart-container">
-      <div class="table-title" style="margin-bottom:16px">Arbeitsstunden pro Monat</div>
+      <div class="table-title" style="margin-bottom:16px">${tt('Arbeitsstunden pro Monat')}</div>
       <canvas id="diary-hours-chart" height="220"></canvas>
     </div>` : ''}
 
     <div class="table-wrap mobile-cards no-actions">
-      <div class="table-header"><div class="table-title">Alle Einträge – Übersicht</div></div>
+      <div class="table-header"><div class="table-title">${tt('Alle Einträge – Übersicht')}</div></div>
       <table>
-        <thead><tr><th>Datum</th><th>Titel</th><th class="hide-mobile">Wetter</th><th class="hide-mobile">Arbeiter</th><th>Stunden</th></tr></thead>
+        <thead><tr><th>${tt('Datum')}</th><th>${tt('Titel')}</th><th class="hide-mobile">${tt('Wetter')}</th><th class="hide-mobile">${tt('Arbeiter')}</th><th>${tt('Stunden')}</th></tr></thead>
         <tbody>
           ${[...state.tagebuch].reverse().map(e => {
             const ws = e.workers || [];
@@ -11757,6 +11810,7 @@ async function openDokument(id) {
   const url = await _getDokumentUrl(d);
   if (!url) { showToast('Datei konnte nicht geladen werden', 'error'); return; }
   const viewable = d.type === 'application/pdf' || d.type?.startsWith('image/');
+  if (isNativeApp() && (!viewable || !/^https?:/i.test(String(url)))) { _dateiTeilen(url, d.name, d.name); return; }
   if (viewable) {
     window.open(url, '_blank');
   } else {
@@ -12448,7 +12502,8 @@ function openBatchPhotoModal(files, targetAlbumId) {
     };
     r.readAsDataURL(file);
   });
-  const descLabel = document.querySelector('#modal-foto-batch label[for="fb-beschr"]') || document.querySelector('#modal-foto-batch .form-row:has(#fb-beschr)');
+  let descLabel = document.querySelector('#modal-foto-batch label[for="fb-beschr"]');
+  if (!descLabel) { try { descLabel = document.querySelector('#modal-foto-batch .form-row:has(#fb-beschr)'); } catch (e) { descLabel = document.getElementById('fb-beschr')?.closest('.form-row') || null; } }
   if (targetAlbumId) {
     document.querySelector('#modal-foto-batch h3').textContent = '📸 Fotos zum Album hinzufügen';
   } else {
@@ -12981,6 +13036,7 @@ function downloadLightboxPhoto() {
   if (!src) return;
   const title = document.getElementById('lightbox-title').textContent || 'foto';
   const safeName = title.replace(/[^a-zA-Z0-9äöüÄÖÜß\-_]/g, '_').slice(0, 60);
+  if (isNativeApp()) { _dateiTeilen(src, safeName + '.jpg', title); return; }
   const a = document.createElement('a');
   a.href     = src;
   a.download = safeName + '.jpg';
@@ -13156,7 +13212,7 @@ function renderKostenChart() {
   const max = kats.length ? kats[0].wert : 0;
   document.getElementById('top-list').innerHTML = kats.slice(0, 6).map(k => `
     <div class="kc-top-row">
-      <div class="kc-top-kopf"><span class="kc-name">${esc(k.name)}</span><span class="kc-val" data-private>${fmt(k.wert)}</span></div>
+      <div class="kc-top-kopf"><span class="kc-name">${esc(_katName(k.name))}</span><span class="kc-val" data-private>${fmt(k.wert)}</span></div>
       <div class="kc-bar"><div style="width:${max > 0 ? Math.max(2, k.wert / max * 100) : 0}%;background:${k.farbe}"></div></div>
     </div>`).join('');
 
@@ -13216,13 +13272,13 @@ function drawDoughnutChart(canvasId, kats, total, th = _chartTheme()) {
   const sum = document.getElementById('kc-cat-sum'); if (sum) sum.textContent = fmt(total);
   const list = document.getElementById('kc-cat-list');
   if (list) list.innerHTML = kats.map(k => `
-    <div class="kc-li"><span class="kc-dot" style="background:${k.farbe}"></span><span class="kc-name">${esc(k.name)}</span>
+    <div class="kc-li"><span class="kc-dot" style="background:${k.farbe}"></span><span class="kc-name">${esc(_katName(k.name))}</span>
       <span class="kc-val" data-private>${fmt(k.wert)}</span><span class="kc-pct">${total > 0 ? Math.round(k.wert / total * 100) : 0} %</span></div>`).join('');
   if (!canvas || !window.Chart) return;
   if (canvas._chart) canvas._chart.destroy();
   canvas._chart = new Chart(canvas, {
     type: 'doughnut',
-    data: { labels: kats.map(k => k.name), datasets: [{ data: kats.map(k => k.wert), backgroundColor: kats.map(k => k.farbe), borderWidth: 3, borderColor: th.surface, hoverOffset: 6, borderRadius: 4 }] },
+    data: { labels: kats.map(k => _katName(k.name)), datasets: [{ data: kats.map(k => k.wert), backgroundColor: kats.map(k => k.farbe), borderWidth: 3, borderColor: th.surface, hoverOffset: 6, borderRadius: 4 }] },
     options: { responsive: true, maintainAspectRatio: true, cutout: '72%', animation: { duration: 350 },
       plugins: { legend: { display: false }, tooltip: { ..._tooltipStil(th), callbacks: { label: c => fmt(c.raw) + ' · ' + (total > 0 ? Math.round(c.raw / total * 100) : 0) + ' %' } } } }
   });
@@ -13673,6 +13729,7 @@ function openGrPinFotoLightbox(i) {
 function downloadGrPinFoto(i) {
   const src = _grPinFotosPending[i];
   if (!src) return;
+  if (isNativeApp()) { _dateiTeilen(src, `pin-foto-${i + 1}.jpg`); return; }
   const a = document.createElement('a');
   a.href     = src;
   a.download = `pin-foto-${i + 1}.jpg`;
@@ -14507,7 +14564,7 @@ function showToast(msg, type='success', duration=3200) {
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
   const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
+  t.style.cssText = `position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
@@ -16074,6 +16131,7 @@ async function loadFromCloud() {
         document.body.classList.toggle('dark-mode', cloudDark);
         localStorage.setItem('darkMode', cloudDark ? '1' : '0');
         _updateDarkModeToggle(cloudDark);
+        try { _applyStatusBarStyle(); } catch (e2) {}
       }
     }
 
@@ -16949,6 +17007,7 @@ function openAngebotDatei(id) {
   if (!a?.datei) return;
   const src = a.datei.url || a.datei.data; // neu: Storage-URL, alt: Base64
   const viewable = ['application/pdf','image/jpeg','image/jpg','image/png','image/gif'];
+  if (isNativeApp()) { _dateiTeilen(src, a.datei.name, a.datei.name); return; }   // window.open('') gibt es im App-WebView nicht
   if (viewable.includes(a.datei.type) || a.datei.type?.startsWith('image/')) {
     const win = window.open('', '_blank');
     if (win) {
@@ -17275,22 +17334,22 @@ function renderZahlungsplan() {
     let statusColor = 'var(--border)';
     let statusLabel = z.status;
     if (z.status === 'Bezahlt')  { statusColor = 'var(--success)'; }
-    else if (isOverdue)           { statusColor = 'var(--danger)'; statusLabel = `Überfällig (${Math.abs(daysLeft)}d)`; }
-    else if (isDueToday)          { statusColor = 'var(--warning)'; statusLabel = 'Heute fällig'; }
-    else if (daysLeft <= 7)       { statusColor = 'var(--warning)'; statusLabel = `In ${daysLeft} Tagen`; }
+    else if (isOverdue)           { statusColor = 'var(--danger)'; statusLabel = `${tt('Überfällig')} (${Math.abs(daysLeft)} ${_lang === 'en' ? 'd' : 'T.'})`; }
+    else if (isDueToday)          { statusColor = 'var(--warning)'; statusLabel = tt('Heute fällig'); }
+    else if (daysLeft <= 7)       { statusColor = 'var(--warning)'; statusLabel = _lang === 'en' ? `In ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : `In ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tagen'}`; }
 
     return `
     <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid ${statusColor};border-radius:var(--radius);padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow-sm)">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-          <span style="font-weight:600;font-size:0.875rem;color:var(--text)">${z.beschr}</span>
-          ${z.kat?`<span class="badge badge-gray">${z.kat}</span>`:''}
+          <span style="font-weight:600;font-size:0.875rem;color:var(--text)">${esc(z.beschr)}</span>
+          ${z.kat?`<span class="badge badge-gray">${esc(_katName(z.kat))}</span>`:''}
         </div>
         <div style="font-size:0.78rem;color:var(--text3)">
-          ${z.anbieter?z.anbieter+' · ':''}
-          Fällig: <span style="font-family:'JetBrains Mono',monospace;font-weight:500;color:${statusColor}">${z.faellig?fmtDate(z.faellig):'–'}</span>
-          ${z.bezahltDatum?' · Bezahlt: '+fmtDate(z.bezahltDatum):''}
-          ${z.notiz?`<br>${z.notiz}`:''}
+          ${z.anbieter?esc(z.anbieter)+' · ':''}
+          ${tt('Fällig')}: <span style="font-family:'JetBrains Mono',monospace;font-weight:500;color:${statusColor}">${z.faellig?fmtDate(z.faellig):'–'}</span>
+          ${z.bezahltDatum?' · '+tt('Bezahlt')+': '+fmtDate(z.bezahltDatum):''}
+          ${z.notiz?`<br>${esc(z.notiz)}`:''}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
@@ -17503,8 +17562,8 @@ function renderGescannteRechnungen() {
   if (katSel) {
     const kats = [...new Set(items.map(r => r.kat).filter(Boolean))];
     const cur  = katSel.value;
-    katSel.innerHTML = `<option value="">Alle Kategorien</option>` +
-      kats.map(k => `<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(k)}</option>`).join('');
+    katSel.innerHTML = `<option value="">${esc(tt('Alle Kategorien'))}</option>` +
+      kats.map(k => `<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(_katName(k))}</option>`).join('');
   }
   const filterKat = katSel?.value || '';
 
@@ -17892,7 +17951,7 @@ function _showRecoveryBanner() {
   if (document.getElementById('recovery-banner')) return;
   const banner = document.createElement('div');
   banner.id = 'recovery-banner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.9rem;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.9rem;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
   banner.innerHTML = `
     <span>⚠️ <strong>Daten nicht geladen.</strong> Bitte klicke auf "Wiederherstellen" um deine Daten aus der Cloud zu laden.</span>
     <div style="display:flex;gap:8px;flex-shrink:0">
@@ -17906,7 +17965,7 @@ function _showRestorePrompt() {
   if (document.getElementById('recovery-banner')) return;
   const banner = document.createElement('div');
   banner.id = 'recovery-banner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.9rem;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.9rem;box-shadow:0 2px 12px rgba(0,0,0,0.2)';
   banner.innerHTML = `
     <span>💾 <strong>Lokale Daten gefunden.</strong> Deine Cloud ist leer — sollen die lokalen Daten in die Cloud gespeichert werden?</span>
     <div style="display:flex;gap:8px;flex-shrink:0">
@@ -18689,6 +18748,8 @@ function _flushSync() {
 }
 window.addEventListener('beforeunload', _flushSync);
 window.addEventListener('pagehide', _flushSync); // more reliable on iOS/mobile
+// iPhone-App: pagehide kommt beim Wechsel in den Hintergrund nicht – dann eben hier
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _flushSync(); });
 
 // ── PDF EXPORT ──────────────────────────────────────────────────────────────
 // Dateiname ohne Zeichen, die Dateisysteme/Teilen-Menue nicht moegen
@@ -18711,6 +18772,34 @@ function _pdfText(s) {
 // PDF ausgeben: in der iPhone-App ueber das Teilen-Menue (Sichern in Dateien, Drucken,
 // AirDrop, Mail) – im WebView klappte das normale Herunterladen nicht. Sonst Teilen am
 // Handy-Browser oder klassisch herunterladen. Liefert false, wenn der Nutzer abbricht.
+// In der iPhone-App: Datei ueber das Teilen-Menue anbieten (Sichern in Dateien, Drucken, AirDrop …).
+// <a download> und window.open mit data:/blob:-Adressen funktionieren im App-WebView nicht
+// (Bild blieb im Vollbild ohne Zurueck bzw. es passierte nichts).
+async function _dateiTeilen(src, name, titel) {
+  const P = window.Capacitor?.Plugins, FS = P?.Filesystem, SH = P?.Share;
+  const extern = /^https?:/i.test(String(src));
+  if (!FS || !SH) { if (extern) window.open(src, '_blank'); return false; }
+  try {
+    let b64;
+    if (/^data:/i.test(src)) b64 = String(src).split(',')[1] || '';
+    else {
+      const blob = await (await fetch(src)).blob();
+      b64 = await new Promise((ok, err) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] || ''); r.onerror = err; r.readAsDataURL(blob); });
+    }
+    const pfad = String(name || 'Datei').replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 80) || 'Datei';
+    const STK = 3 * 1024 * 1024;   // in Stuecken schreiben, Vielfaches von 4
+    let res = await FS.writeFile({ path: pfad, data: b64.slice(0, STK), directory: 'CACHE' });
+    for (let i = STK; i < b64.length; i += STK) await FS.appendFile({ path: pfad, data: b64.slice(i, i + STK), directory: 'CACHE' });
+    if (!res || !res.uri) res = await FS.getUri({ path: pfad, directory: 'CACHE' });
+    await SH.share({ title: titel || pfad, url: res.uri, dialogTitle: titel || pfad });
+    return true;
+  } catch (e) {
+    if (/cancel/i.test(e?.message || '')) return false;
+    if (extern) { window.open(src, '_blank'); return false; }
+    showToast((_lang === 'en' ? '⚠️ Could not open file: ' : '⚠️ Datei konnte nicht geöffnet werden: ') + (e?.message || e), 'error', 5000);
+    return false;
+  }
+}
 async function _pdfAusgeben(doc, dateiname, titel) {
   const P = window.Capacitor?.Plugins;
   const FS = P?.Filesystem, SH = P?.Share;
@@ -19393,7 +19482,7 @@ function exportRechnungenPDF() {
     <button onclick="closeModal('modal-paywall')" style="background:none;border:none;color:var(--text3);font-size:0.8rem;cursor:pointer;text-decoration:underline">Weiter nur ansehen</button>
   </div>
 </div>
-<div id="readonly-banner" onclick="openPaywall()" style="display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.25);white-space:nowrap">👁 Nur-Lese-Modus · Abo aktivieren</div>
+<div id="readonly-banner" onclick="openPaywall()" style="display:none;position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.25);white-space:nowrap">👁 Nur-Lese-Modus · Abo aktivieren</div>
 <!-- App-eigener Bestaetigungs-/Eingabe-Dialog (ersetzt window.confirm/prompt) -->
 <div class="modal-overlay" id="modal-app-confirm" style="z-index:10050">
   <div class="modal" style="max-width:380px">

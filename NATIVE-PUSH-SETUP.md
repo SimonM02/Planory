@@ -43,7 +43,7 @@ Neu anlegen (Production + Preview):
 | `APNS_KEY` | **kompletter Inhalt der .p8-Datei**, inkl. `-----BEGIN PRIVATE KEY-----` … `-----END PRIVATE KEY-----` (mehrzeilig einfügen ist ok) |
 | `APNS_KEY_ID` | die Key-ID aus Schritt 2.4 |
 | `APNS_TEAM_ID` | deine Team-ID aus Schritt 2.5 |
-| `APNS_BUNDLE_ID` | `com.planory.bau` |
+| `APNS_BUNDLE_ID` | `com.planory.bauassistent` (Bundle-ID aus Xcode, = appId in capacitor.config.json) |
 | `APNS_PRODUCTION` | **leer lassen / „true"** für App-Store & TestFlight. Nur `false`, wenn du einen Build direkt aus Xcode aufs Handy spielst (Debug/Sandbox). |
 
 Danach **Redeploy** (Deployments → oberstes → ⋯ → Redeploy).
