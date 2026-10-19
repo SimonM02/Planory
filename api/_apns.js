@@ -7,7 +7,7 @@
 //   APNS_KEY        – Inhalt der .p8-Datei (mehrzeilig, inkl. BEGIN/END)
 //   APNS_KEY_ID     – die 10-stellige Key-ID des .p8
 //   APNS_TEAM_ID    – die 10-stellige Apple-Team-ID
-//   APNS_BUNDLE_ID  – optional, Standard: com.planory.bau
+//   APNS_BUNDLE_ID  – optional, Standard: com.planory.bauassistent (= appId in capacitor.config.json)
 //   APNS_PRODUCTION – "false" = Sandbox (Xcode-Debug), sonst Produktion (App Store/TestFlight)
 
 import http2 from 'http2';
@@ -53,7 +53,7 @@ export function openApnsClient() {
 // Liefert { ok, status, reason } – nie ein Reject (Fehler werden gefangen).
 export function sendApns(client, jwt, deviceToken, { title, body }) {
   return new Promise((resolve) => {
-    const bundleId = process.env.APNS_BUNDLE_ID || 'com.planory.bau';
+    const bundleId = process.env.APNS_BUNDLE_ID || 'com.planory.bauassistent';
     const payload = JSON.stringify({ aps: { alert: { title, body: body || '' }, sound: 'default' } });
     let req;
     try {
