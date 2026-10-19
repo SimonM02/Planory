@@ -15,10 +15,16 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
 (pruefen 106/106, mobile-e2e 103/103, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
-- [ ] Mac: `git pull origin claude/apple-feedback-changes-owr1go` → **`npm install`** (neu: Teilen-
-      und Dateien-Plugin für PDFs) → `npx cap sync ios` → Xcode:
-      **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
-      NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin).
+- [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
+      1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
+         installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
+         ohne diesen Schritt bricht der Pull ab)
+      2. `git pull origin claude/apple-feedback-changes-owr1go`
+      3. `npm install` (neu: Teilen + Dateien für PDFs; Abo + Kamera bleiben erhalten)
+      4. `npx cap sync ios` → in der Ausgabe müssen u. a. **@revenuecat/purchases-capacitor**,
+         **@capacitor/camera**, **@capacitor/share** und **@capacitor/filesystem** stehen
+      5. Xcode: **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
+         NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin)
 - [ ] What's New (Vorschlag):
       „• Wichtige Fehlerbehebung: neue Einträge gehen nach dem Speichern nicht mehr verloren
        • Abbrechen und Bearbeiten zuverlässig – nichts wird mehr versehentlich überschrieben

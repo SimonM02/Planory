@@ -582,6 +582,18 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 }
 
 // Rechtstexte & Todoist-Server
+check('Alle in der App genutzten iPhone-Plugins stehen in package.json (sonst entfernt „npm install" sie am Mac)', () => {
+  const pkg = JSON.parse(read('package.json'));
+  const deps = { ...(pkg.dependencies || {}) };
+  const PAKET = { Camera: '@capacitor/camera', Purchases: '@revenuecat/purchases-capacitor', Share: '@capacitor/share',
+    Filesystem: '@capacitor/filesystem', LocalNotifications: '@capacitor/local-notifications',
+    PushNotifications: '@capacitor/push-notifications', StatusBar: '@capacitor/status-bar' };
+  const genutzt = new Set([...web.matchAll(/Plugins\??\.([A-Z][A-Za-z]+)|registerPlugin\??\.?\('([A-Za-z]+)'\)|P\?\.([A-Z][A-Za-z]+)/g)].map(m => m[1] || m[2] || m[3]));
+  const fehlt = [...genutzt].filter(n => PAKET[n] && !deps[PAKET[n]]).map(n => PAKET[n]);
+  const unbekannt = [...genutzt].filter(n => !PAKET[n]);
+  if (fehlt.length) return 'fehlt in package.json: ' + fehlt.join(', ');
+  if (unbekannt.length) return 'Plugin ohne Zuordnung (Liste ergänzen): ' + unbekannt.join(', ');
+});
 check('Datenschutz nennt die Todoist-Anbindung', () => {
   const d = read('datenschutz.html');
   if (!/Todoist/.test(d)) return 'datenschutz.html erwähnt Todoist nicht';
