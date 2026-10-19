@@ -369,22 +369,28 @@
   .pl-secbody { border-top:1px solid var(--border); }
   .pl-sec.pl-collapsed .pl-secbody { display:none; }
   .pl-item { display:flex; align-items:center; gap:11px; padding:10px 16px; border-bottom:1px solid var(--surface2); }
-  .pl-dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.8rem; font-weight:800; border:2px solid transparent; }
-  .pl-dot.offen { background:var(--surface); border-color:var(--text3); color:var(--text3); }
-  .pl-dot.arbeit { background:var(--warning); }
-  .pl-dot.erledigt { background:var(--success); }
   .pl-imain { flex:1; min-width:0; }
   .pl-iname { font-size:0.92rem; font-weight:600; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; width:100%; }
   .pl-item.pl-erledigt .pl-iname { text-decoration:line-through; color:var(--text3); }
   .pl-imeta { font-size:0.72rem; color:var(--text3); margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .pl-stbadge { font-size:0.66rem; font-weight:800; padding:2px 8px; border-radius:99px; white-space:nowrap; }
-  .pl-st-offen { background:var(--surface2); color:var(--text3); }
-  .pl-st-arbeit { background:#fef3c7; color:#b45309; }
-  .pl-st-erledigt { background:#dcfce7; color:#15803d; }
+  .pl-irow { display:flex; align-items:center; gap:8px; }
+  .pl-stbtn { font-size:0.74rem; font-weight:800; padding:5px 11px; border-radius:99px; white-space:nowrap; cursor:pointer; font-family:inherit; border:1.5px solid transparent; min-height:30px; }
+  .pl-st-offen { background:var(--surface); border-color:var(--border); color:var(--text2); }
+  .pl-st-arbeit { background:#fef3c7; border-color:#fcd34d; color:#b45309; }
+  .pl-st-erledigt { background:#dcfce7; border-color:#86efac; color:#15803d; }
+  .pl-assign { margin-top:7px; font-size:0.8rem; padding:5px 8px; border:1px solid var(--accent); border-radius:7px; background:var(--surface); color:var(--text); font-family:inherit; max-width:100%; }
+  .pl-range { display:block; margin:7px 0 0 24px; padding:0; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600; color:var(--text2); text-align:left; }
+  .pl-range.pl-range-leer { color:var(--text3); font-weight:500; }
+  .pl-range-edit { color:var(--accent); font-weight:700; }
+  .pl-span label { display:inline-flex; align-items:center; gap:6px; }
+  .pl-leer { padding:12px 16px 2px 16px; font-size:0.82rem; color:var(--text3); }
+  .pl-ohne { border-style:dashed; }
+  .pl-sec.pl-neu { animation:plNeu 1.8s ease; }
+  @keyframes plNeu { 0%,45% { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light, rgba(255,159,28,.25)); } 100% { box-shadow:none; } }
   .pl-idate { font-size:0.78rem; color:var(--text2); border:1px solid var(--border); background:var(--surface2); border-radius:6px; padding:4px 7px; font-family:inherit; }
   .pl-overdue .pl-idate { border-color:var(--danger); color:var(--danger); }
   .pl-overdue-tag { font-size:0.62rem; font-weight:800; color:var(--danger); background:var(--danger-light); padding:2px 7px; border-radius:99px; white-space:nowrap; }
-  .pl-bell { cursor:pointer; font-size:0.98rem; opacity:.55; }
+  .pl-bell { cursor:pointer; font-size:0.98rem; opacity:.55; background:none; border:none; padding:2px 4px; }
   .pl-bell.on { opacity:1; }
   .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.98rem; opacity:.6; flex-shrink:0; padding:4px; }
   .pl-addrow { display:flex; align-items:center; gap:10px; padding:10px 16px; }
@@ -396,6 +402,47 @@
   .pl-empty-ic { font-size:2.6rem; margin-bottom:10px; }
   .pl-empty-t { font-weight:800; font-size:1.05rem; color:var(--text); margin-bottom:6px; }
   .pl-empty-s { font-size:0.85rem; color:var(--text2); line-height:1.55; max-width:360px; margin:0 auto; }
+  @media (max-width:600px) {
+    .pl-sechead { padding:12px 12px 11px; }
+    .pl-item { padding:10px 12px; gap:8px; align-items:flex-start; }
+    .pl-imeta { gap:6px; flex-wrap:nowrap; }
+    .pl-idate { padding:4px 6px; min-width:0; flex:0 1 auto; max-width:150px; }
+    .pl-addrow { padding:10px 12px; }
+    .pl-span { margin-left:0; }
+    .pl-range { margin-left:24px; }
+    .pl-progress { margin-left:0; }
+    .pl-idel { margin-top:2px; }
+  }
+  /* Ein/Aus-Schalter (Startseite: Beträge, KI-Berater) */
+  .sw-toggle { display:inline-flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:700; color:var(--text2); padding:4px 0; }
+  .sw-track { width:38px; height:22px; border-radius:99px; background:var(--success); position:relative; transition:background .2s; flex-shrink:0; }
+  .sw-knob { position:absolute; top:3px; left:19px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:left .2s; }
+  .sw-toggle[aria-checked="false"] .sw-track { background:var(--border); }
+  .sw-toggle[aria-checked="false"] .sw-knob { left:3px; }
+  .sw-toggle.sw-dark { color:rgba(255,255,255,0.8); font-size:0.75rem; }
+  .sw-toggle.sw-dark[aria-checked="false"] .sw-track { background:rgba(255,255,255,0.25); }
+  #privacy-pill { display:none; position:fixed; left:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:300; background:var(--surface); color:var(--text); border:1.5px solid var(--border); border-radius:99px; padding:8px 14px; font-size:0.8rem; font-weight:700; box-shadow:var(--shadow-md); cursor:pointer; font-family:inherit; }
+  body.privacy-mode #privacy-pill { display:block; }
+  /* Budget auf einen Blick */
+  .bg-blick-inhalt { display:flex; gap:20px; align-items:center; padding:16px 20px; flex-wrap:wrap; }
+  .bg-ring { position:relative; width:170px; height:170px; flex-shrink:0; margin:0 auto; }
+  .bg-ring canvas { width:170px !important; height:170px !important; }
+  .bg-ring-mitte { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  .bg-ring-mitte strong { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.1; }
+  .bg-ring-mitte span { font-size:0.72rem; color:var(--text3); }
+  .bg-zahlen { flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+  .bg-zahl { display:flex; gap:8px; align-items:flex-start; min-width:0; }
+  .bg-punkt { width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+  .bg-zl { font-size:0.72rem; color:var(--text3); font-weight:700; }
+  .bg-zw { font-size:1.02rem; font-weight:800; color:var(--text); font-family:'JetBrains Mono',monospace; overflow-wrap:anywhere; }
+  .bg-zw.red { color:var(--danger); } .bg-zw.green { color:var(--success); }
+  .bg-zs { font-size:0.7rem; color:var(--text3); }
+  .bg-kat-grafik { padding:14px 20px 18px; border-top:1px solid var(--border); }
+  @media (max-width:600px) { .bg-blick-inhalt { padding:14px; gap:16px; } .bg-zahlen { min-width:0; flex:1 1 100%; width:100%; gap:12px; } .bg-kat-grafik { padding:12px 14px 14px; } .bg-zw { font-size:0.92rem; } }
+  /* Wetter-Auswahl im Bautagebuch */
+  .wx-chips { display:flex; flex-wrap:wrap; gap:6px; flex:1; min-width:0; }
+  .wx-chip { border:1.5px solid var(--border); background:var(--surface); color:var(--text2); border-radius:99px; padding:6px 11px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .wx-chip.on { border-color:var(--accent); background:var(--accent-light); color:var(--text); }
 
   .sidebar-footer {
     padding: 12px 16px;
@@ -1667,7 +1714,7 @@
 
     /* Page header stacks on phone */
     .page-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
-    .page-header > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+    .page-header > div:last-child:not(:first-child) { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
     .page-header .btn { font-size: 0.76rem !important; padding: 7px 10px !important; }
 
     /* Tables scroll within wrapper – don't let them blow out the page */
@@ -2689,6 +2736,7 @@
   </button>
 </div>
 
+<button id="privacy-pill" type="button" onclick="togglePrivacy()" title="Beträge wieder anzeigen">🙈 Beträge verborgen · anzeigen</button>
 <div id="mobile-topbar" style="display:none">
   <button onclick="toggleMobileSidebar()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text2);padding:4px;flex-shrink:0;line-height:1">☰</button>
   <span id="mobile-topbar-title">Planory</span>
@@ -2810,10 +2858,6 @@
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <span id="dash-date" style="font-size:0.85rem;font-weight:600;color:var(--text3);margin-right:6px;white-space:nowrap"></span>
-        <button id="privacy-btn" class="btn btn-ghost" onclick="togglePrivacy()" title="Alle Zahlen ausblenden">👁 Zahlen ausblenden</button>
-        <button id="ki-panel-btn" class="btn btn-ghost" onclick="toggleKIPanel()" title="KI-Bauberater ein-/ausblenden"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> KI ausblenden</button>
-        <button class="btn btn-ghost" onclick="sendStatusReport()" title="Wöchentlichen Statusbericht per E-Mail senden">📧 Statusbericht</button>
-        <button class="btn btn-ghost" onclick="showPage('settings')">⚙ Einstellungen</button>
       </div>
     </div>
 
@@ -2828,6 +2872,12 @@
 
     <div id="dash-reminders" style="margin-bottom:22px"></div>
 
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">💶 Budget</div>
+      <button id="privacy-btn" class="sw-toggle" role="switch" aria-checked="true" onclick="togglePrivacy()" title="Beträge auf allen Seiten verbergen/anzeigen">
+        <span class="sw-label">👁 Beträge sichtbar</span><span class="sw-track"><span class="sw-knob"></span></span>
+      </button>
+    </div>
     <div class="cards-grid" id="dash-cards">
       <div class="card">
         <div class="card-label">Gesamtbudget</div>
@@ -2878,6 +2928,11 @@
       </div>
     </div>
 
+    <!-- KI-Berater ausgeblendet: schmale Leiste an derselben Stelle -->
+    <div id="ki-advisor-off" style="display:none;margin-top:28px;border:1.5px dashed var(--border);border-radius:14px;padding:12px 16px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <span style="font-size:0.85rem;color:var(--text2);font-weight:600">🤖 KI-Berater ausgeblendet</span>
+      <button class="sw-toggle" role="switch" aria-checked="false" onclick="toggleKIPanel()"><span class="sw-label">KI-Berater anzeigen</span><span class="sw-track"><span class="sw-knob"></span></span></button>
+    </div>
     <!-- KI-BAUBERATER PANEL -->
     <div id="ki-advisor-panel" style="margin-top:28px;border-radius:16px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-md)">
       <!-- Header -->
@@ -2889,11 +2944,14 @@
             <div style="color:rgba(255,255,255,0.45);font-size:0.68rem;font-family:'JetBrains Mono',monospace" id="ki-last-update">Noch nicht analysiert</div>
           </div>
         </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <button id="ki-panel-btn" class="sw-toggle sw-dark" role="switch" aria-checked="true" onclick="toggleKIPanel()" title="KI-Bauberater ausblenden"><span class="sw-label">Ausblenden</span><span class="sw-track"><span class="sw-knob"></span></span></button>
         <button onclick="runKIAnalysis()" id="ki-analyze-btn"
           style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);padding:6px 14px;border-radius:6px;font-family:'Hanken Grotesk',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.12s"
           onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
           Analysieren
         </button>
+        </div>
       </div>
 
       <!-- Loading state -->
@@ -2948,7 +3006,6 @@
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportKostenPDF()" title="Als PDF exportieren">📄 PDF</button>
         <button class="btn btn-ghost" onclick="showPage('rechnungen')" title="Nur die eingescannten Rechnungen (Belege) anzeigen">🗂️ Gescannte Rechnungen</button>
-        <button class="btn btn-ghost" onclick="resetEigenModal();openModal('modal-eigenleistung')">+ Eigenleistung</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> Rechnung scannen</button>
         <button class="btn btn-primary" onclick="openModal('modal-kosten')">+ Ausgabe erfassen</button>
       </div>
@@ -2968,16 +3025,11 @@
         <div class="card-label">Diesen Monat</div>
         <div class="card-value" id="k-month">€ 0</div>
       </div>
-      <div class="card">
-        <div class="card-label">Eigenleistung (Wert)</div>
-        <div class="card-value green" id="k-eigen">€ 0</div>
-        <div class="card-sub">nicht im Budget</div>
+      <div class="card" id="k-nib-card" style="display:none">
+        <div class="card-label">Nicht im Budget</div>
+        <div class="card-value" id="k-nib">€ 0</div>
+        <div class="card-sub">z. B. Eigenleistung</div>
       </div>
-    </div>
-
-    <div class="chart-tabs" style="margin-bottom:20px">
-      <button class="chart-tab active" id="kosten-tab-ausgaben" onclick="switchKostenTab('ausgaben',this)">Ausgaben</button>
-      <button class="chart-tab" id="kosten-tab-eigen" onclick="switchKostenTab('eigen',this)">Eigenleistungen</button>
     </div>
 
     <div id="kosten-ausgaben-panel">
@@ -2993,17 +3045,6 @@
       </div>
     </div>
 
-    <div id="kosten-eigen-panel" style="display:none">
-      <div class="table-wrap mobile-cards">
-        <div class="table-header">
-          <div class="table-title">Eigenleistungen</div>
-        </div>
-        <table>
-          <thead><tr><th>Datum</th><th class="hide-mobile">Kategorie</th><th>Beschreibung</th><th>Marktwert</th><th class="hide-mobile">Geleistet von</th><th></th></tr></thead>
-          <tbody id="eigen-table"></tbody>
-        </table>
-      </div>
-    </div>
   </div>
 
   <!-- BUDGETPLAN -->
@@ -3013,27 +3054,22 @@
       <button class="btn btn-primary" onclick="openModal('modal-budget-kat')">+ Kategorie</button>
     </div>
 
-    <!-- Gesamtzusammenfassung -->
-    <div class="cards-grid" style="margin-bottom:24px">
-      <div class="card" style="border-top:3px solid var(--accent)">
-        <div class="card-label">Gesamtbudget (alle Kategorien)</div>
-        <div class="card-value" id="bg-total-budget">€ 0</div>
-        <div class="card-sub">Summe aller Kategorienbudgets</div>
+    <!-- Budget auf einen Blick: Ring + Kennzahlen + Balken je Kategorie (Zahlen bleiben sichtbar) -->
+    <div class="table-wrap bg-blick" style="margin-bottom:24px">
+      <div class="table-header"><div class="table-title">📊 Budget auf einen Blick</div></div>
+      <div class="bg-blick-inhalt">
+        <div class="bg-ring"><canvas id="bg-ring-chart" aria-label="Budget-Verbrauch"></canvas>
+          <div class="bg-ring-mitte"><strong id="bg-ring-pct" data-private>0%</strong><span>verbraucht</span></div></div>
+        <div class="bg-zahlen">
+          <div class="bg-zahl"><span class="bg-punkt" style="background:var(--text3)"></span><div><div class="bg-zl">Gesamtbudget</div><div class="bg-zw" id="bg-total-budget" data-private>€ 0</div></div></div>
+          <div class="bg-zahl"><span class="bg-punkt" style="background:#ff9f1c"></span><div><div class="bg-zl">Ausgegeben</div><div class="bg-zw red" id="bg-total-spent" data-private>€ 0</div></div></div>
+          <div class="bg-zahl"><span class="bg-punkt" style="background:var(--success)"></span><div><div class="bg-zl">Verbleibend</div><div class="bg-zw green" id="bg-total-rest" data-private>€ 0</div><div class="bg-zs" id="bg-total-pct">0% verbraucht</div></div></div>
+          <div class="bg-zahl"><span class="bg-punkt" style="background:var(--warning)"></span><div><div class="bg-zl">Nicht verplant</div><div class="bg-zw" id="bg-unassigned" data-private>€ 0</div><div class="bg-zs">Ausgaben ohne Kategorie</div></div></div>
+        </div>
       </div>
-      <div class="card" style="border-top:3px solid var(--danger)">
-        <div class="card-label">Gesamtausgaben</div>
-        <div class="card-value red" id="bg-total-spent">€ 0</div>
-        <div class="card-sub">Alle gebuchten Kosten</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--success)">
-        <div class="card-label">Verbleibendes Budget</div>
-        <div class="card-value green" id="bg-total-rest">€ 0</div>
-        <div class="card-sub" id="bg-total-pct">0% verbraucht</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--warning)">
-        <div class="card-label">Nicht verplant</div>
-        <div class="card-value yellow" id="bg-unassigned">€ 0</div>
-        <div class="card-sub">Ausgaben ohne Kategorie</div>
+      <div class="bg-kat-grafik" id="bg-kat-grafik">
+        <div class="bg-zl" style="margin-bottom:8px">Geplant und ausgegeben je Kategorie</div>
+        <div id="bg-bar-wrap" style="position:relative;height:160px" data-private><canvas id="bg-bar-chart"></canvas></div>
       </div>
     </div>
 
@@ -3625,7 +3661,7 @@
   <!-- ZAHLUNGSPLAN -->
   <div class="page" id="page-zahlungsplan">
     <div class="page-header">
-      <div><h2 data-i18n="ph_zahlungsplan_t">Zahlungsplan</h2><p data-i18n="ph_zahlungsplan_s">Fälligkeiten, Abschlagszahlungen &amp; offene Rechnungen</p></div>
+      <div><h2 data-i18n="ph_zahlungsplan_t">Zahlungsplan</h2><p data-i18n="ph_zahlungsplan_s">Teilzahlungen an Firmen planen – mit Fälligkeit und Erinnerung</p></div>
       <button class="btn btn-primary" onclick="openModal('modal-zahlung')">+ Zahlung</button>
     </div>
     <div class="cards-grid">
@@ -3749,6 +3785,13 @@
       <input type="text" id="k-bezahlt-von-neu" placeholder="Name der neuen Person" autocomplete="off" autocapitalize="words" maxlength="60" style="display:none;margin-top:8px">
     </div>
     <div class="form-row"><label>Anbieter / Lieferant</label><input type="text" id="k-anbieter" placeholder="Firma GmbH"></div>
+    <div class="form-row" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;text-transform:none;letter-spacing:0;font-size:0.88rem;color:var(--text)">
+        <input type="checkbox" id="k-im-budget" checked style="width:20px;height:20px;accent-color:var(--accent);flex-shrink:0;margin:0">
+        Im Budget berücksichtigen
+      </label>
+      <div style="font-size:0.75rem;color:var(--text3);margin:4px 0 0 30px;line-height:1.45">Abhaken z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.</div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-row"><label>Skonto (%)</label><input type="number" id="k-skonto-proz" placeholder="z.B. 2" step="0.1" min="0" oninput="updateSkontoPreview('k')"></div>
       <div class="form-row"><label>Skonto bis</label><input type="date" id="k-skonto-bis" onchange="updateSkontoPreview('k')"></div>
@@ -3769,25 +3812,6 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-kosten');document.getElementById('k-edit-id').value='';clearKostenBeleg()">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveKosten()">Speichern</button>
-    </div>
-  </div>
-</div>
-
-<!-- Eigenleistung -->
-<div class="modal-overlay" id="modal-eigenleistung">
-  <div class="modal">
-    <h3 id="el-modal-title">Eigenleistung erfassen</h3>
-    <input type="hidden" id="el-edit-id">
-    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:16px">Arbeiten oder Materialien, die keinen Geldbetrag gekostet haben, aber einen Marktwert besitzen. Wird nicht vom Budget abgezogen.</p>
-    <div class="form-row"><label>Datum</label><input type="date" id="el-datum"></div>
-    <div class="form-row"><label>Beschreibung</label><input type="text" id="el-beschr" placeholder="z.B. Eigenarbeit Mauerwerk, gespendetes Material"></div>
-    <div class="form-row"><label>Kategorie</label><select id="el-kat"></select></div>
-    <div class="form-row"><label>Marktwert (€)</label><input type="number" id="el-wert" placeholder="0.00" step="0.01"></div>
-    <div class="form-row"><label>Geleistet von</label><input type="text" id="el-von" placeholder="z.B. Eigenarbeit, Nachbar Huber, Firma XY"></div>
-    <div class="form-row"><label>Notiz</label><textarea id="el-notiz" placeholder="Details zur Eigenleistung..."></textarea></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-eigenleistung');resetEigenModal()">Abbrechen</button>
-      <button class="btn btn-primary" onclick="addEigenleistung()">Speichern</button>
     </div>
   </div>
 </div>
@@ -4044,10 +4068,11 @@
     <div class="form-row"><label>Titel</label><input type="text" id="tb-title" placeholder="z.B. Betonage Decke EG"></div>
     <div class="form-row"><label>Bericht</label><textarea id="tb-text" placeholder="Was wurde heute gemacht?"></textarea></div>
     <div class="form-row"><label>Wetter</label>
+      <select id="tb-weather" style="display:none" onchange="renderWetterChips()"><option>☀️ Sonnig</option><option>⛅ Bewölkt</option><option>🌧️ Regen</option><option>❄️ Schnee</option><option>🌬️ Wind</option><option>⛈️ Gewitter</option></select>
+      <div id="tb-wetter-chips" class="wx-chips" data-noi18n style="margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select id="tb-weather" style="flex:1"><option>☀️ Sonnig</option><option>⛅ Bewölkt</option><option>🌧️ Regen</option><option>❄️ Schnee</option><option>🌬️ Wind</option></select>
-        <input type="number" id="tb-temp" placeholder="°C" step="0.1" style="width:72px;text-align:center" title="Temperatur">
-        <button type="button" class="btn btn-ghost" style="white-space:nowrap;font-size:0.8rem;padding:6px 10px" onclick="fetchWetter()" id="tb-wetter-btn">🌡️ Abrufen</button>
+        <input type="number" id="tb-temp" placeholder="°C" step="0.1" style="width:90px;text-align:center" title="Temperatur">
+        <button type="button" class="btn btn-ghost" style="white-space:nowrap;font-size:0.8rem;padding:6px 10px" onclick="fetchWetter(true)" id="tb-wetter-btn">🌡️ Abrufen</button>
       </div>
     </div>
     <div class="form-row">
@@ -4250,7 +4275,7 @@
   <div class="modal">
     <h3 id="zp-modal-title">Zahlung / Fälligkeit</h3>
     <input type="hidden" id="zp-edit-id">
-    <div class="form-row"><label>Bezeichnung</label><input type="text" id="zp-beschr" placeholder="z.B. Abschlagszahlung 1 – Rohbau"></div>
+    <div class="form-row"><label>Bezeichnung</label><input type="text" id="zp-beschr" placeholder="z.B. 2. Rate Rohbau"></div>
     <div class="form-row"><label>Kategorie</label><select id="zp-kat"></select></div>
     <div class="form-row"><label>Anbieter / Empfänger</label><input type="text" id="zp-anbieter" placeholder="Firma GmbH"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -4907,6 +4932,31 @@ function _deduplicateProject(proj) {
   return proj;
 }
 
+// Eigenleistungen gibt es nicht mehr als eigenen Bereich: bestehende Eintraege werden EINMAL zu
+// Ausgaben „nicht im Budget" (feste ID e.id*10+7 -> auf mehreren Geraeten nicht doppelt; keine
+// Kollision mit der Eigenleistungs-ID). Die Eigenleistung bleibt als Sicherung (_migriert),
+// die alte App-Version zeigt sie weiter. Eine geloeschte Uebernahme kommt nicht wieder.
+function _eigenleistungenUebernehmen(proj) {
+  const liste = (proj && proj.eigenleistungen) || [];
+  let n = 0;
+  if (!liste.length) return 0;
+  proj.kosten = proj.kosten || [];
+  const geloescht = (proj._deletedIds) || {};
+  liste.forEach(e => {
+    if (!e || e._migriert) return;
+    const id = Number(e.id) * 10 + 7;
+    if (!isFinite(id)) return;
+    if (!proj.kosten.some(k => String(k.id) === String(id)) && !geloescht[id] && !geloescht[String(id)]) {
+      const wert = parseFloat(e.wert) || 0;
+      proj.kosten.push({ id, datum: e.datum || today(), beschr: e.beschr || 'Eigenleistung', kat: e.kat || '',
+        mwst: 0, netto: wert, betrag: wert, status: 'Bezahlt', bezahltVon: '', anbieter: e.von || '',
+        skontoProz: 0, skontoBis: '', imBudget: false, ausEigenleistung: true, _updatedAt: Date.now() });
+    }
+    e._migriert = true; e._updatedAt = Date.now();
+    n++;
+  });
+  return n;
+}
 function loadProject(id, rerender = true) {
   const proj = projects.find(p => String(p.id) === String(id));
   if (!proj) return;
@@ -4914,6 +4964,7 @@ function loadProject(id, rerender = true) {
   // Dedup before deep-copy so state and projects are both clean
   _deduplicateProject(proj);
   try { _fixLabelValues(proj); } catch(e) {}   // alte Auswahl-Werte auch bei lokalem Laden reparieren
+  try { _eigenleistungenUebernehmen(proj); } catch(e) {}
   // Deep-copy into state
   state = JSON.parse(JSON.stringify(proj));
   updateProjectHeader();
@@ -4953,7 +5004,7 @@ const PAGE_HINTS = {
   dokumente:      'Notizen für schnelle Hinweise, plus Dokumentenablage für Baupläne, Genehmigungen und Verträge (max. 5 MB je Datei).',
   kontakte:       'Alle Handwerker und Ansprechpartner – mit Gewerk, Telefon, E-Mail und Status.',
   angebote:       'Vergleiche Angebote von Handwerkern und wandle das günstigste mit einem Klick direkt in eine Rechnung um.',
-  zahlungsplan:   'Plane Ratenzahlungen mit Fälligkeitsterminen. Wenn du eine Zahlung abhakst, wird die zugehörige Rechnung automatisch auf „Bezahlt" gesetzt.',
+  zahlungsplan:   'Hier planst du Zahlungen, die noch kommen – z. B. Teilzahlungen an den Baumeister nach Baufortschritt. Planory erinnert dich vor der Fälligkeit. Hakst du eine Zahlung ab, wird die passende offene Rechnung auf „Bezahlt" gesetzt.',
   maengel:        'Dokumentiere Baumängel mit Fotos, Verantwortlichem und Behebungsdatum – wichtig für Gewährleistungsansprüche.',
   rechnungen:     'Hier findest du alle per KI eingescannten Rechnungen als Übersicht.',
   kostenchart:    'Grafische Auswertung der Ausgaben nach Monat und Kategorie.',
@@ -4975,7 +5026,7 @@ const PAGE_HINTS_EN = {
   dokumente:      'Notes for quick reminders, plus document storage for plans, permits and contracts (max. 5 MB per file).',
   kontakte:       'All tradespeople and contacts – with trade, phone, email and status.',
   angebote:       'Compare quotes from tradespeople and turn the best one into an invoice with a single click.',
-  zahlungsplan:   'Plan instalments with due dates. When you tick off a payment, the matching invoice is automatically set to "Paid".',
+  zahlungsplan:   'Plan upcoming payments here – e.g. part payments to the builder as construction progresses. Planory reminds you before they are due. When you tick off a payment, the matching open invoice is set to "Paid".',
   maengel:        'Document defects with photos, responsible person and fix date – important for warranty claims.',
   rechnungen:     'Here you will find all invoices scanned by the AI in one overview.',
   kostenchart:    'Graphical analysis of expenses by month and category.',
@@ -5031,18 +5082,64 @@ function showPlanTab(tab, btn) {
 //    Erinnerungen & Co. unveraendert weiterlaufen.
 const PL_STATES   = ['offen','arbeit','erledigt'];
 const PL_ST_LABEL = { offen:'Offen', arbeit:'In Arbeit', erledigt:'Erledigt' };
-const PL_ST_MARK  = { offen:'', arbeit:'●', erledigt:'✓' };
+const PL_ST_MARK  = { offen:'○', arbeit:'●', erledigt:'✓' };
 function _plItemStatus(m){ return m.status || (m.done ? 'erledigt' : 'offen'); }
-function _plNewId(){ return Date.now() + Math.floor(Math.random() * 1000); }
+function _plNewId(){ return _neueId(); }
 function _plSec(id){ return (state.gantt || []).find(g => String(g.id) === String(id)); }
 function _plItem(id){ return (state.meilensteine || []).find(m => String(m.id) === String(id)); }
+const _plZeitraumOffen = new Set();   // Abschnitte, deren Datumsfelder aufgeklappt sind (nur Ansicht)
+
+// Punkte OHNE Abschnitt automatisch einordnen – sonst stehen z.B. die Meilensteine aus dem
+// KI-Zeitplan doppelt unter den Phasen. Punkte mit unbekanntem Abschnitt bleiben unangetastet
+// (der Abschnitt kann per Sync noch unterwegs sein – nie falsch umhaengen). Reihenfolge:
+// 1) Datum liegt im Zeitraum (ohne Ende: bis zum Beginn des naechsten Abschnitts);
+//    passen mehrere, gewinnt der Name ("Rohbau fertig" -> "Rohbau"), sonst das naechste Ende.
+// 2) Ohne passenden Zeitraum: ueber den Namen. Rest bleibt "Ohne Abschnitt".
+function _plTagDavor(d) { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); }
+function _plZuordnen() {
+  const secs = state.gantt || [], miles = state.meilensteine || [];
+  if (!secs.length || !miles.length) return 0;
+  const mitStart = secs.filter(s => s.start).sort((a, b) => a.start < b.start ? -1 : (a.start > b.start ? 1 : 0));
+  const bis = s => {
+    if (s.end) return s.end;
+    const nx = mitStart.find(x => x.start > s.start);
+    return nx ? _plTagDavor(nx.start) : '9999-12-31';
+  };
+  const norm = v => String(v || '').toLowerCase().trim();
+  const nameTreffer = (m, liste) => {
+    const n = norm(m.name);
+    return liste.filter(s => { const sn = norm(s.name); return sn.length >= 3 && n.includes(sn); })
+                .sort((a, b) => norm(b.name).length - norm(a.name).length)[0];
+  };
+  let n = 0;
+  miles.forEach(m => {
+    if (m.ganttId) return;
+    let ziel = null;
+    if (m.datum) {
+      const kand = mitStart.filter(s => m.datum >= s.start && m.datum <= bis(s));
+      ziel = kand.length > 1
+        ? (nameTreffer(m, kand) || kand.slice().sort((a, b) => (bis(a) < bis(b) ? -1 : 1))[0])
+        : kand[0];
+    }
+    if (!ziel) ziel = nameTreffer(m, secs);
+    if (ziel) { m.ganttId = ziel.id; m._updatedAt = Date.now(); n++; }
+  });
+  return n;
+}
+function _plZeitraumText(s) {
+  if (s.start && s.end) return fmtDate(s.start) + ' – ' + fmtDate(s.end);
+  if (s.start) return (_lang==='en'?'from ':'ab ') + fmtDate(s.start);
+  if (s.end) return (_lang==='en'?'until ':'bis ') + fmtDate(s.end);
+  return tt('Kein Zeitraum festgelegt');
+}
 
 function renderZeitplan() {
   const el = document.getElementById('plan-timeline');
   if (!el) return;
+  if (_plZuordnen()) save();
   const secs  = state.gantt || [];
   const miles = state.meilensteine || [];
-  const escA = s => (s==null?'':String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'));
+  const escA = s => (s==null?'':String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'));
   const _today = today();
   // Sortierung: mit Datum aufsteigend zuerst, ohne Datum ans Ende (stabil).
   const _byDate = (field) => (a,b) => {
@@ -5052,29 +5149,35 @@ function renderZeitplan() {
     if (!da && db) return 1;
     return 0;
   };
+  const sortedSecs = [...secs].sort(_byDate('start'));
 
-  const itemRow = (m) => {
+  const itemRow = (m, ohneAbschnitt) => {
     const st = _plItemStatus(m);
     const remOn = m.remind !== false && !!m.datum;
     const overdue = !!m.datum && st !== 'erledigt' && m.datum < _today;
-    return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''} ${overdue?'pl-overdue':''}">
-      <div class="pl-dot ${st}" onclick="planCycle(${m.id})" title="Status ändern (Offen → In Arbeit → Erledigt)">${PL_ST_MARK[st]}</div>
+    return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''} ${overdue?'pl-overdue':''}" data-item="${m.id}">
       <div class="pl-imain">
-        <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)">
-        <div class="pl-imeta">
-          <span class="pl-stbadge pl-st-${st}">${PL_ST_LABEL[st]}</span>
-          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)">
+        <div class="pl-irow">
+          <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)">
           ${overdue?`<span class="pl-overdue-tag">${tt('überfällig')}</span>`:''}
-          <span class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="Erinnerung ${remOn?'an – tippen zum Ausschalten':'aus – tippen zum Einschalten'}">${remOn?'🔔':'🔕'}</span>
         </div>
+        <div class="pl-imeta">
+          <button type="button" class="pl-stbtn pl-st-${st}" onclick="planCycle(${m.id})" title="${escA(tt('Tippen: Status weiterschalten'))}">${PL_ST_MARK[st]} ${tt(PL_ST_LABEL[st])}</button>
+          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)" aria-label="${escA(tt('Termin'))}">
+          ${m.datum?`<button type="button" class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="${escA(tt(remOn?'Erinnerung an – tippen zum Ausschalten':'Erinnerung aus – tippen zum Einschalten'))}">${remOn?'🔔':'🔕'}</button>`:''}
+        </div>
+        ${ohneAbschnitt && sortedSecs.length ? `<select class="pl-assign" onchange="planAssign(${m.id},this.value)">
+          <option value="">${tt('Abschnitt wählen…')}</option>
+          ${sortedSecs.map(s => `<option value="${s.id}">${escA(s.name)}</option>`).join('')}
+        </select>` : ''}
       </div>
-      <button class="pl-idel" onclick="planDelItem(${m.id})" title="Löschen">🗑</button>
+      <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
     </div>`;
   };
 
   const addRow = (secId) => `<div class="pl-addrow">
       <span class="pl-plus">+</span>
-      <input placeholder="Unterpunkt hinzufügen…" onkeydown="if(event.key==='Enter'){planAddItem('${secId}',this.value);this.value=''}">
+      <input placeholder="${escA(tt('Punkt hinzufügen…'))}" onkeydown="if(event.key==='Enter'){planAddItem('${secId}',this.value);this.value=''}">
     </div>`;
 
   const sectionCard = (s) => {
@@ -5082,22 +5185,24 @@ function renderZeitplan() {
     const total = items.length;
     const done  = items.filter(m => _plItemStatus(m)==='erledigt').length;
     const pct   = total ? Math.round(done/total*100) : 0;
-    return `<div class="pl-sec ${s.collapsed?'pl-collapsed':''}">
+    const offen = _plZeitraumOffen.has(String(s.id));
+    return `<div class="pl-sec ${s.collapsed?'pl-collapsed':''}" data-sec="${s.id}">
       <div class="pl-sechead">
         <div class="pl-sectop">
           <span class="pl-chev" onclick="planToggleSection(${s.id})">▼</span>
-          <input class="pl-secname" value="${escA(s.name)}" onchange="planRenameSection(${s.id},this.value)">
-          <span class="pl-count">${done}/${total} ✓</span>
-          <button class="pl-secdel" onclick="planDelSection(${s.id})" title="Abschnitt löschen">🗑</button>
+          <input class="pl-secname" value="${escA(s.name)}" onchange="planRenameSection(${s.id},this.value)" aria-label="${escA(tt('Name des Abschnitts'))}">
+          <span class="pl-count">${done}/${total} ${_lang==='en'?'done':'erledigt'}</span>
+          <button class="pl-secdel" onclick="planDelSection(${s.id})" title="${escA(tt('Abschnitt löschen'))}">🗑</button>
         </div>
-        <div class="pl-progress"><div class="pl-progress-bar" style="width:${pct}%"></div></div>
-        <div class="pl-span">
-          <span class="pl-span-lbl">${_lang==='en'?'from':'von'}</span><input type="date" value="${s.start||''}" title="${tt('Beginn')}" onchange="planSetSecStart(${s.id},this.value)">
-          <span class="pl-span-lbl">${_lang==='en'?'to':'bis'}</span><input type="date" value="${s.end||''}" title="${tt('Ende')}" onchange="planSetSecEnd(${s.id},this.value)">
-        </div>
+        <button type="button" class="pl-range ${s.start||s.end?'':'pl-range-leer'}" onclick="planToggleZeitraum(${s.id})">📅 ${_plZeitraumText(s)} <span class="pl-range-edit">· ${tt(offen?'Fertig':'Zeitraum ändern')}</span></button>
+        ${offen ? `<div class="pl-span">
+          <label><span class="pl-span-lbl">${_lang==='en'?'from':'von'}</span><input type="date" value="${s.start||''}" onchange="planSetSecStart(${s.id},this.value)"></label>
+          <label><span class="pl-span-lbl">${_lang==='en'?'to':'bis'}</span><input type="date" value="${s.end||''}" onchange="planSetSecEnd(${s.id},this.value)"></label>
+        </div>` : ''}
+        ${total ? `<div class="pl-progress"><div class="pl-progress-bar" style="width:${pct}%"></div></div>` : ''}
       </div>
       <div class="pl-secbody">
-        ${items.map(itemRow).join('')}
+        ${total ? items.map(m => itemRow(m, false)).join('') : `<div class="pl-leer">${tt('Noch keine Punkte')}</div>`}
         ${addRow(s.id)}
       </div>
     </div>`;
@@ -5115,7 +5220,6 @@ function renderZeitplan() {
   }
 
   const ungrouped  = miles.filter(m => !m.ganttId || !secs.some(s => String(s.id) === String(m.ganttId))).sort(_byDate('datum'));
-  const sortedSecs = [...secs].sort(_byDate('start'));
   const allTotal = miles.length;
   const allDone  = miles.filter(m => _plItemStatus(m)==='erledigt').length;
   const allPct   = allTotal ? Math.round(allDone/allTotal*100) : 0;
@@ -5126,30 +5230,39 @@ function renderZeitplan() {
       <div class="pl-overview-top"><span>${tt('Gesamt-Fortschritt')}</span><strong>${allDone}/${allTotal} ${_lang==='en'?'done':'erledigt'}</strong></div>
       <div class="pl-progress pl-progress-lg"><div class="pl-progress-bar" style="width:${allPct}%"></div></div>
     </div>`;
+    html += `<div class="pl-hint">${tt('Tippe auf den Status, um ihn weiterzuschalten · 🔔 = Erinnerung am Termin')}</div>`;
   }
-  html += `<div class="pl-hint">${tt('Nach Datum sortiert · Kreis antippen = Status ändern · 🔔 = Erinnerung')}</div>`;
   html += sortedSecs.map(sectionCard).join('');
   if (ungrouped.length) {
     const done = ungrouped.filter(m => _plItemStatus(m)==='erledigt').length;
-    html += `<div class="pl-sec">
+    html += `<div class="pl-sec pl-ohne">
       <div class="pl-sechead"><div class="pl-sectop">
         <span class="pl-chev" style="visibility:hidden">▼</span>
-        <div class="pl-secname" style="font-weight:800">Weitere Punkte</div>
-        <span class="pl-count">${done}/${ungrouped.length} ✓</span>
+        <div class="pl-secname">${tt('Ohne Abschnitt')}</div>
+        <span class="pl-count">${done}/${ungrouped.length} ${_lang==='en'?'done':'erledigt'}</span>
       </div></div>
-      <div class="pl-secbody">${ungrouped.map(itemRow).join('')}${addRow('')}</div>
+      <div class="pl-secbody">${ungrouped.map(m => itemRow(m, true)).join('')}${secs.length ? '' : addRow('')}</div>
     </div>`;
   }
-  html += `<button class="pl-addsec" onclick="planAddSection()">+ Abschnitt hinzufügen</button>`;
+  html += `<button class="pl-addsec" onclick="planAddSection()">${tt('+ Abschnitt hinzufügen')}</button>`;
   el.innerHTML = html;
 }
 
 function planAddSection() {
   if (!requireSub()) return;
   state.gantt = state.gantt || [];
-  state.gantt.push({ id:_plNewId(), name:'Neuer Abschnitt', start:'', end:'', status:'Offen', collapsed:false, _updatedAt:Date.now() });
+  const id = _plNewId();
+  state.gantt.push({ id, name:tt('Neuer Abschnitt'), start:'', end:'', status:'Offen', collapsed:false, _updatedAt:Date.now() });
+  _plZeitraumOffen.add(String(id));
   save(); renderZeitplan();
-  setTimeout(() => { const els = document.querySelectorAll('#plan-timeline input.pl-secname'); const last = els[els.length-1]; if (last) { last.focus(); last.select(); } }, 30);
+  // Neuer Abschnitt (noch ohne Datum) landet unten – ins Bild holen, kurz hervorheben, Namen markieren
+  const sec = document.querySelector(`#plan-timeline .pl-sec[data-sec="${id}"]`);
+  if (!sec) return;
+  sec.classList.add('pl-neu');
+  try { sec.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (e) { sec.scrollIntoView(); }
+  const inp = sec.querySelector('input.pl-secname');
+  if (inp) { try { inp.focus({ preventScroll:true }); } catch (e) { inp.focus(); } inp.select(); }
+  setTimeout(() => sec.classList.remove('pl-neu'), 1800);
 }
 async function planDelSection(id) {
   if (!requireSub()) return;
@@ -5158,20 +5271,27 @@ async function planDelSection(id) {
   state.meilensteine = (state.meilensteine || []).filter(m => String(m.ganttId) !== String(id));
   _trackDeletion(id, 'gantt');
   state.gantt = (state.gantt || []).filter(g => String(g.id) !== String(id));
+  _plZeitraumOffen.delete(String(id));
   save(); renderZeitplan();
   showToast('🗑 Abschnitt gelöscht', 'success');
 }
 function planRenameSection(id, val){ const s = _plSec(id); if (s) { s.name = val; s._updatedAt = Date.now(); save(); } }
-function planSetSecStart(id, val){ const s = _plSec(id); if (s) { s.start = val; s._updatedAt = Date.now(); save(); } }
-function planSetSecEnd(id, val){ const s = _plSec(id); if (s) { s.end = val; s._updatedAt = Date.now(); save(); } }
+function planSetSecStart(id, val){ const s = _plSec(id); if (s) { s.start = val; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
+function planSetSecEnd(id, val){ const s = _plSec(id); if (s) { s.end = val; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
 function planToggleSection(id){ const s = _plSec(id); if (s) { s.collapsed = !s.collapsed; s._updatedAt = Date.now(); save(); renderZeitplan(); } }
+function planToggleZeitraum(id){ const k = String(id); if (_plZeitraumOffen.has(k)) _plZeitraumOffen.delete(k); else _plZeitraumOffen.add(k); renderZeitplan(); }
+function planAssign(id, secId){ const m = _plItem(id); if (!m || !secId || !_plSec(secId)) return; m.ganttId = _plSec(secId).id; m._updatedAt = Date.now(); save(); renderZeitplan(); }
 
 function planAddItem(sectionId, name) {
   if (!requireSub()) return;
   if (!name || !name.trim()) return;
   state.meilensteine = state.meilensteine || [];
-  state.meilensteine.push({ id:_plNewId(), name:name.trim(), ganttId: sectionId || '', status:'offen', done:false, datum:'', text:'', remind:true, _updatedAt:Date.now() });
+  const sec = sectionId ? _plSec(sectionId) : null;
+  state.meilensteine.push({ id:_plNewId(), name:name.trim(), ganttId: sec ? sec.id : '', status:'offen', done:false, datum:'', text:'', remind:true, _updatedAt:Date.now() });
   save(); renderZeitplan();
+  // Eingabefeld des Abschnitts wieder fokussieren, damit man gleich weiter tippen kann
+  const inp = document.querySelector(`#plan-timeline .pl-sec[data-sec="${sectionId}"] .pl-addrow input`);
+  if (inp) { try { inp.focus({ preventScroll:true }); } catch (e) {} }
 }
 async function planDelItem(id) {
   if (!requireSub()) return;
@@ -5275,7 +5395,7 @@ const I18N = {
     ph_wartung_t:'Wartung', ph_wartung_s:'Wiederkehrende Wartungsaufgaben & Intervalle',
     ph_helfer_t:'Helfer', ph_helfer_s:'Plane, wann du wie viele Helfer brauchst',
     ph_angebote_t:'Angebote', ph_angebote_s:'Angebote erfassen, vergleichen und zu Rechnungen umwandeln',
-    ph_zahlungsplan_t:'Zahlungstermine', ph_zahlungsplan_s:'Fälligkeiten, Abschlagszahlungen & offene Rechnungen',
+    ph_zahlungsplan_t:'Zahlungstermine', ph_zahlungsplan_s:'Teilzahlungen an Firmen planen – mit Fälligkeit und Erinnerung',
     ph_maengel_t:'Mängel', ph_maengel_s:'Mängel dokumentieren, fotografieren & nachverfolgen',
     ph_rechnungen_t:'Gescannte Rechnungen', ph_rechnungen_s:'Alle automatisch eingescannten Rechnungen',
     ph_kostenaufteilung_t:'Kostenaufteilung', ph_kostenaufteilung_s:'Wer hat wie viel bezahlt?',
@@ -5309,7 +5429,7 @@ const I18N = {
     ph_wartung_t:'Maintenance', ph_wartung_s:'Recurring maintenance tasks & intervals',
     ph_helfer_t:'Helpers', ph_helfer_s:'Plan when and how many helpers you need',
     ph_angebote_t:'Quotes', ph_angebote_s:'Capture and compare quotes, convert them to invoices',
-    ph_zahlungsplan_t:'Payment Dates', ph_zahlungsplan_s:'Due dates, instalments & open invoices',
+    ph_zahlungsplan_t:'Payment Dates', ph_zahlungsplan_s:'Plan part payments to companies – with due date and reminder',
     ph_maengel_t:'Defects', ph_maengel_s:'Document, photograph & track defects',
     ph_rechnungen_t:'Scanned Invoices', ph_rechnungen_s:'All automatically scanned invoices',
     ph_kostenaufteilung_t:'Cost Split', ph_kostenaufteilung_s:'Who paid how much?',
@@ -5559,7 +5679,20 @@ const TEXTE = {
   "Einsätze pro Helfer": { en: "Hours per helper" },
   "Geplante Stunden": { en: "Planned hours" },
   "Sobald du Helfer einteilst, siehst du hier die geplanten Stunden pro Person.": { en: "Once you assign helpers, you'll see the planned hours per person here." },
-  "Nach Datum sortiert · Kreis antippen = Status ändern · 🔔 = Erinnerung": { en: "Sorted by date · tap the circle to change status · 🔔 = reminder" },
+  "Tippe auf den Status, um ihn weiterzuschalten · 🔔 = Erinnerung am Termin": { en: "Tap the status to move it on · 🔔 = reminder on the date" },
+  "Tippen: Status weiterschalten": { en: "Tap: next status" },
+  "Erinnerung an – tippen zum Ausschalten": { en: "Reminder on – tap to turn off" },
+  "Erinnerung aus – tippen zum Einschalten": { en: "Reminder off – tap to turn on" },
+  "Abschnitt wählen…": { en: "Choose section…" },
+  "Abschnitt löschen": { en: "Delete section" },
+  "Kein Zeitraum festgelegt": { en: "No period set" },
+  "Zeitraum ändern": { en: "Change period" },
+  "Name des Abschnitts": { en: "Section name" },
+  "Neuer Abschnitt": { en: "New section" },
+  "Noch keine Punkte": { en: "No items yet" },
+  "Ohne Abschnitt": { en: "Without section" },
+  "Punkt hinzufügen…": { en: "Add item…" },
+  "Termin": { en: "Date" },
   "überfällig": { en: "overdue" },
   "Gesamt-Fortschritt": { en: "Overall progress" },
   "Noch kein Zeitplan": { en: "No schedule yet" },
@@ -5713,6 +5846,26 @@ const TEXTE = {
   "🤖 Neue Rechnung scannen": { en: "🤖 Scan new invoice" },
   "Bist du sicher?": { en: "Are you sure?" },
   "Eingaben verwerfen?": { en: "Discard your input?" },
+  "Nicht im Budget": { en: "Not in budget" },
+  "z. B. Eigenleistung": { en: "e.g. own work" },
+  "Im Budget berücksichtigen": { en: "Count towards budget" },
+  "Abhaken z. B. bei Eigenleistung oder Geschenken – zählt dann nicht zum Budget, bleibt aber in der Liste.": { en: "Untick e.g. for own work or gifts – it then does not count towards the budget but stays in the list." },
+  "Hier planst du Zahlungen, die noch kommen – z. B. Teilzahlungen an den Baumeister nach Baufortschritt. Planory erinnert dich vor der Fälligkeit. Hakst du eine Zahlung ab, wird die passende offene Rechnung auf „Bezahlt\" gesetzt.": { en: "Plan upcoming payments here – e.g. part payments to the builder as construction progresses. Planory reminds you before they are due. When you tick off a payment, the matching open invoice is set to \"Paid\"." },
+  "🙈 Beträge verborgen": { en: "🙈 Amounts hidden" },
+  "👁 Beträge sichtbar": { en: "👁 Amounts visible" },
+  "🙈 Beträge werden auf allen Seiten verborgen": { en: "🙈 Amounts are now hidden on all pages" },
+  "👁 Beträge sind wieder sichtbar": { en: "👁 Amounts are visible again" },
+  "KI-Berater ausgeblendet": { en: "AI advisor hidden" },
+  "KI-Berater eingeblendet": { en: "AI advisor shown" },
+  "🤖 KI-Berater ausgeblendet": { en: "🤖 AI advisor hidden" },
+  "KI-Berater anzeigen": { en: "Show AI advisor" },
+  "Ausblenden": { en: "Hide" },
+  "💶 Budget": { en: "💶 Budget" },
+  "Beträge auf allen Seiten verbergen/anzeigen": { en: "Hide/show amounts on all pages" },
+  "🙈 Beträge verborgen · anzeigen": { en: "🙈 Amounts hidden · show" },
+  "Beträge wieder anzeigen": { en: "Show amounts again" },
+  "KI-Bauberater ausblenden": { en: "Hide AI advisor" },
+  "Teilzahlungen an Firmen planen – mit Fälligkeit und Erinnerung": { en: "Plan part payments to companies – with due date and reminder" },
   "— nicht geladen —": { en: "— not loaded —" },
   "Todoist-Aufgabe": { en: "Todoist task" },
   "Aufgabe in Todoist löschen?": { en: "Delete task in Todoist?" },
@@ -6228,7 +6381,7 @@ const TEXTE = {
   "✅ Erkannte Daten – bitte prüfen und ggf. korrigieren:": { en: "✅ Detected data – please check and correct if needed:" },
   "Notiz / Details": { en: "Note / details" },
   "🤖 Auslesen": { en: "🤖 Read out" },
-  "z.B. Abschlagszahlung 1 – Rohbau": { en: "e.g. instalment 1 – shell construction" },
+  "z.B. 2. Rate Rohbau": { en: "e.g. 2nd instalment shell construction" },
   "z.B. Riss in der Außenwand": { en: "e.g. crack in the external wall" },
   "Raum / Ort": { en: "Room / location" },
   "z.B. Wohnzimmer, Außenwand Nord": { en: "e.g. living room, north external wall" },
@@ -6486,6 +6639,7 @@ const OPTIONEN = {
   "🌧️ Regen": { en: "🌧️ Rain" },
   "❄️ Schnee": { en: "❄️ Snow" },
   "🌬️ Wind": { en: "🌬️ Wind" },
+  "⛈️ Gewitter": { en: "⛈️ Thunderstorm" },
   "🌀 Lüftung": { en: "🌀 Ventilation" },
   "⚡ Elektro": { en: "⚡ Electrical" },
   "💧 Wasser": { en: "💧 Water" },
@@ -6630,11 +6784,8 @@ function openModal(id) {
   if (id === 'modal-kosten' || id === 'modal-rechnung-scan') {
     refreshBezahltVonSelects();
   }
-  if (id === 'modal-kosten' || id === 'modal-eigenleistung' || id === 'modal-rechnung-scan') {
-    // Jedes Fenster hat seine eigene Bearbeiten-Kennung (Eigenleistung: el-edit-id). Frueher
-    // wurde immer k-edit-id geprueft -> beim Bearbeiten einer Eigenleistung wurde die
-    // Kategorie-Liste neu aufgebaut und die Kategorie sprang auf die erste.
-    const editId = document.getElementById(id === 'modal-eigenleistung' ? 'el-edit-id' : 'k-edit-id')?.value;
+  if (id === 'modal-kosten' || id === 'modal-rechnung-scan') {
+    const editId = document.getElementById('k-edit-id')?.value;
     if (!editId) { refreshAllKatSelects(_pendingKostenKat); _pendingKostenKat = ''; }
     if (id === 'modal-kosten' && !editId) {
       _kBeleg = null; _kBelegChanged = false; try { _showKBelegPreview(null); } catch(e){}
@@ -6642,6 +6793,7 @@ function openModal(id) {
       // bearbeiteten Ausgabe (z.B. 0 %) und wird ungewollt uebernommen.
       const _mw = document.getElementById('k-mwst'); if (_mw) _mw.value = '20';
       const _st = document.getElementById('k-status'); if (_st) _st.selectedIndex = 0;
+      const _ib = document.getElementById('k-im-budget'); if (_ib) _ib.checked = true;
       try { toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e){}
       // Vorbefuellter Betrag (z.B. Angebot -> Rechnung): Netto/MwSt-Vorschau passend neu rechnen
       try { if (document.getElementById('k-betrag')?.value) updateKostenNetto(); } catch(e){}
@@ -6649,7 +6801,9 @@ function openModal(id) {
   }
   // Tagebuch: auto-fetch weather for new entries
   if (id === 'modal-tagebuch' && !document.getElementById('tb-edit-id')?.value) {
-    setTimeout(fetchWetter, 300);
+    _tbWetterGewaehlt = false;
+    setTimeout(() => fetchWetter(false), 300);
+    try { renderWetterChips(); } catch (e) {}
     const dEl = document.getElementById('tb-datum');
     if (dEl && !dEl.value) dEl.value = today();
     try { _prefillDiaryHelfer(); } catch(e){}
@@ -6707,7 +6861,6 @@ function _selectValue(sel, value) {
 // Wert = zusaetzliche Aufraeumarbeit fuer JS-Zustand ausserhalb der Formularfelder.
 const _FORM_MODALS = {
   'modal-kosten':        () => { try { clearKostenBeleg(); _bvNeuZu('k-bezahlt-von'); toggleBezahltVon('k-status', 'k-bezahlt-von'); } catch(e) {} },
-  'modal-eigenleistung': null,
   'modal-angebot':       () => { try { resetAngModal(); } catch(e) {} },
   'modal-zahlung':       null,
   'modal-task':          null,
@@ -7666,7 +7819,6 @@ const AI_SVG = `<svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1
 const QUICK_ACTIONS = [
   { key:'scan',          icon:AI_SVG, label:'Rechnung scannen',  en:'Scan invoice',     run:"openModal('modal-rechnung-scan')" },
   { key:'expense',       icon:'💶', label:'Ausgabe erfassen',    en:'Add expense',      run:"openModal('modal-kosten')" },
-  { key:'eigenleistung', icon:'🔨', label:'Eigenleistung',       en:'Own work',         run:"openModal('modal-eigenleistung')" },
   { key:'task',          icon:'✅', label:'Aufgabe',             en:'Task',             run:"_populateTaskPersonList();openModal('modal-task')" },
   { key:'diary',         icon:'📓', label:'Bautagebuch-Eintrag', en:'Site diary entry', run:"openModal('modal-tagebuch')" },
   { key:'photo',         icon:'📸', label:'Foto hinzufügen',     en:'Add photo',        run:"openPhotoPicker()" },
@@ -7744,6 +7896,7 @@ function renderDashReminders() {
 }
 
 function renderDashboard() {
+  try { _wendeAnsichtAn(); } catch (e) {}
   renderQuickAccess();
   renderDashReminders();
   // Persoenliche Begruessung nach Tageszeit (+ Name, falls in Einstellungen gesetzt) + Datum
@@ -7760,7 +7913,7 @@ function renderDashboard() {
     if (_dEl) _dEl.textContent = new Date().toLocaleDateString(_lang === 'en' ? 'en-GB' : 'de-AT',
       { weekday: 'short', day: 'numeric', month: 'short' });
   } catch(e) {}
-  const total = state.kosten.reduce((s, k) => s + (k.status !== 'Storniert' ? parseFloat(k.betrag)||0 : 0), 0);
+  const total = state.kosten.reduce((s, k) => s + (_imBudget(k) ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
   const budget = state.budgetKat && state.budgetKat.length > 0
     ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0)
@@ -7840,14 +7993,6 @@ function updateKostenNetto() {
     : `Netto: ${fmt(netto)}  ·  MwSt (${mwst}%): ${fmt(mwstBetrag)}  ·  Brutto: ${fmt(brutto)}`;
 }
 
-let kostenTab = 'ausgaben';
-function switchKostenTab(tab, btn) {
-  kostenTab = tab;
-  document.querySelectorAll('#kosten-tab-ausgaben,#kosten-tab-eigen').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('kosten-ausgaben-panel').style.display = tab === 'ausgaben' ? '' : 'none';
-  document.getElementById('kosten-eigen-panel').style.display = tab === 'eigen' ? '' : 'none';
-}
 
 // ──────────────── KATEGORIE SYSTEM ────────────────
 const FALLBACK_KATS = ['Rohbau','Dach','Fenster & Türen','Elektro','Sanitär','Heizung','Innenausbau','Außenanlagen','Sonstiges'];
@@ -7925,6 +8070,9 @@ async function _uploadBeleg(base64) {
 // Eindeutige, streng steigende ID. Date.now() allein lieferte fuer Person + Ausgabe +
 // Scan-Eintrag im selben Moment dieselbe Zahl – Loeschen per ID haette dann mehrere
 // Eintraege (auch in der Cloud) getroffen.
+// Zaehlt eine Ausgabe zum Budget? (nicht storniert und nicht als „nicht im Budget" markiert –
+// z. B. Eigenleistung oder Geschenke). Ueberall verwenden, wo Budget/Ausgaben summiert werden.
+function _imBudget(k) { return !!k && k.status !== 'Storniert' && k.imBudget !== false; }
 let _lastNewId = 0;
 function _neueId() { const t = Date.now(); _lastNewId = t > _lastNewId ? t : _lastNewId + 1; return _lastNewId; }
 
@@ -8073,6 +8221,7 @@ async function saveKosten() {
     skontoBis:  document.getElementById('k-skonto-bis').value || '',
     aiScanned:  kOld?.aiScanned || false,
     scanUrl, scanPath, scanData,
+    ...(document.getElementById('k-im-budget')?.checked === false ? { imBudget: false } : {}),
     _updatedAt: Date.now()
   };
 
@@ -8129,6 +8278,7 @@ function editKosten(id) {
   toggleBezahltVon('k-status', 'k-bezahlt-von');   // war nach einer "Ausstehend"-Ausgabe sonst ausgegraut
   document.getElementById('k-skonto-proz').value = k.skontoProz || '';
   document.getElementById('k-skonto-bis').value  = k.skontoBis  || '';
+  { const ib = document.getElementById('k-im-budget'); if (ib) ib.checked = k.imBudget !== false; }
   _kBeleg = k.scanUrl || k.scanData || null;
   _kBelegChanged = false;
   _showKBelegPreview(_kBeleg);
@@ -8165,7 +8315,7 @@ let _pendingKostenKat = '';
 function openBudgetDrilldown(katName) {
   _pendingKostenKat = katName;
   const kat    = state.budgetKat.find(b => b.name === katName) || {};
-  const items  = state.kosten.filter(k => k.kat === katName && k.status !== 'Storniert');
+  const items  = state.kosten.filter(k => k.kat === katName && _imBudget(k));
   const budget = kat.budget || 0;
   const spent  = items.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
   const rest   = budget - spent;
@@ -8229,74 +8379,18 @@ async function deleteDrilldownKosten(id, katName) {
   openBudgetDrilldown(katName); // refresh drilldown
 }
 
-// ──────────────── EIGENLEISTUNGEN ────────────────
-function resetEigenModal() {
-  ['el-datum','el-beschr','el-wert','el-von','el-notiz'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  const eid = document.getElementById('el-edit-id'); if (eid) eid.value = '';
-  const t = document.getElementById('el-modal-title'); if (t) t.textContent = 'Eigenleistung erfassen';
-}
-function addEigenleistung() {
-  if (!requireSub()) return;
-  state.eigenleistungen = state.eigenleistungen || [];
-  const editId = parseInt(document.getElementById('el-edit-id')?.value) || null;
-  const item = {
-    id:    editId || Date.now(),
-    datum: document.getElementById('el-datum').value || today(),
-    beschr: document.getElementById('el-beschr').value || 'Eigenleistung',
-    kat:   document.getElementById('el-kat').value,
-    wert:  parseFloat(document.getElementById('el-wert').value) || 0,
-    von:   document.getElementById('el-von').value,
-    notiz: document.getElementById('el-notiz').value
-  };
-  if (editId) {
-    const idx = state.eigenleistungen.findIndex(e => String(e.id) === String(editId));
-    if (idx > -1) state.eigenleistungen[idx] = item;
-  } else {
-    state.eigenleistungen.push(item);
-  }
-  save(); closeModal('modal-eigenleistung');
-  ['el-datum','el-beschr','el-wert','el-von','el-notiz'].forEach(id => document.getElementById(id).value = '');
-  if (document.getElementById('el-edit-id')) document.getElementById('el-edit-id').value = '';
-  if (document.getElementById('el-modal-title')) document.getElementById('el-modal-title').textContent = 'Eigenleistung erfassen';
-  showToast(editId ? '✏️ Eigenleistung aktualisiert' : '✅ Eigenleistung gespeichert', 'success');
-  renderKosten();
-}
-
-function editEigenleistung(id) {
-  const e = (state.eigenleistungen||[]).find(e => String(e.id) === String(id));
-  if (!e) return;
-  document.getElementById('el-datum').value  = e.datum  || '';
-  document.getElementById('el-beschr').value = e.beschr || '';
-  document.getElementById('el-wert').value   = e.wert   || '';
-  document.getElementById('el-von').value    = e.von    || '';
-  document.getElementById('el-notiz').value  = e.notiz  || '';
-  const kSel = document.getElementById('el-kat');
-  _selectValue(kSel, e.kat);
-  if (document.getElementById('el-edit-id')) document.getElementById('el-edit-id').value = id;
-  if (document.getElementById('el-modal-title')) document.getElementById('el-modal-title').textContent = 'Eigenleistung bearbeiten';
-  openModal('modal-eigenleistung');
-}
-
-async function deleteEigenleistung(id) {
-  if (!requireSub()) return;
-  if (!(await showConfirm('Eigenleistung löschen?'))) return;
-  _trackDeletion(id, 'eigenleistungen');
-  state.eigenleistungen = (state.eigenleistungen||[]).filter(e => String(e.id) !== String(id));
-  save(); renderKosten(); showToast('🗑 Eigenleistung gelöscht', 'success');
-}
-
 function renderKosten() {
-  state.eigenleistungen = state.eigenleistungen || [];
   const search = (document.getElementById('kosten-search')?.value || '').toLowerCase();
   const items = state.kosten.filter(k =>
     k.beschr.toLowerCase().includes(search) || k.kat.toLowerCase().includes(search) || (k.anbieter||'').toLowerCase().includes(search)
   );
 
-  const paid = state.kosten.filter(k => k.status !== 'Storniert');
+  const paid = state.kosten.filter(_imBudget);
   const totalBrutto = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
   const totalNetto  = paid.reduce((s,k) => s + (parseFloat(k.netto ?? k.betrag)||0), 0);
   const totalMwst   = totalBrutto - totalNetto;
-  const totalEigen  = state.eigenleistungen.reduce((s,e) => s + (parseFloat(e.wert)||0), 0);
+  const nib = state.kosten.filter(k => k.status !== 'Storniert' && k.imBudget === false);
+  const totalNib = nib.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
 
   const now = new Date(); const month = now.getMonth(); const year = now.getFullYear();
   const monthTotal = paid.filter(k => {
@@ -8307,7 +8401,8 @@ function renderKosten() {
   document.getElementById('k-netto').textContent = fmt(totalNetto);
   document.getElementById('k-mwst-info').textContent = `MwSt: ${fmt(totalMwst)}`;
   document.getElementById('k-month').textContent = fmt(monthTotal);
-  document.getElementById('k-eigen').textContent = fmt(totalEigen);
+  const nibCard = document.getElementById('k-nib-card');
+  if (nibCard) { nibCard.style.display = nib.length ? '' : 'none'; document.getElementById('k-nib').textContent = fmt(totalNib); }
 
   // Ausgaben table
   const tbody = document.getElementById('kosten-table');
@@ -8332,7 +8427,7 @@ function renderKosten() {
       return `<tr>
         <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(k.datum)}</td>
         <td class="hide-mobile"><span class="badge badge-gray">${k.kat}</span></td>
-        <td data-title>${k.beschr}${(k.scanUrl||k.scanData)?` <img src="${_belegThumb(k)}" onerror="this.onerror=null;this.src=DOC_THUMB" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${k.anbieter}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}</td>
+        <td data-title>${esc(k.beschr)}${(k.scanUrl||k.scanData)?` <img src="${_belegThumb(k)}" onerror="this.onerror=null;this.src=DOC_THUMB" onclick="openKostenBeleg(${k.id})" title="Beleg ansehen" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;vertical-align:middle;margin-left:4px">`:''}${k.anbieter?`<br><span style="font-size:0.75rem;color:var(--text3)">${esc(k.anbieter)}</span>`:''}${k.aiScanned?`<span class="badge badge-purple" style="margin-left:6px;font-size:0.6rem"><svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:#ff9f1c;vertical-align:-1px" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/></svg> KI</span>`:''}${skontoBadge}${k.imBudget===false?`<span class="badge badge-gray" style="margin-left:6px;font-size:0.6rem">${tt('nicht im Budget')}</span>`:''}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">${fmt(netto)}</td>
         <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text3)">${mwstBetrag > 0 ? fmt(mwstBetrag) : '–'} ${mwstLabel}</td>
         <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
@@ -8343,28 +8438,6 @@ function renderKosten() {
         </div></td>
       </tr>`;
     }).join('');
-  }
-
-  // Eigenleistungen table
-  const etbody = document.getElementById('eigen-table');
-  if (state.eigenleistungen.length === 0) {
-    etbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="icon">🤝</div><p>Noch keine Eigenleistungen erfasst</p></div></td></tr>`;
-  } else {
-    etbody.innerHTML = [...state.eigenleistungen].reverse().map(e => `
-      <tr>
-        <td data-label="${tt('Datum')}" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">${fmtDate(e.datum)}</td>
-        <td class="hide-mobile"><span class="badge badge-gray">${e.kat}</span></td>
-        <td data-title>
-          ${e.beschr}
-          ${e.notiz ? `<br><span style="font-size:0.75rem;color:var(--text3)">${e.notiz}</span>` : ''}
-        </td>
-        <td data-label="${tt('Marktwert')}" style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">${fmt(e.wert)}</td>
-        <td class="hide-mobile">${e.von || '–'}</td>
-        <td style="display:flex;gap:4px">
-          <button class="action-btn" onclick="editEigenleistung(${e.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteEigenleistung(${e.id})">🗑</button>
-        </td>
-      </tr>`).join('');
   }
 }
 
@@ -8527,6 +8600,44 @@ async function deleteBudgetKat(id) {
 
 const BG_COLORS = ['#3d6ff8','#7b5cfa','#0d9488','#ea6c19','#ef4444','#f59e0b','#22c55e','#e879f9','#06b6d4','#84cc16'];
 
+// Grafik auf der Budget-Seite (Chart.js ist geladen): Ring = Verbrauch, Balken = geplant/ausgegeben
+function _kurzEuro(v) { const a = Math.abs(v); return a >= 1e6 ? '€ ' + (v / 1e6).toFixed(1).replace('.', ',') + ' Mio' : a >= 1000 ? '€ ' + Math.round(v / 1000) + 'k' : '€ ' + Math.round(v); }
+function _zeichneBudgetGrafik(totalBudget, totalSpent) {
+  const pctEl = document.getElementById('bg-ring-pct');
+  const ueber = totalBudget > 0 && totalSpent > totalBudget;
+  if (pctEl) { pctEl.textContent = (totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0) + '%'; pctEl.style.color = ueber ? 'var(--danger)' : ''; }
+  const C = window.Chart, ring = document.getElementById('bg-ring-chart'), bar = document.getElementById('bg-bar-chart');
+  if (!C || !ring || !bar) return;
+  const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+  const txt = css('--text2') || '#555', grid = css('--border') || '#e5e7eb', leer = css('--surface3') || css('--surface2') || '#eef0f4';
+  if (ring._chart) ring._chart.destroy();
+  ring._chart = new C(ring, { type: 'doughnut',
+    data: { labels: [tt('Ausgegeben'), tt('Verbleibend')],
+      datasets: [{ data: [totalBudget > 0 ? Math.min(totalSpent, totalBudget) : totalSpent, Math.max(0, totalBudget - totalSpent)],
+        backgroundColor: [ueber ? (css('--danger') || '#dc2626') : '#ff9f1c', leer], borderWidth: 0 }] },
+    options: { cutout: '74%', responsive: true, maintainAspectRatio: true, animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) } } } } });
+  const kats = (state.budgetKat || []).map(k => ({ name: String(k.name || ''), budget: parseFloat(k.budget) || 0, color: k.color || '#3d6ff8',
+    spent: state.kosten.filter(x => x.kat === k.name && _imBudget(x)).reduce((s, x) => s + (parseFloat(x.betrag) || 0), 0) }));
+  const box = document.getElementById('bg-kat-grafik');
+  if (box) box.style.display = kats.length ? '' : 'none';
+  const wrap = document.getElementById('bg-bar-wrap');
+  if (wrap) wrap.style.height = Math.max(140, kats.length * 52 + 46) + 'px';
+  if (bar._chart) bar._chart.destroy();
+  if (!kats.length) return;
+  const schmal = window.innerWidth <= 600;
+  const kurz = n => n.length > (schmal ? 16 : 26) ? n.slice(0, schmal ? 15 : 25) + '…' : n;
+  bar._chart = new C(bar, { type: 'bar',
+    data: { labels: kats.map(k => [kurz(k.name), fmt(k.spent) + ' / ' + _kurzEuro(k.budget)]),
+      datasets: [
+        { label: tt('Geplant'), data: kats.map(k => k.budget), backgroundColor: kats.map(k => k.color + '33'), borderColor: kats.map(k => k.color), borderWidth: 1, borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.75 },
+        { label: tt('Ausgegeben'), data: kats.map(k => k.spent), backgroundColor: kats.map(k => k.budget > 0 && k.spent > k.budget ? (css('--danger') || '#dc2626') : k.color), borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.75 } ] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+      plugins: { legend: { position: 'top', align: 'start', labels: { boxWidth: 12, boxHeight: 12, color: txt, font: { size: 11 } } },
+        tooltip: { callbacks: { title: c => kats[c[0].dataIndex].name, label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } },
+      scales: { x: { beginAtZero: true, grid: { color: grid }, ticks: { color: txt, font: { size: 10 }, maxTicksLimit: schmal ? 4 : 6, callback: v => _kurzEuro(v) } },
+                y: { grid: { display: false }, ticks: { color: txt, font: { size: schmal ? 10 : 11 } } } } } });
+}
 function renderBudget() {
   // Anzeige-Bereinigung: NUR exakte Doppel (gleiche id) ausblenden. Kein Loeschen
   // nach Namen und KEIN save() – sonst koennen echte Kategorien verloren gehen
@@ -8540,20 +8651,21 @@ function renderBudget() {
   });
 
   const totalBudget = state.budgetKat.reduce((s,k) => s + k.budget, 0);
-  const totalSpent  = state.kosten.filter(k => k.status !== 'Storniert').reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
+  const totalSpent  = state.kosten.filter(_imBudget).reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
   const totalRest   = totalBudget - totalSpent;
   const totalPct    = totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0;
 
   // Ausgaben ohne zugeordnete Kategorie
   const assignedKatNames = state.budgetKat.map(k => k.name);
-  const unassigned = state.kosten.filter(k => k.status !== 'Storniert' && !assignedKatNames.includes(k.kat))
+  const unassigned = state.kosten.filter(k => _imBudget(k) && !assignedKatNames.includes(k.kat))
     .reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
 
   // Summary cards
   document.getElementById('bg-total-budget').textContent = fmt(totalBudget);
   document.getElementById('bg-total-spent').textContent  = fmt(totalSpent);
   document.getElementById('bg-total-rest').textContent   = fmt(totalRest);
-  document.getElementById('bg-total-rest').className     = 'card-value ' + (totalRest >= 0 ? 'green' : 'red');
+  document.getElementById('bg-total-rest').className     = 'bg-zw ' + (totalRest >= 0 ? 'green' : 'red');
+  try { _zeichneBudgetGrafik(totalBudget, totalSpent); } catch (e) { console.warn('[budget-grafik]', e?.message); }
   document.getElementById('bg-total-pct').textContent    = `${totalPct}% verbraucht`;
   document.getElementById('bg-unassigned').textContent   = fmt(unassigned);
   document.getElementById('bg-pct-label').textContent    = `${fmt(totalBudget)} Gesamtbudget`;
@@ -8585,8 +8697,8 @@ function renderBudget() {
 
   // Individual bars (with drag-and-drop handles)
   document.getElementById('budget-bars').innerHTML = state.budgetKat.map((kat, i) => {
-    const spent = state.kosten.filter(k => k.kat === kat.name && k.status !== 'Storniert').reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
-    const count = state.kosten.filter(k => k.kat === kat.name && k.status !== 'Storniert').length;
+    const spent = state.kosten.filter(k => k.kat === kat.name && _imBudget(k)).reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
+    const count = state.kosten.filter(k => k.kat === kat.name && _imBudget(k)).length;
     const pct   = kat.budget > 0 ? Math.min(100, Math.round(spent / kat.budget * 100)) : 0;
     const color = kat.color || BG_COLORS[i % BG_COLORS.length];
     return `<div class="budget-bar-row"
@@ -8607,8 +8719,8 @@ function renderBudget() {
   // Detail table
   document.getElementById('budget-table').innerHTML = [
     ...state.budgetKat.map((kat, i) => {
-      const spent   = state.kosten.filter(k => k.kat === kat.name && k.status !== 'Storniert').reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
-      const count   = state.kosten.filter(k => k.kat === kat.name && k.status !== 'Storniert').length;
+      const spent   = state.kosten.filter(k => k.kat === kat.name && _imBudget(k)).reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
+      const count   = state.kosten.filter(k => k.kat === kat.name && _imBudget(k)).length;
       const rest    = kat.budget - spent;
       const pct     = kat.budget > 0 ? Math.round(spent / kat.budget * 100) : 0;
       const share   = totalBudget > 0 ? (kat.budget / totalBudget * 100).toFixed(1) : 0;
@@ -9039,68 +9151,38 @@ function _updateDarkModeToggle(on) {
   });
 })();
 
-function togglePrivacy() {
-  const on  = document.body.classList.toggle('privacy-mode');
-  const btn = document.getElementById('privacy-btn');
-  if (!btn) return;
-  btn.textContent       = on ? '🙈 Einblenden' : '👁 Zahlen ausblenden';
-  btn.style.background  = on ? 'var(--accent)' : '';
-  btn.style.color       = on ? 'white' : '';
-  btn.style.borderColor = on ? 'var(--accent)' : '';
+// Beträge verbergen (gilt auf allen Seiten) und KI-Berater ein/aus – als Schalter dort, wo sie
+// wirken; Zustand wird gemerkt. Frueher lagen die Knoepfe oben, die Wirkung weit unten.
+function _setzePrivacy(verborgen, melden) {
+  document.body.classList.toggle('privacy-mode', !!verborgen);
+  try { localStorage.setItem('planoryPrivacy', verborgen ? '1' : '0'); } catch (e) {}
+  const b = document.getElementById('privacy-btn');
+  if (b) {
+    b.setAttribute('aria-checked', verborgen ? 'false' : 'true');
+    const l = b.querySelector('.sw-label'); if (l) l.textContent = verborgen ? tt('🙈 Beträge verborgen') : tt('👁 Beträge sichtbar');
+  }
+  if (melden) showToast(verborgen ? tt('🙈 Beträge werden auf allen Seiten verborgen') : tt('👁 Beträge sind wieder sichtbar'), 'success');
 }
-
+function togglePrivacy() { _setzePrivacy(!document.body.classList.contains('privacy-mode'), true); }
+function _setzeKI(aus, melden) {
+  const panel = document.getElementById('ki-advisor-panel'), leiste = document.getElementById('ki-advisor-off');
+  if (panel) panel.style.display = aus ? 'none' : '';
+  if (leiste) leiste.style.display = aus ? 'flex' : 'none';
+  try { localStorage.setItem('planoryKIaus', aus ? '1' : '0'); } catch (e) {}
+  const b = document.getElementById('ki-panel-btn');
+  if (b) b.setAttribute('aria-checked', aus ? 'false' : 'true');
+  if (melden) showToast(aus ? tt('KI-Berater ausgeblendet') : tt('KI-Berater eingeblendet'), 'success');
+}
 function toggleKIPanel() {
   const panel = document.getElementById('ki-advisor-panel');
-  const btn   = document.getElementById('ki-panel-btn');
-  if (!panel || !btn) return;
-  const hidden = panel.style.display === 'none';
-  panel.style.display   = hidden ? '' : 'none';
-  btn.innerHTML         = AI_SVG + (hidden ? ' ' + (_lang==='en'?'Hide AI':'KI ausblenden') : ' ' + (_lang==='en'?'Show AI':'KI anzeigen'));
-  btn.style.background  = hidden ? '' : 'var(--accent)';
-  btn.style.color       = hidden ? '' : 'white';
-  btn.style.borderColor = hidden ? '' : 'var(--accent)';
+  _setzeKI(!(panel && panel.style.display === 'none') ? true : false, true);
 }
-
-function sendStatusReport() {
-  const today0 = new Date(); today0.setHours(0,0,0,0);
-  const proj = state.settings?.name || 'Mein Projekt';
-  const budget = state.budgetKat?.reduce((s,k) => s+(k.budget||0), 0) || state.settings?.budget || 0;
-  const spent = state.kosten.filter(k=>k.status!=='Storniert').reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
-  const remaining = budget - spent;
-  const pct = budget > 0 ? Math.round(spent/budget*100) : 0;
-  const doneMil = state.meilensteine.filter(m=>m.done).length;
-  const allMil = state.meilensteine.length;
-  const offeneZahl = state.zahlungen.filter(z=>z.status!=='Bezahlt').reduce((s,z)=>s+(parseFloat(z.betrag)||0),0);
-  const offeneMaengel = state.maengel.filter(m=>m.status!=='Behoben').length;
-  const nextMil = [...state.meilensteine].filter(m=>!m.done&&m.datum).sort((a,b)=>new Date(a.datum)-new Date(b.datum))[0];
-  const nextZahl = [...state.zahlungen].filter(z=>z.status!=='Bezahlt'&&z.faellig).sort((a,b)=>new Date(a.faellig)-new Date(b.faellig))[0];
-
-  const lines = [
-    `STATUSBERICHT – ${proj}`,
-    `Stand: ${new Date().toLocaleDateString('de-AT')}`,
-    ``,
-    `BUDGET`,
-    `  Geplant:    ${fmt(budget)}`,
-    `  Ausgegeben: ${fmt(spent)} (${pct}%)`,
-    `  Verfügbar:  ${fmt(remaining)}`,
-    ``,
-    `MEILENSTEINE`,
-    `  Abgeschlossen: ${doneMil} von ${allMil}`,
-    nextMil ? `  Nächster:      ${nextMil.name} (${new Date(nextMil.datum).toLocaleDateString('de-AT')})` : `  Nächster:      –`,
-    ``,
-    `ZAHLUNGSPLAN`,
-    `  Noch offen: ${fmt(offeneZahl)}`,
-    nextZahl ? `  Nächste Fälligkeit: ${nextZahl.beschr||'Zahlung'} am ${new Date(nextZahl.faellig).toLocaleDateString('de-AT')} (${fmt(nextZahl.betrag)})` : `  Nächste Fälligkeit: –`,
-    ``,
-    `MÄNGEL`,
-    `  Offen: ${offeneMaengel}`,
-    ``,
-    `–– Erstellt mit Planory ––`
-  ].join('\n');
-
-  const subject = encodeURIComponent(`Statusbericht ${proj} – ${new Date().toLocaleDateString('de-AT')}`);
-  const body = encodeURIComponent(lines);
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+// Gemerkte Ansicht anwenden (beim Zeichnen der Startseite)
+function _wendeAnsichtAn() {
+  let p = '0', k = '0';
+  try { p = localStorage.getItem('planoryPrivacy') || '0'; k = localStorage.getItem('planoryKIaus') || '0'; } catch (e) {}
+  _setzePrivacy(p === '1', false);
+  _setzeKI(k === '1', false);
 }
 
 async function handleRechnungScan(input) {
@@ -9585,13 +9667,14 @@ Erstelle einen vollständigen Projektplan mit:
 1. 6-10 MEILENSTEINE – wichtige Schlüsselereignisse (Baugenehmigung, Spatenstich, Rohbau fertig, Einzug, …)
 2. 5-8 BAUPHASEN – aufeinander aufbauende Phasen mit realistischen Zeiträumen
 
+Jeder Meilenstein gehört zu genau einer Bauphase (Feld "phase") und sein Datum liegt in deren Zeitraum.
 Berechne alle Daten konkret ausgehend von Projektstart ${startDate}.
 ${endDate ? `Der Plan muss bis spätestens ${endDate} fertig sein.` : ''}
 
 Antworte NUR mit validem JSON (kein Text davor/danach):
 {
   "meilensteine": [
-    { "name": "Baugenehmigung erhalten", "datum": "YYYY-MM-DD", "text": "Kurze Beschreibung", "budgetKat": "Kategoriename oder leer" }
+    { "name": "Baugenehmigung erhalten", "datum": "YYYY-MM-DD", "text": "Kurze Beschreibung", "budgetKat": "Kategoriename oder leer", "phase": "exakter Name der Bauphase, zu der der Meilenstein gehört" }
   ],
   "phasen": [
     { "name": "Planung & Einreichung", "start": "YYYY-MM-DD", "end": "YYYY-MM-DD", "budgetKat": "Kategoriename oder leer" }
@@ -9668,36 +9751,44 @@ function importKIZeitplan() {
   const msList   = document.getElementById('ki-ms-list');
   const ganttList = document.getElementById('ki-gantt-list');
 
-  // Import milestones
-  const _msBase = Date.now();
-  (_kiZeitplanData.meilensteine||[]).forEach((m, i) => {
-    const nameEl  = msList.querySelector(`[data-ki-ms-name="${i}"]`);
-    const datumEl = msList.querySelector(`[data-ki-ms-datum="${i}"]`);
-    state.meilensteine.push({
-      id:    _msBase + i,
-      name:  nameEl?.value  || m.name,
-      datum: datumEl?.value || m.datum,
-      text:  m.text || '',
-      done:  false
-    });
-  });
-
-  // Import gantt phases
-  const _ganttBase = Date.now() + 10000;
+  // Erst die Phasen (= Abschnitte), damit die Meilensteine gleich zugeordnet werden koennen
+  const _neuePhasen = [];
   (_kiZeitplanData.phasen||[]).forEach((p, i) => {
     const nameEl  = ganttList.querySelector(`[data-ki-gantt-name="${i}"]`);
     const startEl = ganttList.querySelector(`[data-ki-gantt-start="${i}"]`);
     const endEl   = ganttList.querySelector(`[data-ki-gantt-end="${i}"]`);
-    state.gantt.push({
-      id:     _ganttBase + i,
+    const g = {
+      id:     _neueId(),
       name:   nameEl?.value  || p.name,
       start:  startEl?.value || p.start,
       end:    endEl?.value   || p.end,
       type:   'phase',
       status: 'Offen',
-      notiz:  p.budgetKat ? 'Budgetkategorie: ' + p.budgetKat : ''
+      notiz:  p.budgetKat ? 'Budgetkategorie: ' + p.budgetKat : '',
+      _updatedAt: Date.now()
+    };
+    state.gantt.push(g);
+    _neuePhasen.push({ g, kiName: String(p.name || '').toLowerCase().trim() });
+  });
+
+  // Meilensteine: Abschnitt laut KI ("phase"), sonst automatisch per Datum/Name (_plZuordnen)
+  (_kiZeitplanData.meilensteine||[]).forEach((m, i) => {
+    const nameEl  = msList.querySelector(`[data-ki-ms-name="${i}"]`);
+    const datumEl = msList.querySelector(`[data-ki-ms-datum="${i}"]`);
+    const ph = String(m.phase || '').toLowerCase().trim();
+    const treffer = ph ? _neuePhasen.find(x => x.kiName === ph || String(x.g.name).toLowerCase().trim() === ph) : null;
+    state.meilensteine.push({
+      id:     _neueId(),
+      name:   nameEl?.value  || m.name,
+      datum:  datumEl?.value || m.datum,
+      text:   m.text || '',
+      status: 'offen',
+      done:   false,
+      ganttId: treffer ? treffer.g.id : '',
+      _updatedAt: Date.now()
     });
   });
+  _plZuordnen();
 
   save();
   closeModal('modal-ki-zeitplan');
@@ -10563,6 +10654,8 @@ function editDiary(id) {
   document.getElementById('tb-tags').value   = (e.tags||[]).join(', ');
   const wSel = document.getElementById('tb-weather');
   _selectValue(wSel, e.weather);
+  _tbWetterGewaehlt = true;   // gespeichertes Wetter nicht automatisch ueberschreiben
+  renderWetterChips();
   document.getElementById('tb-temp').value = e.temp != null ? e.temp : '';
   // Restore workers
   const container = document.getElementById('tb-worker-rows');
@@ -10596,12 +10689,35 @@ async function deleteDiary(id) {
   showToast('🗑 Eintrag gelöscht', 'success');
 }
 
-async function fetchWetter() {
+// Wetter als antippbare Felder (das unsichtbare #tb-weather haelt weiter den Wert)
+const WETTER = ['☀️ Sonnig', '⛅ Bewölkt', '🌧️ Regen', '❄️ Schnee', '🌬️ Wind', '⛈️ Gewitter'];
+let _tbWetterGewaehlt = false;   // selbst gewaehlt -> automatischer Abruf ueberschreibt nicht
+function renderWetterChips() {
+  const box = document.getElementById('tb-wetter-chips'), sel = document.getElementById('tb-weather');
+  if (!box || !sel) return;
+  box.innerHTML = WETTER.map(w => {
+    const txt = (_lang !== 'de' && OPTIONEN[w]?.[_lang]) || w;
+    return `<button type="button" class="wx-chip ${sel.value === w ? 'on' : ''}" data-w="${esc(w)}" onclick="waehleWetter(this.dataset.w)">${esc(txt)}</button>`;
+  }).join('');
+}
+function waehleWetter(w) {
+  const sel = document.getElementById('tb-weather');
+  if (!sel) return;
+  _selectValue(sel, w);
+  _tbWetterGewaehlt = true;
+  const m = document.getElementById('modal-tagebuch'); if (m) m._dirty = true;
+  renderWetterChips();
+}
+// manuell = per Knopf „Abrufen": dann mit Meldungen. Automatisch (beim „+ Eintrag") still –
+// frueher kam bei fehlender/unbekannter Adresse jedes Mal eine rote Fehlermeldung.
+async function fetchWetter(manuell = false) {
   const btn = document.getElementById('tb-wetter-btn');
-  btn.textContent = '⏳'; btn.disabled = true;
+  const fehler = msg => { if (manuell) showToast(msg, 'error'); };
+  const fertig = () => { if (btn) { btn.textContent = '🌡️ Abrufen'; btn.disabled = false; } };
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
     const address = state.settings?.address || '';
-    if (!address.trim()) { showToast('⚠️ Bitte zuerst eine Projektadresse in den Einstellungen eintragen', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
+    if (!address.trim()) { fehler('⚠️ Bitte zuerst eine Projektadresse in den Einstellungen eintragen'); fertig(); return; }
     // Ort robust ermitteln: die Wetter-Ortssuche kennt Ortsnamen, keine Straßen/PLZ.
     // Deshalb mehrere Kandidaten probieren – zuerst ohne führende Postleitzahl.
     const lastSeg = (address.split(',').pop() || '').trim();
@@ -10616,7 +10732,7 @@ async function fetchWetter() {
       const geoData = await geoRes.json();
       if (geoData.results?.[0]) { loc = geoData.results[0]; break; }
     }
-    if (!loc) { showToast('⚠️ Ort nicht gefunden – bitte in den Einstellungen den Ortsnamen (z.B. „Wels") eintragen', 'error'); btn.textContent='🌡️ Abrufen'; btn.disabled=false; return; }
+    if (!loc) { fehler('⚠️ Ort nicht gefunden – bitte in den Einstellungen den Ortsnamen (z.B. „Wels") eintragen'); fertig(); return; }
     const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=weathercode,temperature_2m&timezone=auto`);
     const wxData = await wxRes.json();
     const code = wxData.current?.weathercode ?? -1;
@@ -10629,20 +10745,19 @@ async function fetchWetter() {
     ];
     let label = '⛅ Bewölkt';
     for (const [min,max,lbl] of wxMap) { if (code >= min && code <= max) { label = lbl; break; } }
-    const wSel = document.getElementById('tb-weather');
-    let matched = false;
-    Array.from(wSel.options).forEach(o => { if (o.value === label) { o.selected = true; matched = true; } });
-    if (!matched) {
-      const opt = new Option(label, label);
-      wSel.add(opt); wSel.value = label;
-    }
+    // Fenster inzwischen zu oder Wetter schon selbst gewaehlt? Dann nichts ueberschreiben.
+    const m = document.getElementById('modal-tagebuch');
+    if (!manuell && (_tbWetterGewaehlt || !m || !m.classList.contains('open'))) { fertig(); return; }
+    _selectValue(document.getElementById('tb-weather'), label);
     if (temp != null) document.getElementById('tb-temp').value = Math.round(temp * 10) / 10;
-    showToast(`🌡️ ${loc.name}: ${label} · ${temp}°C`, 'success');
+    renderWetterChips();
+    if (manuell) showToast(`🌡️ ${loc.name}: ${label} · ${temp}°C`, 'success');
   } catch(e) {
-    showToast('⚠️ Wetter konnte nicht geladen werden', 'error');
+    fehler('⚠️ Wetter konnte nicht geladen werden');
   }
-  btn.textContent = '🌡️ Abrufen'; btn.disabled = false;
+  fertig();
 }
+
 
 function renderDiary() {
   const el = document.getElementById('diary-list');
@@ -12417,7 +12532,7 @@ function renderKostenChart() {
     return;
   }
 
-  const paid = state.kosten.filter(k => k.status !== 'Storniert');
+  const paid = state.kosten.filter(_imBudget);
 
   if (currentChartMode === 'monthly') {
     // group by month
@@ -13823,7 +13938,7 @@ function showToast(msg, type='success', duration=3200) {
 
 // ──────────────── KI-BAUBERATER ────────────────
 function buildProjectSnapshot() {
-  const paid = state.kosten.filter(k => k.status !== 'Storniert');
+  const paid = state.kosten.filter(_imBudget);
   const totalBudget = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
   const totalSpent  = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
   const budgetPct   = totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0;
@@ -14084,7 +14199,7 @@ function renderProjectSwitcher() {
   container.innerHTML = projects.map(p => {
     const isCurrent = String(p.id) === String(currentProjectId);
     const color = p.settings?.color || '#ff9f1c';
-    const spent = (p.kosten||[]).filter(k=>k.status!=='Storniert').reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
+    const spent = (p.kosten||[]).filter(_imBudget).reduce((s,k)=>s+(parseFloat(k.betrag)||0),0);
     const budget = (p.budgetKat||[]).reduce((s,k)=>s+k.budget,0);
     const pct = budget>0 ? Math.round(spent/budget*100) : 0;
     const modCount = Object.values(p.settings?.modules||{}).filter(v=>v!==false).length || MODULES.length;
@@ -14795,6 +14910,13 @@ function startDemo() {
       { id: 3004, name: 'Heizungsplanung abzeichnen',  status: 'Erledigt',  prio: 'Hoch',     datum: '2025-08-20', notiz: 'Verantwortlich: Planer',    person: 'Planer' },
       { id: 3005, name: 'Parkettmuster auswählen',     status: 'Offen',     prio: 'Niedrig',  datum: '2025-12-01', notiz: 'Verantwortlich: Familie',   person: 'Familie' },
     ],
+    gantt: [
+      { id: 4101, name: 'Rohbau',          start: '2025-03-01', end: '2025-07-31', status: 'Erledigt' },
+      { id: 4102, name: 'Dach',            start: '2025-08-01', end: '2025-09-30', status: 'In Arbeit' },
+      { id: 4103, name: 'Haustechnik',     start: '2025-10-01', end: '2025-11-30', status: 'Offen' },
+      { id: 4104, name: 'Innenausbau',     start: '2025-12-01', end: '2026-05-31', status: 'Offen' },
+      { id: 4105, name: 'Fertigstellung',  start: '2026-06-01', end: '2026-09-01', status: 'Offen' },
+    ],
     meilensteine: [
       { id: 4001, name: 'Spatenstich',         datum: '2025-03-15', status: 'erledigt', done: true,  beschr: 'Offizieller Baubeginn' },
       { id: 4002, name: 'Rohbau fertig',       datum: '2025-07-31', status: 'erledigt', done: true,  beschr: 'Alle Wände gemauert, Decke betoniert' },
@@ -15308,6 +15430,7 @@ async function loadFromCloud() {
     // Wiedereinsetzen, damit ungesicherte lokale Aenderungen nicht verdraengt werden.
     let _labelFixes = 0;
     try { finalProjects.forEach(p => { _labelFixes += _fixLabelValues(p); }); } catch (e) { console.warn('[FIX] Labels:', e?.message); }
+    try { finalProjects.forEach(p => { _labelFixes += _eigenleistungenUebernehmen(p); }); } catch (e) { console.warn('[FIX] Eigenleistung:', e?.message); }
 
     // ── Apply to app ───────────────────────────────────────────────
     projects = finalProjects;
@@ -16948,7 +17071,7 @@ function renderKostenaufteilung() {
   const el = document.getElementById('kostenaufteilung-content');
   if (!el) return;
 
-  const paid = state.kosten.filter(k => k.status !== 'Storniert');
+  const paid = state.kosten.filter(_imBudget);
   const total = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
 
   if (state.zahlungspersonen.length === 0) {
@@ -18494,13 +18617,13 @@ function exportKostenPDF() {
   const projName = state.settings?.name || 'Bauvorhaben';
   pdfHeader(doc, 'Rechnungen & Ausgaben', projName);
 
-  const active = state.kosten.filter(k => k.status !== 'Storniert');
+  const active = state.kosten.filter(_imBudget);
   const rows = state.kosten.map(k => {
     const netto = k.netto ?? k.betrag;
     return [
       fmtDate(k.datum),
       k.kat || '–',
-      k.beschr || '–',
+      (k.beschr || '–') + (k.imBudget === false ? ' (nicht im Budget)' : ''),
       k.anbieter || '–',
       fmt(parseFloat(netto) || 0),
       k.mwst > 0 ? `${k.mwst}%` : '0%',

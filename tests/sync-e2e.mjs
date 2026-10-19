@@ -679,6 +679,42 @@ await scenario('E15: Beleg bewusst entfernt → wird nicht wieder angehängt (au
   } finally { await ctx.close(); }
 });
 
+// E16) Eigenleistung (alte Daten) wird einmalig zur Ausgabe „nicht im Budget" – in der Cloud,
+//      ohne Doppel nach dem Neustart; eine geloeschte Uebernahme kommt nicht wieder.
+await scenario('E16: Eigenleistung → einmalig Ausgabe „nicht im Budget" (Cloud), gelöscht bleibt gelöscht', async () => {
+  const EL = ['eigenleistungen', { id: 98200, datum: '2026-08-01', beschr: 'Dämmung selbst', kat: 'Rohbau', wert: 900, von: 'Simon', notiz: '', _updatedAt: 1700000000000 }];
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true }, { seed: [EL] });
+  const inCloud = () => page.evaluate(() => {
+    const k = window.__fakeDb.projekt_items.filter(r => r.item_type === 'kosten' && String(r.payload.id) === '982007').map(r => r.payload);
+    const e = window.__fakeDb.projekt_items.find(r => r.item_type === 'eigenleistungen' && String(r.payload.id) === '98200');
+    return { k, migriert: !!(e && e.payload._migriert) };
+  });
+  try {
+    await waitFor(page, BEREIT);
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && String(r.payload.id) === '982007'), null, 10000);
+    await settle(page, 3000);
+    const c1 = await inCloud();
+    const p = [];
+    if (c1.k.length !== 1 || c1.k[0].imBudget !== false || c1.k[0].betrag !== 900) p.push(`nach Übernahme in der Cloud: ${JSON.stringify(c1.k)}`);
+    if (!c1.migriert) p.push('Eigenleistung in der Cloud nicht als übernommen markiert');
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('982007'), null, 5000);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 3000);
+    const lokal2 = await page.evaluate(() => state.kosten.filter(k => String(k.id) === '982007').length);
+    if (lokal2 !== 1 || (await inCloud()).k.length !== 1) p.push(`nach Neustart doppelt/fehlt: lokal ${lokal2}`);
+    await page.evaluate(async () => { window.showConfirm = async () => true; await deleteKosten(982007); });
+    await waitFor(page, () => !window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && String(r.payload.id) === '982007'), null, 10000);
+    await page.waitForTimeout(1500);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 3000);
+    const lokal3 = await page.evaluate(() => state.kosten.filter(k => String(k.id) === '982007').length);
+    if (lokal3 || (await inCloud()).k.length) p.push('gelöschte übernommene Ausgabe kam zurück');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 await browser.close();
 
 // ── Ergebnis ──

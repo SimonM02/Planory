@@ -26,6 +26,9 @@ const HTML = readFileSync(FILE, 'utf8');
 // jsPDF (sonst vom CDN) lokal ausliefern, damit PDF-Tests offline laufen
 let JSPDF = null;
 try { JSPDF = readFileSync(path.join(here, '..', 'node_modules', 'jspdf', 'dist', 'jspdf.umd.min.js'), 'utf8'); } catch { /* PDF-Test wird uebersprungen */ }
+// Chart.js ebenso (Budget-Grafik)
+let CHART = null;
+try { CHART = readFileSync(path.join(here, '..', 'node_modules', 'chart.js', 'dist', 'chart.umd.js'), 'utf8'); } catch { /* Grafik-Test wird uebersprungen */ }
 // Nicht als file:// oeffnen (startet eine leere Vorschau) – echte Adresse + Demo-Parameter
 const URL_DEMO = 'https://planory.test/index.html?demo=planory2025';
 
@@ -52,6 +55,7 @@ async function boot() {
     if (u.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
     if (u.includes('supabase-js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
     if (JSPDF && u.includes('jspdf.umd.min.js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: JSPDF });
+    if (CHART && u.includes('chart.umd')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: CHART });
     return r.abort();
   });
   await page.goto(URL_DEMO, { waitUntil: 'domcontentloaded' });
@@ -527,6 +531,7 @@ await scenario('Zeitplan: Bearbeiten über den Meilenstein-Dialog behält Abschn
     editMilestone(9700040);
     addMilestone();
     const m = state.meilensteine.find(x => x.id === 9700040);
+    state.meilensteine = state.meilensteine.filter(x => x !== m);   // Testpunkt wieder weg
     return { ganttId: m.ganttId, status: m.status, remind: m.remind };
   });
   return (r.ganttId === 777 && r.status === 'arbeit' && r.remind === false) ? '' : `Felder verloren: ${JSON.stringify(r)}`;
@@ -574,21 +579,22 @@ await scenario('Projekt: Abbrechen beim Bearbeiten → „+ Neues Projekt" legt 
   });
   return (r.jetzt === r.alt && r.mehr === 1) ? '' : `altes Projekt „${r.alt}" → ${r.jetzt}, neue Projekte: ${r.mehr}`;
 });
-await scenario('Bearbeiten ohne Änderung: Eigenleistung-Kategorie, Brutto 99,99 €, leeres Aufgaben-Datum bleiben', async () => {
+await scenario('Bearbeiten ohne Änderung: „nicht im Budget", Kategorie, Brutto 99,99 €, leeres Aufgaben-Datum bleiben', async () => {
   const r = await page.evaluate(async () => {
     const kat2 = state.budgetKat[1].name;
-    state.eigenleistungen = state.eigenleistungen || [];
-    state.eigenleistungen.push({ id: 9800010, datum: '2026-09-01', beschr: 'Schlitze', kat: kat2, wert: 450, von: '', notiz: '' });
-    editEigenleistung(9800010); addEigenleistung();
+    state.kosten.push({ id: 9800010, datum: '2026-09-01', beschr: 'Schlitze selbst gestemmt', kat: kat2, mwst: 0, netto: 450, betrag: 450, status: 'Bezahlt', anbieter: '', imBudget: false, _updatedAt: 1 });
+    editKosten(9800010); await saveKosten();
+    const el = state.kosten.find(k => k.id === 9800010);
     state.kosten.push({ id: 9800011, datum: '2026-10-01', beschr: 'Cent-Test', kat: state.budgetKat[0].name, mwst: 20, netto: 83.33, betrag: 99.99, status: 'Bezahlt', anbieter: '', _updatedAt: 1 });
     editKosten(9800011); await saveKosten();
     state.aufgaben.push({ id: 9800012, name: 'Ohne Termin', prio: 'Mittel', status: 'Offen', datum: '', notiz: '' });
     editTask(9800012); await saveTask();
-    return { kat: state.eigenleistungen.find(e => e.id === 9800010).kat, kat2, betrag: state.kosten.find(k => k.id === 9800011).betrag,
+    return { kat: el.kat, kat2, imBudget: el.imBudget, betrag: state.kosten.find(k => k.id === 9800011).betrag,
              datum: state.aufgaben.find(t => t.id === 9800012).datum };
   });
   const p = [];
-  if (r.kat !== r.kat2) p.push(`Eigenleistung-Kategorie wurde „${r.kat}"`);
+  if (r.kat !== r.kat2) p.push(`Kategorie wurde „${r.kat}"`);
+  if (r.imBudget !== false) p.push('„nicht im Budget" ging beim Speichern verloren');
   if (Math.abs(r.betrag - 99.99) > 0.001) p.push(`Betrag wurde ${r.betrag}`);
   if (r.datum) p.push(`Aufgabe bekam das Datum ${r.datum}`);
   return p.join(' · ');
@@ -1432,6 +1438,260 @@ await scenario('Tagebuch-Fotos: Foto von anderem Gerät bleibt beim Speichern er
   if (!r.pfade.includes('test/remote')) p.push('Foto vom anderen Gerät verschwunden');
   if (r.geloescht.length) p.push('Dateien gelöscht: ' + r.geloescht.join(','));
   return p.join(' · ');
+});
+
+// ── Simons Liste: Zeitplan · Fotos · Wetter · Startseite · „nicht im Budget" · Budget-Grafik · Zahlungstermine ──
+await scenario('Zeitplan: „+ Abschnitt" holt den neuen Abschnitt ins Bild (hervorgehoben, Name markiert)', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('planung'); window.scrollTo(0, 0);
+    const knopf = [...document.querySelectorAll('#plan-header-btns button')].find(b => b.textContent.includes('Abschnitt'));
+    knopf.click();
+    await new Promise(res => setTimeout(res, 900));
+    const neu = state.gantt[state.gantt.length - 1];
+    const sec = document.activeElement && document.activeElement.closest('.pl-sec');
+    const rc = sec ? sec.getBoundingClientRect() : null;
+    const erg = { name: neu.name, fokus: !!sec && document.activeElement.classList.contains('pl-secname') && document.activeElement.value === neu.name,
+      imBild: !!rc && rc.top >= 0 && rc.top < innerHeight - 60, hervor: !!sec && sec.classList.contains('pl-neu'),
+      datum: !!sec && !!sec.querySelector('.pl-span input[type=date]') };
+    _trackDeletion(neu.id, 'gantt'); state.gantt = state.gantt.filter(g => g !== neu); renderZeitplan();
+    return erg;
+  });
+  const p = [];
+  if (!r.fokus) p.push('Namensfeld des neuen Abschnitts hat keinen Fokus');
+  if (!r.imBild) p.push('neuer Abschnitt nicht im Bild');
+  if (!r.hervor) p.push('nicht hervorgehoben');
+  if (!r.datum) p.push('Zeitraum-Felder beim neuen Abschnitt nicht offen');
+  return p.join(' · ');
+});
+await scenario('Zeitplan: Punkte stehen im passenden Abschnitt – nichts doppelt, kein Kreis-Rätsel', async () => {
+  const r = await page.evaluate(() => {
+    showPage('planung');
+    const el = document.getElementById('plan-timeline');
+    const txt = el.innerText;
+    const demoOk = (state.meilensteine || []).filter(m => m.id >= 4001 && m.id <= 4006)
+      .every(m => el.querySelector(`.pl-sec[data-sec] .pl-item[data-item="${m.id}"]`));
+    const ohneBlock = /Weitere Punkte|Ohne Abschnitt/.test(txt) ? (state.meilensteine || []).filter(m => !m.ganttId || !state.gantt.some(g => String(g.id) === String(m.ganttId))).map(m => m.name + '/' + (m.datum || '-')).join(', ') : '';
+    return { ohne: ohneBlock, kreis: /Kreis antippen/.test(txt), demoOk,
+      hinweis: /Tippe auf den Status/.test(txt), dots: el.querySelectorAll('.pl-dot').length, btn: el.querySelectorAll('.pl-stbtn').length };
+  });
+  const p = [];
+  if (r.ohne) p.push('Block „Weitere Punkte/Ohne Abschnitt" erscheint, obwohl alles zuordenbar ist: ' + r.ohne);
+  if (!r.demoOk) p.push('Demo-Punkte nicht im passenden Abschnitt');
+  if (r.kreis || !r.hinweis) p.push('alter Hinweis „Kreis antippen" statt Status-Hinweis');
+  if (r.dots || !r.btn) p.push(`Status noch als Kreis (${r.dots}) statt Schaltfläche (${r.btn})`);
+  return p.join(' · ');
+});
+await scenario('Zeitplan: Status-Schaltfläche schaltet mit Text weiter (Offen → In Arbeit → Erledigt)', async () => {
+  const r = await page.evaluate(() => {
+    showPage('planung');
+    const m = state.meilensteine.find(x => x.id === 4004);
+    const vorher = m.status;
+    const texte = [];
+    for (let i = 0; i < 3; i++) {
+      const b = document.querySelector(`#plan-timeline .pl-item[data-item="4004"] .pl-stbtn`);
+      if (!b) return { fehlt: true };
+      texte.push(b.textContent.trim()); b.click();
+    }
+    const glocke = !!document.querySelector('#plan-timeline .pl-item[data-item="4004"] .pl-bell');
+    m.status = vorher; m.done = vorher === 'erledigt'; renderZeitplan();
+    return { texte, glocke };
+  });
+  if (r.fehlt) return 'keine Status-Schaltfläche';
+  const soll = ['○ Offen', '● In Arbeit', '✓ Erledigt'];
+  if (JSON.stringify(r.texte) !== JSON.stringify(soll)) return `Texte: ${r.texte.join(' | ')}`;
+  return r.glocke ? '' : '🔔 fehlt bei Punkt mit Datum';
+});
+await scenario('Zeitplan: KI-Import ordnet Meilensteine den Phasen zu, Rest lässt sich zuordnen', async () => {
+  const r = await page.evaluate(() => {
+    const g0 = state.gantt.length, m0 = state.meilensteine.length;
+    document.getElementById('ki-ms-list').innerHTML = ''; document.getElementById('ki-gantt-list').innerHTML = '';
+    _kiZeitplanData = {
+      phasen: [{ name: 'Keller', start: '2027-01-01', end: '2027-03-31' }, { name: 'Fassade', start: '2027-04-01', end: '2027-06-30' },
+               { name: 'Übergabe', start: '2027-08-01', end: '2027-08-31' }],
+      meilensteine: [{ name: 'Keller betoniert', datum: '2027-03-31' }, { name: 'Fassade fertig', datum: '' },
+                     { name: 'Schlüssel', datum: '2027-09-15', phase: 'Übergabe' }, { name: 'Fenster bestellen', datum: '2027-07-15' }]
+    };
+    importKIZeitplan();
+    const neuG = state.gantt.slice(g0), neuM = state.meilensteine.slice(m0);
+    const sec = n => (neuG.find(g => g.name === n) || {}).id;
+    const ist = n => { const m = neuM.find(x => x.name === n); return m && m.ganttId; };
+    const erg = { keller: ist('Keller betoniert') === sec('Keller'), fassade: ist('Fassade fertig') === sec('Fassade'),
+      schluessel: ist('Schlüssel') === sec('Übergabe'), fensterOhne: !ist('Fenster bestellen') };
+    showPage('planung');
+    const ohne = document.querySelector('#plan-timeline .pl-ohne');
+    const fenster = neuM.find(x => x.name === 'Fenster bestellen');
+    const sel = ohne && ohne.querySelector(`.pl-item[data-item="${fenster.id}"] select.pl-assign`);
+    erg.block = !!ohne && ohne.innerText.includes('Ohne Abschnitt') && !!sel;
+    if (sel) { sel.value = String(sec('Fassade')); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    erg.zugeordnet = String(fenster.ganttId) === String(sec('Fassade'));
+    erg.blockWeg = !document.querySelector('#plan-timeline .pl-ohne');
+    erg.idsEinzig = new Set([...state.gantt, ...state.meilensteine].map(x => String(x.id))).size === state.gantt.length + state.meilensteine.length;
+    neuM.forEach(m => _trackDeletion(m.id, 'meilensteine')); neuG.forEach(g => _trackDeletion(g.id, 'gantt'));
+    state.meilensteine = state.meilensteine.filter(m => !neuM.includes(m)); state.gantt = state.gantt.filter(g => !neuG.includes(g));
+    renderZeitplan();
+    return erg;
+  });
+  const p = [];
+  if (!r.keller) p.push('„Keller betoniert" nicht per Datum zugeordnet');
+  if (!r.fassade) p.push('„Fassade fertig" nicht per Name zugeordnet');
+  if (!r.schluessel) p.push('„Schlüssel" nicht laut KI-Phase zugeordnet');
+  if (!r.fensterOhne) p.push('„Fenster bestellen" falsch zugeordnet');
+  if (!r.block) p.push('kein Block „Ohne Abschnitt" mit Auswahl');
+  if (!r.zugeordnet || !r.blockWeg) p.push('Zuordnen per Auswahl klappt nicht');
+  if (!r.idsEinzig) p.push('doppelte IDs');
+  return p.join(' · ');
+});
+await scenario('Fotos/Einstellungen: Unterzeile steht unter der Überschrift', async () => {
+  const r = await page.evaluate(() => ['fotos', 'settings'].map(id => {
+    showPage(id);
+    const h = document.querySelector(`#page-${id} .page-header h2`), s = document.querySelector(`#page-${id} .page-header p`);
+    const a = h.getBoundingClientRect(), b = s.getBoundingClientRect();
+    return b.top >= a.bottom - 2 ? '' : `${id}: Unterzeile neben der Überschrift`;
+  }).filter(Boolean).join(' · '));
+  return r;
+});
+await scenario('Bautagebuch: kein roter Fehler beim „+ Eintrag", Wetter per Antippen', async () => {
+  const r = await page.evaluate(async () => {
+    const alt = showToast, meldungen = [];
+    showToast = (m, t) => meldungen.push(t + ':' + m);
+    const adr = state.settings.address;
+    try {
+      state.settings.address = '4600 Wels';   // Ortssuche scheitert im Test (kein Netz) -> frueher rote Meldung
+      showPage('tagebuch'); openModal('modal-tagebuch');
+      await new Promise(res => setTimeout(res, 1200));
+      const auto = meldungen.filter(m => m.startsWith('error')).length;
+      const chips = [...document.querySelectorAll('#tb-wetter-chips .wx-chip')];
+      const regen = chips.find(c => c.textContent.includes('Regen'));
+      if (regen) regen.click();
+      const wert = document.getElementById('tb-weather').value, an = regen && document.querySelector('#tb-wetter-chips .wx-chip.on')?.textContent;
+      await fetchWetter(true);
+      const manuell = meldungen.filter(m => m.startsWith('error')).length - auto;
+      return { auto, chips: chips.length, wert, an, manuell, bleibt: document.getElementById('tb-weather').value };
+    } finally {
+      showToast = alt; state.settings.address = adr;
+      const m = document.getElementById('modal-tagebuch'); m._dirty = false; closeModal('modal-tagebuch');
+    }
+  });
+  const p = [];
+  if (r.auto) p.push(`${r.auto} Fehlermeldung(en) beim Öffnen`);
+  if (r.chips < 6) p.push(`nur ${r.chips} Wetter-Felder`);
+  if (!/Regen/.test(r.wert || '') || !/Regen/.test(r.an || '')) p.push(`Antippen setzt Wetter nicht (${r.wert})`);
+  if (r.manuell !== 1) p.push('„Abrufen" meldet den Fehler nicht');
+  if (!/Regen/.test(r.bleibt || '')) p.push('gewähltes Wetter überschrieben');
+  return p.join(' · ');
+});
+await scenario('Startseite: Statusbericht/Einstellungen weg, Schalter mit wechselnder Beschriftung werden gemerkt', async () => {
+  const r = await page.evaluate(() => {
+    showPage('dashboard');
+    const kopf = document.querySelector('#page-dashboard .page-header').innerText;
+    const pb = document.getElementById('privacy-btn');
+    const l0 = pb.innerText.trim(); pb.click();
+    const l1 = pb.innerText.trim(), versteckt = document.body.classList.contains('privacy-mode'), aria = pb.getAttribute('aria-checked');
+    document.body.classList.remove('privacy-mode'); renderDashboard();   // wie nach Neustart
+    const gemerkt = document.body.classList.contains('privacy-mode');
+    pb.click();
+    const kb = document.getElementById('ki-panel-btn'); kb.click();
+    const kiAus = document.getElementById('ki-advisor-panel').style.display === 'none', leiste = getComputedStyle(document.getElementById('ki-advisor-off')).display !== 'none';
+    document.getElementById('ki-advisor-panel').style.display = ''; renderDashboard();
+    const kiGemerkt = document.getElementById('ki-advisor-panel').style.display === 'none';
+    document.querySelector('#ki-advisor-off button, #ki-advisor-off [role=switch]').click();
+    const kiWieder = document.getElementById('ki-advisor-panel').style.display !== 'none';
+    return { statusbericht: /Statusbericht/.test(kopf), einst: /Einstellungen/.test(kopf), l0, l1, versteckt, aria, gemerkt,
+      jetzt: document.body.classList.contains('privacy-mode'), kiAus, leiste, kiGemerkt, kiWieder };
+  });
+  const p = [];
+  if (r.statusbericht || r.einst) p.push('Statusbericht/Einstellungen noch oben');
+  if (r.l0 === r.l1 || !r.versteckt || r.aria !== 'false') p.push(`Beträge-Schalter: „${r.l0}" → „${r.l1}"`);
+  if (!r.gemerkt) p.push('Beträge-Einstellung nicht gemerkt');
+  if (r.jetzt) p.push('Beträge lassen sich nicht wieder einblenden');
+  if (!r.kiAus || !r.leiste) p.push('KI ausblenden zeigt keine Leiste');
+  if (!r.kiGemerkt) p.push('KI-Einstellung nicht gemerkt');
+  if (!r.kiWieder) p.push('KI lässt sich über die Leiste nicht wieder einblenden');
+  return p.join(' · ');
+});
+await scenario('Ausgaben: Eigenleistung raus – „Im Budget berücksichtigen" (Standard an), zählt nicht ins Budget', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('kosten');
+    const ui = !!document.getElementById('modal-eigenleistung') || /Eigenleistung \(Wert\)|\+ Eigenleistung/.test(document.getElementById('page-kosten').innerText);
+    openModal('modal-kosten');
+    const cb = document.getElementById('k-im-budget');
+    const standard = !!cb && cb.checked;
+    closeModal('modal-kosten');
+    const summe = () => { showPage('budget'); const b = document.getElementById('bg-total-spent').textContent;
+      showPage('dashboard'); const d = document.getElementById('dash-spent')?.textContent || document.querySelector('#dash-cards')?.innerText; return b + '|' + d; };
+    const vorher = summe();
+    state.kosten.push({ id: 9810001, datum: '2026-09-20', beschr: 'Fliesen selbst verlegt', kat: state.budgetKat[0].name, mwst: 0, netto: 1234, betrag: 1234, status: 'Bezahlt', anbieter: '', imBudget: false, _updatedAt: 1 });
+    const nachher = summe();
+    showPage('kosten');
+    const zeile = [...document.querySelectorAll('#page-kosten tr, #page-kosten .mobile-card, #page-kosten .card')].find(x => x.innerText.includes('Fliesen selbst verlegt'));
+    const badge = !!zeile && /nicht im Budget/i.test(zeile.innerText);
+    const nibSoll = fmt(state.kosten.filter(k => k.imBudget === false && k.status !== 'Storniert').reduce((s, k) => s + (parseFloat(k.betrag) || 0), 0));
+    const karte = document.getElementById('k-nib-card'), nib = karte && karte.style.display !== 'none' && document.getElementById('k-nib').textContent === nibSoll && /1\s?234|1\s?684/.test(nibSoll);
+    // per Fenster: Haken raus -> imBudget:false, wieder rein -> Feld weg
+    editKosten(9810001); const gezeigt = document.getElementById('k-im-budget').checked;
+    document.getElementById('k-im-budget').checked = true; await saveKosten();
+    const wiederDrin = state.kosten.find(k => k.id === 9810001).imBudget !== false;
+    _trackDeletion(9810001, 'kosten'); state.kosten = state.kosten.filter(k => k.id !== 9810001);
+    return { ui, standard, gleich: vorher === nachher, vorher, nachher, badge, nib, gezeigt, wiederDrin };
+  });
+  const p = [];
+  if (r.ui) p.push('Eigenleistung-Bereich noch da');
+  if (!r.standard) p.push('Häkchen „Im Budget berücksichtigen" fehlt oder ist aus');
+  if (!r.gleich) p.push(`Budget/Startseite zählen es mit: ${r.vorher} → ${r.nachher}`);
+  if (!r.badge) p.push('kein Hinweis „nicht im Budget" in der Liste');
+  if (!r.nib) p.push('Karte „Nicht im Budget" fehlt');
+  if (r.gezeigt) p.push('Bearbeiten zeigt Häkchen an, obwohl nicht im Budget');
+  if (!r.wiederDrin) p.push('Häkchen wieder an wirkt nicht');
+  return p.join(' · ');
+});
+await scenario('Ausgaben: bestehende Eigenleistungen werden einmalig übernommen, gelöschte kommen nicht wieder', async () => {
+  const r = await page.evaluate(async () => {
+    if (typeof _eigenleistungenUebernehmen !== 'function') return { fehlt: true };
+    state.eigenleistungen = [{ id: 98200, datum: '2026-08-01', beschr: 'Dämmung selbst', kat: state.budgetKat[0].name, wert: 900, von: 'Simon', notiz: '' }];
+    const n1 = _eigenleistungenUebernehmen(state), n2 = _eigenleistungenUebernehmen(state);
+    const neu = state.kosten.filter(k => k.id === 982007);
+    const ok = neu.length === 1 && neu[0].imBudget === false && neu[0].betrag === 900;
+    window.showConfirm = async () => true;
+    await deleteKosten(982007);
+    window.showConfirm = window.__echtesConfirm;
+    delete state.eigenleistungen[0]._migriert;   // z.B. alte App speichert die Eigenleistung neu
+    const n3 = _eigenleistungenUebernehmen(state);
+    const wieder = state.kosten.some(k => k.id === 982007);
+    state.eigenleistungen = [];
+    return { n1, n2, ok, wieder, n3 };
+  });
+  if (r.fehlt) return 'Übernahme fehlt';
+  const p = [];
+  if (r.n1 !== 1 || r.n2 !== 0 || !r.ok) p.push(`Übernahme: ${r.n1}/${r.n2}, ok=${r.ok}`);
+  if (r.wieder) p.push('gelöschte übernommene Ausgabe kam wieder');
+  return p.join(' · ');
+});
+await scenario('Budget: Grafik (Ring + Balken je Kategorie) mit Zahlen, ohne „nicht im Budget"', async () => {
+  if (!CHART) return '';
+  const r = await page.evaluate(async () => {
+    state.kosten.push({ id: 9830001, datum: '2026-09-21', beschr: 'Geschenk', kat: state.budgetKat[0].name, mwst: 0, netto: 5000, betrag: 5000, status: 'Bezahlt', imBudget: false, _updatedAt: 1 });
+    showPage('budget'); await new Promise(res => setTimeout(res, 300));
+    const ring = document.getElementById('bg-ring-chart'), bar = document.getElementById('bg-bar-chart');
+    const soll = state.kosten.filter(k => k.status !== 'Storniert' && k.imBudget !== false).reduce((s, k) => s + (parseFloat(k.betrag) || 0), 0);
+    const erg = { da: !!(ring && ring._chart && bar && bar._chart),
+      ring: ring && ring._chart ? ring._chart.data.datasets[0].data[0] : null, soll,
+      kats: bar && bar._chart ? bar._chart.data.labels.length : 0, anzKat: state.budgetKat.length,
+      zahl: /\d/.test(document.getElementById('bg-total-spent').textContent),
+      breit: document.querySelector('.bg-blick').scrollWidth <= document.querySelector('.bg-blick').clientWidth + 1 };
+    _trackDeletion(9830001, 'kosten'); state.kosten = state.kosten.filter(k => k.id !== 9830001);
+    return erg;
+  });
+  const p = [];
+  if (!r.da) return 'Grafik fehlt';
+  if (Math.abs(r.ring - r.soll) > 0.01) p.push(`Ring zeigt ${r.ring}, erwartet ${r.soll}`);
+  if (r.kats !== r.anzKat) p.push(`Balken: ${r.kats} statt ${r.anzKat} Kategorien`);
+  if (!r.zahl) p.push('Zahlen fehlen');
+  if (!r.breit) p.push('Grafik ragt über den Rand');
+  return p.join(' · ');
+});
+await scenario('Zahlungstermine: verständlicher Text statt „Abschlagszahlungen"', async () => {
+  const t = await page.evaluate(() => { showPage('zahlungsplan'); return document.getElementById('page-zahlungsplan').innerText; });
+  return /Abschlagszahlung/.test(t) ? 'Text „Abschlagszahlungen" noch da' : '';
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);

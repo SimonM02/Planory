@@ -556,6 +556,21 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
   check(`${label}: API-Adresse gesetzt (sonst KI/Bezahlen tot in der App)`, () => {
     if (!/const API_BASE = 'https:\/\//.test(src)) return 'API_BASE fehlt oder ist relativ';
   });
+  const fn = name => { const i = src.indexOf('function ' + name + '('); if (i < 0) return ''; const j = src.indexOf('\nfunction ', i + 10); return src.slice(i, j < 0 ? undefined : j); };
+  check(`${label}: Budget-Summen zählen „nicht im Budget" nicht mit`, () => {
+    if (!/function _imBudget\(k\)\s*\{[^}]*imBudget !== false/.test(src)) return '_imBudget fehlt';
+    const ohne = ['renderBudget', 'renderDashboard', 'openBudgetDrilldown', 'buildProjectSnapshot', 'exportKostenPDF'].filter(f => !fn(f).includes('_imBudget'));
+    if (ohne.length) return 'ohne _imBudget: ' + ohne.join(', ');
+  });
+  check(`${label}: Statusbericht-Knopf und Eigenleistung-Fenster entfernt`, () => {
+    if (src.includes('sendStatusReport')) return 'sendStatusReport noch da';
+    if (src.includes('modal-eigenleistung')) return 'modal-eigenleistung noch da';
+  });
+  check(`${label}: Zeitplan-Automatik hängt nur Punkte OHNE Abschnitt um (Sync-sicher)`, () => {
+    const z = fn('_plZuordnen');
+    if (!z) return '_plZuordnen fehlt';
+    if (!z.includes('if (m.ganttId) return;')) return 'Punkte mit (noch unbekanntem) Abschnitt könnten umgehängt werden';
+  });
 }
 
 // Rechtstexte & Todoist-Server

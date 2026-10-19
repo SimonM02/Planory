@@ -31,10 +31,17 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
        • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
        • Gelöschte Einträge bleiben gelöscht
        • Bessere Darstellung am iPhone (Tabellen, Wartung, Einstellungen)
-       • Fotos zoomen · Dateien per Drag & Drop · übersichtlicherer Zeitplan · Helfer-Stunden"
+       • Zeitplan neu: klarer aufgebaut, Status per Tipp, Punkte landen automatisch im passenden Abschnitt
+       • Budget als Grafik · Startseite mit Schaltern für Beträge und KI-Berater
+       • Ausgaben „nicht im Budget" (z. B. Eigenleistung) per Häkchen
+       • Bautagebuch: Wetter per Antippen, keine störende Fehlermeldung mehr
+       • Fotos zoomen · Dateien per Drag & Drop · Helfer-Stunden"
 - [ ] Am iPhone prüfen: PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?) ·
       Bautagebuch → „📖 Buch" → Teilen-Menü erscheint → Drucken / „In Dateien sichern" ·
-      ein Eingabefenster offen lassen und ☰ tippen (Fenster schließt, bei Eingaben Rückfrage).
+      ein Eingabefenster offen lassen und ☰ tippen (Fenster schließt, bei Eingaben Rückfrage) ·
+      Zeitplan „+ Abschnitt" (springt zum neuen Abschnitt) · Bautagebuch „+ Eintrag" (Wetter-Felder).
+- Hinweis: Alte Eigenleistungen werden beim ersten Öffnen mit der neuen Version automatisch zu
+  Ausgaben „nicht im Budget" (einmalig; die alten Daten bleiben als Sicherung erhalten).
 - [ ] Nach dem Update: die 3 seit 14.08. bearbeiteten Ausgaben (1 davon in Simons Konto) kurz auf
       die richtige MwSt prüfen (alter Fehler: MwSt vom letzten Bearbeiten blieb hängen).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
