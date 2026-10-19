@@ -347,74 +347,95 @@
   .tl-note { font-size:0.78rem; color:var(--text2); margin-top:5px; line-height:1.4; }
   .tl-undated { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 12px; }
 
-  /* ── Zeitplan: Abschnitte mit Unterpunkten ─────────────────────────── */
-  .pl-hint { font-size:0.8rem; color:var(--text3); margin-bottom:14px; line-height:1.5; }
-  .pl-sec { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:14px; overflow:hidden; }
-  .pl-sechead { padding:13px 16px 12px; user-select:none; }
-  .pl-sectop { display:flex; align-items:center; gap:10px; }
-  .pl-chev { font-size:0.85rem; color:var(--text3); transition:transform .15s; width:14px; flex-shrink:0; cursor:pointer; text-align:center; }
+  /* ── Zeitplan: Abschnitte mit Punkten (kompakt, eine Zeile je Punkt) ───── */
+  #plan-timeline { max-width:860px; }
+  .pl-hint { font-size:0.78rem; color:var(--text3); margin:0 2px 12px; line-height:1.5; }
+  .pl-sec { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+  .pl-sechead { padding:11px 14px 10px; user-select:none; }
+  .pl-sectop { display:flex; align-items:center; gap:8px; }
+  .pl-chev { font-size:0.7rem; color:var(--text3); transition:transform .15s; width:16px; flex-shrink:0; cursor:pointer; text-align:center; }
   .pl-sec.pl-collapsed .pl-chev { transform:rotate(-90deg); }
-  .pl-secname { font-weight:800; font-size:1rem; flex:1; min-width:0; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; }
-  .pl-count { font-size:0.72rem; font-weight:700; color:var(--text3); background:var(--surface2); border-radius:99px; padding:3px 9px; white-space:nowrap; }
-  .pl-secdel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:1rem; opacity:.65; padding:4px; }
-  .pl-progress { height:6px; background:var(--surface2); border-radius:99px; overflow:hidden; margin:9px 0 0 24px; }
+  .pl-secname { font-weight:800; font-size:0.98rem; flex:1; min-width:0; color:var(--text); font-family:inherit; outline:none; padding:2px 0; }
+  .pl-count { font-size:0.7rem; font-weight:700; color:var(--text3); background:var(--surface2); border-radius:99px; padding:2px 8px; white-space:nowrap; }
+  .pl-secdel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.9rem; opacity:.45; padding:4px; transition:opacity .15s; }
+  .pl-sechead:hover .pl-secdel, .pl-secdel:focus { opacity:.9; }
+  .pl-progress { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; margin:8px 0 0 24px; }
   .pl-progress-bar { height:100%; background:var(--success); border-radius:99px; transition:width .35s ease; }
-  .pl-progress-lg { height:9px; margin:9px 0 0 0; }
-  .pl-overview { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 16px; margin-bottom:14px; }
+  .pl-progress-lg { height:8px; margin:9px 0 0 0; }
+  .pl-overview { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
   .pl-overview-top { display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--text2); }
   .pl-overview-top strong { color:var(--text); font-weight:800; }
-  .pl-span { display:flex; align-items:center; gap:7px; margin:8px 0 0 24px; font-size:0.78rem; color:var(--text3); flex-wrap:wrap; }
+  .pl-range { display:inline-block; margin:4px 0 0 24px; padding:0; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.78rem; font-weight:600; color:var(--text2); text-align:left; }
+  .pl-range.pl-range-leer { color:var(--text3); font-weight:500; }
+  .pl-range-edit { color:var(--accent); font-weight:700; }
+  .pl-span { display:flex; align-items:center; gap:10px; margin:8px 0 0 24px; font-size:0.78rem; color:var(--text3); flex-wrap:wrap; }
+  .pl-span label { display:inline-flex; align-items:center; gap:6px; }
   .pl-span-lbl { color:var(--text3); font-size:0.74rem; font-weight:600; }
   .pl-span input { border:1px solid var(--border); background:var(--surface2); border-radius:7px; padding:5px 8px; font-size:0.8rem; color:var(--text2); font-family:inherit; width:140px; }
   .pl-secbody { border-top:1px solid var(--border); }
   .pl-sec.pl-collapsed .pl-secbody { display:none; }
-  .pl-item { display:flex; align-items:center; gap:11px; padding:10px 16px; border-bottom:1px solid var(--surface2); }
+  .pl-item { display:flex; align-items:center; gap:10px; padding:7px 14px; border-bottom:1px solid var(--surface2); min-height:44px; }
+  .pl-item:hover { background:var(--surface2); }
   .pl-imain { flex:1; min-width:0; }
-  .pl-iname { font-size:0.92rem; font-weight:600; border:none; background:transparent; color:var(--text); font-family:inherit; outline:none; width:100%; }
+  .pl-irow { display:flex; align-items:center; gap:8px; min-width:0; }
+  .pl-iname { font-size:0.9rem; font-weight:600; color:var(--text); font-family:inherit; outline:none; flex:1; min-width:0; padding:3px 0; }
   .pl-item.pl-erledigt .pl-iname { text-decoration:line-through; color:var(--text3); }
-  .pl-imeta { font-size:0.72rem; color:var(--text3); margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .pl-irow { display:flex; align-items:center; gap:8px; }
-  .pl-stbtn { font-size:0.74rem; font-weight:800; padding:5px 11px; border-radius:99px; white-space:nowrap; cursor:pointer; font-family:inherit; border:1.5px solid transparent; min-height:30px; }
-  .pl-st-offen { background:var(--surface); border-color:var(--border); color:var(--text2); }
-  .pl-st-arbeit { background:#fef3c7; border-color:#fcd34d; color:#b45309; }
-  .pl-st-erledigt { background:#dcfce7; border-color:#86efac; color:#15803d; }
-  .pl-assign { margin-top:7px; font-size:0.8rem; padding:5px 8px; border:1px solid var(--accent); border-radius:7px; background:var(--surface); color:var(--text); font-family:inherit; max-width:100%; }
-  .pl-range { display:block; margin:7px 0 0 24px; padding:0; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600; color:var(--text2); text-align:left; }
-  .pl-range.pl-range-leer { color:var(--text3); font-weight:500; }
-  .pl-range-edit { color:var(--accent); font-weight:700; }
-  .pl-span label { display:inline-flex; align-items:center; gap:6px; }
-  .pl-leer { padding:12px 16px 2px 16px; font-size:0.82rem; color:var(--text3); }
+  .pl-imeta { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  /* Eingabefelder im Zeitplan ohne Kasten/Balken (auch im Dunkelmodus) – nur beim Bearbeiten eine feine Linie */
+  #plan-timeline .pl-iname, #plan-timeline .pl-secname, #plan-timeline .pl-addrow input,
+  body.dark-mode #plan-timeline .pl-iname, body.dark-mode #plan-timeline .pl-secname, body.dark-mode #plan-timeline .pl-addrow input {
+    background:transparent !important; border:none !important; border-bottom:1.5px solid transparent !important; border-radius:0 !important; box-shadow:none !important; }
+  #plan-timeline .pl-iname:focus, #plan-timeline .pl-secname:focus, #plan-timeline .pl-addrow input:focus,
+  body.dark-mode #plan-timeline .pl-iname:focus, body.dark-mode #plan-timeline .pl-secname:focus, body.dark-mode #plan-timeline .pl-addrow input:focus {
+    border-bottom-color:var(--accent) !important; }
+  /* Status: Abhak-Kreis (leer = offen, halb = in Arbeit, Haken = erledigt) */
+  .pl-stbtn { position:relative; width:22px; height:22px; flex-shrink:0; border-radius:50%; border:2px solid var(--text3); background:transparent; padding:0; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:0.72rem; font-weight:900; line-height:1; font-family:inherit; transition:transform .12s, border-color .15s, background .15s; }
+  .pl-stbtn::before { content:''; position:absolute; inset:-8px; }   /* groessere Tippflaeche */
+  .pl-stbtn:hover { transform:scale(1.08); border-color:var(--accent); }
+  .pl-st-offen { opacity:.75; }
+  .pl-st-arbeit { border-color:var(--warning); background:linear-gradient(90deg, var(--warning) 50%, transparent 50%); }
+  .pl-st-erledigt { border-color:var(--success); background:var(--success); }
+  body.dark-mode .pl-st-erledigt { color:#0b1220; }
+  .pl-tag-arbeit { font-size:0.64rem; font-weight:800; color:var(--warning); background:rgba(245,158,11,.14); padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; }
+  .pl-overdue-tag { font-size:0.64rem; font-weight:800; color:var(--danger); background:var(--danger-light); padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; }
+  .pl-idate, body.dark-mode #plan-timeline .pl-idate { font-size:0.8rem; color:var(--text2) !important; border:1px solid transparent !important; background:transparent !important; border-radius:7px; padding:4px 6px; font-family:inherit; cursor:pointer; box-shadow:none !important; }
+  .pl-idate:hover, .pl-idate:focus, body.dark-mode #plan-timeline .pl-idate:hover, body.dark-mode #plan-timeline .pl-idate:focus { border-color:var(--border) !important; background:var(--surface) !important; }
+  .pl-overdue .pl-idate, body.dark-mode #plan-timeline .pl-overdue .pl-idate { color:var(--danger) !important; }
+  .pl-bellbox { width:28px; display:inline-flex; justify-content:center; }
+  .pl-bell { cursor:pointer; font-size:0.9rem; opacity:.45; background:none; border:none; padding:2px; }
+  .pl-bell.on { opacity:.9; }
+  .pl-iact { display:inline-flex; align-items:center; gap:2px; opacity:.4; transition:opacity .15s; }
+  .pl-item:hover .pl-iact, .pl-iact:focus-within { opacity:1; }
+  .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.88rem; padding:4px; }
+  .pl-move, body.dark-mode #plan-timeline .pl-move { width:28px; height:28px; padding:0; text-align:center; text-align-last:center; border:none !important; border-radius:7px; background:transparent !important; color:var(--text3) !important; font-size:0.9rem; cursor:pointer; -webkit-appearance:none; appearance:none; font-family:inherit; box-shadow:none !important; }
+  .pl-move:hover { background:var(--surface3, var(--border)) !important; }
+  .pl-assign { margin-top:6px; font-size:0.8rem; padding:5px 8px; border:1px solid var(--accent); border-radius:7px; background:var(--surface); color:var(--text); font-family:inherit; max-width:100%; }
+  .pl-leer { padding:10px 14px 0 46px; font-size:0.8rem; color:var(--text3); }
   .pl-ohne { border-style:dashed; }
   .pl-sec.pl-neu { animation:plNeu 1.8s ease; }
   @keyframes plNeu { 0%,45% { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light, rgba(255,159,28,.25)); } 100% { box-shadow:none; } }
-  .pl-idate { font-size:0.78rem; color:var(--text2); border:1px solid var(--border); background:var(--surface2); border-radius:6px; padding:4px 7px; font-family:inherit; }
-  .pl-overdue .pl-idate { border-color:var(--danger); color:var(--danger); }
-  .pl-overdue-tag { font-size:0.62rem; font-weight:800; color:var(--danger); background:var(--danger-light); padding:2px 7px; border-radius:99px; white-space:nowrap; }
-  .pl-bell { cursor:pointer; font-size:0.98rem; opacity:.55; background:none; border:none; padding:2px 4px; }
-  .pl-bell.on { opacity:1; }
-  .pl-idel { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.98rem; opacity:.6; flex-shrink:0; padding:4px; }
-  .pl-iact { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
-  .pl-move { width:34px; height:30px; padding:0; text-align:center; text-align-last:center; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text3); font-size:0.95rem; cursor:pointer; -webkit-appearance:none; appearance:none; font-family:inherit; }
-  .pl-addrow { display:flex; align-items:center; gap:10px; padding:10px 16px; }
-  .pl-addrow .pl-plus { width:22px; text-align:center; color:var(--accent); font-weight:800; font-size:1.1rem; flex-shrink:0; }
-  .pl-addrow input { flex:1; border:none; background:transparent; font-size:0.9rem; color:var(--text); font-family:inherit; outline:none; }
-  .pl-addsec { width:100%; border:1.5px dashed var(--border); background:transparent; border-radius:12px; padding:13px; color:var(--text3); font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit; }
+  .pl-addrow { display:flex; align-items:center; gap:10px; padding:6px 14px 8px; }
+  .pl-addrow .pl-plus { width:22px; text-align:center; color:var(--accent); font-weight:800; font-size:1rem; flex-shrink:0; }
+  .pl-addrow input { flex:1; font-size:0.86rem; color:var(--text); font-family:inherit; outline:none; padding:4px 0; }
+  .pl-addsec { width:100%; border:1.5px dashed var(--border); background:transparent; border-radius:12px; padding:12px; color:var(--text3); font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit; }
   .pl-addsec:hover { border-color:var(--accent); color:var(--accent); }
   .pl-empty { text-align:center; padding:46px 20px; }
   .pl-empty-ic { font-size:2.6rem; margin-bottom:10px; }
   .pl-empty-t { font-weight:800; font-size:1.05rem; color:var(--text); margin-bottom:6px; }
   .pl-empty-s { font-size:0.85rem; color:var(--text2); line-height:1.55; max-width:360px; margin:0 auto; }
   @media (max-width:600px) {
-    .pl-sechead { padding:12px 12px 11px; }
-    .pl-item { padding:10px 12px; gap:8px; align-items:flex-start; }
-    .pl-imeta { gap:6px; flex-wrap:nowrap; }
-    .pl-idate { padding:4px 6px; min-width:0; flex:0 1 auto; max-width:150px; }
-    .pl-addrow { padding:10px 12px; }
+    .pl-sechead { padding:11px 12px 10px; }
+    /* Handy: Kreis + Name oben, Datum/Glocke/Aktionen eingerueckt darunter */
+    .pl-item { flex-wrap:wrap; padding:8px 12px; gap:2px 10px; }
+    .pl-imain { flex:1 1 calc(100% - 40px); }
+    .pl-imeta { flex:1 1 100%; padding-left:32px; gap:2px; }
+    .pl-iact { margin-left:auto; opacity:.7; }
+    .pl-idate { padding:3px 4px; min-width:0; max-width:150px; }
+    .pl-addrow { padding:6px 12px 8px; }
     .pl-span { margin-left:0; }
-    .pl-range { margin-left:24px; }
     .pl-progress { margin-left:0; }
-    .pl-idel { margin-top:2px; }
-    .pl-move { width:34px; height:32px; }
+    .pl-leer { padding-left:44px; }
   }
   /* Ein/Aus-Schalter (Startseite: Beträge, KI-Berater) */
   .sw-toggle { display:inline-flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:700; color:var(--text2); padding:4px 0; }
@@ -5176,29 +5197,31 @@ function renderZeitplan() {
     const st = _plItemStatus(m);
     const remOn = m.remind !== false && !!m.datum;
     const overdue = !!m.datum && st !== 'erledigt' && m.datum < _today;
+    const stTxt = tt(PL_ST_LABEL[st]);
     return `<div class="pl-item ${st==='erledigt'?'pl-erledigt':''} ${overdue?'pl-overdue':''}" data-item="${m.id}">
+      <button type="button" class="pl-stbtn pl-st-${st}" onclick="planCycle(${m.id})" aria-label="${escA(tt('Status') + ': ' + stTxt)}" title="${escA(stTxt + ' – ' + tt('Tippen: Status weiterschalten'))}">${st==='erledigt'?'✓':''}</button>
       <div class="pl-imain">
         <div class="pl-irow">
-          <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)">
+          <input class="pl-iname" value="${escA(m.name)}" onchange="planRenameItem(${m.id},this.value)" aria-label="${escA(tt('Name'))}">
+          ${st==='arbeit'?`<span class="pl-tag-arbeit">${tt('In Arbeit')}</span>`:''}
           ${overdue?`<span class="pl-overdue-tag">${tt('überfällig')}</span>`:''}
-        </div>
-        <div class="pl-imeta">
-          <button type="button" class="pl-stbtn pl-st-${st}" onclick="planCycle(${m.id})" title="${escA(tt('Tippen: Status weiterschalten'))}">${PL_ST_MARK[st]} ${tt(PL_ST_LABEL[st])}</button>
-          <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)" onblur="_plNachDatum()" aria-label="${escA(tt('Termin'))}">
-          ${m.datum?`<button type="button" class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="${escA(tt(remOn?'Erinnerung an – tippen zum Ausschalten':'Erinnerung aus – tippen zum Einschalten'))}">${remOn?'🔔':'🔕'}</button>`:''}
         </div>
         ${ohneAbschnitt && sortedSecs.length ? `<select class="pl-assign" data-noi18n onchange="planAssign(${m.id},this.value)">
           <option value="">${tt('Abschnitt wählen…')}</option>
           ${sortedSecs.map(s => `<option value="${s.id}">${escA(s.name)}</option>`).join('')}
         </select>` : ''}
       </div>
-      <div class="pl-iact">
-        <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
-        ${!ohneAbschnitt && sortedSecs.length ? `<select class="pl-move" data-noi18n onchange="planAssign(${m.id},this.value)" title="${escA(tt('In anderen Abschnitt verschieben'))}" aria-label="${escA(tt('In anderen Abschnitt verschieben'))}">
-          <option value="" selected disabled>⇄</option>
-          ${sortedSecs.map(s => `<option value="${s.id}" ${String(s.id)===String(m.ganttId)?'disabled':''}>${escA(s.name)}${String(s.id)===String(m.ganttId)?' ✓':''}</option>`).join('')}
-          <option value="${PL_OHNE}">${escA(tt('Ohne Abschnitt'))}</option>
-        </select>` : ''}
+      <div class="pl-imeta">
+        <input class="pl-idate" type="date" value="${m.datum||''}" onchange="planSetItemDate(${m.id},this.value)" onblur="_plNachDatum()" aria-label="${escA(tt('Termin'))}">
+        <span class="pl-bellbox">${m.datum?`<button type="button" class="pl-bell ${remOn?'on':''}" onclick="planToggleRemind(${m.id})" title="${escA(tt(remOn?'Erinnerung an – tippen zum Ausschalten':'Erinnerung aus – tippen zum Einschalten'))}">${remOn?'🔔':'🔕'}</button>`:''}</span>
+        <span class="pl-iact">
+          ${!ohneAbschnitt && sortedSecs.length ? `<select class="pl-move" data-noi18n onchange="planAssign(${m.id},this.value)" title="${escA(tt('In anderen Abschnitt verschieben'))}" aria-label="${escA(tt('In anderen Abschnitt verschieben'))}">
+            <option value="" selected disabled>⇄</option>
+            ${sortedSecs.map(s => `<option value="${s.id}" ${String(s.id)===String(m.ganttId)?'disabled':''}>${escA(s.name)}${String(s.id)===String(m.ganttId)?' ✓':''}</option>`).join('')}
+            <option value="${PL_OHNE}">${escA(tt('Ohne Abschnitt'))}</option>
+          </select>` : ''}
+          <button class="pl-idel" onclick="planDelItem(${m.id})" title="${escA(tt('Löschen'))}">🗑</button>
+        </span>
       </div>
     </div>`;
   };
@@ -5219,7 +5242,7 @@ function renderZeitplan() {
         <div class="pl-sectop">
           <span class="pl-chev" onclick="planToggleSection(${s.id})">▼</span>
           <input class="pl-secname" value="${escA(s.name)}" onchange="planRenameSection(${s.id},this.value)" aria-label="${escA(tt('Name des Abschnitts'))}">
-          <span class="pl-count">${done}/${total} ${_lang==='en'?'done':'erledigt'}</span>
+          <span class="pl-count" title="${done}/${total} ${_lang==='en'?'done':'erledigt'}">${done}/${total} ✓</span>
           <button class="pl-secdel" onclick="planDelSection(${s.id})" title="${escA(tt('Abschnitt löschen'))}">🗑</button>
         </div>
         <button type="button" class="pl-range ${s.start||s.end?'':'pl-range-leer'}" onclick="planToggleZeitraum(${s.id})">📅 ${_plZeitraumText(s)} <span class="pl-range-edit">· ${tt(offen?'Zeitraum schließen':'Zeitraum ändern')}</span></button>
@@ -5258,7 +5281,7 @@ function renderZeitplan() {
       <div class="pl-overview-top"><span>${tt('Gesamt-Fortschritt')}</span><strong>${allDone}/${allTotal} ${_lang==='en'?'done':'erledigt'}</strong></div>
       <div class="pl-progress pl-progress-lg"><div class="pl-progress-bar" style="width:${allPct}%"></div></div>
     </div>`;
-    html += `<div class="pl-hint">${tt('Tippe auf den Status, um ihn weiterzuschalten · 🔔 = Erinnerung am Termin')}</div>`;
+    html += `<div class="pl-hint">${tt('Kreis antippen: Offen → In Arbeit → Erledigt · 🔔 = Erinnerung am Termin')}</div>`;
   }
   html += sortedSecs.map(sectionCard).join('');
   if (ungrouped.length) {
@@ -5731,7 +5754,7 @@ const TEXTE = {
   "Einsätze pro Helfer": { en: "Hours per helper" },
   "Geplante Stunden": { en: "Planned hours" },
   "Sobald du Helfer einteilst, siehst du hier die geplanten Stunden pro Person.": { en: "Once you assign helpers, you'll see the planned hours per person here." },
-  "Tippe auf den Status, um ihn weiterzuschalten · 🔔 = Erinnerung am Termin": { en: "Tap the status to move it on · 🔔 = reminder on the date" },
+  "Kreis antippen: Offen → In Arbeit → Erledigt · 🔔 = Erinnerung am Termin": { en: "Tap the circle: Open → In progress → Done · 🔔 = reminder on the date" },
   "Tippen: Status weiterschalten": { en: "Tap: next status" },
   "Erinnerung an – tippen zum Ausschalten": { en: "Reminder on – tap to turn off" },
   "Erinnerung aus – tippen zum Einschalten": { en: "Reminder off – tap to turn on" },
