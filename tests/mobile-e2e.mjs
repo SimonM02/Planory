@@ -1870,6 +1870,208 @@ await scenario('Kostenentwicklung: Kategorien mit Namen (nicht „€0, €1"), 
   return p.join(' · ');
 });
 
+// ── Aufgaben wie Todoist: Heute/Demnächst, Kategorien, Unteraufgaben, Wiederholung ──
+const TK_AUFRAEUMEN = `window.__tkWeg = ids => { const s = new Set(ids.map(String)); state.aufgaben = state.aufgaben.filter(t => !s.has(String(t.id))); };`;
+await page.evaluate(TK_AUFRAEUMEN);
+await scenario('Aufgaben: „Heute" zeigt heute Fälliges, Überfälliges extra oben, nichts aus der Zukunft', async () => {
+  const r = await page.evaluate(() => {
+    const h = today();
+    state.aufgaben.push({ id: 9900001, name: 'TK alt', prio: 'Mittel', status: 'Offen', datum: _tkPlusTage(h, -3) },
+      { id: 9900002, name: 'TK heute', prio: 'Hoch', status: 'Offen', datum: h, time: '07:30' },
+      { id: 9900003, name: 'TK später', prio: 'Mittel', status: 'Offen', datum: _tkPlusTage(h, 4) });
+    showPage('aufgaben'); tkZeige('heute');
+    const gruppen = [...document.querySelectorAll('#task-list-container .tk-gruppe')].map(g => ({ kopf: g.querySelector('.tk-gkopf').textContent, ids: [...g.querySelectorAll('.tk-row')].map(x => x.dataset.task) }));
+    const ueber = gruppen.find(g => /Überfällig/.test(g.kopf)), heu = gruppen.find(g => /Heute/.test(g.kopf));
+    const zeit = document.querySelector('#task-list-container .tk-row[data-task="9900002"]')?.innerText || '';
+    __tkWeg([9900001, 9900002, 9900003]);
+    return { ueber: ueber && ueber.ids, heu: heu && heu.ids, alle: gruppen.flatMap(g => g.ids), zeit };
+  });
+  const p = [];
+  if (!r.ueber || !r.ueber.includes('9900001')) p.push('Überfälliges fehlt im Block „Überfällig"');
+  if (!r.heu || !r.heu.includes('9900002') || r.heu.includes('9900001')) p.push('„Heute" falsch befüllt');
+  if (r.alle.includes('9900003')) p.push('Zukünftiges steht in „Heute"');
+  if (!/07:30/.test(r.zeit)) p.push('Uhrzeit nicht sichtbar');
+  return p.join(' · ');
+});
+await scenario('Aufgaben: „Demnächst" nach Tagen gruppiert, Schnell-Anlegen setzt das Datum des Tages', async () => {
+  const r = await page.evaluate(() => {
+    const h = today(), d3 = _tkPlusTage(h, 3);
+    state.aufgaben.push({ id: 9900011, name: 'TK in drei Tagen', prio: 'Mittel', status: 'Offen', datum: d3 },
+      { id: 9900012, name: 'TK überfällig', prio: 'Mittel', status: 'Offen', datum: _tkPlusTage(h, -1) });
+    showPage('aufgaben'); tkZeige('demnaechst');
+    const grp = [...document.querySelectorAll('#task-list-container .tk-gruppe')].find(g => g.querySelector('.tk-row[data-task="9900011"]'));
+    const kopf = grp ? grp.querySelector('.tk-gkopf').textContent : '';
+    const ueber = !!document.querySelector('#task-list-container .tk-row[data-task="9900012"]');
+    tkSchnellTag(d3);
+    const inp = document.querySelector(`#task-list-container .tk-add[data-tag="${d3}"] input`);
+    inp.value = 'TK schnell am Tag'; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const neu = state.aufgaben.find(t => t.name === 'TK schnell am Tag');
+    const erg = { kopf, soll: fmtDate(d3), ueber, neuDatum: neu && neu.datum, d3 };
+    __tkWeg([9900011, 9900012, neu && neu.id].filter(Boolean));
+    return erg;
+  });
+  const p = [];
+  if (!r.kopf.includes(r.soll)) p.push(`Tag-Überschrift „${r.kopf}"`);
+  if (r.ueber) p.push('Überfälliges steht in „Demnächst"');
+  if (r.neuDatum !== r.d3) p.push(`Schnell angelegt mit Datum ${r.neuDatum}`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben: Kategorie anlegen, umbenennen, darin anlegen, löschen → Aufgaben in den Eingang', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('aufgaben');
+    const vorher = (state.aufgabenKat || []).length;
+    tkKatNeu();
+    const k = state.aufgabenKat[state.aufgabenKat.length - 1];
+    const ansicht = tkAnsicht === 'kat:' + k.id;
+    const name = document.getElementById('tk-kat-name');
+    name.value = 'Garten'; name.dispatchEvent(new Event('change', { bubbles: true }));
+    const inp = document.querySelector('#task-list-container .tk-add-haupt input');
+    inp.value = 'Rasen säen'; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const t = state.aufgaben.find(x => x.name === 'Rasen säen');
+    const inKat = t && String(t.katId) === String(k.id) && !!document.querySelector(`#task-list-container .tk-row[data-task="${t.id}"]`);
+    const navName = [...document.querySelectorAll('#tk-nav .tk-nav-item')].some(b => b.textContent.includes('Garten'));
+    window.showConfirm = async () => true;
+    await tkKatLoeschen(k.id);
+    window.showConfirm = window.__echtesConfirm;
+    const weg = !(state.aufgabenKat || []).some(x => x.id === k.id) && !!state._deletedIds[String(k.id)];
+    tkZeige('eingang');
+    const imEingang = !t.katId && !!document.querySelector(`#task-list-container .tk-row[data-task="${t.id}"]`);
+    __tkWeg([t.id]);
+    return { neu: state.aufgabenKat.length === vorher, ansicht, inKat, navName, weg, imEingang, nameNeu: k.name };
+  });
+  const p = [];
+  if (!r.ansicht) p.push('neue Kategorie wird nicht angezeigt');
+  if (r.nameNeu !== 'Garten' || !r.navName) p.push('Umbenennen klappt nicht');
+  if (!r.inKat) p.push('Schnell-Anlegen landet nicht in der Kategorie');
+  if (!r.weg) p.push('Kategorie nicht gelöscht (oder ohne Grabstein)');
+  if (!r.imEingang) p.push('Aufgabe nach dem Löschen nicht im Eingang');
+  return p.join(' · ');
+});
+await scenario('Aufgaben: Unteraufgaben „1/3", Hauptaufgabe abhaken = alles erledigt, Löschen räumt alles auf', async () => {
+  const r = await page.evaluate(async () => {
+    state.aufgaben.push({ id: 9900021, name: 'TK Haupt', prio: 'Hoch', status: 'Offen', datum: '', notiz: 'Haupt-Notiz' },
+      { id: 9900022, name: 'TK Unter 1', prio: 'Mittel', status: 'Erledigt', datum: '', parentId: 9900021 },
+      { id: 9900023, name: 'TK Unter 2', prio: 'Mittel', status: 'Offen', datum: '', parentId: 9900021, notiz: 'Unter-Notiz' },
+      { id: 9900024, name: 'TK Unter 3', prio: 'Mittel', status: 'Offen', datum: '', parentId: 9900021 });
+    _syncTaskNotiz(_tkFind(9900021)); _syncTaskNotiz(_tkFind(9900023));
+    showPage('aufgaben'); tkZeige('eingang');
+    const btn = document.querySelector('#task-list-container .tk-row[data-task="9900021"] .tk-sub-btn');
+    const zaehler = btn ? btn.textContent : '';
+    const eingerueckt = !!document.querySelector('#task-list-container .tk-kinder .tk-row[data-task="9900023"]');
+    toggleTask(9900021);
+    const alleErl = [9900021, 9900022, 9900023, 9900024].every(id => _tkFind(id).status === 'Erledigt');
+    toggleTask(9900021);
+    const nurHaupt = _tkFind(9900021).status === 'Offen' && _tkFind(9900023).status === 'Erledigt';
+    window.showConfirm = async () => true;
+    await deleteTask(9900021);
+    window.showConfirm = window.__echtesConfirm;
+    const rest = [9900021, 9900022, 9900023, 9900024].filter(id => _tkFind(id)).length;
+    const notizen = state.notizen.filter(n => [9900021, 9900023].includes(n.__taskId)).length;
+    const steine = ['9900021', '9900024'].every(id => state._deletedIds[id]);
+    return { zaehler, eingerueckt, alleErl, nurHaupt, rest, notizen, steine };
+  });
+  const p = [];
+  if (!/1\/3/.test(r.zaehler)) p.push(`Zähler „${r.zaehler}"`);
+  if (!r.eingerueckt) p.push('Unteraufgaben nicht eingerückt unter der Hauptaufgabe');
+  if (!r.alleErl) p.push('Hauptaufgabe abhaken erledigt nicht alle Unteraufgaben');
+  if (!r.nurHaupt) p.push('Wieder öffnen öffnet mehr als die Hauptaufgabe');
+  if (r.rest || r.notizen || !r.steine) p.push(`Löschen: ${r.rest} Aufgaben, ${r.notizen} Notizen übrig`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben: Wiederholung springt auf den nächsten Termin (wöchentlich, Monatsende), Unteraufgaben wieder offen', async () => {
+  const r = await page.evaluate(() => {
+    const h = today();
+    const woche = _tkNaechsterTermin(h, 'woechentlich');
+    const monat = _tkNaechsterTermin('2027-01-31', 'monatlich');
+    const schalt = _tkNaechsterTermin('2028-01-31', 'monatlich');
+    const alt = _tkNaechsterTermin('2020-03-15', 'monatlich');
+    const werktag = _tkNaechsterTermin('2027-01-08', 'werktags');   // Freitag -> Montag
+    state.aufgaben.push({ id: 9900031, name: 'TK wöchentlich', prio: 'Mittel', status: 'Offen', datum: h, time: '08:00', wdh: 'woechentlich' },
+      { id: 9900032, name: 'TK wöchentlich Unter', prio: 'Mittel', status: 'Erledigt', datum: '', parentId: 9900031 });
+    showPage('aufgaben');
+    toggleTask(9900031);
+    const t = _tkFind(9900031), u = _tkFind(9900032);
+    const erg = { woche, soll: _tkPlusTage(h, 7), monat, schalt, alt, h, werktag, datum: t.datum, status: t.status, time: t.time, unter: u.status };
+    __tkWeg([9900031, 9900032]);
+    return erg;
+  });
+  const p = [];
+  if (r.woche !== r.soll) p.push(`wöchentlich: ${r.woche}`);
+  if (r.monat !== '2027-02-28' || r.schalt !== '2028-02-29') p.push(`Monatsende: ${r.monat} / ${r.schalt}`);
+  if (!(r.alt > r.h)) p.push(`alter Termin rutscht nicht in die Zukunft: ${r.alt}`);
+  if (r.werktag !== '2027-01-11') p.push(`werktags: ${r.werktag}`);
+  if (r.datum !== r.soll || r.status !== 'Offen' || r.time !== '08:00') p.push(`nach dem Abhaken: ${r.datum} ${r.status} ${r.time}`);
+  if (r.unter !== 'Offen') p.push('Unteraufgabe nicht wieder offen');
+  return p.join(' · ');
+});
+await scenario('Aufgaben: Fenster speichert Kategorie, Wiederholung und Unteraufgaben; Bearbeiten ohne Änderung behält alles', async () => {
+  const r = await page.evaluate(async () => {
+    showPage('aufgaben');
+    const k = _tkKatAnlegen('TK Fenster-Kat');
+    tkZeige('kat:' + k.id);
+    tkNeu();
+    const vorbelegt = document.getElementById('t-kat').value === String(k.id);
+    document.getElementById('t-name').value = 'TK aus dem Fenster';
+    _selectValue(document.getElementById('t-wdh'), 'monatlich'); onTaskWdhChange();
+    const datumGesetzt = !!document.getElementById('t-datum').value;
+    const ui = document.getElementById('t-unter-neu');
+    ui.value = 'TK Teil A'; tkModalUnterAdd(ui); ui.value = 'TK Teil B'; tkModalUnterAdd(ui);
+    await saveTask();
+    const t = state.aufgaben.find(x => x.name === 'TK aus dem Fenster');
+    const kinder = _tkKinder(t.id);
+    const vor = JSON.stringify({ ...t, _updatedAt: 0 });
+    editTask(t.id); await saveTask();
+    const nach = JSON.stringify({ ..._tkFind(t.id), _updatedAt: 0 });
+    editTask(kinder[0].id);
+    const katVersteckt = document.getElementById('t-kat-row').style.display === 'none';
+    await saveTask();
+    const kindBleibt = String(_tkFind(kinder[0].id).parentId) === String(t.id) && String(_tkFind(kinder[0].id).katId) === String(k.id);
+    const ids = [t.id, ...kinder.map(x => x.id)];
+    __tkWeg(ids); state.aufgabenKat = state.aufgabenKat.filter(x => x !== k);
+    return { vorbelegt, datumGesetzt, kat: String(t.katId) === String(k.id), wdh: t.wdh, kinder: kinder.map(x => x.name).sort().join(','), gleich: vor === nach, katVersteckt, kindBleibt };
+  });
+  const p = [];
+  if (!r.vorbelegt) p.push('Kategorie im Fenster nicht vorbelegt');
+  if (!r.datumGesetzt) p.push('Wiederholung ohne Datum setzt kein Datum');
+  if (!r.kat || r.wdh !== 'monatlich') p.push(`gespeichert: Kategorie ${r.kat}, Wiederholung ${r.wdh}`);
+  if (r.kinder !== 'TK Teil A,TK Teil B') p.push(`Unteraufgaben: ${r.kinder}`);
+  if (!r.gleich) p.push('Bearbeiten ohne Änderung verändert die Aufgabe');
+  if (!r.katVersteckt || !r.kindBleibt) p.push('Unteraufgabe bearbeiten verliert Hauptaufgabe/Kategorie');
+  return p.join(' · ');
+});
+await scenario('Aufgaben am Handy: Ansichten als wischbare Leiste, nichts ragt über den Rand', async () => {
+  const r = await page.evaluate(() => {
+    showPage('aufgaben'); tkZeige('kat:3101');
+    const nav = document.getElementById('tk-nav'), cs = getComputedStyle(nav);
+    const ueber = [...document.querySelectorAll('#page-aufgaben .tk-row, #page-aufgaben .tk-kopfzeile')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length;
+    tkZeige('heute');
+    return { reihe: cs.flexDirection === 'row' && /auto|scroll/.test(cs.overflowX), ueber, seite: document.documentElement.scrollWidth <= innerWidth + 1 };
+  });
+  const p = [];
+  if (!r.reihe) p.push('Navigation nicht als wischbare Leiste');
+  if (r.ueber || !r.seite) p.push(`${r.ueber} Zeilen ragen über den Rand`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben am Computer (dunkel): zwei Spalten, Eingabefelder ohne Balken', async () => {
+  const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  let r;
+  try {
+    r = await d.page.evaluate(() => {
+      document.body.classList.add('dark-mode'); showPage('aufgaben'); tkZeige('kat:3101');
+      const nav = document.getElementById('tk-nav').getBoundingClientRect(), list = document.getElementById('task-list-container').getBoundingClientRect();
+      const bg = el => getComputedStyle(el).backgroundColor;
+      const felder = [document.querySelector('#page-aufgaben .tk-add input'), document.getElementById('tk-kat-name')];
+      return { spalten: nav.right <= list.left && Math.abs(nav.top - list.top) < 140, durchsichtig: felder.every(el => el && /rgba\(0, 0, 0, 0\)|transparent/.test(bg(el))) };
+    });
+    if (d.errors.length) r.fehler = d.errors.join(' · ');
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (r.fehler) p.push('JS-Fehler: ' + r.fehler);
+  if (!r.spalten) p.push('Navigation und Liste nicht nebeneinander');
+  if (!r.durchsichtig) p.push('Eingabefelder mit Balken im Dunkelmodus');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

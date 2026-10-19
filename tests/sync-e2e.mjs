@@ -715,6 +715,45 @@ await scenario('E16: Eigenleistung → einmalig Ausgabe „nicht im Budget" (Clo
   } finally { await ctx.close(); }
 });
 
+// E17) Aufgaben-Kategorie + Unteraufgabe landen als eigene Zeilen in der Cloud, sind nach dem
+//      Neustart wieder da; eine geloeschte Kategorie kommt nicht zurueck.
+await scenario('E17: Aufgaben-Kategorie und Unteraufgabe überleben den Neustart, gelöschte Kategorie bleibt weg', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true });
+  const zeilen = typ => page.evaluate(t => window.__fakeDb.projekt_items.filter(r => r.item_type === t).map(r => r.payload), typ);
+  try {
+    await waitFor(page, BEREIT);
+    const ids = await page.evaluate(() => {
+      const k = _tkKatAnlegen('Küche E17');
+      const haupt = { id: _neueId(), name: 'Küche bestellen E17', prio: 'Hoch', status: 'Offen', datum: '', katId: k.id, _updatedAt: Date.now() };
+      const unter = { id: _neueId(), name: 'Maße nehmen E17', prio: 'Mittel', status: 'Offen', datum: '', katId: k.id, parentId: haupt.id, wdh: 'woechentlich', _updatedAt: Date.now() };
+      state.aufgaben.push(haupt, unter); save();
+      return { k: k.id, haupt: haupt.id, unter: unter.id };
+    });
+    await waitFor(page, i => window.__fakeDb.projekt_items.some(r => r.item_type === 'aufgabenKat' && String(r.payload.id) === String(i.k))
+      && window.__fakeDb.projekt_items.some(r => r.item_type === 'aufgaben' && String(r.payload.id) === String(i.unter)), ids, 10000);
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('E17'), null, 5000);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 2500);
+    const nach = await page.evaluate(i => ({ kat: (state.aufgabenKat || []).some(k => String(k.id) === String(i.k)),
+      unter: (state.aufgaben.find(t => String(t.id) === String(i.unter)) || {}) }), ids);
+    const p = [];
+    if (!nach.kat) p.push('Kategorie nach Neustart weg');
+    if (String(nach.unter.parentId) !== String(ids.haupt) || String(nach.unter.katId) !== String(ids.k) || nach.unter.wdh !== 'woechentlich') p.push(`Unteraufgabe nach Neustart: ${JSON.stringify(nach.unter)}`);
+    await page.evaluate(async i => { window.showConfirm = async () => true; await tkKatLoeschen(i.k); }, ids);
+    await waitFor(page, i => !window.__fakeDb.projekt_items.some(r => r.item_type === 'aufgabenKat' && String(r.payload.id) === String(i.k)), ids, 10000);
+    await page.waitForTimeout(1500);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 2500);
+    const ende = await page.evaluate(i => ({ kat: (state.aufgabenKat || []).some(k => String(k.id) === String(i.k)),
+      haupt: (state.aufgaben.find(t => String(t.id) === String(i.haupt)) || {}) }), ids);
+    if (ende.kat || (await zeilen('aufgabenKat')).some(k => String(k.id) === String(ids.k))) p.push('gelöschte Kategorie kam zurück');
+    if (ende.haupt.katId) p.push('Aufgabe hängt noch an der gelöschten Kategorie');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 await browser.close();
 
 // ── Ergebnis ──

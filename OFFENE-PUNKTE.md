@@ -31,6 +31,7 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
        • Angebote, Zahlungsplan, Wartung und Budgetkategorien verbessert
        • Gelöschte Einträge bleiben gelöscht
        • Bessere Darstellung am iPhone (Tabellen, Wartung, Einstellungen)
+       • NEU: Aufgaben wie Todoist – Kategorien, Unteraufgaben, „Heute“ & „Demnächst“, Wiederholung
        • Zeitplan neu: klarer aufgebaut, Status per Tipp, Punkte landen automatisch im passenden Abschnitt
        • Budget als Grafik · Startseite mit Schaltern für Beträge und KI-Berater
        • Ausgaben „nicht im Budget" (z. B. Eigenleistung) per Häkchen

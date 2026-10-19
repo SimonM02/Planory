@@ -566,6 +566,14 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (src.includes('sendStatusReport')) return 'sendStatusReport noch da';
     if (src.includes('modal-eigenleistung')) return 'modal-eigenleistung noch da';
   });
+  check(`${label}: Aufgaben-Kategorien werden synchronisiert (eigene Zeilen)`, () => {
+    const m = src.match(/const ITEM_TYPES = \[([\s\S]*?)\];/);
+    if (!m || !m[1].includes("'aufgabenKat'")) return 'aufgabenKat fehlt in ITEM_TYPES';
+    if (!/const ARRS = \[[\s\S]*?'aufgabenKat'[\s\S]*?\];/.test(src)) return 'aufgabenKat fehlt in _mergeProjects';
+  });
+  check(`${label}: Aufgaben-Kategorie löschen setzt einen Grabstein`, () => {
+    if (!fn('tkKatLoeschen').includes("_trackDeletion(k.id, 'aufgabenKat')")) return 'kein Grabstein';
+  });
   check(`${label}: Zeitplan-Automatik hängt nur Punkte OHNE Abschnitt um (Sync-sicher)`, () => {
     const z = fn('_plZuordnen');
     if (!z) return '_plZuordnen fehlt';
