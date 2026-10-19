@@ -6504,6 +6504,8 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Aufgaben-Ansichten": { en: "Task views" },
+  "Person": { en: "Person" },
   "Alle Personen": { en: "All people" },
   "+ Neue Kategorie…": { en: "+ New category…" },
   "Als erledigt markieren": { en: "Mark as done" },
@@ -8188,7 +8190,7 @@ function renderDashboard() {
   // Dringende zuerst (Prioritaet, dann Faelligkeit) – frueher die 5 aeltesten, neue dringende fehlten
   const _po = { Hoch: 0, Mittel: 1, Niedrig: 2 };
   const openTasks = state.aufgaben.filter(t => t.status !== 'Erledigt' && !(t.parentId && state.aufgaben.some(p => String(p.id) === String(t.parentId))))
-    .sort((a, b) => { const f = t => (t.datum && t.datum <= today()) ? 0 : 1;   // heute/ueberfaellig zuerst
+    .sort((a, b) => { const f = t => (t.datum && t.datum <= _tkHeute()) ? 0 : 1;   // heute/ueberfaellig zuerst
       return (f(a) - f(b)) || ((_po[a.prio] ?? 1) - (_po[b.prio] ?? 1)) || String(a.datum || '9999').localeCompare(String(b.datum || '9999')); })
     .slice(0, 5);
   const ttbody = document.getElementById('dash-tasks');
@@ -10082,6 +10084,11 @@ let _tkUnterNeu = [];             // im Fenster neu eingetippte Unteraufgaben (w
 const _tkUnterAuf = new Set();    // Hauptaufgaben mit offenem Eingabefeld „Unteraufgabe hinzufügen"
 let _tkTagOffen = '';             // Demnaechst: Tag mit offenem Eingabefeld
 
+// Lokales Datum (nicht UTC): sonst ist kurz nach Mitternacht „Heute" noch gestern
+function _tkLokal(ts) { const d = ts == null ? new Date() : new Date(ts); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _tkHeute() { return _tkLokal(); }
+// Farben kommen aus synchronisierten Daten -> nur echte Farbwerte in style-Attribute
+function _tkFarbe(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#64748b'; }
 function _tkFind(id) { return (state.aufgaben || []).find(t => String(t.id) === String(id)); }
 function _tkKat(id) { return id ? (state.aufgabenKat || []).find(k => String(k.id) === String(id)) : null; }
 function _tkDone(t) { return t.status === 'Erledigt'; }
@@ -10093,7 +10100,7 @@ function _tkPlusTage(d, n) { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(
 // Naechster Termin einer wiederkehrenden Aufgabe – immer NACH heute (eine nachgeholte, ueberfaellige
 // Aufgabe rutscht nicht wieder in „Ueberfaellig"). Monatsende: 31. -> letzter Tag des Monats.
 function _tkNaechsterTermin(datum, wdh) {
-  const heute = today();
+  const heute = _tkHeute();
   const p = s => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
   let dt = p(_plDatumOk(datum) ? datum : heute);
   const tag0 = dt.getUTCDate();
@@ -10109,8 +10116,9 @@ function _tkNaechsterTermin(datum, wdh) {
     } else dt.setUTCDate(dt.getUTCDate() + 1);
   };
   let n = 0;
-  do { schritt(); n++; } while (dt.toISOString().slice(0, 10) <= heute && n < 5000);
-  return dt.toISOString().slice(0, 10);
+  do { schritt(); n++; } while (dt.toISOString().slice(0, 10) <= heute && n < 200000);
+  const erg = dt.toISOString().slice(0, 10);
+  return erg > heute ? erg : _tkNaechsterTermin(heute, wdh);
 }
 
 function _getTaskPersons() {
@@ -10154,11 +10162,12 @@ function _tkKatOptionen(sel, wert) {
     kats.map(k => `<option value="${esc(k.id)}">#  ${esc(k.name)}</option>`).join('') +
     `<option value="__neu">${esc(tt('+ Neue Kategorie…'))}</option>`;
   sel.value = _tkKat(wert) ? String(wert) : '';
+  sel.dataset.prev = sel.value;
 }
 async function tkKatAuswahl(sel) {
-  if (sel.value !== '__neu') return;
+  if (sel.value !== '__neu') { sel.dataset.prev = sel.value; return; }
   const name = await showPrompt(tt('Name der neuen Kategorie'), '', { title: tt('Neue Kategorie') });
-  if (!name || !String(name).trim()) { sel.value = ''; return; }
+  if (!name || !String(name).trim()) { sel.value = sel.dataset.prev || ''; return; }
   const k = _tkKatAnlegen(String(name).trim());
   _tkKatOptionen(sel, k.id);
   const m = document.getElementById('modal-task'); if (m) m._dirty = true;
@@ -10179,7 +10188,7 @@ function tkModalUnterAdd(inp) {
 }
 function onTaskWdhChange() {
   const d = document.getElementById('t-datum');
-  if (document.getElementById('t-wdh').value && d && !d.value) d.value = today();
+  if (document.getElementById('t-wdh').value && d && !d.value) d.value = _tkHeute();
 }
 // Fenster fuer eine neue Aufgabe vorbereiten (Kategorie/Datum je nach Ansicht vorbelegt)
 function tkNeu(vorgabe = {}) {
@@ -10190,6 +10199,7 @@ function tkNeu(vorgabe = {}) {
   _tkKatOptionen(document.getElementById('t-kat'), kat);
   if (vorgabe.datum !== undefined) document.getElementById('t-datum').value = vorgabe.datum;
   else if (tkAnsicht.startsWith('kat:') || tkAnsicht === 'eingang') document.getElementById('t-datum').value = '';
+  else document.getElementById('t-datum').value = _tkHeute();
   if (vorgabe.parentId) {
     document.getElementById('t-parent-id').value = vorgabe.parentId;
     const p = _tkFind(vorgabe.parentId); if (p) _tkKatOptionen(document.getElementById('t-kat'), p.katId);
@@ -10208,6 +10218,8 @@ function saveTask() {
   const editId = document.getElementById('t-edit-id').value || null;
   const name = document.getElementById('t-name').value.trim();
   if (!name) { showToast('⚠️ Bitte eine Aufgabe eingeben', 'error'); return; }
+  const offenEin = document.getElementById('t-unter-neu');
+  if (offenEin && offenEin.value.trim()) { _tkUnterNeu.push(offenEin.value.trim()); offenEin.value = ''; }
   const alt = editId ? _tkFind(editId) : null;
   const parentId = alt ? (alt.parentId || '') : (document.getElementById('t-parent-id').value || '');
   const eltern = parentId ? _tkFind(parentId) : null;
@@ -10267,12 +10279,12 @@ function _syncTaskNotiz(task) {
   if (existing) {
     // Always update title; only overwrite text if user hasn't manually edited it
     existing.title = noteTitle;
-    existing.datum = today();
+    existing.datum = _tkHeute();
     if (!existing.__userEdited) existing.text = autoText;
   } else {
     state.notizen.push({ id: _neueId(),
       title: noteTitle, text: autoText, color: '#eff4ff',
-      datum: today(), __taskId: task.id, __userEdited: false });
+      datum: _tkHeute(), __taskId: task.id, __userEdited: false });
   }
 }
 
@@ -10316,9 +10328,17 @@ function toggleTask(id) {
   if (t) {
     const jetzt = Date.now();
     if (!_tkDone(t) && t.wdh) {
+      const vorher = t.datum;
       t.datum = _tkNaechsterTermin(t.datum, t.wdh);
       t.status = 'Offen'; t._updatedAt = jetzt;
-      _tkKinder(t.id).forEach(k => { if (_tkDone(k)) { k.status = 'Offen'; delete k.erledigtAm; k._updatedAt = jetzt; _syncTaskNotiz(k); } });
+      // Unteraufgaben wieder oeffnen und ihre Termine um denselben Abstand verschieben
+      const tage = _plDatumOk(vorher) ? Math.round((Date.parse(t.datum + 'T12:00:00Z') - Date.parse(vorher + 'T12:00:00Z')) / 864e5) : 0;
+      _tkKinder(t.id).forEach(k => {
+        let geaendert = false;
+        if (_tkDone(k)) { k.status = 'Offen'; delete k.erledigtAm; geaendert = true; }
+        if (tage && _plDatumOk(k.datum)) { k.datum = _tkPlusTage(k.datum, tage); geaendert = true; }
+        if (geaendert) { k._updatedAt = jetzt; _syncTaskNotiz(k); }
+      });
       _syncTaskNotiz(t);
       showToast('🔁 ' + tt('Nächster Termin') + ': ' + fmtDate(t.datum), 'success');
     } else {
@@ -10382,7 +10402,8 @@ function tkKatNeu() {
 function tkKatUmbenennen(id, val) {
   const k = _tkKat(id); const v = String(val || '').trim();
   if (!k || !v) { renderTasks(); return; }
-  k.name = v; k._updatedAt = Date.now(); save(); renderTasks();
+  k.name = v; k._updatedAt = Date.now(); save();
+  const nl = document.querySelector('#tk-nav .tk-nav-item.on .tk-nl'); if (nl) nl.textContent = v;
 }
 function tkKatFarbe(id, farbe) { const k = _tkKat(id); if (!k) return; k.color = farbe; k._updatedAt = Date.now(); save(); renderTasks(); }
 async function tkKatLoeschen(id) {
@@ -10424,14 +10445,23 @@ function tkSchnell(inp) {
   const t = { id: _neueId(), name, prio: 'Mittel', datum: inp.dataset.datum || '', time: '', person: '', notiz: '', status: 'Offen', _updatedAt: Date.now() };
   if (kat) t.katId = kat;
   if (parent) t.parentId = parent.id;
+  if (taskPersonFilter) t.person = taskPersonFilter;   // sonst verschwaende sie sofort aus der gefilterten Liste
   state.aufgaben.push(t);
-  inp.value = '';
+  inp.onblur = null; inp.value = '';
   save(); try { scheduleTaskReminders(); } catch (e) {}
   if (parent) _tkUnterAuf.add(String(parent.id));
   const sel = parent ? `.tk-add[data-parent="${parent.id}"] input` : (inp.dataset.datum && tkAnsicht === 'demnaechst' ? `.tk-add[data-tag="${inp.dataset.datum}"] input` : '.tk-add-haupt input');
   renderTasks();
   const neu = document.querySelector('#task-list-container ' + sel);
   if (neu) { try { neu.focus({ preventScroll: true }); } catch (e) {} }
+}
+// Leeres Unteraufgaben-Feld verlassen: nur diese Zeile schliessen (kein Neuzeichnen -> der Klick
+// auf ein anderes Feld bleibt erhalten)
+function _tkUnterBlur(inp, id) {
+  if (!inp.isConnected || inp.value.trim()) return;
+  _tkUnterAuf.delete(String(id));
+  const row = inp.closest('.tk-add');
+  setTimeout(() => { if (row && row.isConnected && !row.contains(document.activeElement)) row.remove(); }, 150);
 }
 function tkSchnellTag(datum) {
   _tkTagOffen = datum; renderTasks();
@@ -10445,7 +10475,7 @@ function _tkWoTag(d) {
 }
 function _tkDatumChip(t) {
   if (!t.datum) return '';
-  const heute = today(), morgen = _tkPlusTage(heute, 1), done = _tkDone(t);
+  const heute = _tkHeute(), morgen = _tkPlusTage(heute, 1), done = _tkDone(t);
   const kurz = d => { const [y, m, dd] = d.split('-'); return `${+dd}.${+m}.` + (y !== heute.slice(0, 4) ? y : ''); };
   let cls = 'tk-d-spaeter', txt = kurz(t.datum);
   if (!done && t.datum < heute) { cls = 'tk-d-ueber'; }
@@ -10460,7 +10490,7 @@ function renderTasks() {
   state.aufgabenKat = state.aufgabenKat || [];
   const kats = [...state.aufgabenKat].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   if (tkAnsicht.startsWith('kat:') && !_tkKat(tkAnsicht.slice(4))) tkAnsicht = 'heute';
-  const heute = today(), bis = _tkPlusTage(heute, 14);
+  const heute = _tkHeute(), bis = _tkPlusTage(heute, 14);
 
   // Personen-Filter
   const pSel = document.getElementById('task-person-filter');
@@ -10479,12 +10509,14 @@ function renderTasks() {
 
   // Navigation (links; am Handy als wischbare Leiste)
   const nav = document.getElementById('tk-nav');
+  if (nav) nav.setAttribute('aria-label', tt('Aufgaben-Ansichten'));
+  if (pSel) pSel.setAttribute('aria-label', tt('Person'));
   if (nav) {
     const item = (key, ic, label, n, farbe) => `<button type="button" class="tk-nav-item ${tkAnsicht === key ? 'on' : ''}" onclick="tkZeige('${key}')">
       <span class="tk-ic" ${farbe ? `style="color:${farbe}"` : ''}>${ic}</span><span class="tk-nl">${esc(label)}</span>${n ? `<span class="tk-cnt">${n}</span>` : ''}</button>`;
     nav.innerHTML = item('heute', '📅', tt('Heute'), zHeute) + item('demnaechst', '🗓', tt('Demnächst'), zDemn) + item('eingang', '📥', tt('Eingang'), zKat('')) +
       `<div class="tk-nav-kopf"><span>${esc(tt('Meine Kategorien'))}</span><button type="button" onclick="tkKatNeu()" title="${esc(tt('Neue Kategorie'))}">+</button></div>` +
-      kats.map(k => item('kat:' + k.id, '#', k.name, zKat(String(k.id)), k.color)).join('') +
+      kats.map(k => item('kat:' + k.id, '#', k.name, zKat(String(k.id)), _tkFarbe(k.color))).join('') +
       `<button type="button" class="tk-nav-item tk-nav-neu" onclick="tkKatNeu()"><span class="tk-ic">+</span><span class="tk-nl">${esc(tt('Kategorie'))}</span></button>`;
   }
 
@@ -10504,7 +10536,7 @@ function renderTasks() {
       t.wdh ? `<span class="tk-chip" title="${esc(tt(TK_WDH[t.wdh] || ''))}">🔁 ${esc(tt(TK_WDH[t.wdh] || ''))}</span>` : '',
       t.person ? `<span class="tk-chip">👤 ${esc(t.person)}</span>` : '',
       eltern ? `<span class="tk-chip">↳ ${esc(eltern.name)}</span>` : '',
-      kat ? `<span class="tk-chip" style="color:${kat.color}"># <span style="color:var(--text3)">${esc(kat.name)}</span></span>` : '',
+      kat ? `<span class="tk-chip" style="color:${_tkFarbe(kat.color)}"># <span style="color:var(--text3)">${esc(kat.name)}</span></span>` : '',
     ].join('');
     return `<div class="tk-row ${done ? 'tk-done' : ''} ${opt.unter ? 'tk-unter' : ''}" data-task="${t.id}">
       <button type="button" class="tk-check tk-p-${prio}" onclick="event.stopPropagation();toggleTask(${t.id})" aria-label="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}" title="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}">${done ? '✓' : ''}</button>
@@ -10520,15 +10552,15 @@ function renderTasks() {
       </div>
     </div>` + ((kinder.length && auf) || (!opt.unter && _tkUnterAuf.has(String(t.id))) ? `<div class="tk-kinder">
       ${[...kinder].sort((a, b) => (_tkDone(a) - _tkDone(b)) || sortier(a, b)).map(k => zeile(k, { unter: true })).join('')}
-      ${!opt.unter && _tkUnterAuf.has(String(t.id)) ? `<div class="tk-add tk-add-unter" data-parent="${t.id}"><span class="tk-plus">+</span><input placeholder="${esc(tt('Unteraufgabe hinzufügen…'))}" data-parent="${t.id}" onkeydown="if(event.key==='Enter')tkSchnell(this)" onblur="if(this.isConnected&&!this.value.trim()){_tkUnterAuf.delete('${t.id}');setTimeout(renderTasks,150)}"></div>` : ''}
+      ${!opt.unter && _tkUnterAuf.has(String(t.id)) ? `<div class="tk-add tk-add-unter" data-parent="${t.id}"><span class="tk-plus">+</span><input placeholder="${esc(tt('Unteraufgabe hinzufügen…'))}" data-parent="${t.id}" onkeydown="if(event.key==='Enter')tkSchnell(this)" onblur="_tkUnterBlur(this, '${t.id}')"></div>` : ''}
     </div>` : '');
   };
   const addHaupt = (daten = {}) => `<div class="tk-add tk-add-haupt"><span class="tk-plus">+</span><input placeholder="${esc(tt('Aufgabe hinzufügen…'))}" ${daten.kat ? `data-kat="${esc(daten.kat)}"` : ''} ${daten.datum ? `data-datum="${daten.datum}"` : ''} onkeydown="if(event.key==='Enter')tkSchnell(this)"></div>`;
   const gruppe = (titel, inhalt, extra = '') => `<div class="tk-gruppe"><div class="tk-gkopf">${titel}${extra}</div>${inhalt}</div>`;
   // Liste fuer eine Datums-Ansicht: Hauptaufgaben mit ihren Unteraufgaben, passende Unteraufgaben
   // anderer (nicht passender) Hauptaufgaben einzeln mit Hinweis „↳ Hauptaufgabe"
-  const datumsListe = treffer => {
-    const ids = new Set(treffer.map(t => String(t.id)));
+  const datumsListe = (treffer, sichtbar = treffer) => {
+    const ids = new Set(sichtbar.map(t => String(t.id)));
     return treffer.filter(t => !(_tkHatEltern(t) && ids.has(String(t.parentId)))).sort(sortier)
       .map(t => _tkHatEltern(t) ? zeile(t, { unter: true, mitEltern: true }) : zeile(t)).join('');
   };
@@ -10542,32 +10574,35 @@ function renderTasks() {
     titel = tt('Heute');
     const ueber = offen.filter(t => t.datum && t.datum < heute), heu = offen.filter(t => t.datum === heute);
     sub = `${zHeute} ${tt(zHeute === 1 ? 'Aufgabe' : 'Aufgaben')}`;
-    if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber));
-    html += gruppe(`${esc(fmtDate(heute))} · ${esc(tt('Heute'))}`, heu.length ? datumsListe(heu) : (ueber.length ? '' : leer('🎉', tt('Für heute ist alles erledigt.'))) ) + addHaupt({ datum: heute });
-    const heuteErl = alle.filter(t => _tkDone(t) && t.erledigtAm && new Date(t.erledigtAm).toISOString().slice(0, 10) === heute && !_tkHatEltern(t));
+    const sicht = [...ueber, ...heu];
+    if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber, sicht));
+    html += gruppe(`${esc(fmtDate(heute))} · ${esc(tt('Heute'))}`, heu.length ? datumsListe(heu, sicht) : (ueber.length ? '' : leer('🎉', tt('Für heute ist alles erledigt.'))) ) + addHaupt({ datum: heute });
+    const heuteErl = alle.filter(t => _tkDone(t) && t.erledigtAm && _tkLokal(t.erledigtAm) === heute && !_tkHatEltern(t));
     html += erledigtBlock(heuteErl);
   } else if (tkAnsicht === 'demnaechst') {
     titel = tt('Demnächst');
     sub = `${zDemn} ${tt(zDemn === 1 ? 'Aufgabe' : 'Aufgaben')} · ${tt('nächste 14 Tage')}`;
+    const sicht = offen.filter(t => t.datum && t.datum > heute);
     for (let i = 1; i <= 14; i++) {
       const d = _tkPlusTage(heute, i), tr = offen.filter(t => t.datum === d);
       if (!tr.length && i > 7) continue;
       const kopf = `${esc(i === 1 ? tt('Morgen') : _tkWoTag(d))} <span class="tk-gdat">${esc(fmtDate(d))}</span>`;
-      html += gruppe(kopf, datumsListe(tr) + (_tkTagOffen === d
+      html += gruppe(kopf, datumsListe(tr, sicht) + (_tkTagOffen === d
         ? `<div class="tk-add" data-tag="${d}"><span class="tk-plus">+</span><input placeholder="${esc(tt('Aufgabe hinzufügen…'))}" data-datum="${d}" onkeydown="if(event.key==='Enter')tkSchnell(this)"></div>`
         : `<div class="tk-add" data-tag="${d}"><button type="button" class="tk-add-mini" onclick="tkSchnellTag('${d}')">+ ${esc(tt('Aufgabe'))}</button></div>`));
     }
     const spaeter = offen.filter(t => t.datum && t.datum > bis);
-    if (spaeter.length) html += gruppe(esc(tt('Später')), datumsListe(spaeter));
+    if (spaeter.length) html += gruppe(esc(tt('Später')), datumsListe(spaeter, sicht));
   } else {
     const katId = tkAnsicht === 'eingang' ? '' : tkAnsicht.slice(4);
     const kat = _tkKat(katId);
-    const top = alle.filter(t => !_tkHatEltern(t) && _tkKatVon(t) === katId);
+    const passt = t => !taskPersonFilter || t.person === taskPersonFilter || _tkKinder(t.id).some(k => k.person === taskPersonFilter);
+    const top = state.aufgaben.filter(t => !_tkHatEltern(t) && _tkKatVon(t) === katId && passt(t));
     const o = top.filter(t => !_tkDone(t)).sort(sortier), e = top.filter(_tkDone);
     if (kat) {
       titel = '';
       kopfExtra = `<div class="tk-katkopf">
-        <span class="tk-kathash" style="color:${kat.color}">#</span>
+        <span class="tk-kathash" style="color:${_tkFarbe(kat.color)}">#</span>
         <input id="tk-kat-name" class="tk-katname" value="${esc(kat.name)}" onchange="tkKatUmbenennen(${kat.id}, this.value)" aria-label="${esc(tt('Name der Kategorie'))}">
         <span class="tk-farben">${TK_FARBEN.map(f => `<button type="button" class="tk-farbe ${f === kat.color ? 'on' : ''}" style="background:${f}" onclick="tkKatFarbe(${kat.id}, '${f}')" aria-label="${esc(tt('Farbe'))}"></button>`).join('')}</span>
         <button type="button" class="tk-katdel" onclick="tkKatLoeschen(${kat.id})" title="${esc(tt('Kategorie löschen'))}">🗑</button>

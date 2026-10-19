@@ -2072,6 +2072,99 @@ await scenario('Aufgaben am Computer (dunkel): zwei Spalten, Eingabefelder ohne 
   return p.join(' · ');
 });
 
+await scenario('Aufgaben: mehrere Unteraufgaben hintereinander per Enter, keine Doppel in „Heute"', async () => {
+  await page.evaluate(() => {
+    state.aufgaben.push({ id: 9900041, name: 'TK Eltern überfällig', prio: 'Mittel', status: 'Offen', datum: _tkPlusTage(_tkHeute(), -2) },
+      { id: 9900042, name: 'TK Kind heute', prio: 'Mittel', status: 'Offen', datum: _tkHeute(), parentId: 9900041 });
+    showPage('aufgaben'); tkZeige('eingang'); tkUnterNeu(9900041);
+  });
+  await page.keyboard.type('TK U1'); await page.keyboard.press('Enter');
+  await page.waitForTimeout(250);
+  await page.keyboard.type('TK U2'); await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(() => {
+    const kinder = _tkKinder(9900041).map(k => k.name).sort();
+    tkZeige('heute');
+    const doppelt = document.querySelectorAll('#task-list-container .tk-row[data-task="9900042"]').length;
+    __tkWeg([9900041, ..._tkKinder(9900041).map(k => k.id)]);
+    return { kinder, doppelt };
+  });
+  const p = [];
+  if (!(r.kinder.includes('TK U1') && r.kinder.includes('TK U2'))) p.push(`angelegt: ${r.kinder.join(', ')}`);
+  if (r.doppelt !== 1) p.push(`Unteraufgabe ${r.doppelt}× in „Heute"`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben: Personen-Filter, Fenster-Eingaben, Kategorie-Abbruch, Farben, alte Wiederholung', async () => {
+  const r = await page.evaluate(async () => {
+    const k = _tkKatAnlegen('TK Filter-Kat');
+    state.aufgaben.push({ id: 9900051, name: 'TK Haupt ohne Person', prio: 'Mittel', status: 'Offen', datum: '', katId: k.id },
+      { id: 9900052, name: 'TK Unter für Zoe', prio: 'Mittel', status: 'Offen', datum: '', katId: k.id, parentId: 9900051, person: 'Zoe' });
+    showPage('aufgaben'); tkZeige('kat:' + k.id); setTaskPersonFilter('Zoe');
+    const filterOk = !!document.querySelector('#task-list-container .tk-row[data-task="9900051"]');
+    setTaskPersonFilter('');
+    // Unteraufgabe nur eingetippt (ohne Enter) und Speichern
+    editTask(9900051);
+    document.getElementById('t-unter-neu').value = 'TK nur getippt';
+    // „+ Neue Kategorie…" waehlen und abbrechen -> Kategorie bleibt
+    const sel = document.getElementById('t-kat');
+    const altPrompt = window.showPrompt; window.showPrompt = async () => null;
+    sel.value = '__neu'; await tkKatAuswahl(sel);
+    window.showPrompt = altPrompt;
+    const katBleibt = sel.value === String(k.id);
+    await saveTask();
+    const getippt = _tkKinder(9900051).some(x => x.name === 'TK nur getippt');
+    const katGespeichert = String(_tkFind(9900051).katId) === String(k.id);
+    // boesartige Farbe aus synchronisierten Daten
+    k.color = 'red" onmouseover="alert(1)'; renderTasks();
+    const injiziert = !!document.querySelector('#page-aufgaben [onmouseover*="alert"]');
+    // sehr alter Termin bei taeglicher Wiederholung
+    const alt = _tkNaechsterTermin('2000-01-01', 'taeglich');
+    __tkWeg([9900051, ..._tkKinder(9900051).map(x => x.id)]); state.aufgabenKat = state.aufgabenKat.filter(x => x !== k); tkZeige('heute');
+    return { filterOk, katBleibt, getippt, katGespeichert, injiziert, alt, heute: _tkHeute() };
+  });
+  const p = [];
+  if (!r.filterOk) p.push('Hauptaufgabe verschwindet, obwohl eine Unteraufgabe zur Person passt');
+  if (!r.getippt) p.push('nur eingetippte Unteraufgabe geht beim Speichern verloren');
+  if (!r.katBleibt || !r.katGespeichert) p.push('Abbruch bei „Neue Kategorie" verschiebt in den Eingang');
+  if (r.injiziert) p.push('Farbe kann Attribute einschleusen');
+  if (!(r.alt > r.heute)) p.push(`alter Termin bleibt in der Vergangenheit: ${r.alt}`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben: „Heute" nach Ortszeit (nicht UTC) – auch kurz nach Mitternacht', async () => {
+  // Zeitzone waehlen, in der jetzt schon/noch ein anderer Kalendertag ist als in UTC
+  const zone = new Date().getUTCHours() >= 10 ? 'Pacific/Kiritimati' : 'Pacific/Pago_Pago';
+  const d = await boot({ timezoneId: zone });
+  let r;
+  try {
+    r = await d.page.evaluate(() => {
+      const lokal = new Date().toLocaleDateString('sv');   // JJJJ-MM-TT in Ortszeit
+      showPage('aufgaben'); tkZeige('heute');
+      const kopf = [...document.querySelectorAll('#task-list-container .tk-gkopf')].map(g => g.textContent).join(' | ');
+      const inp = document.querySelector('#task-list-container .tk-add-haupt input');
+      inp.value = 'TK Ortszeit'; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const t = state.aufgaben.find(x => x.name === 'TK Ortszeit');
+      return { lokal, utc: new Date().toISOString().slice(0, 10), kopf, datum: t && t.datum, soll: fmtDate(lokal) };
+    });
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (r.lokal === r.utc) return '';   // (kein Unterschied in dieser Minute – nichts zu pruefen)
+  if (r.datum !== r.lokal) p.push(`Schnell-Anlegen in „Heute" speichert ${r.datum} statt ${r.lokal}`);
+  if (!r.kopf.includes(r.soll)) p.push(`Überschrift „${r.kopf}" statt ${r.soll}`);
+  return p.join(' · ');
+});
+await scenario('Aufgaben: wiederkehrende Hauptaufgabe verschiebt die Termine ihrer Unteraufgaben mit', async () => {
+  const r = await page.evaluate(() => {
+    const h = _tkHeute();
+    state.aufgaben.push({ id: 9900061, name: 'TK Wochenputz', prio: 'Mittel', status: 'Offen', datum: h, wdh: 'woechentlich' },
+      { id: 9900062, name: 'TK Fenster', prio: 'Mittel', status: 'Erledigt', datum: _tkPlusTage(h, -1), parentId: 9900061 });
+    toggleTask(9900061);
+    const k = _tkFind(9900062), erg = { datum: k.datum, soll: _tkPlusTage(h, 6), status: k.status };
+    __tkWeg([9900061, 9900062]);
+    return erg;
+  });
+  return (r.datum === r.soll && r.status === 'Offen') ? '' : `Unteraufgabe: ${r.datum} (${r.status}), erwartet ${r.soll}`;
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
