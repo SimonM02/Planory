@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 111/111, mobile-e2e 107/107, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
+(pruefen 111/111, mobile-e2e 109/109, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
 - [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
       1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
          installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
@@ -35,7 +35,8 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
        • Startseite: Schalter für Beträge und KI-Berater
        • Bautagebuch: Fotos im Eintrag, Wetter per Antippen und als Erinnerungs-Buch (PDF)
        • PDFs und Fotos teilen, drucken oder in Dateien sichern
-       • Rechnung scannen schneller und zuverlässiger, „Bezahlt von“ direkt eintragen
+       • Rechnung scannen: Kategorie wird automatisch erkannt, „Bezahlt von“ direkt eintragen
+       • Ausgabenliste nach Kategorie filtern – mit Summe
        • Viele Verbesserungen und Fehlerbehebungen – Einträge gehen nicht mehr verloren“
 - [ ] Am iPhone prüfen: PDF-Beleg antippen (öffnet als PDF? zurück in die App möglich?) ·
       Bautagebuch → „📖 Buch" → Teilen-Menü erscheint → Drucken / „In Dateien sichern" ·

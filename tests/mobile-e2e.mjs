@@ -611,6 +611,7 @@ const SCAN_FORM = `window.__scanForm = (beschr, brutto) => {
   document.getElementById('scan-netto').value = (brutto / 1.2).toFixed(2);
   document.getElementById('scan-datum').value = '2026-10-10';
   document.getElementById('scan-anbieter').value = 'Fa. Test';
+  const kat = document.getElementById('scan-kat'); if (kat && !kat.value && kat.options.length > 1) kat.value = kat.options[1].value;
 };
 window.__neuePerson = (selId, name) => {
   const sel = document.getElementById(selId);
@@ -2284,6 +2285,70 @@ await scenario('iPhone-App: Foto/Datei „Herunterladen" öffnet das Teilen-Men�
   });
   if (r.klick) return 'nutzt <a download> in der App';
   return r.aufrufe.some(a => a.startsWith('share:file:///cache/Baustelle_Tag_1')) ? '' : `kein Teilen: ${r.aufrufe.join(', ')}`;
+});
+
+await scenario('Ausgabenliste: nach Kategorie filtern, Anzahl + Summe der Auswahl, „Ohne Kategorie"', async () => {
+  const r = await page.evaluate(() => {
+    state.kosten.push({ id: 9930001, datum: '2026-10-02', beschr: 'TK ohne Kat', kat: '', mwst: 20, netto: 10, betrag: 12, status: 'Bezahlt' });
+    showPage('kosten');
+    const sel = document.getElementById('kosten-filter-kat');
+    if (!sel) return { fehlt: true };
+    const rand = document.querySelector('#kosten-ausgaben-panel .table-wrap').getBoundingClientRect().right;
+    const passt = ['kosten-filter-kat', 'kosten-search'].every(id => document.getElementById(id).getBoundingClientRect().right <= rand + 1);
+    const kat = state.kosten.find(k => k.kat).kat;
+    sel.value = kat; sel.dispatchEvent(new Event('change'));
+    const zeilen = [...document.querySelectorAll('#kosten-table tr')].filter(tr => !tr.querySelector('td[colspan]')).length;
+    const soll = state.kosten.filter(k => k.kat === kat).length;
+    const info = document.getElementById('kosten-filter-info').innerText;
+    const summe = fmt(state.kosten.filter(k => k.kat === kat && k.status !== 'Storniert').reduce((a, k) => a + (parseFloat(k.betrag) || 0), 0));
+    sel.value = '__ohne'; sel.dispatchEvent(new Event('change'));
+    const ohne = [...document.querySelectorAll('#kosten-table tr')].filter(tr => !tr.querySelector('td[colspan]')).length;
+    sel.value = ''; sel.dispatchEvent(new Event('change'));
+    state.kosten = state.kosten.filter(k => k.id !== 9930001); renderKosten();
+    return { zeilen, soll, info, summe, ohne, passt };
+  });
+  if (r.fehlt) return 'kein Kategorie-Filter';
+  const p = [];
+  if (r.zeilen !== r.soll) p.push(`${r.zeilen} Zeilen statt ${r.soll}`);
+  if (!r.info.includes(String(r.soll)) || !r.info.replace(/\s/g, '').includes(r.summe.replace(/\s/g, ''))) p.push(`Info „${r.info}"`);
+  if (r.ohne !== 1) p.push(`„Ohne Kategorie" zeigt ${r.ohne} Zeilen`);
+  if (!r.passt) p.push('Filter/Suche ragen am Handy über den Rand');
+  return p.join(' · ');
+});
+await scenario('Rechnung scannen: KI-Kategorie wird vorbelegt, wenn sie zu einer eigenen passt – sonst leer und Pflicht', async () => {
+  let kat = '';
+  const ki = rt => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [{ type: 'text',
+    text: JSON.stringify({ beschreibung: 'TK Scan', anbieter: 'Fa', datum: '2026-10-05', netto: 100, mwst_prozent: 20, brutto: 120, kategorie: kat }) }] }) });
+  await page.route('**/api/ki', ki);
+  const erg = [];
+  try {
+    for (const [vorschlag, soll] of [['Sanitär', 'Sanitär'], ['sanitär & bad', 'Sanitär'], ['Gartenmöbel', ''], ['', '']]) {
+      kat = vorschlag;
+      const r = await page.evaluate(async () => {
+        showPage('kosten'); openModal('modal-rechnung-scan');
+        const prompt = { text: '' };
+        const altFetch = window.fetch;
+        window.fetch = (u, o) => { try { prompt.text = JSON.parse(o.body).messages[0].content.find(c => c.type === 'text').text; } catch (e) {} return altFetch(u, o); };
+        const cv = document.createElement('canvas'); cv.width = 40; cv.height = 40; cv.getContext('2d').fillRect(0, 0, 40, 40);
+        const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg'));
+        try { await _processScanFile(new File([blob], 'r.jpg', { type: 'image/jpeg' })); }
+        finally { window.fetch = altFetch; }
+        for (let i = 0; i < 40 && document.getElementById('scan-result').style.display !== 'block'; i++) await new Promise(res => setTimeout(res, 100));
+        const wert = document.getElementById('scan-kat').value;
+        const vorher = state.kosten.length;
+        await confirmRechnungScan();
+        const gebucht = state.kosten.length - vorher;
+        if (gebucht) { const k = state.kosten[state.kosten.length - 1]; state.kosten = state.kosten.filter(x => x !== k); }
+        const m = document.getElementById('modal-rechnung-scan'); m._dirty = false; closeModal('modal-rechnung-scan');
+        return { wert, gebucht, eigeneListe: getKatList().every(n => prompt.text.includes(n.replace(/"/g, "'"))), fehlt: getKatList().filter(n => !prompt.text.includes(n.replace(/"/g, "'"))) };
+      });
+      if (r.wert !== soll) erg.push(`„${vorschlag}" → „${r.wert}" statt „${soll}"`);
+      if (!soll && r.gebucht) erg.push(`ohne Kategorie eingebucht („${vorschlag}")`);
+      if (soll && !r.gebucht) erg.push(`mit Kategorie nicht eingebucht („${vorschlag}")`);
+      if (!r.eigeneListe) erg.push('KI bekommt nicht die eigenen Kategorien: ' + r.fehlt.join(', '));
+    }
+  } finally { await page.unroute('**/api/ki', ki); }
+  return [...new Set(erg)].join(' · ');
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);

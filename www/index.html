@@ -558,6 +558,13 @@
     #page-aufgaben .tk-katname { min-width:0 !important; flex:1 1 calc(100% - 34px); }
     .tk-kopf-links { flex:1 1 100%; }
   }
+  /* ── Ausgabenliste: Filter ── */
+  .k-filter { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .k-filter select { font-size:0.82rem; padding:7px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer; max-width:200px; }
+  .k-filter-info { padding:8px 18px; font-size:0.82rem; color:var(--text2); border-bottom:1px solid var(--border); background:var(--surface2); }
+  .k-filter-info strong { color:var(--text); }
+  .k-filter-info button { margin-left:8px; background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer; font-family:inherit; font-size:0.8rem; }
+  @media (max-width:600px) { .k-kopf { flex-wrap:wrap; gap:10px; } .k-filter { flex:1 1 100%; flex-wrap:nowrap; min-width:0; width:100%; } .k-filter select { flex:1 1 0; width:0; max-width:none; min-width:0; } .k-filter .search-bar { flex:1 1 0; width:0 !important; min-width:0 !important; max-width:none !important; box-sizing:border-box; } }
   /* ── Kostenentwicklung ── */
   .kc-chart { position:relative; height:280px; margin-top:6px; }
   .kc-cat { display:grid; grid-template-columns:240px minmax(0, 520px); gap:36px; align-items:center; margin-top:10px; }
@@ -3213,10 +3220,14 @@
 
     <div id="kosten-ausgaben-panel">
       <div class="table-wrap mobile-cards">
-        <div class="table-header">
+        <div class="table-header k-kopf">
           <div class="table-title">Ausgabenliste</div>
-          <input class="search-bar" id="kosten-search" placeholder="🔍 Suchen..." oninput="renderKosten()">
+          <div class="k-filter">
+            <select id="kosten-filter-kat" data-noi18n onchange="renderKosten()" aria-label="Kategorie"></select>
+            <input class="search-bar" id="kosten-search" placeholder="🔍 Suchen..." oninput="renderKosten()">
+          </div>
         </div>
+        <div id="kosten-filter-info" class="k-filter-info" style="display:none"></div>
         <table>
           <thead><tr><th>Datum</th><th class="hide-mobile">Kategorie</th><th>Beschreibung</th><th class="hide-mobile">Netto</th><th class="hide-mobile">MwSt</th><th>Brutto</th><th>Status</th><th></th></tr></thead>
           <tbody id="kosten-table"></tbody>
@@ -6545,6 +6556,10 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "— Kategorie wählen —": { en: "— Choose category —" },
+  "Bitte eine Kategorie wählen": { en: "Please choose a category" },
+  "Filter aufheben": { en: "Clear filter" },
+  "Ausgabe": { en: "expense" },
   "+ Abschnitt": { en: "+ Section" },
   "Buchung": { en: "booking" },
   "Alle Kategorien": { en: "All categories" },
@@ -8325,7 +8340,10 @@ function refreshAllKatSelects(selectedVal = '', extraIds = []) {
   const ids = ['k-kat','el-kat','scan-kat'];
   ids.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = getKatOptions(selectedVal);
+    if (!el) return;
+    // Scan: leer starten – die KI setzt die Kategorie nur, wenn sie sicher passt
+    el.innerHTML = (id === 'scan-kat' ? `<option value="" selected>${esc(tt('— Kategorie wählen —'))}</option>` : '') + getKatOptions(id === 'scan-kat' ? '' : selectedVal);
+    if (id === 'scan-kat') el.value = '';
   });
   // Extra selects (Angebote, Zahlungsplan etc.)
   extraIds.forEach(id => {
@@ -8706,9 +8724,33 @@ async function deleteDrilldownKosten(id, katName) {
 
 function renderKosten() {
   const search = (document.getElementById('kosten-search')?.value || '').toLowerCase();
+  // Kategorie-Filter: Liste aus Budget-Kategorien + allen genutzten Kategorien (auch „ohne Kategorie")
+  const fSel = document.getElementById('kosten-filter-kat');
+  let filterKat = fSel ? fSel.value : '';
+  if (fSel) {
+    const genutzt = [...new Set(state.kosten.map(k => k.kat || ''))];
+    const liste = [...new Set([...getKatList().filter(n => genutzt.includes(n)), ...genutzt.filter(Boolean)])];
+    const ohne = genutzt.includes('');
+    if (filterKat && filterKat !== '__ohne' && !liste.includes(filterKat)) filterKat = '';
+    fSel.innerHTML = `<option value="">${esc(tt('Alle Kategorien'))}</option>` +
+      liste.map(n => `<option value="${esc(n)}" ${n === filterKat ? 'selected' : ''}>${esc(_katName(n))}</option>`).join('') +
+      (ohne ? `<option value="__ohne" ${filterKat === '__ohne' ? 'selected' : ''}>${esc(tt('Ohne Kategorie'))}</option>` : '');
+    fSel.value = filterKat;
+  }
   const items = state.kosten.filter(k =>
-    k.beschr.toLowerCase().includes(search) || k.kat.toLowerCase().includes(search) || (k.anbieter||'').toLowerCase().includes(search)
+    (!filterKat || (filterKat === '__ohne' ? !k.kat : k.kat === filterKat)) &&
+    ((k.beschr || '').toLowerCase().includes(search) || (k.kat || '').toLowerCase().includes(search) || _katName(k.kat || '').toLowerCase().includes(search) || (k.anbieter||'').toLowerCase().includes(search))
   );
+  const fInfo = document.getElementById('kosten-filter-info');
+  if (fInfo) {
+    const gefiltert = filterKat || search;
+    fInfo.style.display = gefiltert ? '' : 'none';
+    if (gefiltert) {
+      const summe = items.filter(k => k.status !== 'Storniert').reduce((s2, k) => s2 + (parseFloat(k.betrag) || 0), 0);
+      fInfo.innerHTML = `${items.length} ${tt(items.length === 1 ? 'Ausgabe' : 'Ausgaben')} · <strong data-private>${fmt(summe)}</strong>` +
+        (filterKat ? ` <button type="button" onclick="document.getElementById('kosten-filter-kat').value='';renderKosten()">✕ ${esc(tt('Filter aufheben'))}</button>` : '');
+    }
+  }
 
   const paid = state.kosten.filter(_imBudget);
   const totalBrutto = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
@@ -8733,7 +8775,7 @@ function renderKosten() {
   const tbody = document.getElementById('kosten-table');
   if (items.length === 0) {
     // Bei aktiver Suche "Keine Treffer" statt "Noch keine Ausgaben" (wirkte, als waeren Daten weg)
-    tbody.innerHTML = (search && state.kosten.length)
+    tbody.innerHTML = ((search || filterKat) && state.kosten.length)
       ? `<tr><td colspan="8"><div class="empty"><div class="icon">🔍</div><p>${_lang==='en'?'No matches – adjust search or filter.':'Keine Treffer – Suche oder Filter anpassen.'}</p></div></td></tr>`
       : `<tr><td colspan="8"><div class="empty"><div class="icon">💶</div><p>Noch keine Ausgaben erfasst</p></div></td></tr>`;
   } else {
@@ -9591,7 +9633,7 @@ async function _processScanFile(file) {
   "netto": 0.00,
   "mwst_prozent": 20,
   "brutto": 0.00,
-  "kategorie": "Eine von: Rohbau, Dach, Fenster & Türen, Elektro, Sanitär, Heizung, Innenausbau, Außenanlagen, Sonstiges",
+  "kategorie": "Genau EINE der folgenden Kategorien, die am besten passt (z. B. Küchenrechnung → Küche), wörtlich übernommen: ${getKatList().map(n => n.replace(/"/g, "'")).join(' | ')}. Wenn keine eindeutig passt: leerer Text \"\"",
   "skonto_prozent": 0,
   "skonto_bis": "YYYY-MM-DD oder null wenn kein Skonto angegeben",
   "hinweis": "Kurzer Hinweis zur Erkennung oder was auffällig ist (optional)"
@@ -9640,16 +9682,17 @@ async function _processScanFile(file) {
     const mwstVal = String(isFinite(mwstAuto) ? mwstAuto : 20);
     Array.from(mwstSel.options).forEach(o => { if (o.value === mwstVal) o.selected = true; });
 
-    // Set Kategorie
+    // Kategorie: nur setzen, wenn sie zu einer eigenen Kategorie passt – sonst leer (selbst waehlen)
     const katSel = document.getElementById('scan-kat');
-    Array.from(katSel.options).forEach(o => { if (o.value === parsed.kategorie) o.selected = true; });
+    const katTreffer = _scanKategorie(parsed.kategorie);
+    katSel.value = katTreffer || '';
 
     document.getElementById('scan-loading').style.display = 'none';
     document.getElementById('scan-result').style.display  = 'block';
     document.getElementById('scan-confirm-btn').style.display = 'inline-flex';
     document.getElementById('modal-rechnung-scan')._dirty = true;   // Scan-Ergebnis nicht ohne Rueckfrage verwerfen
-    // Nach dem Scannen direkt zum Kategorie-Feld springen (muss meist noch gesetzt werden).
-    _focusField('scan-kat');
+    // Keine passende Kategorie erkannt -> direkt zum Kategorie-Feld springen
+    if (!katTreffer) _focusField('scan-kat');
 
   } catch(e) {
     if (lauf !== _scanLauf) return;
@@ -9691,8 +9734,23 @@ function _kiFehlertext(status, data) {
   return 'Rechnung konnte nicht gelesen werden' + (detail ? ' (' + detail + ')' : '');
 }
 
+// KI-Kategorie einer eigenen Kategorie zuordnen (genau, dann ohne Gross/Klein, dann enthalten)
+function _scanKategorie(vorschlag) {
+  const norm = x => String(x || '').replace(/["'„“”‚‘’]/g, '').trim().toLowerCase();
+  const v = norm(vorschlag);
+  if (!v) return '';
+  const liste = getKatList();
+  return liste.find(n => norm(n) === v)
+      || liste.find(n => { const k = norm(n); return k.length >= 3 && v.length >= 3 && (k.includes(v) || v.includes(k)); })
+      || '';
+}
 async function confirmRechnungScan() {
   if (!requireSub()) return;
+  if (!document.getElementById('scan-kat').value) {
+    showToast('⚠️ ' + tt('Bitte eine Kategorie wählen'), 'error');
+    _focusField('scan-kat');
+    return;
+  }
   const brutto   = parseFloat(document.getElementById('scan-brutto').value)  || 0;
   const mwst     = parseFloat(document.getElementById('scan-mwst').value)    || 0;
   const netto    = mwst > 0 ? brutto / (1 + mwst/100) : brutto;
