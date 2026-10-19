@@ -1906,12 +1906,13 @@ await scenario('Aufgaben: „Demnächst" nach Tagen gruppiert, Schnell-Anlegen s
     const inp = document.querySelector(`#task-list-container .tk-add[data-tag="${d3}"] input`);
     inp.value = 'TK schnell am Tag'; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     const neu = state.aufgaben.find(t => t.name === 'TK schnell am Tag');
-    const erg = { kopf, soll: fmtDate(d3), ueber, neuDatum: neu && neu.datum, d3 };
+    const erg = { kopf, soll: _tkTagMon(d3), ueber, neuDatum: neu && neu.datum, d3, karten: !!grp && grp.classList.contains('tk-spalte') && !!grp.querySelector('.tk-card .tk-row[data-task="9900011"]') };
     __tkWeg([9900011, 9900012, neu && neu.id].filter(Boolean));
     return erg;
   });
   const p = [];
   if (!r.kopf.includes(r.soll)) p.push(`Tag-Überschrift „${r.kopf}"`);
+  if (!r.karten) p.push('Demnächst nicht als Spalten mit Karten');
   if (r.ueber) p.push('Überfälliges steht in „Demnächst"');
   if (r.neuDatum !== r.d3) p.push(`Schnell angelegt mit Datum ${r.neuDatum}`);
   return p.join(' · ');
@@ -2143,7 +2144,7 @@ await scenario('Aufgaben: „Heute" nach Ortszeit (nicht UTC) – auch kurz nach
       const inp = document.querySelector('#task-list-container .tk-add-haupt input');
       inp.value = 'TK Ortszeit'; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
       const t = state.aufgaben.find(x => x.name === 'TK Ortszeit');
-      return { lokal, utc: new Date().toISOString().slice(0, 10), kopf, datum: t && t.datum, soll: fmtDate(lokal) };
+      return { lokal, utc: new Date().toISOString().slice(0, 10), kopf, datum: t && t.datum, soll: _tkTagMon(lokal) };
     });
   } finally { await d.ctx.close(); }
   const p = [];
@@ -2163,6 +2164,30 @@ await scenario('Aufgaben: wiederkehrende Hauptaufgabe verschiebt die Termine ihr
     return erg;
   });
   return (r.datum === r.soll && r.status === 'Offen') ? '' : `Unteraufgabe: ${r.datum} (${r.status}), erwartet ${r.soll}`;
+});
+
+await scenario('Aufgaben: „Demnächst" am Computer als Tages-Spalten nebeneinander, Uhrzeit statt doppeltem Datum', async () => {
+  const d = await boot({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  let r;
+  try {
+    r = await d.page.evaluate(() => {
+      showPage('aufgaben'); tkZeige('demnaechst');
+      const sp = [...document.querySelectorAll('#task-list-container .tk-spalte')].slice(0, 3).map(e => e.getBoundingClientRect());
+      const nebeneinander = sp.length === 3 && sp[1].left > sp[0].right && Math.abs(sp[1].top - sp[0].top) < 2;
+      const erste = document.querySelector('#task-list-container .tk-spalte .tk-gkopf')?.textContent || '';
+      const estrich = document.querySelector('#task-list-container .tk-row[data-task="3002"]')?.innerText || '';
+      const symbole = [...document.querySelectorAll('#tk-nav .tk-nav-item .tk-ic')].slice(0, 3).every(e => e.querySelector('svg'));
+      return { nebeneinander, erste, estrich, symbole };
+    });
+    if (d.errors.length) r.fehler = d.errors.join(' · ');
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (r.fehler) p.push('JS-Fehler: ' + r.fehler);
+  if (!r.nebeneinander) p.push('Spalten nicht nebeneinander');
+  if (!/Heute/.test(r.erste)) p.push(`erste Spalte „${r.erste}" (Heute fehlt)`);
+  if (!/16:00/.test(r.estrich) || /📅/.test(r.estrich)) p.push(`Karte zeigt „${r.estrich.replace(/\n/g, ' ')}"`);
+  if (!r.symbole) p.push('Navigation noch mit Emoji-Symbolen');
+  return p.join(' · ');
 });
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
