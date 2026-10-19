@@ -471,6 +471,13 @@
   .tk-inhalt.tk-breit { max-width:none; }
   .tk-board { display:flex; gap:18px; overflow-x:auto; align-items:flex-start; padding-bottom:14px; scroll-snap-type:x proximity; }
   .tk-spalte { flex:0 0 272px; margin-bottom:0; scroll-snap-align:start; }
+  /* Demnächst am Computer: ganze Breite und Höhe nutzen – auch mit wenigen Aufgaben */
+  .tk-layout.tk-layout-breit { max-width:none; }
+  @media (min-width:901px) {
+    .tk-board { min-height:max(440px, calc(100vh - 300px)); align-items:stretch; }
+    .tk-spalte { display:flex; flex-direction:column; padding-right:16px; border-right:1px solid var(--surface2); }
+    .tk-spalte:last-child { border-right:none; }
+  }
   .tk-spalte .tk-gkopf { display:flex; align-items:baseline; gap:8px; border-bottom:none; padding:4px 2px 10px; font-weight:600; color:var(--text2); }
   .tk-spalte .tk-gkopf strong { color:var(--text); font-weight:800; }
   .tk-gzahl { color:var(--text3); font-size:0.78rem; font-weight:600; }
@@ -10659,6 +10666,7 @@ function renderTasks() {
     html = (o.length ? o.map(t => zeile(t)).join('') : leer('📝', tt(kat ? 'Noch keine Aufgaben in dieser Kategorie.' : 'Keine Aufgaben ohne Kategorie.'))) + addHaupt({ kat: katId }) + erledigtBlock(e);
   }
   document.querySelector('#page-aufgaben .tk-inhalt')?.classList.toggle('tk-breit', tkAnsicht === 'demnaechst');
+  document.querySelector('#page-aufgaben .tk-layout')?.classList.toggle('tk-layout-breit', tkAnsicht === 'demnaechst');
   const kopf = document.getElementById('tk-kopf');
   if (kopf) kopf.innerHTML = kopfExtra || `<h3 class="tk-titel">${esc(titel)}</h3>`;
   const subEl = document.getElementById('tk-sub'); if (subEl) subEl.textContent = sub;
