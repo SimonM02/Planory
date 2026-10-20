@@ -597,7 +597,7 @@ check('Alle in der App genutzten iPhone-Plugins stehen in package.json (sonst en
   const deps = { ...(pkg.dependencies || {}) };
   const PAKET = { Camera: '@capacitor/camera', Purchases: '@revenuecat/purchases-capacitor', Share: '@capacitor/share',
     Filesystem: '@capacitor/filesystem', LocalNotifications: '@capacitor/local-notifications',
-    PushNotifications: '@capacitor/push-notifications', StatusBar: '@capacitor/status-bar' };
+    PushNotifications: '@capacitor/push-notifications', StatusBar: '@capacitor/status-bar', App: '@capacitor/app' };
   const genutzt = new Set([...web.matchAll(/Plugins\??\.([A-Z][A-Za-z]+)|registerPlugin\??\.?\('([A-Za-z]+)'\)|P\?\.([A-Z][A-Za-z]+)/g)].map(m => m[1] || m[2] || m[3]));
   const fehlt = [...genutzt].filter(n => PAKET[n] && !deps[PAKET[n]]).map(n => PAKET[n]);
   const unbekannt = [...genutzt].filter(n => !PAKET[n]);

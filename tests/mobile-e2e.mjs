@@ -2383,6 +2383,43 @@ await scenario('Aufgaben: „Neu planen" verschiebt angezeigte überfällige Auf
   return p.join(' · ');
 });
 
+await scenario('iPhone-App: Hinweis „Neue Version verfügbar" nur bei wirklich neuerer App-Store-Version', async () => {
+  const r = await page.evaluate(async () => {
+    const altCap = window.Capacitor, altFetch = window.fetch, offen = [];
+    let store = '1.4', abfragen = 0;
+    const altOpen = window.open; window.open = u => { offen.push(u); return null; };
+    window.fetch = async (u, o) => String(u).includes('/api/app-version')
+      ? (abfragen++, new Response(JSON.stringify({ version: store, url: 'https://apps.apple.com/at/app/planory/id1', id: 1 }), { status: 200 }))
+      : altFetch(u, o);
+    const reset = () => { ['planoryStoreVer', 'planoryUpdateSpaeter'].forEach(k => localStorage.removeItem(k)); document.getElementById('update-hinweis')?.remove(); };
+    const da = () => !!document.getElementById('update-hinweis');
+    try {
+      const erg = {};
+      reset(); window.Capacitor = undefined; await _pruefeAppUpdate(); erg.web = da();
+      window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: { App: { getInfo: async () => ({ version: '1.3', build: '7' }) } } };
+      reset(); await _pruefeAppUpdate(); erg.neuer = da();
+      erg.text = document.getElementById('update-hinweis')?.innerText || '';
+      document.querySelector('#update-hinweis .btn-primary')?.click(); erg.geoeffnet = offen[0] || '';
+      reset(); await _pruefeAppUpdate(); document.querySelector('#update-hinweis .btn-ghost')?.click();
+      await _pruefeAppUpdate(); erg.nachSpaeter = da();
+      reset(); store = '1.3'; await _pruefeAppUpdate(); erg.gleich = da();
+      reset(); store = '1.2.9'; await _pruefeAppUpdate(); erg.aelter = da();
+      reset(); store = '1.10'; await _pruefeAppUpdate(); erg.zweistellig = da();
+      const vorher = abfragen; document.getElementById('update-hinweis')?.remove(); await _pruefeAppUpdate(); erg.gemerkt = abfragen === vorher;
+      return erg;
+    } finally { reset(); window.Capacitor = altCap; window.fetch = altFetch; window.open = altOpen; }
+  });
+  const p = [];
+  if (r.web) p.push('Hinweis auch im Web');
+  if (!r.neuer || !/1\.4/.test(r.text)) p.push(`kein Hinweis bei neuerer Version (${r.text})`);
+  if (!/apps\.apple\.com/.test(r.geoeffnet)) p.push('„Jetzt aktualisieren" öffnet nicht den App Store');
+  if (r.nachSpaeter) p.push('„Später" wirkt nicht');
+  if (r.gleich || r.aelter) p.push('Hinweis obwohl keine neuere Version');
+  if (!r.zweistellig) p.push('1.10 nicht als neuer als 1.3 erkannt');
+  if (!r.gemerkt) p.push('App Store wird bei jedem Öffnen abgefragt');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

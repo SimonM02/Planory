@@ -14,7 +14,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 111/111, mobile-e2e 110/110, sync-e2e 21/21, todoist-api 14/14, push-api 4/4).
+(pruefen 111/111, mobile-e2e 111/111, sync-e2e 21/21, todoist-api 14/14, push-api 4/4, app-version-api 6/6).
 - [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
       1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
          installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
@@ -22,7 +22,8 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
       2. `git pull origin claude/apple-feedback-changes-owr1go`
       3. `npm install` (neu: Teilen + Dateien für PDFs; Abo + Kamera bleiben erhalten)
       4. `npx cap sync ios` → in der Ausgabe müssen u. a. **@revenuecat/purchases-capacitor**,
-         **@capacitor/camera**, **@capacitor/share** und **@capacitor/filesystem** stehen
+         **@capacitor/camera**, **@capacitor/share**, **@capacitor/filesystem** und **@capacitor/app**
+         (neu: für den Hinweis „Neue Version verfügbar“) stehen
       5. Xcode: **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
          NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin)
 - [ ] What's New (final):
@@ -55,6 +56,12 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
   Ausgaben „nicht im Budget" (einmalig; die alten Daten bleiben als Sicherung erhalten).
 - [ ] Nach dem Update: die 3 seit 14.08. bearbeiteten Ausgaben (1 davon in Simons Konto) kurz auf
       die richtige MwSt prüfen (alter Fehler: MwSt vom letzten Bearbeiten blieb hängen).
+- Ab v1.3 eingebaut: Die App prüft beim Start (höchstens alle 12 h) die Version im App Store und
+  zeigt NUR bei einer wirklich neueren Version unten „🆕 Neue Planory-Version verfügbar · Jetzt
+  aktualisieren“ (öffnet den App Store; „Später“ = 3 Tage Ruhe). Wirkt also ab dem Update auf v1.4.
+- [ ] v1.4 – iPhone-Widgets (WidgetKit, braucht am Mac: Widget Extension + App Group):
+      „Heute zu tun“ (Aufgaben), „Nächster Termin“ (Meilenstein/Zahlung), „Fällige Zahlungen &
+      Skonto“ (nächste Zahlungstermine, Skonto-Frist mit Ersparnis – rot wenn heute/morgen).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
 

@@ -561,6 +561,14 @@
     #page-aufgaben .tk-katname { min-width:0 !important; flex:1 1 calc(100% - 34px); }
     .tk-kopf-links { flex:1 1 100%; }
   }
+  /* ── Hinweis „Neue Version verfügbar" (iPhone-App) ── */
+  #update-hinweis { position:fixed; left:12px; right:12px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:10050; max-width:520px; margin:0 auto;
+    background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:16px; box-shadow:0 12px 32px rgba(0,0,0,.25);
+    padding:14px 16px; display:flex; flex-direction:column; gap:10px; animation:slideUp .3s ease; }
+  #update-hinweis .uh-text { display:flex; flex-direction:column; gap:2px; }
+  #update-hinweis .uh-text strong { font-size:0.95rem; }
+  #update-hinweis .uh-text span { font-size:0.8rem; color:var(--text2); }
+  #update-hinweis .uh-knoepfe { display:flex; gap:8px; justify-content:flex-end; }
   /* ── Ausgabenliste: Filter ── */
   .k-filter { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .k-filter select { font-size:0.82rem; padding:7px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer; max-width:200px; }
@@ -6559,6 +6567,10 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Neue Planory-Version verfügbar": { en: "New Planory version available" },
+  "Version": { en: "Version" },
+  "mit Verbesserungen und neuen Funktionen.": { en: "with improvements and new features." },
+  "Jetzt aktualisieren": { en: "Update now" },
   "Kommende Tage": { en: "Next days" },
   "Auf heute verschieben": { en: "Move to today" },
   "Neu planen": { en: "Reschedule" },
@@ -18831,6 +18843,59 @@ function _flushSync() {
 }
 window.addEventListener('beforeunload', _flushSync);
 window.addEventListener('pagehide', _flushSync); // more reliable on iOS/mobile
+// ── Hinweis „Neue Version verfuegbar" (nur iPhone-App) ──
+// Beim Start und beim Zurueckkehren in die App: installierte Version (Capacitor App-Plugin) mit
+// der App-Store-Version vergleichen (/api/app-version, hoechstens alle 12 h abgefragt). Nur wenn
+// es WIRKLICH eine neuere gibt, erscheint unten ein Hinweis; „Später" blendet ihn 3 Tage aus.
+function _versionNeuer(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0), pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0; }
+  return false;
+}
+let _updateLaeuft = false;
+async function _pruefeAppUpdate() {
+  if (!isNativeApp() || _updateLaeuft || document.getElementById('update-hinweis')) return;
+  const App = window.Capacitor?.Plugins?.App;
+  if (!App || typeof App.getInfo !== 'function') return;
+  _updateLaeuft = true;
+  try {
+    const info = await App.getInfo();
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem('planoryStoreVer') || 'null'); } catch (e) {}
+    if (!st || Date.now() - (st.at || 0) > 12 * 3600e3) {
+      const r = await fetch(API_BASE + '/api/app-version', { cache: 'no-store' });
+      const j = r.ok ? await r.json() : {};
+      st = { at: Date.now(), version: j.version || null, url: j.url || null, id: j.id || null };
+      try { localStorage.setItem('planoryStoreVer', JSON.stringify(st)); } catch (e) {}
+    }
+    if (!st.version || !info || !info.version || !_versionNeuer(st.version, info.version)) return;
+    let sp = {};
+    try { sp = JSON.parse(localStorage.getItem('planoryUpdateSpaeter') || '{}'); } catch (e) {}
+    if (sp.v === st.version && Date.now() - (sp.at || 0) < 3 * 864e5) return;
+    const el = document.createElement('div');
+    el.id = 'update-hinweis'; el.setAttribute('role', 'dialog');
+    el.innerHTML = `<div class="uh-text"><strong>🆕 ${esc(tt('Neue Planory-Version verfügbar'))}</strong>
+        <span>${esc(tt('Version'))} ${esc(st.version)} · ${esc(tt('mit Verbesserungen und neuen Funktionen.'))}</span></div>
+      <div class="uh-knoepfe"><button type="button" class="btn btn-ghost" onclick="_updateSpaeter()">${esc(tt('Später'))}</button>
+        <button type="button" class="btn btn-primary" onclick="_updateOeffnen()">${esc(tt('Jetzt aktualisieren'))}</button></div>`;
+    el._st = st;
+    document.body.appendChild(el);
+  } catch (e) { /* offline o.ae. – beim naechsten Mal */ }
+  finally { _updateLaeuft = false; }
+}
+function _updateSpaeter() {
+  const el = document.getElementById('update-hinweis');
+  try { localStorage.setItem('planoryUpdateSpaeter', JSON.stringify({ v: el?._st?.version, at: Date.now() })); } catch (e) {}
+  el?.remove();
+}
+function _updateOeffnen() {
+  const el = document.getElementById('update-hinweis'), st = el?._st || {};
+  const url = st.url || (st.id ? `https://apps.apple.com/app/id${st.id}` : 'https://apps.apple.com/');
+  window.open(url, '_blank');   // oeffnet den App Store
+  el?.remove();
+}
+setTimeout(() => { try { _pruefeAppUpdate(); } catch (e) {} }, 4000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(() => { try { _pruefeAppUpdate(); } catch (e) {} }, 1500); });
 // iPhone-App: pagehide kommt beim Wechsel in den Hintergrund nicht – dann eben hier
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _flushSync(); });
 
