@@ -645,6 +645,14 @@ check('Server-Funktionen prüfen die Anmeldung echt (kein bloßes Auslesen des T
   const schlecht = dateien.filter(f => /split\(['"]\.['"]\)\[1\]/.test(read('api/' + f)));
   if (schlecht.length) return 'Token nur ausgelesen (fremde ID möglich): ' + schlecht.join(', ');
 });
+check('Probeabo: Umstellungstag in App und Stripe-Checkout gleich, „ohneAbo“ sperrt', () => {
+  const datum = t => (t.match(/PROBEABO_AB = Date\.parse\('([^']+)'\)/) || [])[1];
+  const app = datum(read(WEB)), srv = datum(read('api/stripe-checkout.js'));
+  if (!app || app !== srv) return `App ${app} ≠ Server ${srv}`;
+  const w = read(WEB);
+  if (/_subActive\(\)\s*\{[^}]*ohneAbo/.test(w)) return 'ohneAbo zählt als aktives Abo';
+  if (!/_userPlan === 'ohneAbo'\) \{ openProbeabo\(\); return false; \}/.test(w)) return 'requireSub öffnet das Probeabo-Fenster nicht';
+});
 check('Todoist-Server: verschlüsselt, CORS nur planory.at, keine Tokens im Log', () => {
   let a = '', l = '';
   try { a = read('api/todoist.js'); l = read('api/_todoist-lib.js'); } catch (e) { return 'api/todoist.js fehlt'; }

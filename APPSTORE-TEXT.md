@@ -63,7 +63,7 @@ Halte fest, wo Leitungen und Rohre verlaufen – mit Fotos und Plänen, damit du
 FÜR WEN?
 Für private Bauherren, Häuslbauer und alle, die ihr Bauprojekt selbst organisieren.
 
-Planory kostenlos testen – einen Monat lang alle Funktionen gratis. Danach kannst du deine Daten jederzeit weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.
+Planory einen Monat gratis testen – alle Funktionen frei. Danach 3,99 € pro Monat oder 28,99 € pro Jahr. Das Abo verlängert sich automatisch; kündigst du mindestens 24 Stunden vor Ende des Gratismonats, zahlst du nichts.
 ```
 
 ---
@@ -120,7 +120,7 @@ Record where cables and pipes run – with photos and plans, so you drill with c
 WHO IS IT FOR?
 For private builders and anyone organising their own construction project.
 
-Try Planory free – all features free for one month. After that you can always keep viewing your data; new entries and the AI come with a fair subscription.
+Try Planory free for one month – all features unlocked. After that €3.99 per month or €28.99 per year. The subscription renews automatically; cancel at least 24 hours before the free month ends and you pay nothing.
 ```
 
 ---

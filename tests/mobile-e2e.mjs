@@ -2538,6 +2538,140 @@ await scenario('Offenes Fenster: Seite dahinter scrollt nicht mit, danach wieder
   return p.join(' · ');
 });
 
+// ── Probeabo: angemeldetes Konto nachstellen (eigener Browser-Kontext, Abo-Zeile frei wählbar) ──
+async function alsKonto(p, erstellt, zeile) {
+  await p.evaluate(([c, z]) => {
+    _demoMode = false;
+    document.body.classList.remove('demo-aktiv');
+    document.getElementById('demo-banner').style.display = 'none';
+    currentUser = { id: 'u-probe', email: 'probe@test.at', created_at: c };
+    ['_userPlan', '_hatteAbo', '_aboProbe', '_probeGratis'].forEach(k => { window[k] = undefined; });
+    const orig = supa.from;
+    supa.from = t => { if (t !== 'subscriptions') return orig(t);
+      const o = { select() { return o; }, eq() { return o; }, maybeSingle: async () => ({ data: z, error: null }) }; return o; };
+  }, [erstellt, zeile]);
+}
+const PA = () => {
+  const o = document.getElementById('probeabo-overlay');
+  const t = id => (document.getElementById(id)?.textContent || '').replace(/\s+/g, ' ').trim();
+  return { plan: window._userPlan, offen: !!o?.classList.contains('open'), sperre: document.documentElement.classList.contains('fenster-offen'),
+    jahrAn: document.getElementById('pa-plan-jahr')?.getAttribute('aria-pressed'), monatAn: document.getElementById('pa-plan-monat')?.getAttribute('aria-pressed'),
+    jahr: t('pa-plan-jahr'), monat: t('pa-plan-monat'), recht: t('pa-recht'), titel: t('pa-titel'), start: t('pa-start'),
+    agb: !!document.querySelector('#pa-recht a[href="agb.html"]'), wieder: !![...document.querySelectorAll('#probeabo-inhalt button')].find(b => /wiederherstellen/.test(b.textContent)),
+    breit: o ? o.scrollWidth - innerWidth : 0 };
+};
+
+await scenario('Probeabo: neues Konto ohne Abo sieht nach dem Onboarding das Gratismonat-Fenster, Jahresabo vorausgewählt', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    await alsKonto(d.page, '2026-10-25T08:00:00Z', null);
+    await d.page.evaluate(() => { document.getElementById('onboarding-overlay').style.display = 'flex'; });
+    await d.page.evaluate(() => loadUserPlan());
+    const waehrendOb = await d.page.evaluate(PA);
+    if (waehrendOb.plan !== 'ohneAbo') f.push('Status ' + waehrendOb.plan);
+    if (waehrendOb.offen) f.push('erscheint schon während des Onboardings');
+    await d.page.evaluate(() => { document.getElementById('onboarding-overlay').style.display = 'none'; _probeaboPruefen(); });
+    await d.page.waitForTimeout(200);
+    const r = await d.page.evaluate(PA);
+    if (!r.offen || !r.sperre) f.push('Fenster nicht offen/Seite nicht gesperrt');
+    if (r.jahrAn !== 'true' || r.monatAn !== 'false') f.push('Jahresabo nicht vorausgewählt');
+    if (!/30 Tage gratis, danach 28,99 € \/ Jahr/.test(r.jahr) || !/2,42 € pro Monat/.test(r.jahr)) f.push('Jahr: ' + r.jahr);
+    if (!/30 Tage gratis, danach 3,99 € \/ Monat/.test(r.monat)) f.push('Monat: ' + r.monat);
+    if (!/verlängert sich automatisch/.test(r.recht) || !/vor Ende des Gratismonats gekündigt, zahlst du nichts/.test(r.recht) || !r.agb) f.push('Pflichttext/AGB: ' + r.recht);
+    if (r.titel !== 'Starte deinen Gratismonat' || r.start !== 'Gratismonat starten') f.push(`Titel/Knopf: ${r.titel} / ${r.start}`);
+    if (r.breit > 1) f.push(`ragt ${r.breit}px über den Rand`);
+    const gesperrt = await d.page.evaluate(() => { const ok = requireSub(); return { ok, offen: document.getElementById('probeabo-overlay').classList.contains('open'), pw: document.getElementById('modal-paywall').classList.contains('open') }; });
+    if (gesperrt.ok || !gesperrt.offen || gesperrt.pw) f.push('Eintragen nicht gesperrt bzw. falsches Fenster');
+    await d.page.click('#pa-plan-monat');
+    await d.page.evaluate(() => { window.startStripeCheckout = p => { window.__checkout = p; }; });
+    await d.page.click('#pa-start');
+    const m = await d.page.evaluate(() => ({ an: document.getElementById('pa-plan-monat').getAttribute('aria-pressed'), co: window.__checkout }));
+    if (m.an !== 'true' || m.co !== 'monthly') f.push(`Monatsabo-Wahl → ${m.co}`);
+    const en = await d.page.evaluate(() => { _lang = 'en'; _paRender(); const t = document.getElementById('pa-plan-monat').textContent.replace(/\s+/g, ' '); _lang = 'de'; _paRender(); return t; });
+    if (!/30 days free, then €3\.99 \/ month/.test(en)) f.push('Englisch: ' + en);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
+await scenario('Probeabo: „Erst die Demo ansehen“ öffnet die Demo, „Demo beenden“ führt zurück', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    await alsKonto(d.page, '2026-10-25T08:00:00Z', null);
+    await d.page.evaluate(() => loadUserPlan());
+    await d.page.evaluate(() => { _cloudLoadedOk = false; });
+    await d.page.click('.pa-demo');
+    await d.page.waitForTimeout(200);
+    if (!(await d.page.evaluate(() => document.getElementById('probeabo-overlay').classList.contains('open') && !sessionStorage.getItem('planoryDemoVomKonto'))))
+      f.push('ohne gesicherte Cloud trotzdem gewechselt');
+    await d.page.evaluate(() => { _cloudLoadedOk = true; window.syncToCloud = async () => {}; });
+    await Promise.all([d.page.waitForNavigation(), d.page.click('.pa-demo')]);
+    await d.page.waitForFunction(() => typeof _demoMode !== 'undefined' && _demoMode && state.kosten.length > 0, null, { timeout: 15000 });
+    const demo = await d.page.evaluate(() => ({ flag: sessionStorage.getItem('planoryDemoVomKonto'), offen: document.getElementById('probeabo-overlay').classList.contains('open') }));
+    if (demo.flag !== '1' || demo.offen) f.push('Demo: ' + JSON.stringify(demo));
+    await Promise.all([d.page.waitForNavigation(), d.page.evaluate(() => setTimeout(exitDemo, 0))]);
+    await d.page.waitForTimeout(800);
+    const zur = await d.page.evaluate(() => ({ flag: sessionStorage.getItem('planoryDemoVomKonto'), demo: location.search.includes('demo') }));
+    if (zur.flag || zur.demo) f.push('Demo beenden: ' + JSON.stringify(zur));
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
+await scenario('Probeabo: ältere Konten wie bisher, beendetes Abo = Nur-Lesen, Stripe-Gratismonat zählt als Pro', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    const lauf = async (erstellt, zeile) => { await alsKonto(d.page, erstellt, zeile); await d.page.evaluate(() => loadUserPlan()); await d.page.waitForTimeout(100);
+      return d.page.evaluate(() => ({ ...(() => { const o = document.getElementById('probeabo-overlay'); return { plan: window._userPlan, offen: o.classList.contains('open') }; })(),
+        banner: document.getElementById('readonly-banner').style.display, ende: document.getElementById('plan-period-end').textContent })); };
+    const a = await lauf('2026-10-10T08:00:00Z', null);
+    if (a.plan !== 'trial' || a.offen) f.push('altes Konto im Gratismonat: ' + JSON.stringify(a));
+    const b = await lauf('2026-08-01T08:00:00Z', null);
+    if (b.plan !== 'expired' || b.offen || b.banner !== '') f.push('altes Konto nach dem Gratismonat: ' + JSON.stringify(b));
+    const c = await lauf('2026-10-25T08:00:00Z', { plan: 'free', status: 'canceled', stripe_subscription_id: 'sub_1' });
+    if (c.plan !== 'expired' || c.offen) f.push('neues Konto nach gekündigtem Abo: ' + JSON.stringify(c));
+    await d.page.evaluate(() => { window._userPlan = 'ohneAbo'; openProbeabo(); });
+    const e = await lauf('2026-10-25T08:00:00Z', { plan: 'pro', status: 'trialing', current_period_end: '2026-11-24T09:00:00Z', stripe_subscription_id: 'sub_1' });
+    if (e.plan !== 'pro' || e.offen) f.push('Stripe-Gratismonat: ' + JSON.stringify(e));
+    if (!/Gratismonat bis 24\.11\.2026/.test(e.ende)) f.push('Hinweis Gratismonat fehlt: ' + e.ende);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
+await scenario('Probeabo iPhone: Apples Gratismonat wird angezeigt – ohne Anspruch der normale Preis', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    await alsKonto(d.page, '2026-10-25T08:00:00Z', null);
+    const lauf = st => d.page.evaluate(async st => {
+      const prod = (id, preis, wert) => ({ identifier: id, priceString: preis, price: wert, currencyCode: 'EUR',
+        introPrice: { price: 0, priceString: '0,00 €', period: 'P1M', periodUnit: 'MONTH', periodNumberOfUnits: 1, cycles: 1 } });
+      const P = { getOfferings: async () => ({ current: { annual: { identifier: '$rc_annual', product: prod('pro_jahr', '28,99 €', 28.99) },
+                                                          monthly: { identifier: '$rc_monthly', product: prod('pro_monat', '3,99 €', 3.99) } } }),
+                  checkTrialOrIntroductoryPriceEligibility: async () => ({ pro_jahr: { status: st }, pro_monat: { status: st } }) };
+      window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', registerPlugin: () => P };
+      _rcOffering = null; _paNative = null; _paPlan = 'jahr'; window._userPlan = 'ohneAbo';
+      await openProbeabo();
+      const t = id => (document.getElementById(id)?.textContent || '').replace(/\s+/g, ' ').trim();
+      return { jahr: t('pa-plan-jahr'), monat: t('pa-plan-monat'), recht: t('pa-recht'), titel: t('pa-titel'), start: t('pa-start'),
+        wieder: !![...document.querySelectorAll('#probeabo-inhalt button')].find(b => /wiederherstellen/.test(b.textContent)),
+        agb: !!document.querySelector('#pa-recht a[href="agb.html"]'), eula: !!document.querySelector('#pa-recht a[href*="stdeula"]') };
+    }, st);
+    const a = await lauf(2);
+    if (!/1 Monat gratis, danach 28,99 € \/ Jahr/.test(a.jahr) || !/2,42/.test(a.jahr)) f.push('Jahr: ' + a.jahr);
+    if (!/1 Monat gratis, danach 3,99 € \/ Monat/.test(a.monat)) f.push('Monat: ' + a.monat);
+    if (!/Apple-Account/.test(a.recht) || !/24 Stunden/.test(a.recht) || !a.eula || a.agb) f.push('Apple-Pflichttext: ' + a.recht);
+    if (!a.wieder) f.push('„Käufe wiederherstellen“ fehlt');
+    const b = await lauf(1);
+    if (/gratis/i.test(b.jahr + b.monat + b.titel) || !/Jahresabo 28,99 € \/ Jahr ≈ 2,42 € pro Monat/.test(b.jahr) || b.start !== 'Abo abschließen') f.push('ohne Anspruch: ' + JSON.stringify(b));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

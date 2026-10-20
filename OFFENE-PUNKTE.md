@@ -1,6 +1,6 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 20.10.2026.
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -14,7 +14,13 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 19.10.2026.
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
-(pruefen 111/111, mobile-e2e 113/113, sync-e2e 21/21, todoist-api 14/14, push-api 4/4, app-version-api 6/6).
+(pruefen 118/118, mobile-e2e 120/120, sync-e2e 22/22, todoist-api 14/14, push-api 4/4, app-version-api 6/6,
+abo-api 7/7).
+- [ ] **VOR dem Upload – App Store Connect → Planory → Abos (Monat UND Jahr), je:**
+      „Einführungsangebote“ → **+** → alle Länder → Start: heute, kein Ende →
+      **„Kostenlos“ (Free Trial), Dauer „1 Monat“**. Ohne dieses Angebot zeigt die App neuen Nutzern
+      den normalen Preis ohne Gratismonat (sie zahlen dann sofort). Apple prüft automatisch, wer schon
+      einmal gratis getestet hat.
 - [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
       1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
          installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
@@ -28,6 +34,7 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
          NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin)
 - [ ] What's New (final):
       „Großes Update:
+       • 1 Monat gratis testen – danach jederzeit kündbar
        • NEU: Aufgaben – eigene Kategorien, Unteraufgaben, „Heute“ und „Kommende Tage“,
          wiederkehrende Aufgaben und Uhrzeit
        • Zeitplan neu: übersichtlicher, Status per Tipp, Punkte landen automatisch im richtigen Abschnitt
@@ -62,6 +69,24 @@ in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests gr
 - [ ] v1.4 – iPhone-Widgets (WidgetKit, braucht am Mac: Widget Extension + App Group):
       „Heute zu tun“ (Aufgaben), „Nächster Termin“ (Meilenstein/Zahlung), „Fällige Zahlungen &
       Skonto“ (nächste Zahlungstermine, Skonto-Frist mit Ersparnis – rot wenn heute/morgen).
+- [ ] Am iPhone (neues Testkonto, nach dem Einführungsangebot) prüfen: nach dem Onboarding erscheint
+      „Starte deinen Gratismonat“ mit „1 Monat gratis, danach 28,99 € / Jahr“ · Kauf mit Sandbox-Konto
+      → Glückwunsch „Dein Gratismonat läuft“ · „Käufe wiederherstellen“ · „Erst die Demo ansehen“ →
+      „Demo beenden“ führt zurück.
+
+## Probeabo (seit 20.10.2026 im Web live)
+- Konten ab **21.10.2026** (`PROBEABO_AB` in index.html + api/stripe-checkout.js) bekommen den
+  Gratismonat nur noch als **Probeabo**: 30 Tage gratis, danach automatisch 28,99 €/Jahr bzw.
+  3,99 €/Monat, vorher kündbar. Ohne Abo: nur die Demo. Ältere Konten: unverändert.
+- Web: Stripe-Testzeitraum (nur beim ersten Abo, Karte wird hinterlegt). In Stripe ist nichts
+  einzustellen. Kündigen über Einstellungen → Abo verwalten (Kundenportal).
+- Wer ein Abo hatte und es beendet, sieht seine Daten weiter (Nur-Lesen) – kein Aussperren.
+- Abos aus der iPhone-App werden jetzt auch auf planory.at erkannt (neue Server-Funktion
+  `api/abo-status`, fragt RevenueCat). Einmal mit einem echten Apple-Abo im Web einloggen und prüfen,
+  dass „Pro-Mitglied“ erscheint.
+- [ ] **AGB (`agb.html`) von WKO oder Anwalt prüfen lassen** (Entwurf mit Rücktrittsbelehrung nach
+      FAGG, Laufzeit, Gratismonat, Kündigung). Ist bereits verlinkt (Startseite unten, Probeabo-Fenster).
+
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
 
