@@ -4,6 +4,13 @@ const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 
 export const config = { api: { bodyParser: false } };
 
+// Ende des laufenden Zeitraums (im Probeabo = Ende des Gratismonats). Neuere Stripe-Versionen
+// fuehren es nur noch an den Abo-Positionen.
+export function periodenEnde(sub) {
+  const t = sub?.current_period_end ?? sub?.items?.data?.[0]?.current_period_end ?? sub?.trial_end;
+  return t ? new Date(t * 1000).toISOString() : null;
+}
+
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -57,18 +64,30 @@ export default async function handler(req, res) {
       const session = event.data.object;
       const uid = session.metadata?.supabase_uid;
       if (!uid) break;
+      // Echten Status des Abos uebernehmen – im Probeabo ist er 'trialing' (zaehlt als Pro).
+      let status = 'active', ende = null;
+      if (session.subscription) {
+        try { const s = await stripe.subscriptions.retrieve(session.subscription); status = s.status || status; ende = periodenEnde(s); }
+        catch (e) { console.error('stripe-webhook: Abo nicht lesbar', e?.message); }
+      }
       await upsertSub({
         user_id: uid,
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
-        plan: 'pro',
-        status: 'active',
+        plan: ['active', 'trialing'].includes(status) ? 'pro' : 'free',
+        status,
+        ...(ende ? { current_period_end: ende } : {}),
       });
       break;
     }
+    case 'customer.subscription.created':
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted': {
-      const sub = event.data.object;
+      // Stripe liefert Ereignisse nicht garantiert der Reihe nach: immer den aktuellen Stand holen,
+      // damit ein verspaetetes "created" ein inzwischen aktives Abo nicht ueberschreibt.
+      let sub = event.data.object;
+      try { const frisch = await stripe.subscriptions.retrieve(sub.id); if (frisch && frisch.id) sub = frisch; }
+      catch (e) { console.error('stripe-webhook: Abo nicht lesbar', e?.message); }
       const uid = sub.metadata?.supabase_uid || await getUidFromCustomer(sub.customer);
       if (!uid) break;
       const isActive = ['active', 'trialing'].includes(sub.status);
@@ -78,7 +97,7 @@ export default async function handler(req, res) {
         stripe_subscription_id: sub.id,
         plan: isActive ? 'pro' : 'free',
         status: sub.status,
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        ...(periodenEnde(sub) ? { current_period_end: periodenEnde(sub) } : {}),
       });
       break;
     }

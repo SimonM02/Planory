@@ -24,7 +24,7 @@
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Planory","applicationCategory":"BusinessApplication","operatingSystem":"iOS, Web","inLanguage":"de","description":"Digitaler Bauassistent für Budget, Baukosten, Rechnungen, Bautagebuch, Wartungsplan und KI-Bauberatung – für alle, die bauen, sanieren oder umbauen.","url":"https://planory.at/","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR","description":"Einen Monat kostenlos testen"}}
 </script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Was ist Planory?","acceptedAnswer":{"@type":"Answer","text":"Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung."}},{"@type":"Question","name":"Für wen ist Planory gedacht?","acceptedAnswer":{"@type":"Answer","text":"Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen."}},{"@type":"Question","name":"Läuft Planory auf Handy und Computer?","acceptedAnswer":{"@type":"Answer","text":"Ja. Planory gibt es als iPhone- und iPad-App und im Web – die Daten sind auf allen Geräten synchron."}},{"@type":"Question","name":"Was kostet Planory?","acceptedAnswer":{"@type":"Answer","text":"Du kannst Planory einen Monat kostenlos testen. Danach gibt es ein faires Abo für neue Einträge und die KI-Funktionen."}}]}
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Was ist Planory?","acceptedAnswer":{"@type":"Answer","text":"Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung."}},{"@type":"Question","name":"Für wen ist Planory gedacht?","acceptedAnswer":{"@type":"Answer","text":"Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen."}},{"@type":"Question","name":"Läuft Planory auf Handy und Computer?","acceptedAnswer":{"@type":"Answer","text":"Ja. Planory gibt es als iPhone- und iPad-App und im Web – die Daten sind auf allen Geräten synchron."}},{"@type":"Question","name":"Was kostet Planory?","acceptedAnswer":{"@type":"Answer","text":"Der erste Monat ist gratis. Danach kostet Planory 3,99 € pro Monat oder 28,99 € pro Jahr. Das Abo verlängert sich automatisch und ist jederzeit kündbar – wer vor Ende des Gratismonats kündigt, zahlt nichts."}}]}
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2311151f'/><rect x='42' y='8.5' width='16' height='4' rx='2' fill='%23222b3c'/><rect x='40' y='90' width='20' height='2.6' rx='1.3' fill='%232a3446'/><rect x='20' y='56' width='30' height='28' fill='%23ffffff'/><rect x='50' y='69' width='20' height='15' fill='%23ffffff'/><rect x='48' y='66' width='24' height='3.5' rx='1' fill='%23ff9f1c'/><rect x='52.5' y='72' width='15' height='12' fill='%2311151f'/><path d='M15 56 L35 44 L55 56 Z' fill='%23ff9f1c'/><rect x='24' y='72' width='9' height='12' fill='%2311151f'/><rect x='38' y='62' width='8' height='8' fill='%23ff9f1c'/><g stroke='%23ff9f1c' stroke-width='1.25' fill='none' stroke-linecap='round' stroke-linejoin='round'><path d='M79.5 84 V26 M83 84 V26'/><path d='M79.5 82 L83 79 L79.5 76 L83 73 L79.5 70 L83 67 L79.5 64 L83 61 L79.5 58 L83 55 L79.5 52 L83 49 L79.5 46 L83 43 L79.5 40 L83 37 L79.5 34 L83 31 L79.5 28'/><path d='M76 84 H86.5'/><path d='M79.5 26 L81.25 19 L83 26'/><path d='M32 26 H83'/><path d='M37 29.5 H79.5'/><path d='M32 26 L37 29.5 L44 26 L51 29.5 L58 26 L65 29.5 L72 26 L79 29.5'/><path d='M81.25 19 L48 26 M81.25 19 L60 26 M81.25 19 L72 26 M81.25 19 L89 26'/><path d='M83 26 H90'/><path d='M48 29.5 V34'/></g><rect x='86.5' y='26.3' width='4.4' height='5.4' rx='.8' fill='%23ff9f1c'/><circle cx='48' cy='29.5' r='1.1' fill='%23ff9f1c'/></svg>">
 <meta name="theme-color" content="#11151F">
@@ -1422,6 +1422,35 @@
   /* Offenes Fenster: weder das Fenster noch der Hintergrund schiebt die Seite dahinter weiter */
   .modal-overlay, .modal, .lightbox { overscroll-behavior: contain; }
   html.fenster-offen, html.fenster-offen body { overflow: hidden !important; }
+  /* Probeabo-Fenster (ganzseitig) */
+  .probeabo { display: none; position: fixed; inset: 0; z-index: 10045; background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch; padding: calc(28px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+  .probeabo.open { display: flex; justify-content: center; align-items: flex-start; }
+  .pa-karte { width: 100%; max-width: 440px; margin: auto 0; color: var(--text); }
+  .pa-marke { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.05rem; }
+  .pa-logo { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--accent-text); display: inline-flex; align-items: center; justify-content: center; }
+  .pa-titel { font-size: 1.65rem; font-weight: 800; line-height: 1.15; margin: 20px 0 10px; letter-spacing: -0.01em; }
+  .pa-text { color: var(--text2); font-size: 0.93rem; line-height: 1.55; margin: 0 0 14px; }
+  .pa-vorteile { list-style: none; padding: 0; margin: 0 0 20px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; font-weight: 600; }
+  .pa-vorteile li { display: flex; align-items: center; gap: 10px; }
+  .pa-vorteile svg { flex-shrink: 0; }
+  .pa-plan { display: block; width: 100%; text-align: left; position: relative; margin-bottom: 12px; padding: 14px 16px; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-family: inherit; cursor: pointer; }
+  .pa-plan[aria-pressed="true"] { border: 2px solid var(--accent); padding: 13.5px 15.5px; box-shadow: 0 0 0 3px var(--accent-light); }
+  .pa-name { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1rem; }
+  .pa-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; box-sizing: border-box; }
+  .pa-plan[aria-pressed="true"] .pa-radio { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 4px, transparent 5px); }
+  .pa-preis { display: block; margin: 5px 0 0 28px; font-size: 0.9rem; font-weight: 600; }
+  .pa-klein { display: block; margin: 2px 0 0 28px; font-size: 0.78rem; color: var(--text3); }
+  .pa-tag { position: absolute; top: -10px; right: 14px; background: var(--accent); color: var(--accent-text); font-size: 0.66rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.02em; }
+  .pa-start { width: 100%; padding: 14px; font-size: 1rem; margin-top: 4px; justify-content: center; }
+  .pa-recht { font-size: 0.72rem; color: var(--text3); line-height: 1.55; margin: 12px 0 0; }
+  .pa-recht a { color: var(--text2); text-decoration: underline; }
+  .pa-demo { display: block; width: 100%; margin-top: 16px; padding: 12px; min-height: 44px; background: none; border: 1.5px solid var(--border); border-radius: 10px;
+    color: var(--text2); font-family: inherit; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+  .pa-unten { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-top: 10px; }
+  .pa-unten button { background: none; border: none; color: var(--text3); font-family: inherit; font-size: 0.8rem; text-decoration: underline; cursor: pointer; min-height: 44px; padding: 0 6px; }
+  .pa-hinweis { font-size: 0.82rem; color: var(--text3); line-height: 1.55; margin-bottom: 12px; padding: 10px 12px; background: var(--surface2); border-radius: 9px; }
   /* sanftes Schliessen: .closing blendet Overlay + Karte aus, bevor .open faellt */
   .modal-overlay.closing { animation: fadeOut 0.18s ease forwards; }
   .modal-overlay.closing .modal { animation: modalOut 0.18s ease forwards; }
@@ -2579,7 +2608,7 @@
       <div class="lp-trust">
         <span data-en="🔒 GDPR-compliant">🔒 DSGVO-konform</span>
         <span data-en="🇪🇺 Servers in the EU">🇪🇺 Server in der EU</span>
-        <span data-en="💳 1 month free, no payment details">💳 1 Monat gratis – ohne Zahlungsdaten</span>
+        <span data-en="💳 1 month free – cancel anytime">💳 1 Monat gratis – jederzeit kündbar</span>
       </div>
     </section>
 
@@ -2679,9 +2708,9 @@
       <div class="lp-price">
         <div style="color:var(--lp-text2)" data-en="One month">Einen Monat</div>
         <div class="lp-big" data-en="Free trial">Kostenlos testen</div>
-        <p style="color:var(--lp-text2);margin-bottom:16px" data-en="All features free for one month – no credit card, no payment details. After that you can still view your data; new entries and the AI require a fair subscription.">Alle Funktionen einen Monat gratis – keine Kreditkarte, keine Zahlungsdaten nötig. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI gibt es ein faires Abo.</p>
+        <p style="color:var(--lp-text2);margin-bottom:16px" data-en="All features free for one month. After that your subscription continues automatically – cancel before the free month ends and you pay nothing.">Alle Funktionen einen Monat gratis. Danach läuft dein Abo automatisch weiter – kündigst du vor Ende des Gratismonats, zahlst du nichts.</p>
         <div style="font-weight:800;font-size:1.1rem;margin-bottom:20px" data-en="Then €3.99 / month or €28.99 / year (save 40%)">Danach 3,99 €/Monat oder 28,99 €/Jahr (spare 40 %)</div>
-        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')" data-en="Start for free now">Jetzt kostenlos starten</button>
+        <button class="lp-btn lp-btn-primary" style="width:100%" onclick="enterApp('register')" data-en="Try 1 month free">1 Monat gratis testen</button>
       </div>
     </section>
 
@@ -2691,13 +2720,13 @@
         <div class="lp-qa"><h3 data-en="What is Planory?">Was ist Planory?</h3><p data-en="Planory is an app and web application for private building projects: it manages budget, building costs, invoices, quotes, schedule, site diary and maintenance – with AI support.">Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Bautagebuch und Wartung – mit KI-Unterstützung.</p></div>
         <div class="lp-qa"><h3 data-en="Who is Planory for?">Für wen ist Planory gedacht?</h3><p data-en="For everyone building, renovating or remodelling a home who wants to keep their costs under control themselves.">Für alle, die ein Haus bauen, sanieren oder umbauen und ihre Kosten selbst im Griff behalten wollen.</p></div>
         <div class="lp-qa"><h3 data-en="Does Planory run on phone and computer?">Läuft Planory auf Handy und Computer?</h3><p data-en="Yes. Planory is available as an iPhone/iPad app and on the web – your data stays in sync across all devices.">Ja. Planory gibt es als iPhone-/iPad-App und im Web – deine Daten sind auf allen Geräten synchron.</p></div>
-        <div class="lp-qa"><h3 data-en="What does Planory cost?">Was kostet Planory?</h3><p data-en="You can try Planory free for one month. After that it's €3.99 / month or €28.99 / year (save 40%) – needed for new entries and the AI features. Viewing your existing data stays free.">Du kannst Planory einen Monat kostenlos testen. Danach 3,99 €/Monat oder 28,99 €/Jahr (spare 40 %) – für neue Einträge und die KI-Funktionen. Deine bisherigen Daten ansehen bleibt gratis.</p></div>
+        <div class="lp-qa"><h3 data-en="What does Planory cost?">Was kostet Planory?</h3><p data-en="The first month is free. After that Planory costs €3.99 / month or €28.99 / year (save 40%). The subscription renews automatically – cancel before the free month ends and you pay nothing. You can cancel anytime.">Der erste Monat ist gratis. Danach kostet Planory 3,99 €/Monat oder 28,99 €/Jahr (spare 40 %). Das Abo verlängert sich automatisch – kündigst du vor Ende des Gratismonats, zahlst du nichts. Kündigen kannst du jederzeit.</p></div>
       </div>
     </section>
   </div>
 
   <footer class="lp-footer"><div class="lp-wrap">
-    © Planory · <a href="#" onclick="enterApp();return false" data-en="To the app">Zur App</a> · <a href="impressum.html" data-en="Imprint">Impressum</a> · <a href="datenschutz.html" data-en="Privacy">Datenschutz</a>
+    © Planory · <a href="#" onclick="enterApp();return false" data-en="To the app">Zur App</a> · <a href="impressum.html" data-en="Imprint">Impressum</a> · <a href="datenschutz.html" data-en="Privacy">Datenschutz</a> · <a href="agb.html" data-en="Terms">AGB</a>
   </div></footer>
 </div>
 
@@ -5071,7 +5100,8 @@ function saveAll() {
   // aus der Cloud setzt es wieder ein, bis der Upload bestaetigt ist.
   try { _markPending(); } catch(e) { console.warn('[SYNC] _markPending:', e?.message); }
   const ts = new Date().toISOString();
-  try {
+  // Demo-Daten nie in den lokalen Speicher (sonst ueberschreiben sie den Zwischenspeicher eines Kontos)
+  if (!_demoMode) try {
     localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
     localStorage.setItem('bauplan_current',    String(currentProjectId));
     localStorage.setItem('bauplan_user_id',    currentUser?.id || '');
@@ -7201,7 +7231,7 @@ function openModal(id) {
 // Seite dahinter sperren, solange ein Fenster (oder die Foto-Ansicht) offen ist – sonst scrollte man
 // am Ende des Fensters „durch“ in die Seite darunter. Ein Beobachter erfasst alle Oeffnen/Schliessen.
 function _fensterSperre() {
-  const offen = !!document.querySelector('.modal-overlay.open:not(.closing), .lightbox.open');
+  const offen = !!document.querySelector('.modal-overlay.open:not(.closing), .lightbox.open, .probeabo.open');
   document.documentElement.classList.toggle('fenster-offen', offen);
 }
 try { new MutationObserver(() => _fensterSperre()).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] }); } catch (e) {}
@@ -7453,6 +7483,24 @@ function showPrompt(message, defaultValue = '', opts = {}) {
 // frei – sonst wuerde Apple die App ablehnen (Guideline 3.1.1).
 function _subActive() { return window._userPlan === 'pro' || window._userPlan === 'trial'; }
 
+// ── Probeabo: Konten ab PROBEABO_AB bekommen den Gratismonat nicht mehr automatisch ab der
+// Registrierung, sondern starten ein Abo mit 30 Tagen gratis (Stripe-Testzeitraum bzw. Apple-
+// Einfuehrungsangebot). Es verlaengert sich danach automatisch, wenn man vorher nicht kuendigt.
+// Ohne Abo gibt es nur die Demo (Status 'ohneAbo'). Aeltere Konten bleiben wie bisher.
+const PROBEABO_AB = Date.parse('2026-10-21T00:00:00+02:00');   // gleich in api/stripe-checkout.js
+let _aboRueckkehrBis = 0;    // gerade von Stripe zurueck: kurz auf den Webhook warten
+function _probeaboRegel() {
+  const c = Date.parse(currentUser?.created_at || '');
+  return !isNaN(c) && c >= PROBEABO_AB;
+}
+// Plan ohne laufendes Abo: neue Regel -> 'ohneAbo' (nie ein Abo gehabt) bzw. Nur-Lesen (Abo beendet –
+// die eigenen Daten bleiben sichtbar); alte Regel -> Gratismonat ab Registrierung.
+function _planOhneAbo() {
+  if (_probeaboRegel()) return window._hatteAbo ? 'expired' : 'ohneAbo';
+  const created = new Date(currentUser?.created_at || Date.now());
+  return (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+}
+
 // ─── In-App-Abo via RevenueCat ───────────────────────────────────────────────
 // >>> HIER deine RevenueCat-Daten eintragen (aus dem RevenueCat-Dashboard):
 const RC_API_KEY_IOS     = 'appl_eMLeZHBkeBtxBeVVoPPTXKaSMvR';  // Public SDK Key (Apple), App com.planory.bauassistent.
@@ -7490,24 +7538,30 @@ async function _rcInit() {
 // Testphase. So gilt ein im Web abgeschlossenes Abo auch in der App.
 async function _rcRefresh() {
   if (!_rcReady || !currentUser) return;
-  let isPro = false, checkFailed = false;
+  const uid = currentUser.id;   // Kontowechsel waehrend des Abgleichs -> Ergebnis verwerfen
+  let isPro = false, checkFailed = false, probe = false, hatte = false;
   const P = _rcPlugin();
   if (P) {
     try {
       const res = await P.getCustomerInfo();
       const info = res?.customerInfo || res;
-      if ((info?.entitlements?.active || {})[RC_ENTITLEMENT]) isPro = true;
+      const ent = (info?.entitlements?.active || {})[RC_ENTITLEMENT];
+      if (ent) { isPro = true; probe = /trial/i.test(String(ent.periodType || '')); }
+      else if ((info?.entitlements?.all || {})[RC_ENTITLEMENT]) hatte = true;   // frueheres Apple-Abo
     } catch(e) { checkFailed = true; console.warn('RevenueCat refresh failed', e); }
   }
   if (!isPro) {
     // Web-Abo (Stripe) aus derselben Supabase-Tabelle pruefen, die die Web-App nutzt.
     try {
-      const { data, error } = await supa.from('subscriptions').select('plan,status').eq('user_id', currentUser.id).maybeSingle();
+      const { data, error } = await supa.from('subscriptions').select('plan,status,stripe_subscription_id').eq('user_id', uid).maybeSingle();
       if (error) checkFailed = true;
-      if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) isPro = true;
+      if (data?.stripe_subscription_id) hatte = true;
+      if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) { isPro = true; probe = data.status === 'trialing'; }
     } catch(e) { checkFailed = true; }
   }
-  if (isPro) { window._userPlan = 'pro'; }
+  if (currentUser?.id !== uid) return;
+  if (hatte) window._hatteAbo = true;
+  if (isPro) { window._userPlan = 'pro'; window._aboProbe = probe; }
   // Hat diese Sitzung bereits Pro bestaetigt, einen einzelnen fehlgeschlagenen
   // Abgleich (z.B. RevenueCat-Timeout) NICHT als "abgelaufen" werten – sonst
   // blitzt bei zahlenden Nutzern kurz der Nur-Lese-Modus auf. Eine echte
@@ -7519,12 +7573,13 @@ async function _rcRefresh() {
     if (checkFailed && !isPro) {
       if (!window._userPlan) window._userPlan = 'trial';
     } else {
-      const created = new Date(currentUser?.created_at || Date.now());
-      window._userPlan = (Date.now() < created.getTime() + 30 * 86400000) ? 'trial' : 'expired';
+      window._userPlan = _planOhneAbo();
     }
   }
   const banner = document.getElementById('readonly-banner');
   if (banner) banner.style.display = (window._userPlan === 'expired') ? '' : 'none';
+  try { _updateProEntry(); } catch(e) {}
+  _probeaboPruefen();
 }
 // Findet das passende Paket (Monat/Jahr) im aktuellen Offering – robust ueber
 // die RevenueCat-Kurzzugriffe (.monthly/.annual) mit Fallback auf die Liste.
@@ -7543,7 +7598,7 @@ async function rcPurchase(which) {
   try {
     await P.purchasePackage({ aPackage: pkg });
     await _rcRefresh();
-    if (_subActive()) { closeModal('modal-paywall'); showAboSuccess(); }
+    if (_subActive()) { closeModal('modal-paywall'); _probeaboSchliessen(); showAboSuccess(); }
   } catch(e) { if (!/cancel/i.test(e?.message || '')) showToast('Kauf nicht abgeschlossen', 'error'); }
 }
 async function rcRestore() {
@@ -7552,7 +7607,7 @@ async function rcRestore() {
   try {
     await P.restorePurchases();
     await _rcRefresh();
-    if (_subActive()) { closeModal('modal-paywall'); showToast('✅ Käufe wiederhergestellt', 'success'); }
+    if (_subActive()) { closeModal('modal-paywall'); _probeaboSchliessen(); showToast('✅ Käufe wiederhergestellt', 'success'); }
     else showToast('Keine aktiven Käufe gefunden', 'warning');
   } catch(e) { showToast('Wiederherstellen fehlgeschlagen', 'error'); }
 }
@@ -7565,6 +7620,7 @@ function requireSub() {
   // sonst sehen zahlende Nutzer kurz die Bezahlschranke und ihr Eintrag geht verloren.
   // (Sanfte Bezahlschranke, keine Sicherheitsgrenze – siehe _loadUserPlanImpl.)
   if (window._userPlan === undefined) return true;
+  if (window._userPlan === 'ohneAbo') { openProbeabo(); return false; }
   openPaywall();
   return false;
 }
@@ -7575,8 +7631,11 @@ function showAboSuccess() {
   const b = document.getElementById('abosucc-body');
   const k = document.getElementById('abosucc-btn');
   if (t) t.textContent = en ? '🎉 Welcome to Planory Pro!' : '🎉 Willkommen bei Planory Pro!';
-  if (b) b.textContent = en ? 'All features unlocked. Have fun building your project!'
-                            : 'Alle Funktionen freigeschaltet. Viel Erfolg mit deinem Bauprojekt!';
+  if (b) b.textContent = window._aboProbe
+    ? (en ? 'Your free month has started – all features unlocked. You can cancel anytime before it ends and pay nothing.'
+          : 'Dein Gratismonat läuft – alle Funktionen sind freigeschaltet. Kündigst du vor dem Ende, zahlst du nichts.')
+    : (en ? 'All features unlocked. Have fun building your project!'
+          : 'Alle Funktionen freigeschaltet. Viel Erfolg mit deinem Bauprojekt!');
   if (k) k.textContent = en ? "Let's go" : 'Los geht’s';
   try { if (typeof _updateProEntry === 'function') _updateProEntry(); } catch(e){}
   const el = document.getElementById('modal-abo-success');
@@ -7588,6 +7647,7 @@ function _updateProEntry() {
   if (btn) btn.style.display = (window._userPlan === 'pro') ? 'none' : '';
 }
 async function openPaywall() {
+  if (window._userPlan === 'ohneAbo') return openProbeabo();   // neue Konten: Probeabo statt Paywall
   // In der nativen App IMMER den Apple-Kauf zeigen (nie Web/Stripe – das waere
   // ein Apple-Verstoss). Web nutzt weiterhin Stripe.
   const nativeAbo = isNativeApp() && !!RC_API_KEY;
@@ -7650,7 +7710,7 @@ async function openPaywall() {
 // niemand vom Ende des Gratismonats ueberrascht wird. Zeigt nichts bei Pro.
 function _checkTrialEndingSoon() {
   try {
-    if (!currentUser || window._userPlan === 'pro') return;
+    if (!currentUser || window._userPlan === 'pro' || _probeaboRegel()) return;   // Probeabo: keine eigene Erinnerung
     const created  = new Date(currentUser.created_at || Date.now());
     const trialEnd = new Date(created.getTime() + 30 * 86400000);
     const days = Math.ceil((trialEnd.getTime() - Date.now()) / 86400000);
@@ -7669,10 +7729,17 @@ function _checkTrialEndingSoon() {
 // Berechnet Testphase/abgelaufen und rendert die Plan-Karte in den Einstellungen
 function _applyFreePlan(freeEl) {
   const en = (_lang === 'en');
+  if (_probeaboRegel() && !window._hatteAbo) {
+    window._userPlan = 'ohneAbo';
+    const banner = document.getElementById('readonly-banner');
+    if (banner) banner.style.display = 'none';
+    if (freeEl) { freeEl.style.display = 'block'; freeEl.innerHTML = _probeaboKarte(en); }
+    return;
+  }
   const created  = new Date(currentUser?.created_at || Date.now());
   const trialEnd = new Date(created.getTime() + 30 * 86400000);
   window._trialEnd = trialEnd;
-  const inTrial  = Date.now() < trialEnd.getTime();
+  const inTrial  = !_probeaboRegel() && Date.now() < trialEnd.getTime();   // neue Regel: kein Gratismonat ab Registrierung
   window._userPlan = inTrial ? 'trial' : 'expired';
   const banner = document.getElementById('readonly-banner');
   if (banner) banner.style.display = inTrial ? 'none' : '';
@@ -7714,7 +7781,7 @@ function _applyNativePlan(freeEl) {
   const en = (_lang === 'en');
   const created  = new Date(currentUser?.created_at || Date.now());
   const trialEnd = new Date(created.getTime() + 30 * 86400000);
-  const inTrial  = Date.now() < trialEnd.getTime();
+  const inTrial  = !_probeaboRegel() && Date.now() < trialEnd.getTime();
   const isPro    = (window._userPlan === 'pro');
   const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000));
   freeEl.style.display = 'block';
@@ -7732,6 +7799,7 @@ function _applyNativePlan(freeEl) {
     </div>`;
     return;
   }
+  if (_probeaboRegel() && !window._hatteAbo) { freeEl.innerHTML = _probeaboKarte(en); return; }
   const title = inTrial ? (en ? 'Trial active' : 'Testphase aktiv') : (en ? 'View-only mode' : 'Nur-Lese-Modus');
   const sub   = inTrial ? (en ? `${days} day${days===1?'':'s'} left · all free` : `Noch ${days} Tag${days===1?'':'e'} alles gratis`)
                         : (en ? 'Viewing & ticking off free – adding needs a subscription' : 'Ansehen & Abhaken frei – Eintragen braucht ein Abo');
@@ -7754,6 +7822,170 @@ function _applyNativePlan(freeEl) {
         ${en ? 'View Planory Pro' : 'Planory Pro ansehen'}
       </button>
     </div>`;
+}
+
+// ── Probeabo-Fenster: ganzseitig fuer neue Konten ohne Abo (Status 'ohneAbo') ──
+// Jahresabo vorausgewaehlt. Web: Stripe mit 30 Tagen Testzeitraum (nur beim ersten Abo).
+// iPhone: Apples Einfuehrungsangebot – gezeigt wird nur, was Apple fuer diesen Nutzer wirklich anbietet.
+let _paPlan = 'jahr';
+let _paNative = null;      // { jahr, monat } aus RevenueCat (Preis, Gratiszeitraum)
+function _probeaboKarte(en) {
+  return `
+    <div style="padding:16px 18px;background:var(--surface2)">
+      <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px">${en ? 'No subscription yet' : 'Noch kein Abo'}</div>
+      <div style="font-size:0.78rem;color:var(--text3)">${en ? 'Start your free month – cancel anytime' : 'Starte deinen Gratismonat – jederzeit kündbar'}</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--surface)">
+      <button onclick="openProbeabo()" style="width:100%;background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;border-radius:9px;padding:12px;font-family:'Hanken Grotesk',sans-serif;font-size:0.9rem;font-weight:700;color:white;cursor:pointer">
+        ${en ? 'Start free month' : 'Gratismonat starten'}
+      </button>
+    </div>`;
+}
+function _paZeitraum(ip, en) {
+  const n = Number(ip?.periodNumberOfUnits) || 1, u = String(ip?.periodUnit || 'MONTH').toUpperCase();
+  const de = { DAY: ['Tag', 'Tage'], WEEK: ['Woche', 'Wochen'], MONTH: ['Monat', 'Monate'], YEAR: ['Jahr', 'Jahre'] }[u] || ['Monat', 'Monate'];
+  const enW = { DAY: 'day', WEEK: 'week', MONTH: 'month', YEAR: 'year' }[u] || 'month';
+  return en ? `${n} ${enW}${n === 1 ? '' : 's'}` : `${n} ${n === 1 ? de[0] : de[1]}`;
+}
+async function _paNativLaden() {
+  const P = _rcPlugin();
+  if (!P) return;
+  if (!_rcOffering) { try { const o = await P.getOfferings(); _rcOffering = o?.current || o?.offerings?.current || null; } catch (e) {} }
+  const pk = { jahr: _rcPkg('annual'), monat: _rcPkg('monthly') };
+  if (pk.jahr && pk.monat === pk.jahr) pk.monat = null;
+  const ids = [pk.jahr, pk.monat].filter(Boolean).map(p => p.product?.identifier).filter(Boolean);
+  let elig = {};
+  try { if (ids.length && P.checkTrialOrIntroductoryPriceEligibility) elig = (await P.checkTrialOrIntroductoryPriceEligibility({ productIdentifiers: ids })) || {}; } catch (e) {}
+  const info = p => {
+    if (!p) return null;
+    const pr = p.product || {}, ip = pr.introPrice, st = elig[pr.identifier]?.status;
+    // Nur "gratis" anzeigen, wenn Apple den Gratiszeitraum fuer DIESEN Nutzer bestaetigt (sonst Normalpreis)
+    const gratis = !!(ip && Number(ip.price) === 0 && (st === 2 || st === 'INTRO_ELIGIBILITY_STATUS_ELIGIBLE'));
+    return { preis: pr.priceString || '', ip: gratis ? ip : null, price: Number(pr.price), currency: pr.currencyCode };
+  };
+  _paNative = { jahr: info(pk.jahr), monat: info(pk.monat) };
+}
+function _paAngebot(en) {
+  if (isNativeApp() && RC_API_KEY) {
+    if (!_paNative) return null;   // laedt noch
+    const m = x => x && { preis: x.preis, gratis: x.ip ? _paZeitraum(x.ip, en) : '',
+      proMonat: (() => { try { return x.price > 0 && x.currency ? new Intl.NumberFormat(en ? 'en-GB' : 'de-DE', { style: 'currency', currency: x.currency }).format(x.price / 12) : ''; } catch (e) { return ''; } })() };
+    return { jahr: m(_paNative.jahr), monat: m(_paNative.monat) };
+  }
+  const g = window._probeGratis === false ? '' : (en ? '30 days' : '30 Tage');
+  return { jahr: { preis: en ? '€28.99' : '28,99 €', gratis: g, proMonat: en ? '€2.42' : '2,42 €' },
+           monat: { preis: en ? '€3.99' : '3,99 €', gratis: g } };
+}
+function _paRender() {
+  const box = document.getElementById('probeabo-inhalt');
+  if (!box) return;
+  const en = (_lang === 'en'), nativ = isNativeApp() && !!RC_API_KEY;
+  const a = _paAngebot(en);
+  if (a && !a[_paPlan] && a[_paPlan === 'jahr' ? 'monat' : 'jahr']) _paPlan = _paPlan === 'jahr' ? 'monat' : 'jahr';
+  const w = a && a[_paPlan];
+  const gratis = !!(w && w.gratis);
+  const per = p => p === 'jahr' ? (en ? 'year' : 'Jahr') : (en ? 'month' : 'Monat');
+  const preisZeile = (o, p) => o.gratis ? (en ? `${o.gratis} free, then ${o.preis} / ${per(p)}` : `${o.gratis} gratis, danach ${o.preis} / ${per(p)}`) : `${o.preis} / ${per(p)}`;
+  const plan = (p, name, klein, tag) => {
+    const o = a && a[p];
+    if (a && !o) return '';
+    return `<button type="button" class="pa-plan" id="pa-plan-${p}" aria-pressed="${_paPlan === p}" onclick="_paWahl('${p}')">
+      ${tag ? `<span class="pa-tag">${tag}</span>` : ''}
+      <span class="pa-name"><span class="pa-radio" aria-hidden="true"></span>${name}</span>
+      <span class="pa-preis">${o ? preisZeile(o, p) : '…'}</span>
+      ${klein ? `<span class="pa-klein">${klein}</span>` : ''}
+    </button>`;
+  };
+  const haken = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+  const vorteile = en ? ['Budget &amp; costs always in view', 'Scan invoices with AI', 'Schedule, tasks &amp; site diary']
+                      : ['Budget &amp; Kosten immer im Blick', 'Rechnungen per Foto mit KI erfassen', 'Zeitplan, Aufgaben &amp; Bautagebuch'];
+  const ls = 'target="_blank" rel="noopener"';
+  const preisText = w ? `${w.preis} ${en ? 'per' : 'pro'} ${per(_paPlan)}` : '';
+  let recht;
+  if (nativ) {
+    recht = (!w ? '' : gratis
+      ? (en ? `${w.gratis} free, then ${preisText}. Payment is charged to your Apple account when the free period ends. `
+            : `${w.gratis} gratis, danach ${preisText}. Die Zahlung erfolgt nach Ende des Gratiszeitraums über deinen Apple-Account. `)
+      : (en ? `${preisText}, charged to your Apple account. ` : `${preisText}, abgerechnet über deinen Apple-Account. `))
+      + (en ? 'The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. Cancel in your iPhone settings › Apple ID › Subscriptions.'
+            : 'Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf des laufenden Zeitraums gekündigt wird. Kündigen in den iPhone-Einstellungen › Apple-ID › Abos.')
+      + `<br><a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" ${ls}>${en ? 'Terms of Use' : 'Nutzungsbedingungen'}</a> · <a href="https://planory.at/datenschutz.html" ${ls}>${en ? 'Privacy' : 'Datenschutz'}</a>`;
+  } else {
+    recht = (!w ? '' : gratis
+      ? (en ? `By tapping “Start free month” you take out a subscription with a 30-day free period. After that it costs ${preisText} and renews automatically until you cancel. Cancel anytime in Settings › Manage subscription – cancel before the free month ends and you pay nothing. `
+            : `Mit „Gratismonat starten“ schließt du ein Abo mit 30 Tagen Gratiszeitraum ab. Danach kostet es ${preisText} und verlängert sich automatisch, bis du kündigst. Kündigen jederzeit unter Einstellungen › Abo verwalten – vor Ende des Gratismonats gekündigt, zahlst du nichts. `)
+      : (en ? `The subscription costs ${preisText} and renews automatically until you cancel. Cancel anytime in Settings › Manage subscription. `
+            : `Das Abo kostet ${preisText} und verlängert sich automatisch, bis du kündigst. Kündigen jederzeit unter Einstellungen › Abo verwalten. `))
+      + (en ? `Our <a href="agb.html" ${ls}>Terms</a> (incl. right of withdrawal) and <a href="datenschutz.html" ${ls}>Privacy Policy</a> apply.`
+            : `Es gelten unsere <a href="agb.html" ${ls}>AGB</a> (inkl. Widerrufsbelehrung) und die <a href="datenschutz.html" ${ls}>Datenschutzerklärung</a>.`);
+  }
+  const keinAngebot = nativ && a && !a.jahr && !a.monat;
+  box.innerHTML = `
+    <div class="pa-marke"><span class="pa-logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Planory</div>
+    <h2 class="pa-titel" id="pa-titel">${gratis || !a ? (en ? 'Start your free month' : 'Starte deinen Gratismonat') : (en ? 'Unlock Planory Pro' : 'Planory Pro freischalten')}</h2>
+    <p class="pa-text">${gratis || !a
+      ? (en ? `All features free for ${gratis ? w.gratis : (nativ ? 'one month' : '30 days')}. After that your subscription continues automatically – cancel before then and you pay nothing.`
+            : `Alle Funktionen ${gratis ? w.gratis : (nativ ? '1 Monat' : '30 Tage')} kostenlos. Danach läuft dein Abo automatisch weiter – kündigst du vorher, zahlst du nichts.`)
+      : (en ? 'With the subscription you can use every feature.' : 'Mit dem Abo nutzt du alle Funktionen.')}</p>
+    <ul class="pa-vorteile">${vorteile.map(v => `<li>${haken}<span>${v}</span></li>`).join('')}</ul>
+    ${keinAngebot ? `<div class="pa-hinweis">${en ? 'The subscription options are still being provisioned by Apple. Please try again later.' : 'Die Abo-Optionen werden von Apple gerade noch bereitgestellt. Bitte später erneut versuchen.'}</div>` : ''}
+    ${plan('jahr', en ? 'Yearly' : 'Jahresabo', a?.jahr?.proMonat ? (en ? `≈ ${a.jahr.proMonat} per month` : `≈ ${a.jahr.proMonat} pro Monat`) : '', en ? 'SAVE 40%' : '40 % GÜNSTIGER')}
+    ${plan('monat', en ? 'Monthly' : 'Monatsabo', en ? 'cancel monthly' : 'monatlich kündbar', '')}
+    <button type="button" class="btn btn-primary pa-start" id="pa-start" onclick="probeaboStarten()" ${w ? '' : 'disabled'}>${gratis || !a ? (en ? 'Start free month' : 'Gratismonat starten') : (en ? 'Subscribe' : 'Abo abschließen')}</button>
+    <p class="pa-recht" id="pa-recht">${recht}</p>
+    <button type="button" class="pa-demo" onclick="probeaboDemo()">${en ? 'See the demo first' : 'Erst die Demo ansehen'}</button>
+    <div class="pa-unten">
+      ${nativ ? `<button type="button" onclick="rcRestore()">${en ? 'Restore purchases' : 'Käufe wiederherstellen'}</button>` : ''}
+      <button type="button" onclick="doLogout()">${en ? 'Log out' : 'Abmelden'}</button>
+    </div>`;
+}
+function _paWahl(p) { _paPlan = p === 'monat' ? 'monat' : 'jahr'; _paRender(); }
+async function openProbeabo() {
+  const o = document.getElementById('probeabo-overlay');
+  if (!o) return;
+  _paRender();
+  o.classList.add('open');
+  if (isNativeApp() && RC_API_KEY) { await _paNativLaden(); _paRender(); }
+}
+function _probeaboSchliessen() { document.getElementById('probeabo-overlay')?.classList.remove('open'); }
+// Zeigt das Fenster, solange ein neues Konto kein Abo hat – erst nach dem Onboarding und nicht,
+// waehrend nach der Rueckkehr von Stripe noch auf die Bestaetigung gewartet wird.
+function _probeaboPruefen() {
+  if (window._userPlan !== 'ohneAbo' || _demoMode || !currentUser) { _probeaboSchliessen(); return; }
+  if (_initialCloudLoad) return;   // erst nach dem ersten Laden (danach ruft onAuthSuccess loadUserPlan auf)
+  const ob = document.getElementById('onboarding-overlay');
+  if (ob && getComputedStyle(ob).display !== 'none') return;
+  if (_aboRueckkehrBis > Date.now()) return;
+  if (!document.getElementById('probeabo-overlay')?.classList.contains('open')) openProbeabo();
+}
+function probeaboStarten() {
+  if (isNativeApp()) { if (RC_API_KEY) rcPurchase(_paPlan === 'jahr' ? 'annual' : 'monthly'); return; }
+  startStripeCheckout(_paPlan === 'jahr' ? 'yearly' : 'monthly');
+}
+// Demo ohne Abmelden: Projekt erst sichern, dann die Demo frisch laden (getrennt vom Konto).
+// „Demo beenden“ fuehrt zurueck ins Konto (und damit wieder zu diesem Fenster).
+async function probeaboDemo() {
+  if (!_cloudLoadedOk) {
+    showToast(_lang === 'en' ? '⚠️ Your project is still being saved – please try again in a moment.' : '⚠️ Dein Projekt wird noch gesichert – bitte gleich nochmal tippen.', 'warning', 5000);
+    return;
+  }
+  try { await syncToCloud(); } catch (e) {}
+  try { sessionStorage.setItem('planoryDemoVomKonto', '1'); } catch (e) {}
+  location.replace(location.pathname + '?demo=planory2025');
+}
+// Web: Abo aus der iPhone-App (Apple/RevenueCat) ueber den Server pruefen.
+// null = Server nicht erreichbar; { apple:false, error } = RevenueCat gestoert (dann kein Apple-Abo annehmen).
+async function _appleAboImWeb() {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (!session?.access_token) return { apple: false };
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch(API_BASE + '/api/abo-status', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token }, signal: ctl.signal });
+    clearTimeout(t);
+    const j = await r.json().catch(() => ({}));
+    return r.ok ? j : null;
+  } catch (e) { return null; }
 }
 
 // ──────────────── SETTINGS ────────────────
@@ -7942,7 +8174,7 @@ if (document.readyState === 'loading') {
 
 async function loadUserPlan() {
   // Nach jeder Plan-Ermittlung (alle Zweige) den Sidebar-Upgrade-Knopf abgleichen.
-  try { await _loadUserPlanImpl(); } finally { try { _updateProEntry(); } catch(e){} }
+  try { await _loadUserPlanImpl(); } finally { try { _updateProEntry(); } catch(e){} try { _probeaboPruefen(); } catch(e){} }
 }
 async function _loadUserPlanImpl() {
   if (!currentUser) return;
@@ -7964,12 +8196,17 @@ async function _loadUserPlanImpl() {
     if (_rcActive()) { try { await _rcRefresh(); } catch(e){} if (freeEl) _applyNativePlan(freeEl); }
     return;
   }
+  const uid = currentUser.id;   // Kontowechsel waehrend der Abfrage -> Ergebnis verwerfen
   try {
     const { data, error } = await supa
       .from('subscriptions')
-      .select('plan, status, current_period_end')
+      .select('plan, status, current_period_end, stripe_subscription_id')
       .eq('user_id', currentUser.id)
       .maybeSingle();
+    if (currentUser?.id !== uid) return;
+    // Schon einmal ein Stripe-Abo gehabt? Dann gibt es keinen zweiten Gratismonat (und danach Nur-Lesen).
+    window._probeGratis = !(data && data.stripe_subscription_id);
+    if (data && data.stripe_subscription_id) window._hatteAbo = true;
 
     const loadingEl = document.getElementById('plan-loading-card');
     const freeEl    = document.getElementById('plan-free-card');
@@ -7984,14 +8221,38 @@ async function _loadUserPlanImpl() {
     // im Zweifel Zugriff lassen (bereits ermittelten 'pro'-Status nie abwerten).
     if (error) { if (!_subActive()) window._userPlan = 'trial'; return; }
 
-    const isPro = data && data.plan === 'pro' && ['active','trialing'].includes(data.status);
+    let isPro = data && data.plan === 'pro' && ['active','trialing'].includes(data.status);
+    window._aboProbe = !!(isPro && data.status === 'trialing');
+    // Kein Web-Abo? Dann ein Abo aus der iPhone-App (Apple) gelten lassen.
+    let apple = null;
+    if (!isPro && window._userPlan !== 'pro') {
+      const a = await _appleAboImWeb();
+      if (currentUser?.id !== uid) return;
+      if (a && a.apple) { apple = a; isPro = true; window._aboProbe = !!a.probe; }
+      else if (a && a.hatte) window._hatteAbo = true;
+      // Pruefung nicht erreichbar (kein Netz/Zeitueberschreitung): ein zahlendes iPhone-Konto NICHT
+      // aussperren – vorerst Zugriff lassen, der naechste Abgleich korrigiert das (wie bei Supabase-Fehlern).
+      else if (!a && _probeaboRegel()) { if (!_subActive()) window._userPlan = 'trial'; freeEl.style.display = 'none'; return; }
+    }
 
     if (isPro) {
       proEl.style.display = 'block';
+      freeEl.style.display = 'none';
+      const en = (_lang === 'en');
       const periodEl = document.getElementById('plan-period-end');
-      if (periodEl && data.current_period_end) {
-        const d = new Date(data.current_period_end);
-        periodEl.textContent = 'Nächste Verlängerung: ' + d.toLocaleDateString('de-AT');
+      const portalBtn = document.getElementById('btn-stripe-portal');
+      if (portalBtn) portalBtn.style.display = apple ? 'none' : '';
+      if (periodEl) {
+        const bis = apple ? apple.bis : data.current_period_end;
+        const d = bis ? new Date(bis).toLocaleDateString(en ? 'en-GB' : 'de-AT') : '';
+        periodEl.textContent = apple
+          ? (en ? 'Subscribed in the iPhone app – manage it in your iPhone settings (Apple ID › Subscriptions).'
+                : 'Abo über die iPhone-App – verwalten in den iPhone-Einstellungen (Apple-ID › Abos).')
+          : !d ? ''
+          : window._aboProbe
+            ? (en ? `Free month until ${d} – then it renews automatically. Cancel before then and you pay nothing.`
+                  : `Gratismonat bis ${d} – danach verlängert es sich automatisch. Vorher gekündigt, zahlst du nichts.`)
+            : (en ? 'Next renewal: ' : 'Nächste Verlängerung: ') + d;
       }
       // Store plan in state for feature gating
       window._userPlan = 'pro';
@@ -8024,8 +8285,9 @@ async function _loadUserPlanImpl() {
 async function startStripeCheckout(plan = 'monthly') {
   if (isNativeApp()) return;
   if (!currentUser) return;
-  const btn = event?.target;
-  if (btn) { btn.disabled = true; btn.textContent = 'Weiterleitung…'; }
+  const btn = event?.target?.closest?.('button') || null;
+  const btnText = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.textContent = _lang === 'en' ? 'Redirecting…' : 'Weiterleitung…'; }
   try {
     const { data: { session } } = await supa.auth.getSession();
     const token = session?.access_token;
@@ -8042,7 +8304,7 @@ async function startStripeCheckout(plan = 'monthly') {
       throw new Error(json.error || 'Fehler');
     }
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '⭐ Jetzt auf Pro upgraden'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = btnText; }
     showToast((_lang === 'en' ? 'Error: ' : 'Fehler: ') + e.message, 'error');
   }
 }
@@ -8089,8 +8351,20 @@ async function openStripePortal() {
   const p = new URLSearchParams(window.location.search);
   if (p.get('upgrade') === 'success') {
     history.replaceState({}, '', window.location.pathname);
-    // Wait for UI to be ready then show congrats modal
-    setTimeout(() => showAboSuccess(), 1200);
+    // Der Stripe-Webhook bestaetigt das Abo oft erst ein paar Sekunden spaeter: so lange
+    // nachfragen (und das Probeabo-Fenster nicht zeigen), dann gratulieren.
+    _aboRueckkehrBis = Date.now() + 30000;
+    let versuch = 0;
+    const warte = async () => {
+      if (currentUser && window._userPlan !== 'pro') { try { await loadUserPlan(); } catch (e) {} }
+      if (window._userPlan === 'pro' || ++versuch >= 10 || Date.now() > _aboRueckkehrBis) {
+        _aboRueckkehrBis = 0;
+        if (window._userPlan === 'pro' || !_probeaboRegel()) showAboSuccess(); else _probeaboPruefen();
+        return;
+      }
+      setTimeout(warte, 3000);
+    };
+    setTimeout(warte, 1200);
   }
 })();
 // ── End Stripe / Plan ───────────────────────────────────────────────────────
@@ -8107,6 +8381,8 @@ async function doLogout() {
   await syncToCloud();
   await supa.auth.signOut();
   currentUser = null;
+  try { _probeaboSchliessen(); } catch (e) {}
+  ['_userPlan', '_hatteAbo', '_aboProbe', '_probeGratis'].forEach(k => { window[k] = undefined; });   // nichts ins naechste Konto mitnehmen
   projects = [];
   state = EMPTY_PROJECT();
   // Clear localStorage so next user on this device starts fresh
@@ -14728,7 +15004,7 @@ function showToast(msg, type='success', duration=3200) {
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
   const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
+  t.style.cssText = `position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:28px;z-index:10080;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
@@ -15755,6 +16031,8 @@ function startDemo() {
 }
 
 function exitDemo() {
+  // Aus dem Probeabo-Fenster gestartet: zurueck ins angemeldete Konto
+  try { if (sessionStorage.getItem('planoryDemoVomKonto')) { sessionStorage.removeItem('planoryDemoVomKonto'); location.replace(location.pathname); return; } } catch (e) {}
   _demoMode = false;
   // Hide banner, reset layout offsets
   document.getElementById('demo-banner').style.display = 'none';
@@ -16327,7 +16605,8 @@ let obStep = 0;
 let obType = 'Neubau';
 // Web: 6 Schritte inkl. Abo-Erklaerung. Native App: 5 (kein Abo-Schritt –
 // Apple verbietet externe Bezahl-Links, In-App-Kauf kommt separat).
-const OB_TOTAL = (typeof isNativeApp === 'function' && isNativeApp()) ? 5 : 6;
+// Schritt 6 (Abo erklaeren) nur im Web fuer aeltere Konten – neue sehen danach das Probeabo-Fenster
+function _obTotal() { return (isNativeApp() || _probeaboRegel()) ? 5 : 6; }
 
 // Budget templates: name, icon, color, percent
 const OB_BUDGET_TEMPLATES = {
@@ -16674,12 +16953,12 @@ function updateObUI() {
   });
   // Dots
   const dots = document.getElementById('ob-dots');
-  dots.innerHTML = Array.from({length: OB_TOTAL}, (_,i) => `
+  dots.innerHTML = Array.from({length: _obTotal()}, (_,i) => `
     <div style="width:${i===obStep?'24px':'8px'};height:8px;border-radius:99px;background:${i===obStep?'var(--accent)':'var(--border)'};transition:all 0.3s"></div>`
   ).join('');
   // Buttons
   document.getElementById('ob-back').style.display = obStep > 0 ? '' : 'none';
-  document.getElementById('ob-next').textContent = obStep === OB_TOTAL - 1 ? '🚀 Loslegen' : 'Weiter →';
+  document.getElementById('ob-next').textContent = obStep === _obTotal() - 1 ? '🚀 Loslegen' : 'Weiter →';
   // Bei englischer Sprache den gerade sichtbaren Schritt uebersetzen (auch die
   // dynamisch gesetzte Button-Beschriftung).
   if (typeof _lang !== 'undefined' && _lang !== 'de') { try { _sweepPhrases(document.getElementById('onboarding-overlay')); } catch(e){} }
@@ -16700,7 +16979,7 @@ function obNext() {
       if (firstBtn) applyObBudgetTemplate(key, firstBtn);
     }
   }
-  if (obStep < OB_TOTAL - 1) {
+  if (obStep < _obTotal() - 1) {
     obStep++;
     updateObUI();
   } else {
@@ -16753,7 +17032,7 @@ async function finishOnboarding() {
   showPage('dashboard');
   showToast(`🎉 Willkommen! "${proj.settings.name}" wurde angelegt.`, 'success');
   // Freundliche Begrüßung + kurze Erklärung (Gratismonat / Pro) nach dem Anlegen.
-  setTimeout(showWelcomeMessage, 500);
+  setTimeout(() => { if (_probeaboRegel()) _probeaboPruefen(); else showWelcomeMessage(); }, 500);
 }
 
 // Einmalige Willkommens-/Abo-Erklärung direkt nach dem Onboarding. Merkt sich
@@ -19698,6 +19977,10 @@ function exportRechnungenPDF() {
     <div style="font-size:0.72rem;color:var(--text3);margin-bottom:14px">Jederzeit kündbar · Aufgaben abhaken bleibt immer gratis</div>
     <button onclick="closeModal('modal-paywall')" style="background:none;border:none;color:var(--text3);font-size:0.8rem;cursor:pointer;text-decoration:underline">Weiter nur ansehen</button>
   </div>
+</div>
+<!-- Probeabo: neue Konten ohne Abo sehen nur dieses Fenster (oder die Demo). Inhalt: _paRender() -->
+<div id="probeabo-overlay" class="probeabo" role="dialog" aria-modal="true" aria-labelledby="pa-titel" data-noi18n>
+  <div class="pa-karte" id="probeabo-inhalt"></div>
 </div>
 <div id="readonly-banner" onclick="openPaywall()" style="display:none;position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.25);white-space:nowrap">👁 Nur-Lese-Modus · Abo aktivieren</div>
 <!-- App-eigener Bestaetigungs-/Eingabe-Dialog (ersetzt window.confirm/prompt) -->
