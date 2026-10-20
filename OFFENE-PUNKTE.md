@@ -12,6 +12,8 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 20.10.2026.
   **Eigenleistung-Fix**.
 
 ## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
+**→ Genaue Schritt-für-Schritt-Anleitung: `NAECHSTER-BUILD-v1.3.md`**
+
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
 (pruefen 118/118, mobile-e2e 120/120, sync-e2e 22/22, todoist-api 14/14, push-api 4/4, app-version-api 6/6,
