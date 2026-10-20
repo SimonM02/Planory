@@ -2420,6 +2420,29 @@ await scenario('iPhone-App: Hinweis „Neue Version verfügbar" nur bei wirklich
   return p.join(' · ');
 });
 
+await scenario('Aufgaben: Aufklapp-Pfeil links, Linien-Symbole statt Emojis bei den Aktionen', async () => {
+  const r = await page.evaluate(() => {
+    showPage('aufgaben'); tkZeige('kat:3101');
+    const row = document.querySelector('#task-list-container .tk-row[data-task="3006"]');
+    const pfeil = row && row.querySelector('.tk-klapp');
+    const vorher = !!document.querySelector('#task-list-container .tk-kinder .tk-row[data-task="3008"]');
+    pfeil?.click();
+    const nachher = !!document.querySelector('#task-list-container .tk-kinder .tk-row[data-task="3008"]');
+    const pfeil2 = document.querySelector('#task-list-container .tk-row[data-task="3006"] .tk-klapp');
+    const aria = pfeil2 ? pfeil2.getAttribute('aria-expanded') : null;
+    pfeil2?.click();
+    const akt = [...document.querySelectorAll('#task-list-container .tk-row[data-task="3006"] .tk-act button')];
+    const emojis = akt.map(b => b.textContent.trim()).filter(Boolean);
+    return { pfeil: !!pfeil, vorher, nachher, aria, svg: akt.length === 3 && akt.every(b => b.querySelector('svg')), emojis, leer: !!document.querySelector('#task-list-container .tk-row[data-task="3003"] .tk-klapp-leer') };
+  });
+  const p = [];
+  if (!r.pfeil) p.push('kein Aufklapp-Pfeil bei Aufgabe mit Unteraufgaben');
+  if (r.vorher === r.nachher || r.aria !== String(r.nachher)) p.push(`Pfeil klappt nicht (${r.vorher} → ${r.nachher}, aria ${r.aria})`);
+  if (!r.svg || r.emojis.length) p.push(`Aktionen: ${r.emojis.join(' ') || 'keine Symbole'}`);
+  if (!r.leer) p.push('Aufgaben ohne Unteraufgaben nicht bündig');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

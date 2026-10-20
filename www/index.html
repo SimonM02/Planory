@@ -488,7 +488,7 @@
   .tk-card { position:relative; }
   .tk-card > .tk-row > .tk-act { position:absolute; top:6px; right:6px; background:var(--surface); border-radius:8px; box-shadow:var(--shadow-sm); }
   .tk-d-zeit { color:var(--text2); font-weight:600; }
-  .tk-card .tk-kinder { margin-left:26px; border-top:1px solid var(--surface2); }
+  .tk-card .tk-kinder { margin-left:28px; border-top:1px solid var(--surface2); }
   .tk-spalte .tk-add-mini { display:flex; align-items:center; gap:10px; padding:6px 2px; width:100%; text-align:left; }
   .tk-spalte .tk-add-mini .tk-plus { width:20px; }
   .tk-gkopf { font-size:0.85rem; font-weight:800; color:var(--text); padding:0 0 7px; border-bottom:1px solid var(--border); margin-bottom:2px; }
@@ -512,7 +512,14 @@
   .tk-notiz { font-size:0.76rem; color:var(--text3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tk-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:4px; }
   .tk-chip { font-size:0.72rem; color:var(--text3); white-space:nowrap; background:none; border:none; padding:0; font-family:inherit; }
-  .tk-sub-btn { cursor:pointer; font-weight:700; color:var(--text2); background:var(--surface2); padding:1px 7px; border-radius:6px; }
+  .tk-sub-btn { cursor:pointer; font-weight:600; color:var(--text3); display:inline-flex; align-items:center; gap:3px; }
+  .tk-sub-btn:hover { color:var(--text); }
+  .tk-klapp { width:18px; height:20px; flex-shrink:0; margin-top:1px; border:none; background:none; padding:0; cursor:pointer; color:var(--text3); display:inline-flex; align-items:center; justify-content:center; border-radius:5px; position:relative; }
+  .tk-klapp::before { content:''; position:absolute; inset:-6px -4px; }
+  .tk-klapp svg { transition:transform .15s ease; }
+  .tk-klapp.auf svg { transform:rotate(90deg); }
+  .tk-klapp:hover { color:var(--text); background:var(--surface2); }
+  .tk-klapp-leer { width:18px; flex-shrink:0; }
   .tk-d-ueber { color:var(--danger); font-weight:700; }
   .tk-d-heute { color:#16a34a; font-weight:700; }
   body.dark-mode .tk-d-heute { color:#4ade80; }
@@ -522,9 +529,10 @@
   .tk-act { display:flex; gap:2px; opacity:0; transition:opacity .15s; flex-shrink:0; }
   .tk-row:hover .tk-act, .tk-act:focus-within { opacity:1; }
   @media (hover:none) { .tk-act { opacity:.55; } .pl-iact { opacity:.7; } }
-  .tk-act button { background:none; border:none; cursor:pointer; color:var(--text3); font-size:0.82rem; padding:3px 5px; border-radius:6px; font-family:inherit; }
-  .tk-act button:hover { background:var(--surface3, var(--border)); }
-  .tk-kinder { margin-left:30px; }
+  .tk-act button { background:none; border:none; cursor:pointer; color:var(--text2); padding:4px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; }
+  .tk-act button:hover { background:var(--surface2); color:var(--text); }
+  .tk-act button.tk-act-del:hover { color:var(--danger); }
+  .tk-kinder { margin-left:28px; }
   .tk-unter .tk-name { font-size:0.86rem; }
   .tk-add { display:flex; align-items:center; gap:10px; padding:7px 4px; }
   .tk-plus { width:20px; text-align:center; color:var(--accent); font-weight:800; font-size:1rem; flex-shrink:0; }
@@ -6567,6 +6575,8 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Unteraufgaben anzeigen": { en: "Show subtasks" },
+  "Unteraufgaben zuklappen": { en: "Hide subtasks" },
   "Neue Planory-Version verfügbar": { en: "New Planory version available" },
   "Version": { en: "Version" },
   "mit Verbesserungen und neuen Funktionen.": { en: "with improvements and new features." },
@@ -10247,6 +10257,15 @@ function _tkLokal(ts) { const d = ts == null ? new Date() : new Date(ts); return
 function _tkHeute() { return _tkLokal(); }
 // Farben kommen aus synchronisierten Daten -> nur echte Farbwerte in style-Attribute
 function _tkFarbe(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#64748b'; }
+// Schlichte Linien-Symbole fuer die Aufgaben (statt Emojis)
+const _TK_SVG = (inner, w = 16) => `<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const TK_IC = {
+  pfeil:  _TK_SVG('<path d="M9 6l6 6-6 6"/>', 14),
+  unter:  _TK_SVG('<path d="M6 4v9a3 3 0 0 0 3 3h7"/><path d="M13 13l3 3-3 3"/>', 13),
+  unterNeu: _TK_SVG('<path d="M4 6h10M4 12h7M4 18h7"/><path d="M18 13v8M14 17h8"/>'),
+  stift:  _TK_SVG('<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 7.5l3 3"/>'),
+  muell:  _TK_SVG('<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/>'),
+};
 function _tkFind(id) { return (state.aufgaben || []).find(t => String(t.id) === String(id)); }
 function _tkKat(id) { return id ? (state.aufgabenKat || []).find(k => String(k.id) === String(id)) : null; }
 function _tkDone(t) { return t.status === 'Erledigt'; }
@@ -10724,14 +10743,19 @@ function renderTasks() {
     const eltern = opt.mitEltern && _tkHatEltern(t) ? _tkFind(t.parentId) : null;
     const prio = { Hoch: 'hoch', Mittel: 'mittel', Niedrig: 'niedrig' }[t.prio] || 'mittel';
     const meta = [
-      kinder.length ? `<button type="button" class="tk-chip tk-sub-btn" onclick="event.stopPropagation();tkKlappe(${t.id})" title="${esc(tt('Unteraufgaben'))}">⑂ ${kDone}/${kinder.length} ${auf ? '▾' : '▸'}</button>` : '',
+      kinder.length ? `<button type="button" class="tk-chip tk-sub-btn" onclick="event.stopPropagation();tkKlappe(${t.id})" title="${esc(tt(auf ? 'Unteraufgaben zuklappen' : 'Unteraufgaben anzeigen'))}">${TK_IC.unter}<span>${kDone}/${kinder.length}</span></button>` : '',
       opt.ohneDatum ? (t.time ? `<span class="tk-chip tk-d-zeit">🕓 ${esc(t.time)}</span>` : '') : _tkDatumChip(t),
       t.wdh ? `<span class="tk-chip" title="${esc(tt(TK_WDH[t.wdh] || ''))}">🔁 ${esc(tt(TK_WDH[t.wdh] || ''))}</span>` : '',
       t.person ? `<span class="tk-chip">👤 ${esc(t.person)}</span>` : '',
       eltern ? `<span class="tk-chip">↳ ${esc(eltern.name)}</span>` : '',
       kat ? `<span class="tk-chip" style="color:${_tkFarbe(kat.color)}"># <span style="color:var(--text3)">${esc(kat.name)}</span></span>` : '',
     ].join('');
+    // Aufklappen wie man es kennt: Pfeil links neben der Aufgabe (dreht sich beim Oeffnen)
+    const klapp = opt.unter ? '' : (kinder.length
+      ? `<button type="button" class="tk-klapp ${auf ? 'auf' : ''}" onclick="event.stopPropagation();tkKlappe(${t.id})" aria-expanded="${auf}" title="${esc(tt(auf ? 'Unteraufgaben zuklappen' : 'Unteraufgaben anzeigen'))}">${TK_IC.pfeil}</button>`
+      : '<span class="tk-klapp-leer"></span>');
     return `<div class="tk-row ${done ? 'tk-done' : ''} ${opt.unter ? 'tk-unter' : ''}" data-task="${t.id}">
+      ${klapp}
       <button type="button" class="tk-check tk-p-${prio}" onclick="event.stopPropagation();toggleTask(${t.id})" aria-label="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}" title="${esc(tt(done ? 'Als offen markieren' : 'Als erledigt markieren'))}">${done ? '✓' : ''}</button>
       <div class="tk-main" onclick="editTask(${t.id})">
         <div class="tk-name">${esc(t.name)}</div>
@@ -10739,9 +10763,9 @@ function renderTasks() {
         ${meta ? `<div class="tk-meta">${meta}</div>` : ''}
       </div>
       <div class="tk-act">
-        ${!opt.unter && !_tkHatEltern(t) ? `<button type="button" onclick="event.stopPropagation();tkUnterNeu(${t.id})" title="${esc(tt('Unteraufgabe hinzufügen'))}">⑂+</button>` : ''}
-        <button type="button" class="tk-act-edit" onclick="event.stopPropagation();editTask(${t.id})" title="${esc(tt('Bearbeiten'))}">✏️</button>
-        <button type="button" onclick="event.stopPropagation();deleteTask(${t.id})" title="${esc(tt('Löschen'))}">🗑</button>
+        ${!opt.unter && !_tkHatEltern(t) ? `<button type="button" onclick="event.stopPropagation();tkUnterNeu(${t.id})" title="${esc(tt('Unteraufgabe hinzufügen'))}" aria-label="${esc(tt('Unteraufgabe hinzufügen'))}">${TK_IC.unterNeu}</button>` : ''}
+        <button type="button" class="tk-act-edit" onclick="event.stopPropagation();editTask(${t.id})" title="${esc(tt('Bearbeiten'))}" aria-label="${esc(tt('Bearbeiten'))}">${TK_IC.stift}</button>
+        <button type="button" class="tk-act-del" onclick="event.stopPropagation();deleteTask(${t.id})" title="${esc(tt('Löschen'))}" aria-label="${esc(tt('Löschen'))}">${TK_IC.muell}</button>
       </div>
     </div>` + ((kinder.length && auf) || (!opt.unter && _tkUnterAuf.has(String(t.id))) ? `<div class="tk-kinder">
       ${[...kinder].sort((a, b) => (_tkDone(a) - _tkDone(b)) || sortier(a, b)).map(k => zeile(k, { unter: true })).join('')}
