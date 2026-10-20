@@ -2359,6 +2359,8 @@ await scenario('Aufgaben: „Neu planen" verschiebt angezeigte überfällige Auf
       { id: 9940003, name: 'TK alt Max', prio: 'Mittel', status: 'Offen', datum: alt, person: 'Max' });
     showPage('aufgaben'); tkZeige('heute'); setTaskPersonFilter('Zoe');
     const knopf = document.querySelector('#task-list-container .tk-neuplanen');
+    const navTexte = [...document.querySelectorAll('#tk-nav .tk-nav-item .tk-nl')].slice(0, 3).map(e => e.textContent).join(' | ');
+    const knopfText = knopf ? knopf.textContent.trim() : '';
     if (!knopf) { setTaskPersonFilter(''); state.aufgaben = state.aufgaben.filter(t => ![9940001, 9940002, 9940003].includes(t.id)); return { fehlt: true }; }
     window.showConfirm = async () => false; await tkNeuPlanen();
     const abbruchOk = _tkFind(9940001).datum === alt;
@@ -2368,7 +2370,7 @@ await scenario('Aufgaben: „Neu planen" verschiebt angezeigte überfällige Auf
     const blockWeg = !document.querySelector('#task-list-container .tk-neuplanen');
     setTaskPersonFilter('');
     state.aufgaben = state.aufgaben.filter(t => ![9940001, 9940002, 9940003].includes(t.id)); renderTasks();
-    return { abbruchOk, a: [a.datum, a.time, a.wdh], b: b.datum, c: c.datum, h, alt, blockWeg };
+    return { abbruchOk, a: [a.datum, a.time, a.wdh], b: b.datum, c: c.datum, h, alt, blockWeg, navTexte, knopfText };
   });
   if (r.fehlt) return 'kein Knopf „Neu planen"';
   const p = [];
@@ -2377,6 +2379,7 @@ await scenario('Aufgaben: „Neu planen" verschiebt angezeigte überfällige Auf
   if (r.a[1] !== '07:15' || r.a[2] !== 'woechentlich') p.push('Uhrzeit/Wiederholung verloren');
   if (r.c !== r.alt) p.push('Aufgabe einer anderen Person mitverschoben');
   if (!r.blockWeg) p.push('Block „Überfällig" bleibt');
+  if (r.navTexte !== 'Heute | Kommende Tage | Ohne Kategorie' || r.knopfText !== 'Auf heute verschieben') p.push(`Namen: ${r.navTexte} / ${r.knopfText}`);
   return p.join(' · ');
 });
 

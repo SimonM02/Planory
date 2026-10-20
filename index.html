@@ -5188,7 +5188,7 @@ const PAGE_HINTS = {
   kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus.',
   budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest.',
   meilensteine:   'Definiere wichtige Bauphasen mit Terminen. Überfällige Meilensteine werden automatisch rot markiert.',
-  aufgaben:       'Wie in Todoist: links „Heute", „Demnächst" und deine Kategorien. Kreis antippen = erledigt (bei wiederkehrenden Aufgaben springt das Datum weiter). Unteraufgaben über „⑂+", schnell anlegen mit der Zeile „+ Aufgabe hinzufügen".',
+  aufgaben:       'Links „Heute“, „Kommende Tage“ und deine Kategorien. Kreis antippen = erledigt (bei wiederkehrenden Aufgaben springt das Datum weiter). Unteraufgaben über „⑂+“, schnell anlegen mit der Zeile „+ Aufgabe hinzufügen“.',
   tagebuch:       'Tagesberichte mit Mannschaft und Stunden. Das aktuelle Wetter wird beim Anlegen automatisch geladen (Adresse in Einstellungen nötig).',
   dokumente:      'Notizen für schnelle Hinweise, plus Dokumentenablage für Baupläne, Genehmigungen und Verträge (max. 5 MB je Datei).',
   kontakte:       'Alle Handwerker und Ansprechpartner – mit Gewerk, Telefon, E-Mail und Status.',
@@ -5210,7 +5210,7 @@ const PAGE_HINTS_EN = {
   kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
   budget:         'Split your budget across trades and see at a glance where you are over or under.',
   meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
-  aufgaben:       'Like Todoist: “Today”, “Upcoming” and your categories on the left. Tap the circle to complete (recurring tasks move to their next date). Add subtasks with “⑂+”, add tasks quickly with “+ Add task”.',
+  aufgaben:       'On the left: “Today”, “Next days” and your categories. Tap the circle to complete (recurring tasks move to their next date). Add subtasks with “⑂+”, add tasks quickly with “+ Add task”.',
   tagebuch:       'Daily reports with crew and hours. The current weather is loaded automatically when you add an entry (address required in settings).',
   dokumente:      'Notes for quick reminders, plus document storage for plans, permits and contracts (max. 5 MB per file).',
   kontakte:       'All tradespeople and contacts – with trade, phone, email and status.',
@@ -6559,6 +6559,8 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Kommende Tage": { en: "Next days" },
+  "Auf heute verschieben": { en: "Move to today" },
   "Neu planen": { en: "Reschedule" },
   "Alle überfälligen Aufgaben auf heute verschieben": { en: "Move all overdue tasks to today" },
   "— Kategorie wählen —": { en: "— Choose category —" },
@@ -10302,7 +10304,7 @@ function _populateTaskPersonList() {
 function _tkKatOptionen(sel, wert) {
   if (!sel) return;
   const kats = state.aufgabenKat || [];
-  sel.innerHTML = `<option value="">📥 ${esc(tt('Eingang'))}</option>` +
+  sel.innerHTML = `<option value="">📥 ${esc(tt('Ohne Kategorie'))}</option>` +
     kats.map(k => `<option value="${esc(k.id)}">#  ${esc(k.name)}</option>`).join('') +
     `<option value="__neu">${esc(tt('+ Neue Kategorie…'))}</option>`;
   sel.value = _tkKat(wert) ? String(wert) : '';
@@ -10556,8 +10558,8 @@ async function tkKatLoeschen(id) {
   const betroffen = state.aufgaben.filter(t => String(t.katId || '') === String(id));
   const n = betroffen.filter(t => !t.parentId).length;
   const frage = _lang === 'en'
-    ? `Delete category “${k.name}”?${n ? ` Its ${n} task${n === 1 ? '' : 's'} will move to the Inbox.` : ''}`
-    : `Kategorie „${k.name}“ löschen?${n ? ` ${n === 1 ? 'Die Aufgabe kommt' : 'Die ' + n + ' Aufgaben kommen'} in den Eingang.` : ''}`;
+    ? `Delete category “${k.name}”?${n ? ` Its ${n} task${n === 1 ? '' : 's'} will move to “No category”.` : ''}`
+    : `Kategorie „${k.name}“ löschen?${n ? ` ${n === 1 ? 'Die Aufgabe kommt' : 'Die ' + n + ' Aufgaben kommen'} zu „Ohne Kategorie“.` : ''}`;
   if (!(await showConfirm(frage))) return;
   betroffen.forEach(t => { delete t.katId; t._updatedAt = Date.now(); });
   _trackDeletion(k.id, 'aufgabenKat');
@@ -10693,7 +10695,7 @@ function renderTasks() {
     const icHeute = svg(kal + `<text x="12" y="18" text-anchor="middle" font-size="7.5" font-weight="800" fill="currentColor" stroke="none" font-family="inherit">${+heute.slice(8)}</text>`);
     const icDemn = svg(kal + '<g fill="currentColor" stroke="none"><circle cx="8" cy="13.5" r="1.1"/><circle cx="12" cy="13.5" r="1.1"/><circle cx="16" cy="13.5" r="1.1"/><circle cx="8" cy="17.3" r="1.1"/><circle cx="12" cy="17.3" r="1.1"/></g>');
     const icEing = svg('<path d="M4 13.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.5"/><path d="M4 13.5 6.4 5.6A2 2 0 0 1 8.3 4.2h7.4a2 2 0 0 1 1.9 1.4L20 13.5"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/>');
-    nav.innerHTML = item('heute', icHeute, tt('Heute'), zHeute, '#16a34a') + item('demnaechst', icDemn, tt('Demnächst'), zDemn, '#8b5cf6') + item('eingang', icEing, tt('Eingang'), zKat(''), '#3d6ff8') +
+    nav.innerHTML = item('heute', icHeute, tt('Heute'), zHeute, '#16a34a') + item('demnaechst', icDemn, tt('Kommende Tage'), zDemn, '#8b5cf6') + item('eingang', icEing, tt('Ohne Kategorie'), zKat(''), '#3d6ff8') +
       `<div class="tk-nav-kopf"><span>${esc(tt('Meine Kategorien'))}</span><button type="button" onclick="tkKatNeu()" title="${esc(tt('Neue Kategorie'))}">+</button></div>` +
       kats.map(k => item('kat:' + k.id, '#', k.name, zKat(String(k.id)), _tkFarbe(k.color))).join('') +
       `<button type="button" class="tk-nav-item tk-nav-neu" onclick="tkKatNeu()"><span class="tk-ic">+</span><span class="tk-nl">${esc(tt('Kategorie'))}</span></button>`;
@@ -10756,12 +10758,12 @@ function renderTasks() {
     sub = `${zHeute} ${tt(zHeute === 1 ? 'Aufgabe' : 'Aufgaben')}`;
     const sicht = [...ueber, ...heu];
     if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber, sicht),
-      `<button type="button" class="tk-neuplanen" onclick="tkNeuPlanen()" title="${esc(tt('Alle überfälligen Aufgaben auf heute verschieben'))}">${esc(tt('Neu planen'))}</button>`);
+      `<button type="button" class="tk-neuplanen" onclick="tkNeuPlanen()" title="${esc(tt('Alle überfälligen Aufgaben auf heute verschieben'))}">${esc(tt('Auf heute verschieben'))}</button>`);
     html += gruppe(`${esc(_tkTagMon(heute))} · ${esc(tt('Heute'))}`, heu.length ? datumsListe(heu, sicht, false, true) : (ueber.length ? '' : leer('🎉', tt('Für heute ist alles erledigt.'))) ) + addHaupt({ datum: heute });
     const heuteErl = alle.filter(t => _tkDone(t) && t.erledigtAm && _tkLokal(t.erledigtAm) === heute && !_tkHatEltern(t));
     html += erledigtBlock(heuteErl);
   } else if (tkAnsicht === 'demnaechst') {
-    titel = tt('Demnächst');
+    titel = tt('Kommende Tage');
     const sicht = offen.filter(t => t.datum && t.datum >= heute);
     sub = `${_tkMonat(heute)} · ${sicht.length} ${tt(sicht.length === 1 ? 'Aufgabe' : 'Aufgaben')}`;
     const spalte = (kopf, n, inhalt, tag) => `<div class="tk-gruppe tk-spalte">
@@ -10795,7 +10797,7 @@ function renderTasks() {
         <span class="tk-farben">${TK_FARBEN.map(f => `<button type="button" class="tk-farbe ${f === kat.color ? 'on' : ''}" style="background:${f}" onclick="tkKatFarbe(${kat.id}, '${f}')" aria-label="${esc(tt('Farbe'))}"></button>`).join('')}</span>
         <button type="button" class="tk-katdel" onclick="tkKatLoeschen(${kat.id})" title="${esc(tt('Kategorie löschen'))}">🗑</button>
       </div>`;
-    } else titel = tt('Eingang');
+    } else titel = tt('Ohne Kategorie');
     sub = `${o.length} ${tt(o.length === 1 ? 'offene Aufgabe' : 'offene Aufgaben')}`;
     html = (o.length ? o.map(t => zeile(t)).join('') : leer('📝', tt(kat ? 'Noch keine Aufgaben in dieser Kategorie.' : 'Keine Aufgaben ohne Kategorie.'))) + addHaupt({ kat: katId }) + erledigtBlock(e);
   }
