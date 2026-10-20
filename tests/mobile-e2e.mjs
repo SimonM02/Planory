@@ -2351,6 +2351,35 @@ await scenario('Rechnung scannen: KI-Kategorie wird vorbelegt, wenn sie zu einer
   return [...new Set(erg)].join(' · ');
 });
 
+await scenario('Aufgaben: „Neu planen" verschiebt angezeigte überfällige Aufgaben auf heute (nur mit Bestätigung)', async () => {
+  const r = await page.evaluate(async () => {
+    const h = _tkHeute(), alt = _tkPlusTage(h, -5);
+    state.aufgaben.push({ id: 9940001, name: 'TK alt Zoe 1', prio: 'Mittel', status: 'Offen', datum: alt, time: '07:15', wdh: 'woechentlich', person: 'Zoe' },
+      { id: 9940002, name: 'TK alt Zoe 2', prio: 'Mittel', status: 'Offen', datum: _tkPlusTage(h, -1), person: 'Zoe' },
+      { id: 9940003, name: 'TK alt Max', prio: 'Mittel', status: 'Offen', datum: alt, person: 'Max' });
+    showPage('aufgaben'); tkZeige('heute'); setTaskPersonFilter('Zoe');
+    const knopf = document.querySelector('#task-list-container .tk-neuplanen');
+    if (!knopf) { setTaskPersonFilter(''); state.aufgaben = state.aufgaben.filter(t => ![9940001, 9940002, 9940003].includes(t.id)); return { fehlt: true }; }
+    window.showConfirm = async () => false; await tkNeuPlanen();
+    const abbruchOk = _tkFind(9940001).datum === alt;
+    window.showConfirm = async () => true; await tkNeuPlanen();
+    window.showConfirm = window.__echtesConfirm;
+    const a = _tkFind(9940001), b = _tkFind(9940002), c = _tkFind(9940003);
+    const blockWeg = !document.querySelector('#task-list-container .tk-neuplanen');
+    setTaskPersonFilter('');
+    state.aufgaben = state.aufgaben.filter(t => ![9940001, 9940002, 9940003].includes(t.id)); renderTasks();
+    return { abbruchOk, a: [a.datum, a.time, a.wdh], b: b.datum, c: c.datum, h, alt, blockWeg };
+  });
+  if (r.fehlt) return 'kein Knopf „Neu planen"';
+  const p = [];
+  if (!r.abbruchOk) p.push('Abbrechen hat trotzdem verschoben');
+  if (r.a[0] !== r.h || r.b !== r.h) p.push(`angezeigte nicht auf heute: ${r.a[0]}, ${r.b}`);
+  if (r.a[1] !== '07:15' || r.a[2] !== 'woechentlich') p.push('Uhrzeit/Wiederholung verloren');
+  if (r.c !== r.alt) p.push('Aufgabe einer anderen Person mitverschoben');
+  if (!r.blockWeg) p.push('Block „Überfällig" bleibt');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

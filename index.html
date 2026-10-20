@@ -492,6 +492,9 @@
   .tk-spalte .tk-add-mini { display:flex; align-items:center; gap:10px; padding:6px 2px; width:100%; text-align:left; }
   .tk-spalte .tk-add-mini .tk-plus { width:20px; }
   .tk-gkopf { font-size:0.85rem; font-weight:800; color:var(--text); padding:0 0 7px; border-bottom:1px solid var(--border); margin-bottom:2px; }
+  .tk-gruppe > .tk-gkopf { display:flex; align-items:baseline; gap:8px; }
+  .tk-neuplanen { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--accent); font-weight:700; font-size:0.8rem; font-family:inherit; padding:0 2px; white-space:nowrap; }
+  .tk-neuplanen:hover { text-decoration:underline; }
   .tk-gdat { color:var(--text3); font-weight:600; margin-left:6px; font-size:0.78rem; }
   .tk-row { display:flex; align-items:flex-start; gap:10px; padding:9px 4px; border-bottom:1px solid var(--surface2); border-radius:6px; }
   .tk-row:hover { background:var(--surface2); }
@@ -6556,6 +6559,8 @@ const TEXTE = {
   "Nach Kategorie": { en: "By category" },
   "Top-Ausgaben": { en: "Top expenses" },
   "Top-Kategorien": { en: "Top categories" },
+  "Neu planen": { en: "Reschedule" },
+  "Alle überfälligen Aufgaben auf heute verschieben": { en: "Move all overdue tasks to today" },
   "— Kategorie wählen —": { en: "— Choose category —" },
   "Bitte eine Kategorie wählen": { en: "Please choose a category" },
   "Filter aufheben": { en: "Clear filter" },
@@ -10563,6 +10568,23 @@ async function tkKatLoeschen(id) {
 }
 
 // ── Ansichten ──
+// „Neu planen" wie bei Todoist: alle angezeigten ueberfaelligen Aufgaben auf heute (nur auf Wunsch)
+async function tkNeuPlanen() {
+  if (!requireSub()) return;
+  const heute = _tkHeute();
+  const liste = (state.aufgaben || []).filter(t => !_tkDone(t) && t.datum && t.datum < heute && (!taskPersonFilter || t.person === taskPersonFilter));
+  if (!liste.length) return;
+  const n = liste.length;
+  const frage = _lang === 'en'
+    ? `Move ${n} overdue task${n === 1 ? '' : 's'} to today?`
+    : `${n === 1 ? 'Die überfällige Aufgabe' : n + ' überfällige Aufgaben'} auf heute verschieben?`;
+  if (!(await showConfirm(frage))) return;
+  const jetzt = Date.now();
+  liste.forEach(t => { t.datum = heute; t._updatedAt = jetzt; _syncTaskNotiz(t); });
+  save(); try { scheduleTaskReminders(); } catch (e) {}
+  renderTasks();
+  showToast('✅ ' + (_lang === 'en' ? `${n} task${n === 1 ? '' : 's'} moved to today` : `${n} ${n === 1 ? 'Aufgabe' : 'Aufgaben'} auf heute verschoben`), 'success');
+}
 function tkZeige(ansicht) {
   tkAnsicht = ansicht;
   try { localStorage.setItem('planoryTkAnsicht', ansicht); } catch (e) {}
@@ -10733,7 +10755,8 @@ function renderTasks() {
     const ueber = offen.filter(t => t.datum && t.datum < heute), heu = offen.filter(t => t.datum === heute);
     sub = `${zHeute} ${tt(zHeute === 1 ? 'Aufgabe' : 'Aufgaben')}`;
     const sicht = [...ueber, ...heu];
-    if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber, sicht));
+    if (ueber.length) html += gruppe(`<span style="color:var(--danger)">${esc(tt('Überfällig'))}</span>`, datumsListe(ueber, sicht),
+      `<button type="button" class="tk-neuplanen" onclick="tkNeuPlanen()" title="${esc(tt('Alle überfälligen Aufgaben auf heute verschieben'))}">${esc(tt('Neu planen'))}</button>`);
     html += gruppe(`${esc(_tkTagMon(heute))} · ${esc(tt('Heute'))}`, heu.length ? datumsListe(heu, sicht, false, true) : (ueber.length ? '' : leer('🎉', tt('Für heute ist alles erledigt.'))) ) + addHaupt({ datum: heute });
     const heuteErl = alle.filter(t => _tkDone(t) && t.erledigtAm && _tkLokal(t.erledigtAm) === heute && !_tkHatEltern(t));
     html += erledigtBlock(heuteErl);
