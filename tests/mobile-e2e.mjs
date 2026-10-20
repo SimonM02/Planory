@@ -2470,6 +2470,74 @@ await scenario('Listen: jede zweite Zeile abgesetzt (Computer), Bearbeiten/Lösc
   return p.join(' · ');
 });
 
+await scenario('Fotos hinzufügen (Bautagebuch/Mängel/Doku): ein Tipp öffnet die Auswahl genau einmal, Seite bleibt bedienbar', async () => {
+  await page.evaluate(() => {
+    window.__dateiKlicks = {};
+    const orig = HTMLInputElement.prototype.click;
+    window.__origInputClick = orig;
+    HTMLInputElement.prototype.click = function () {
+      if (this.type === 'file') { window.__dateiKlicks[this.id] = (window.__dateiKlicks[this.id] || 0) + 1; if (window.__dateiKlicks[this.id] > 50) return; }
+      return orig.call(this);
+    };
+  });
+  const p = [];
+  for (const [modal, input] of [['modal-tagebuch', 'tb-photo-input'], ['modal-mangel', 'mg-photo-input'], ['modal-doku', 'dk-photo-input']]) {
+    const da = await page.evaluate(([m, i]) => { if (!document.getElementById(i)) return false; openModal(m); return true; }, [modal, input]);
+    if (!da) { p.push(`${input} fehlt`); continue; }
+    await page.waitForTimeout(250);
+    await page.evaluate(i => document.getElementById(i).parentElement.click(), input);
+    await page.waitForTimeout(400);
+    const r = await page.evaluate(([m, i]) => { const n = window.__dateiKlicks[i] || 0; closeModal(m); return n; }, [modal, input]);
+    if (r !== 1) p.push(`${input}: ${r}× geöffnet`);
+    await page.waitForTimeout(250);
+  }
+  const lebt = await Promise.race([page.evaluate(() => { HTMLInputElement.prototype.click = window.__origInputClick; return 1 + 1; }), new Promise(r => setTimeout(() => r(0), 3000))]);
+  if (lebt !== 2) p.push('Seite reagiert nicht mehr');
+  return p.join(' · ');
+});
+
+await scenario('Löschen von Plan, Foto und Album setzt Grabsteine (kommt nach Neustart nicht zurück)', async () => {
+  const r = await page.evaluate(async () => {
+    const vorher = window.showConfirm; window.showConfirm = async () => true;
+    try {
+      state.grundrisse = [{ id: 'gr-t1', name: 'EG', bildUrl: '', pins: [{ id: 'pin1', fotos: [] }] }];
+      state.fotoAlben = [{ id: 'alb-t1', title: 'Rohbau' }];
+      state.fotos = [{ id: 'fo-t1', albumId: 'alb-t1', url: '' }, { id: 'fo-t2', albumId: 'alb-t1', url: '' }, { id: 'fo-t3', albumId: '', url: '' }];
+      await deleteGrundriss('gr-t1');
+      await deletePhoto('fo-t3');
+      deleteAlbumData('alb-t1');
+      const d = state._deletedIds || {};
+      return ['gr-t1', 'fo-t1', 'fo-t2', 'fo-t3', 'alb-t1'].filter(id => !d[id]).concat(state.grundrisse.length ? ['Plan noch da'] : []);
+    } finally { window.showConfirm = vorher; }
+  });
+  return r.length ? 'ohne Grabstein: ' + r.join(', ') : '';
+});
+
+await scenario('Offenes Fenster: Seite dahinter scrollt nicht mit, danach wieder an derselben Stelle', async () => {
+  await page.evaluate(() => { showPage('kosten'); window.scrollTo(0, 400); });
+  await page.waitForTimeout(150);
+  const y0 = await page.evaluate(() => window.scrollY);
+  await page.evaluate(() => openModal('modal-tagebuch'));
+  await page.waitForTimeout(300);
+  const offen = await page.evaluate(() => ({ klasse: document.documentElement.classList.contains('fenster-offen'),
+    ov: getComputedStyle(document.body).overflow, os: getComputedStyle(document.querySelector('#modal-tagebuch .modal')).overscrollBehaviorY }));
+  // ans Ende des Fensters und darueber hinaus wischen
+  await page.mouse.move(195, 500);
+  for (let i = 0; i < 8; i++) { await page.mouse.wheel(0, 600); await page.waitForTimeout(40); }
+  const yOffen = await page.evaluate(() => window.scrollY);
+  await page.evaluate(() => closeModal('modal-tagebuch'));
+  await page.waitForTimeout(400);
+  const zu = await page.evaluate(() => ({ klasse: document.documentElement.classList.contains('fenster-offen'), y: window.scrollY }));
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const p = [];
+  if (!offen.klasse || offen.ov !== 'hidden') p.push(`Seite nicht gesperrt (overflow ${offen.ov})`);
+  if (offen.os !== 'contain') p.push('Fenster gibt das Scrollen weiter');
+  if (yOffen !== y0) p.push(`Seite dahinter bewegt (${y0} → ${yOffen})`);
+  if (zu.klasse) p.push('Sperre bleibt nach dem Schließen');
+  if (zu.y !== y0) p.push(`Scroll-Position verloren (${y0} → ${zu.y})`);
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

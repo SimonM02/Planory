@@ -1419,6 +1419,9 @@
   }
 
   .modal-overlay.open { display: flex; animation: fadeIn 0.18s ease; }
+  /* Offenes Fenster: weder das Fenster noch der Hintergrund schiebt die Seite dahinter weiter */
+  .modal-overlay, .modal, .lightbox { overscroll-behavior: contain; }
+  html.fenster-offen, html.fenster-offen body { overflow: hidden !important; }
   /* sanftes Schliessen: .closing blendet Overlay + Karte aus, bevor .open faellt */
   .modal-overlay.closing { animation: fadeOut 0.18s ease forwards; }
   .modal-overlay.closing .modal { animation: modalOut 0.18s ease forwards; }
@@ -4306,7 +4309,7 @@
       <div onclick="pickPhotosOrFile('tb-photo-input', addDiaryPhotos)"
         style="border:1.5px dashed var(--border);border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-size:0.82rem;color:var(--text2);transition:all 0.15s"
         onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-        <input type="file" id="tb-photo-input" accept="image/*" multiple style="display:none" onchange="addDiaryPhotos(this)">
+        <input type="file" id="tb-photo-input" accept="image/*" multiple style="display:none" onclick="event.stopPropagation()" onchange="addDiaryPhotos(this)">
         📷 Fotos hinzufügen
       </div>
     </div>
@@ -4545,7 +4548,7 @@
       <div onclick="pickPhotosOrFile('mg-photo-input', addMaengelPhotos)"
         style="border:1.5px dashed var(--border);border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-size:0.82rem;color:var(--text2);transition:all 0.15s"
         onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-        <input type="file" id="mg-photo-input" accept="image/*" multiple style="display:none" onchange="addMaengelPhotos(this)">
+        <input type="file" id="mg-photo-input" accept="image/*" multiple style="display:none" onclick="event.stopPropagation()" onchange="addMaengelPhotos(this)">
         📷 Fotos hinzufügen
       </div>
     </div>
@@ -4803,7 +4806,7 @@
         style="border:2px dashed var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface2)"
         onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
-        <input type="file" id="dk-photo-input" accept="image/*" multiple style="display:none" onchange="addDokuPhotos(this)">
+        <input type="file" id="dk-photo-input" accept="image/*" multiple style="display:none" onclick="event.stopPropagation()" onchange="addDokuPhotos(this)">
         <span style="font-size:1.3rem">📷</span>
         <span style="font-size:0.82rem;color:var(--text2);margin-left:8px;font-weight:600">Fotos hinzufügen</span>
         <span style="font-size:0.75rem;color:var(--text3);display:block;margin-top:3px">Mehrere Dateien möglich</span>
@@ -7195,6 +7198,13 @@ function openModal(id) {
   }
 }
 
+// Seite dahinter sperren, solange ein Fenster (oder die Foto-Ansicht) offen ist – sonst scrollte man
+// am Ende des Fensters „durch“ in die Seite darunter. Ein Beobachter erfasst alle Oeffnen/Schliessen.
+function _fensterSperre() {
+  const offen = !!document.querySelector('.modal-overlay.open:not(.closing), .lightbox.open');
+  document.documentElement.classList.toggle('fenster-offen', offen);
+}
+try { new MutationObserver(() => _fensterSperre()).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] }); } catch (e) {}
 function closeModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -12582,9 +12592,19 @@ async function openPhotoPicker(targetAlbumId) {
 // Generisch für die übrigen Foto-Buttons (Mängel, Leitungs-Doku …): in der App
 // nativer Mehrfach-Picker, sonst das Dateifeld. Der Handler bekommt ein Objekt,
 // das sich wie das <input> verhält (nur .files/.value werden gelesen).
+// Das versteckte Datei-Feld steckt im anklickbaren Bereich: sein click() „blubbert“ dorthin
+// zurueck und startete diese Funktion endlos neu (Web-App fror ein). Sperre waehrend des Klicks.
+let _pickLaeuft = false;
 async function pickPhotosOrFile(inputId, handlerFn) {
-  const files = await _nativePickImageFiles();
-  if (files === null) { const el = document.getElementById(inputId); if (el) el.click(); return; }
+  if (_pickLaeuft) return;
+  _pickLaeuft = true;
+  let files;
+  try { files = await _nativePickImageFiles(); } finally { _pickLaeuft = false; }
+  if (files === null) {
+    const el = document.getElementById(inputId);
+    if (el) { _pickLaeuft = true; try { el.click(); } finally { _pickLaeuft = false; } }
+    return;
+  }
   if (files.length) {
     const o = document.getElementById(inputId)?.closest('.modal-overlay');
     if (o) o._dirty = true;   // ☰ fragt dann vor dem Verwerfen nach
@@ -12761,6 +12781,7 @@ async function deletePhotoFromAlbum(id) {
   if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) deletePhotoFromStorage(f.path);
+  _trackDeletion(id, 'fotos');   // sonst kam das Foto aus der Cloud zurueck
   state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
   save();
   // Refresh album view
@@ -12780,6 +12801,8 @@ async function deletePhotoFromAlbum(id) {
 }
 
 function deleteAlbumData(albumId) {
+  _trackDeletion(albumId, 'fotoAlben');
+  (state.fotos||[]).filter(f => f.albumId === albumId).forEach(f => _trackDeletion(f.id, 'fotos'));
   state.fotoAlben = (state.fotoAlben||[]).filter(a => a.id !== albumId);
   state.fotos = (state.fotos||[]).filter(f => f.albumId !== albumId);
   save();
@@ -12859,6 +12882,7 @@ async function deletePhoto(id) {
   if (!(await showConfirm('Foto löschen?'))) return;
   const f = state.fotos.find(f => String(f.id) === String(id));
   if (f?.path) await deletePhotoFromStorage(f.path);
+  _trackDeletion(id, 'fotos');   // sonst kam das Foto aus der Cloud zurueck
   state.fotos = state.fotos.filter(f => String(f.id) !== String(id));
   save(); renderFotos();
 }
@@ -13774,6 +13798,8 @@ async function deleteGrundriss(id) {
   if (!g) return;
   if (!(await showConfirm(`Stockwerk „${g.name}" mit allen ${g.pins?.length||0} Markierungen löschen?`))) return;
   if (g.bildPath) deletePhotoFromStorage(g.bildPath);
+  (g.pins || []).forEach(p => (p.fotos || []).forEach(f => { if (f && f.path) deletePhotoFromStorage(f.path); }));
+  _trackDeletion(g.id, 'grundrisse');   // sonst kam der Plan aus der Cloud zurueck
   state.grundrisse = state.grundrisse.filter(x => String(x.id) !== String(id));
   _grActiveId = state.grundrisse[0]?.id || null;
   save();

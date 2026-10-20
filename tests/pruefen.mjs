@@ -574,6 +574,34 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
   check(`${label}: Aufgaben-Kategorie löschen setzt einen Grabstein`, () => {
     if (!fn('tkKatLoeschen').includes("_trackDeletion(k.id, 'aufgabenKat')")) return 'kein Grabstein';
   });
+  check(`${label}: Jedes Löschen aus einer synchronisierten Liste setzt einen Grabstein`, () => {
+    // Fehlt _trackDeletion, bleibt die Zeile in der Cloud und der Eintrag kommt nach dem Neustart zurück
+    // (so war es bei Plänen, Fotos und Alben). renderBudget blendet nur exakte Doppel aus.
+    const types = src.match(/const ITEM_TYPES = \[([\s\S]*?)\];/)[1].match(/'(\w+)'/g).map(s => s.slice(1, -1));
+    const re = /\n(?:async )?function (\w+)\s*\(/g; const starts = []; let m;
+    while ((m = re.exec(src))) starts.push([m.index, m[1]]);
+    const fehlt = [];
+    starts.forEach(([at, name], i) => {
+      if (name === 'renderBudget') return;
+      const body = src.slice(at, starts[i + 1]?.[0] ?? src.length);
+      for (const t of types) {
+        if (!new RegExp(`state\\.${t}\\s*=\\s*\\(?\\s*state\\.${t}[^;]*?\\.filter\\(`).test(body)) continue;
+        if (!new RegExp(`_trackDeletion\\([^)]*['"]${t}['"]`).test(body)) fehlt.push(`${name} (${t})`);
+      }
+    });
+    if (fehlt.length) return 'ohne Grabstein: ' + fehlt.join(', ');
+  });
+  check(`${label}: Foto-Auswahl startet sich nicht selbst neu (Web-App fror ein)`, () => {
+    if (!/if \(_pickLaeuft\) return;/.test(fn('pickPhotosOrFile'))) return 'keine Sperre in pickPhotosOrFile';
+    const ohne = ['tb-photo-input', 'mg-photo-input', 'dk-photo-input']
+      .filter(id => !new RegExp(`id="${id}"[^>]*onclick="event\\.stopPropagation\\(\\)"`).test(src));
+    if (ohne.length) return 'Klick blubbert zurück: ' + ohne.join(', ');
+  });
+  check(`${label}: Offenes Fenster sperrt das Scrollen der Seite dahinter`, () => {
+    if (!/html\.fenster-offen,\s*html\.fenster-offen body\s*\{\s*overflow:\s*hidden/.test(src)) return 'CSS-Sperre fehlt';
+    if (!/overscroll-behavior:\s*contain/.test(src)) return 'overscroll-behavior fehlt';
+    if (!/MutationObserver\(\(\) => _fensterSperre\(\)\)/.test(src)) return 'Beobachter fehlt';
+  });
   check(`${label}: Zeitplan-Automatik hängt nur Punkte OHNE Abschnitt um (Sync-sicher)`, () => {
     const z = fn('_plZuordnen');
     if (!z) return '_plZuordnen fehlt';

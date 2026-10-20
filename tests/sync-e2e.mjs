@@ -754,6 +754,48 @@ await scenario('E17: Aufgaben-Kategorie und Unteraufgabe überleben den Neustart
   } finally { await ctx.close(); }
 });
 
+// E18) Gelöschter Plan (Leitungen einzeichnen), gelöschtes Foto und Album kamen nach dem Neustart
+// aus der Cloud zurück, weil keine Lösch-Markierung gesetzt wurde.
+await scenario('E18: Gelöschter Plan, Foto und Album bleiben nach dem Neustart weg', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true });
+  const inDb = (typ, id) => page.evaluate(([t, i]) => window.__fakeDb.projekt_items.some(r => r.item_type === t && String(r.payload.id) === String(i)), [typ, id]);
+  try {
+    await waitFor(page, BEREIT);
+    const ids = await page.evaluate(() => {
+      const gr = { id: _neueId(), name: 'Keller E18', bildUrl: '', pins: [], _updatedAt: Date.now() };
+      const alb = { id: _neueId(), title: 'Rohbau E18', _updatedAt: Date.now() };
+      const fa = { id: _neueId(), albumId: alb.id, url: '', name: 'a.jpg', _updatedAt: Date.now() };
+      const fb = { id: _neueId(), albumId: '', url: '', name: 'b.jpg', _updatedAt: Date.now() };
+      state.grundrisse = (state.grundrisse || []).concat(gr);
+      state.fotoAlben = (state.fotoAlben || []).concat(alb);
+      state.fotos = (state.fotos || []).concat(fa, fb);
+      save();
+      return { gr: gr.id, alb: alb.id, fa: fa.id, fb: fb.id };
+    });
+    await waitFor(page, i => ['grundrisse:' + i.gr, 'fotoAlben:' + i.alb, 'fotos:' + i.fa, 'fotos:' + i.fb]
+      .every(k => window.__fakeDb.projekt_items.some(r => r.item_type + ':' + r.payload.id === k)), ids, 10000);
+    await page.evaluate(async i => {
+      window.showConfirm = async () => true;
+      await deleteGrundriss(i.gr); await deletePhoto(i.fb); deleteAlbumData(i.alb);
+    }, ids);
+    await page.waitForTimeout(2000);
+    await waitFor(page, () => !(sessionStorage.getItem('__fakeDbState') || '').includes('Keller E18'), null, 5000).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 2500);
+    const zurueck = await page.evaluate(i => [
+      (state.grundrisse || []).some(g => String(g.id) === String(i.gr)) && 'Plan',
+      (state.fotoAlben || []).some(a => String(a.id) === String(i.alb)) && 'Album',
+      (state.fotos || []).some(f => String(f.id) === String(i.fa)) && 'Foto im Album',
+      (state.fotos || []).some(f => String(f.id) === String(i.fb)) && 'Foto'].filter(Boolean), ids);
+    const p = [];
+    if (zurueck.length) p.push('nach Neustart wieder da: ' + zurueck.join(', '));
+    if (await inDb('grundrisse', ids.gr)) p.push('Plan noch in der Cloud');
+    if (await inDb('fotos', ids.fb)) p.push('Foto noch in der Cloud');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 await browser.close();
 
 // ── Ergebnis ──
