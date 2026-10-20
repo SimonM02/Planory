@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { appleAboAktiv, RC_KEY_STANDARD } from './abo-status.js';
 
 const SUPA_URL = 'https://savrxykygruzyngttekl.supabase.co';
 // Ab diesem Tag registrierte Konten starten ein Probeabo: 30 Tage gratis, danach verlaengert
@@ -58,11 +59,30 @@ export default async function handler(req, res) {
     const subs = await subRes.json();
     const zeile = Array.isArray(subs) ? subs[0] : null;
     let customerId = zeile?.stripe_customer_id || null;
+    // Stripe-Kunde auch finden, wenn der Webhook (noch) keine Zeile geschrieben hat
+    if (!customerId) {
+      try { customerId = (await stripe.customers.search({ query: `metadata['supabase_uid']:'${userId}'`, limit: 1 })).data[0]?.id || null; }
+      catch (e) { /* Suche nicht verfuegbar – dann neuer Kunde */ }
+    }
     // Kein zweiter Gratismonat: wer schon ein Abo hatte (auch gekuendigt), zahlt sofort.
     let hatteAbo = !!zeile?.stripe_subscription_id;
-    if (customerId && !hatteAbo) {
-      try { hatteAbo = (await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 1 })).data.length > 0; }
+    if (customerId) {
+      let abos = [];
+      try { abos = (await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 10 })).data; }
       catch (e) { hatteAbo = true; }   // im Zweifel kein Testzeitraum
+      if (abos.length) hatteAbo = true;
+      // Laeuft schon ein Abo (z. B. zweiter Tab oder Webhook noch unterwegs)? Kein zweites anlegen.
+      if (abos.some(a => ['active', 'trialing', 'past_due'].includes(a.status))) {
+        return res.status(409).json({ error: 'Du hast bereits ein aktives Abo – bitte die Seite neu laden.', code: 'already_subscribed' });
+      }
+    }
+    // Gratismonat schon in der iPhone-App genutzt (Apple-Abo, auch abgelaufen)? Dann auch hier keiner.
+    if (!hatteAbo) {
+      try {
+        const r = await fetch('https://api.revenuecat.com/v1/subscribers/' + encodeURIComponent(userId), {
+          headers: { Authorization: 'Bearer ' + (process.env.RC_PUBLIC_KEY || RC_KEY_STANDARD) } });
+        if (r.ok) { const a = appleAboAktiv(await r.json()); if (a.apple || a.hatte) hatteAbo = true; }
+      } catch (e) { /* RevenueCat nicht erreichbar – Stripe-Pruefung reicht */ }
     }
     const probe = Date.parse(userCreated || '') >= PROBEABO_AB && !hatteAbo;
 

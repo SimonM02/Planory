@@ -2566,6 +2566,9 @@ await scenario('Probeabo: neues Konto ohne Abo sieht nach dem Onboarding das Gra
   const f = [];
   try {
     await alsKonto(d.page, '2026-10-25T08:00:00Z', null);
+    const beimLaden = await d.page.evaluate(() => { _initialCloudLoad = true; window._userPlan = 'ohneAbo'; _probeaboPruefen();
+      const o = document.getElementById('probeabo-overlay').classList.contains('open'); _initialCloudLoad = false; window._userPlan = undefined; return o; });
+    if (beimLaden) f.push('erscheint schon vor der Onboarding-Entscheidung (erstes Laden)');
     await d.page.evaluate(() => { document.getElementById('onboarding-overlay').style.display = 'flex'; });
     await d.page.evaluate(() => loadUserPlan());
     const waehrendOb = await d.page.evaluate(PA);
@@ -2581,6 +2584,10 @@ await scenario('Probeabo: neues Konto ohne Abo sieht nach dem Onboarding das Gra
     if (!/verlängert sich automatisch/.test(r.recht) || !/vor Ende des Gratismonats gekündigt, zahlst du nichts/.test(r.recht) || !r.agb) f.push('Pflichttext/AGB: ' + r.recht);
     if (r.titel !== 'Starte deinen Gratismonat' || r.start !== 'Gratismonat starten') f.push(`Titel/Knopf: ${r.titel} / ${r.start}`);
     if (r.breit > 1) f.push(`ragt ${r.breit}px über den Rand`);
+    const toastOben = await d.page.evaluate(() => { showToast('Prüfmeldung', 'warning');
+      const t = [...document.body.children].reverse().find(e => e.textContent === 'Prüfmeldung');
+      return !!t && +getComputedStyle(t).zIndex > +getComputedStyle(document.getElementById('probeabo-overlay')).zIndex; });
+    if (!toastOben) f.push('Meldungen (z. B. „Käufe wiederherstellen“) liegen hinter dem Fenster');
     const gesperrt = await d.page.evaluate(() => { const ok = requireSub(); return { ok, offen: document.getElementById('probeabo-overlay').classList.contains('open'), pw: document.getElementById('modal-paywall').classList.contains('open') }; });
     if (gesperrt.ok || !gesperrt.offen || gesperrt.pw) f.push('Eintragen nicht gesperrt bzw. falsches Fenster');
     await d.page.click('#pa-plan-monat');
@@ -2606,9 +2613,11 @@ await scenario('Probeabo: „Erst die Demo ansehen“ öffnet die Demo, „Demo 
     await d.page.waitForTimeout(200);
     if (!(await d.page.evaluate(() => document.getElementById('probeabo-overlay').classList.contains('open') && !sessionStorage.getItem('planoryDemoVomKonto'))))
       f.push('ohne gesicherte Cloud trotzdem gewechselt');
-    await d.page.evaluate(() => { _cloudLoadedOk = true; window.syncToCloud = async () => {}; });
+    await d.page.evaluate(() => { _cloudLoadedOk = true; window.syncToCloud = async () => {}; localStorage.setItem('bauplan_projects', '"KONTO"'); });
     await Promise.all([d.page.waitForNavigation(), d.page.click('.pa-demo')]);
     await d.page.waitForFunction(() => typeof _demoMode !== 'undefined' && _demoMode && state.kosten.length > 0, null, { timeout: 15000 });
+    const cache = await d.page.evaluate(() => { save(); return localStorage.getItem('bauplan_projects'); });
+    if (cache !== '"KONTO"') f.push('Demo überschreibt den lokalen Speicher des Kontos');
     const demo = await d.page.evaluate(() => ({ flag: sessionStorage.getItem('planoryDemoVomKonto'), offen: document.getElementById('probeabo-overlay').classList.contains('open') }));
     if (demo.flag !== '1' || demo.offen) f.push('Demo: ' + JSON.stringify(demo));
     await Promise.all([d.page.waitForNavigation(), d.page.evaluate(() => setTimeout(exitDemo, 0))]);
@@ -2636,6 +2645,10 @@ await scenario('Probeabo: ältere Konten wie bisher, beendetes Abo = Nur-Lesen, 
     const e = await lauf('2026-10-25T08:00:00Z', { plan: 'pro', status: 'trialing', current_period_end: '2026-11-24T09:00:00Z', stripe_subscription_id: 'sub_1' });
     if (e.plan !== 'pro' || e.offen) f.push('Stripe-Gratismonat: ' + JSON.stringify(e));
     if (!/Gratismonat bis 24\.11\.2026/.test(e.ende)) f.push('Hinweis Gratismonat fehlt: ' + e.ende);
+    // iPhone-Abo-Prüfung nicht erreichbar → nicht aussperren (könnte ein zahlendes iPhone-Konto sein)
+    await d.page.evaluate(() => { supa.auth.getSession = async () => ({ data: { session: { access_token: 'tok' } } }); });
+    const g = await lauf('2026-10-25T08:00:00Z', null);
+    if (g.plan !== 'trial' || g.offen) f.push('Prüfung nicht erreichbar → gesperrt: ' + JSON.stringify(g));
     if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
   } finally { await d.ctx.close(); }
   return f.join(' · ');

@@ -75,7 +75,7 @@ Planory gibt es als App und im Web (planory.at). Deine Daten sind auf allen Ger�
 
 PREIS
 
-Einen Monat kostenlos testen. Danach kannst du deine Daten weiter ansehen; für neue Einträge und die KI-Funktionen gibt es ein faires Abo.
+Einen Monat gratis testen – alle Funktionen frei. Danach 3,99 € pro Monat oder 28,99 € pro Jahr. Das Abo verlängert sich automatisch; kündigst du mindestens 24 Stunden vor Ende des Gratismonats (iPhone-Einstellungen › Apple-ID › Abos), zahlst du nichts.
 
 Nutzungsbedingungen (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Datenschutz: https://planory.at/datenschutz.html
@@ -145,7 +145,7 @@ Planory is available as an app and on the web (planory.at). Your data stays in s
 
 PRICING
 
-Try it free for one month. After that you can still view your data; new entries and the AI features require a fair subscription.
+Try it free for one month – all features unlocked. After that €3.99 per month or €28.99 per year. The subscription renews automatically; cancel at least 24 hours before the free month ends (iPhone Settings › Apple ID › Subscriptions) and you pay nothing.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy Policy: https://planory.at/datenschutz.html

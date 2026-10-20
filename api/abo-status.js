@@ -6,7 +6,7 @@ import { nutzerAusToken } from './_auth.js';
 
 const ERLAUBT = new Set(['https://planory.at', 'https://www.planory.at', 'https://bauplan-weld.vercel.app']);
 // Oeffentlicher App-Schluessel (steht ohnehin in der App); RC_PUBLIC_KEY kann ihn ersetzen.
-const RC_KEY_STANDARD = 'appl_eMLeZHBkeBtxBeVVoPPTXKaSMvR';
+export const RC_KEY_STANDARD = 'appl_eMLeZHBkeBtxBeVVoPPTXKaSMvR';
 const RC_ENTITLEMENT = 'Planory Pro';
 
 export function appleAboAktiv(antwort, jetzt = Date.now()) {

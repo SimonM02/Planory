@@ -40,9 +40,10 @@ globalThis.fetch = async (url, opts = {}) => {
 
 // Stripe nachbauen (Methoden liegen am Prototyp – gilt auch für die Instanz im Handler)
 const muster = new Stripe('sk_test_dummy');
-let sessionParams = null, abosListe = [], aboAbruf = null;
+let sessionParams = null, abosListe = [], aboAbruf = null, kundenSuche = [];
 Object.getPrototypeOf(muster.checkout.sessions).create = async p => { sessionParams = p; return { url: 'https://checkout.stripe.test/s' }; };
 Object.getPrototypeOf(muster.customers).create = async () => ({ id: 'cus_neu' });
+Object.getPrototypeOf(muster.customers).search = async () => ({ data: kundenSuche });
 Object.getPrototypeOf(muster.subscriptions).list = async () => ({ data: abosListe });
 Object.getPrototypeOf(muster.subscriptions).retrieve = async () => aboAbruf;
 
@@ -67,7 +68,7 @@ function webhook(handler, event) {
 
 const results = [];
 async function check(name, fn) {
-  subsZeilen = []; schreib = []; rcAntwort = null; rcAufrufe = []; sessionParams = null; abosListe = []; aboAbruf = null;
+  subsZeilen = []; schreib = []; rcAntwort = null; rcAufrufe = []; sessionParams = null; abosListe = []; aboAbruf = null; kundenSuche = [];
   try { const m = await fn(); results.push([!m, name, m || '']); }
   catch (e) { results.push([false, name, 'Abbruch: ' + String(e && e.message || e).split('\n')[0]]); }
 }
@@ -100,6 +101,29 @@ await check('Checkout: kein zweiter Gratismonat (früheres Abo in Supabase oder 
   await aufruf(checkout, 'NEU', { plan: 'yearly' });
   const b = sessionParams?.subscription_data?.trial_period_days;
   return a || b ? `Testzeitraum trotz früherem Abo (${a}/${b})` : '';
+});
+await check('Checkout: kein zweiter Gratismonat (Kunde ohne Supabase-Zeile, Gratismonat schon in der iPhone-App)', async () => {
+  kundenSuche = [{ id: 'cus_gefunden' }]; abosListe = [{ id: 'sub_alt', status: 'canceled' }];
+  await aufruf(checkout, 'NEU', { plan: 'yearly' });
+  const a = sessionParams?.subscription_data?.trial_period_days, kunde = sessionParams?.customer;
+  sessionParams = null; kundenSuche = []; abosListe = [];
+  rcAntwort = { subscriber: { entitlements: { 'Planory Pro': { expires_date: '2020-01-01T00:00:00Z', product_identifier: 'jahr' } } } };
+  await aufruf(checkout, 'NEU', { plan: 'yearly' });
+  const b = sessionParams?.subscription_data?.trial_period_days;
+  if (kunde !== 'cus_gefunden') return 'vorhandener Stripe-Kunde nicht gefunden: ' + kunde;
+  return a || b ? `Testzeitraum trotz früherem Abo (${a}/${b})` : '';
+});
+await check('Checkout: läuft schon ein Abo (zweiter Tab), wird kein zweites angelegt', async () => {
+  subsZeilen = [{ stripe_customer_id: 'cus_1', stripe_subscription_id: null }]; abosListe = [{ id: 'sub_1', status: 'trialing' }];
+  const r = await aufruf(checkout, 'NEU', { plan: 'yearly' });
+  return r.status === 409 && !sessionParams ? '' : `Status ${r.status}, Checkout ${sessionParams ? 'angelegt' : '-'}`;
+});
+await check('Webhook: verspätetes „Abo angelegt“ überschreibt den aktuellen Stand nicht', async () => {
+  aboAbruf = { id: 'sub_1', status: 'active', customer: 'cus_1', metadata: { supabase_uid: UA }, current_period_end: 1795000000 };
+  await webhook(hook, { id: 'evt_4', object: 'event', type: 'customer.subscription.created',
+    data: { object: { id: 'sub_1', object: 'subscription', customer: 'cus_1', status: 'incomplete', metadata: { supabase_uid: UA } } } });
+  const z = schreib[0] || {};
+  return z.plan === 'pro' && z.status === 'active' ? '' : 'gespeichert: ' + JSON.stringify(z);
 });
 await check('Checkout, Konto vor dem Umstellungstag: kein Stripe-Testzeitraum (hatte den Gratismonat schon)', async () => {
   const r = await aufruf(checkout, 'ALT', { plan: 'yearly' });

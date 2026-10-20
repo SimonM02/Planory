@@ -15,7 +15,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 20.10.2026.
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
 (pruefen 118/118, mobile-e2e 120/120, sync-e2e 22/22, todoist-api 14/14, push-api 4/4, app-version-api 6/6,
-abo-api 7/7).
+abo-api 10/10).
 - [ ] **VOR dem Upload – App Store Connect → Planory → Abos (Monat UND Jahr), je:**
       „Einführungsangebote“ → **+** → alle Länder → Start: heute, kein Ende →
       **„Kostenlos“ (Free Trial), Dauer „1 Monat“**. Ohne dieses Angebot zeigt die App neuen Nutzern
@@ -78,14 +78,23 @@ abo-api 7/7).
 - Konten ab **21.10.2026** (`PROBEABO_AB` in index.html + api/stripe-checkout.js) bekommen den
   Gratismonat nur noch als **Probeabo**: 30 Tage gratis, danach automatisch 28,99 €/Jahr bzw.
   3,99 €/Monat, vorher kündbar. Ohne Abo: nur die Demo. Ältere Konten: unverändert.
-- Web: Stripe-Testzeitraum (nur beim ersten Abo, Karte wird hinterlegt). In Stripe ist nichts
-  einzustellen. Kündigen über Einstellungen → Abo verwalten (Kundenportal).
+- Web: Stripe-Testzeitraum (nur beim ersten Abo, Karte wird hinterlegt; kein zweiter Gratismonat,
+  auch nicht nach einem Apple-Gratismonat). Kündigen über Einstellungen → Abo verwalten (Kundenportal).
+- [ ] **Stripe-Dashboard → Einstellungen → Billing → Kundenportal → „Abos kündigen“:** auf
+      **„Am Ende des Abrechnungszeitraums“** stellen (nicht „sofort“) – sonst endet der Gratismonat
+      beim Kündigen sofort statt nach 30 Tagen.
+- [ ] Empfehlung: Stripe → Einstellungen → Billing → Abos und E-Mails → **Erinnerung 7 Tage vor Ende
+      des Testzeitraums** einschalten. Die Kartenfirmen (Visa/Mastercard) verlangen bei Gratismonaten mit
+      hinterlegter Karte eine Vorab-Info; die schickt dann Stripe, nicht die App.
+- Übergang bis v1.3: In der alten iPhone-App (v1.2) gilt für neue Konten noch der alte Gratismonat.
 - Wer ein Abo hatte und es beendet, sieht seine Daten weiter (Nur-Lesen) – kein Aussperren.
 - Abos aus der iPhone-App werden jetzt auch auf planory.at erkannt (neue Server-Funktion
   `api/abo-status`, fragt RevenueCat). Einmal mit einem echten Apple-Abo im Web einloggen und prüfen,
   dass „Pro-Mitglied“ erscheint.
 - [ ] **AGB (`agb.html`) von WKO oder Anwalt prüfen lassen** (Entwurf mit Rücktrittsbelehrung nach
       FAGG, Laufzeit, Gratismonat, Kündigung). Ist bereits verlinkt (Startseite unten, Probeabo-Fenster).
+      Dabei auch fragen: Reicht die Beschriftung des Stripe-Bestellknopfs im Gratismonat („Testphase
+      starten“ + unser Hinweis „danach 28,99 €/Jahr“) für § 8 Abs. 2 FAGG („zahlungspflichtig bestellen“)?
 
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.

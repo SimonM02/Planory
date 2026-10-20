@@ -83,7 +83,11 @@ export default async function handler(req, res) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted': {
-      const sub = event.data.object;
+      // Stripe liefert Ereignisse nicht garantiert der Reihe nach: immer den aktuellen Stand holen,
+      // damit ein verspaetetes "created" ein inzwischen aktives Abo nicht ueberschreibt.
+      let sub = event.data.object;
+      try { const frisch = await stripe.subscriptions.retrieve(sub.id); if (frisch && frisch.id) sub = frisch; }
+      catch (e) { console.error('stripe-webhook: Abo nicht lesbar', e?.message); }
       const uid = sub.metadata?.supabase_uid || await getUidFromCustomer(sub.customer);
       if (!uid) break;
       const isActive = ['active', 'trialing'].includes(sub.status);

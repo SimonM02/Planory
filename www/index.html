@@ -5100,7 +5100,8 @@ function saveAll() {
   // aus der Cloud setzt es wieder ein, bis der Upload bestaetigt ist.
   try { _markPending(); } catch(e) { console.warn('[SYNC] _markPending:', e?.message); }
   const ts = new Date().toISOString();
-  try {
+  // Demo-Daten nie in den lokalen Speicher (sonst ueberschreiben sie den Zwischenspeicher eines Kontos)
+  if (!_demoMode) try {
     localStorage.setItem('bauplan_projects',   JSON.stringify(projects));
     localStorage.setItem('bauplan_current',    String(currentProjectId));
     localStorage.setItem('bauplan_user_id',    currentUser?.id || '');
@@ -7537,27 +7538,30 @@ async function _rcInit() {
 // Testphase. So gilt ein im Web abgeschlossenes Abo auch in der App.
 async function _rcRefresh() {
   if (!_rcReady || !currentUser) return;
-  let isPro = false, checkFailed = false;
+  const uid = currentUser.id;   // Kontowechsel waehrend des Abgleichs -> Ergebnis verwerfen
+  let isPro = false, checkFailed = false, probe = false, hatte = false;
   const P = _rcPlugin();
   if (P) {
     try {
       const res = await P.getCustomerInfo();
       const info = res?.customerInfo || res;
       const ent = (info?.entitlements?.active || {})[RC_ENTITLEMENT];
-      if (ent) { isPro = true; window._aboProbe = /trial/i.test(String(ent.periodType || '')); }
-      else if ((info?.entitlements?.all || {})[RC_ENTITLEMENT]) window._hatteAbo = true;   // frueheres Apple-Abo
+      if (ent) { isPro = true; probe = /trial/i.test(String(ent.periodType || '')); }
+      else if ((info?.entitlements?.all || {})[RC_ENTITLEMENT]) hatte = true;   // frueheres Apple-Abo
     } catch(e) { checkFailed = true; console.warn('RevenueCat refresh failed', e); }
   }
   if (!isPro) {
     // Web-Abo (Stripe) aus derselben Supabase-Tabelle pruefen, die die Web-App nutzt.
     try {
-      const { data, error } = await supa.from('subscriptions').select('plan,status,stripe_subscription_id').eq('user_id', currentUser.id).maybeSingle();
+      const { data, error } = await supa.from('subscriptions').select('plan,status,stripe_subscription_id').eq('user_id', uid).maybeSingle();
       if (error) checkFailed = true;
-      if (data?.stripe_subscription_id) window._hatteAbo = true;
-      if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) { isPro = true; window._aboProbe = data.status === 'trialing'; }
+      if (data?.stripe_subscription_id) hatte = true;
+      if (data && data.plan === 'pro' && ['active','trialing'].includes(data.status)) { isPro = true; probe = data.status === 'trialing'; }
     } catch(e) { checkFailed = true; }
   }
-  if (isPro) { window._userPlan = 'pro'; }
+  if (currentUser?.id !== uid) return;
+  if (hatte) window._hatteAbo = true;
+  if (isPro) { window._userPlan = 'pro'; window._aboProbe = probe; }
   // Hat diese Sitzung bereits Pro bestaetigt, einen einzelnen fehlgeschlagenen
   // Abgleich (z.B. RevenueCat-Timeout) NICHT als "abgelaufen" werten – sonst
   // blitzt bei zahlenden Nutzern kurz der Nur-Lese-Modus auf. Eine echte
@@ -7899,7 +7903,7 @@ function _paRender() {
   const preisText = w ? `${w.preis} ${en ? 'per' : 'pro'} ${per(_paPlan)}` : '';
   let recht;
   if (nativ) {
-    recht = (gratis
+    recht = (!w ? '' : gratis
       ? (en ? `${w.gratis} free, then ${preisText}. Payment is charged to your Apple account when the free period ends. `
             : `${w.gratis} gratis, danach ${preisText}. Die Zahlung erfolgt nach Ende des Gratiszeitraums über deinen Apple-Account. `)
       : (en ? `${preisText}, charged to your Apple account. ` : `${preisText}, abgerechnet über deinen Apple-Account. `))
@@ -7907,7 +7911,7 @@ function _paRender() {
             : 'Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf des laufenden Zeitraums gekündigt wird. Kündigen in den iPhone-Einstellungen › Apple-ID › Abos.')
       + `<br><a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" ${ls}>${en ? 'Terms of Use' : 'Nutzungsbedingungen'}</a> · <a href="https://planory.at/datenschutz.html" ${ls}>${en ? 'Privacy' : 'Datenschutz'}</a>`;
   } else {
-    recht = (gratis
+    recht = (!w ? '' : gratis
       ? (en ? `By tapping “Start free month” you take out a subscription with a 30-day free period. After that it costs ${preisText} and renews automatically until you cancel. Cancel anytime in Settings › Manage subscription – cancel before the free month ends and you pay nothing. `
             : `Mit „Gratismonat starten“ schließt du ein Abo mit 30 Tagen Gratiszeitraum ab. Danach kostet es ${preisText} und verlängert sich automatisch, bis du kündigst. Kündigen jederzeit unter Einstellungen › Abo verwalten – vor Ende des Gratismonats gekündigt, zahlst du nichts. `)
       : (en ? `The subscription costs ${preisText} and renews automatically until you cancel. Cancel anytime in Settings › Manage subscription. `
@@ -7920,8 +7924,8 @@ function _paRender() {
     <div class="pa-marke"><span class="pa-logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Planory</div>
     <h2 class="pa-titel" id="pa-titel">${gratis || !a ? (en ? 'Start your free month' : 'Starte deinen Gratismonat') : (en ? 'Unlock Planory Pro' : 'Planory Pro freischalten')}</h2>
     <p class="pa-text">${gratis || !a
-      ? (en ? 'All features free for 30 days. After that your subscription continues automatically – cancel before then and you pay nothing.'
-            : '30 Tage alle Funktionen kostenlos. Danach läuft dein Abo automatisch weiter – kündigst du vorher, zahlst du nichts.')
+      ? (en ? `All features free for ${gratis ? w.gratis : (nativ ? 'one month' : '30 days')}. After that your subscription continues automatically – cancel before then and you pay nothing.`
+            : `Alle Funktionen ${gratis ? w.gratis : (nativ ? '1 Monat' : '30 Tage')} kostenlos. Danach läuft dein Abo automatisch weiter – kündigst du vorher, zahlst du nichts.`)
       : (en ? 'With the subscription you can use every feature.' : 'Mit dem Abo nutzt du alle Funktionen.')}</p>
     <ul class="pa-vorteile">${vorteile.map(v => `<li>${haken}<span>${v}</span></li>`).join('')}</ul>
     ${keinAngebot ? `<div class="pa-hinweis">${en ? 'The subscription options are still being provisioned by Apple. Please try again later.' : 'Die Abo-Optionen werden von Apple gerade noch bereitgestellt. Bitte später erneut versuchen.'}</div>` : ''}
@@ -7948,6 +7952,7 @@ function _probeaboSchliessen() { document.getElementById('probeabo-overlay')?.cl
 // waehrend nach der Rueckkehr von Stripe noch auf die Bestaetigung gewartet wird.
 function _probeaboPruefen() {
   if (window._userPlan !== 'ohneAbo' || _demoMode || !currentUser) { _probeaboSchliessen(); return; }
+  if (_initialCloudLoad) return;   // erst nach dem ersten Laden (danach ruft onAuthSuccess loadUserPlan auf)
   const ob = document.getElementById('onboarding-overlay');
   if (ob && getComputedStyle(ob).display !== 'none') return;
   if (_aboRueckkehrBis > Date.now()) return;
@@ -7968,11 +7973,12 @@ async function probeaboDemo() {
   try { sessionStorage.setItem('planoryDemoVomKonto', '1'); } catch (e) {}
   location.replace(location.pathname + '?demo=planory2025');
 }
-// Web: Abo aus der iPhone-App (Apple/RevenueCat) ueber den Server pruefen
+// Web: Abo aus der iPhone-App (Apple/RevenueCat) ueber den Server pruefen.
+// null = Server nicht erreichbar; { apple:false, error } = RevenueCat gestoert (dann kein Apple-Abo annehmen).
 async function _appleAboImWeb() {
   try {
     const { data: { session } } = await supa.auth.getSession();
-    if (!session?.access_token) return null;
+    if (!session?.access_token) return { apple: false };
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 6000);
     const r = await fetch(API_BASE + '/api/abo-status', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token }, signal: ctl.signal });
@@ -8190,12 +8196,14 @@ async function _loadUserPlanImpl() {
     if (_rcActive()) { try { await _rcRefresh(); } catch(e){} if (freeEl) _applyNativePlan(freeEl); }
     return;
   }
+  const uid = currentUser.id;   // Kontowechsel waehrend der Abfrage -> Ergebnis verwerfen
   try {
     const { data, error } = await supa
       .from('subscriptions')
       .select('plan, status, current_period_end, stripe_subscription_id')
       .eq('user_id', currentUser.id)
       .maybeSingle();
+    if (currentUser?.id !== uid) return;
     // Schon einmal ein Stripe-Abo gehabt? Dann gibt es keinen zweiten Gratismonat (und danach Nur-Lesen).
     window._probeGratis = !(data && data.stripe_subscription_id);
     if (data && data.stripe_subscription_id) window._hatteAbo = true;
@@ -8219,8 +8227,12 @@ async function _loadUserPlanImpl() {
     let apple = null;
     if (!isPro && window._userPlan !== 'pro') {
       const a = await _appleAboImWeb();
+      if (currentUser?.id !== uid) return;
       if (a && a.apple) { apple = a; isPro = true; window._aboProbe = !!a.probe; }
       else if (a && a.hatte) window._hatteAbo = true;
+      // Pruefung nicht erreichbar (kein Netz/Zeitueberschreitung): ein zahlendes iPhone-Konto NICHT
+      // aussperren – vorerst Zugriff lassen, der naechste Abgleich korrigiert das (wie bei Supabase-Fehlern).
+      else if (!a && _probeaboRegel()) { if (!_subActive()) window._userPlan = 'trial'; freeEl.style.display = 'none'; return; }
     }
 
     if (isPro) {
@@ -14992,7 +15004,7 @@ function showToast(msg, type='success', duration=3200) {
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
   const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:28px;z-index:999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
+  t.style.cssText = `position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:28px;z-index:10080;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideUp 0.34s cubic-bezier(.34,1.5,.64,1);pointer-events:none`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
