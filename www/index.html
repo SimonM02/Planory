@@ -577,6 +577,17 @@
   #update-hinweis .uh-text strong { font-size:0.95rem; }
   #update-hinweis .uh-text span { font-size:0.8rem; color:var(--text2); }
   #update-hinweis .uh-knoepfe { display:flex; gap:8px; justify-content:flex-end; }
+  /* ── Tabellen: jede zweite Zeile leicht abgesetzt (bessere Lesbarkeit) ── */
+  :root { --zebra: rgba(15,23,42,0.035); }
+  body.dark-mode { --zebra: rgba(255,255,255,0.035); }
+  table tbody tr:nth-child(even) > td { background: var(--zebra); }
+  table tbody tr:hover > td { background: var(--surface2); }
+  /* Betraege nicht mitten im Betrag umbrechen („€" ueber der Zahl) */
+  @media (min-width:601px) {
+    #kosten-ausgaben-panel td[style*="JetBrains Mono"], #kosten-ausgaben-panel td [style*="JetBrains Mono"] { white-space: nowrap; }
+    #kosten-ausgaben-panel th, #kosten-ausgaben-panel td { padding-left: 12px; padding-right: 12px; }
+  }
+  @media (max-width:600px) { .mobile-cards tbody tr:nth-child(even) > td, .budget-detail-table tbody tr:nth-child(even) > td { background: transparent; } }
   /* ── Ausgabenliste: Filter ── */
   .k-filter { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .k-filter select { font-size:0.82rem; padding:7px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer; max-width:200px; }
@@ -1389,6 +1400,10 @@
 
   .action-btn:hover { color: var(--accent); background: var(--accent-light); border-color: var(--accent); }
   .action-btn.del:hover { color: var(--danger); background: var(--danger-light); border-color: var(--danger); }
+  /* Knoepfe mit Linien-Symbol: ruhig, Farbe erst beim Darueberfahren */
+  .action-btn.ic { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; background:transparent; border-color:transparent; color:var(--text2); }
+  .action-btn > svg { display:block; }
+  @media (hover:none) { .action-btn.ic { border-color:var(--border); } }
 
   /* MODAL */
   .modal-overlay {
@@ -4571,8 +4586,8 @@
         <div style="font-size:0.78rem;color:var(--text3)" id="av-meta"></div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="action-btn" id="av-edit-btn" onclick="editAlbum(_openAlbumId)" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteAlbum(_openAlbumId)" title="Album löschen">🗑</button>
+        <button class="action-btn ic" id="av-edit-btn" onclick="editAlbum(_openAlbumId)" title="Bearbeiten"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 7.5l3 3"/></svg></button>
+        <button class="action-btn ic del" onclick="deleteAlbum(_openAlbumId)" title="Album löschen"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg></button>
         <button onclick="closeModal('modal-album-view')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text3);padding:4px 6px">✕</button>
       </div>
     </div>
@@ -7009,6 +7024,9 @@ function _txtFwd(lang) { const m = {}; for (const de in TEXTE) { const v = TEXTE
 function _txtBack()    { const m = {}; for (const de in TEXTE) { const o = TEXTE[de]; for (const l in o) { if (o[l]) m[o[l]] = de; } } return m; }
 function _mapFor(lang) { return _mapCache[lang] || (_mapCache[lang] = (lang === 'de') ? _txtBack() : _txtFwd(lang)); }
 // Uebersetzt einen exakten Einzeltext (fuer Toasts/Meldungen).
+// Schlichte Linien-Symbole fuer Bearbeiten/Loeschen (statt ✏️/🗑-Emojis) – ueberall gleich
+function _icStift() { return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 7.5l3 3"/></svg>'; }
+function _icMuell() { return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>'; }
 function tt(deText) { if (_lang === 'de') return deText; const o = TEXTE[deText]; return (o && o[_lang]) ? o[_lang] : deText; }
 // Zeigt in der Konsole, welche Texte fuer eine Sprache noch fehlen.
 function i18nMissing(lang) {
@@ -8728,8 +8746,8 @@ function openBudgetDrilldown(katName) {
         <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(k.betrag)}</td>
         <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${esc(k.status)}</span></td>
         <td><div style="display:flex;gap:4px;justify-content:flex-end">
-          <button class="action-btn" title="Bearbeiten" onclick="closeModal('modal-budget-drilldown');editKosten(${k.id})">✏️</button>
-          <button class="action-btn del" title="Löschen" onclick="deleteDrilldownKosten(${k.id},'${katName.replace(/'/g,"\\'")}')">🗑</button>
+          <button class="action-btn ic" title="Bearbeiten" onclick="closeModal('modal-budget-drilldown');editKosten(${k.id})">${_icStift()}</button>
+          <button class="action-btn ic del" title="Löschen" onclick="deleteDrilldownKosten(${k.id},'${katName.replace(/'/g,"\\'")}')">${_icMuell()}</button>
         </div></td>
       </tr>`;
     }).join('');
@@ -8829,8 +8847,8 @@ function renderKosten() {
         <td data-label="${tt('Brutto')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(k.betrag)}</td>
         <td data-label="${tt('Status')}"><span class="badge ${k.status==='Bezahlt'?'badge-green':k.status==='Ausstehend'?'badge-yellow':'badge-red'}">${k.status}</span></td>
         <td><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
-          <button class="action-btn" onclick="editKosten(${k.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteKosten(${k.id})" title="Löschen">🗑</button>
+          <button class="action-btn ic" onclick="editKosten(${k.id})" title="Bearbeiten">${_icStift()}</button>
+          <button class="action-btn ic del" onclick="deleteKosten(${k.id})" title="Löschen">${_icMuell()}</button>
         </div></td>
       </tr>`;
     }).join('');
@@ -9150,8 +9168,8 @@ function renderBudget() {
           </div>
         </td>
         <td onclick="event.stopPropagation()" style="white-space:nowrap;text-align:right">
-          <button class="action-btn" onclick="editBudgetKat(${kat.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteBudgetKat(${kat.id})">🗑</button>
+          <button class="action-btn ic" onclick="editBudgetKat(${kat.id})" title="Bearbeiten">${_icStift()}</button>
+          <button class="action-btn ic del" onclick="deleteBudgetKat(${kat.id})">${_icMuell()}</button>
         </td>
       </tr>`;
     }),
@@ -10233,8 +10251,8 @@ function renderMilestones() {
         ${m.text?`<div style="font-size:0.78rem;color:var(--text3);margin-top:3px">${m.text}</div>`:''}
       </div>
       <span class="badge ${m.done ? 'badge-green' : (m.datum && m.datum < today() ? 'badge-red' : 'badge-yellow')}">${m.done ? 'Erledigt' : (m.datum && m.datum < today() ? '⚠️ Überfällig' : 'Offen')}</span>
-      <button class="action-btn" onclick="editMilestone(${m.id})" title="Bearbeiten">✏️</button>
-      <button class="action-btn del" onclick="deleteMilestone(${m.id})">🗑</button>
+      <button class="action-btn ic" onclick="editMilestone(${m.id})" title="Bearbeiten">${_icStift()}</button>
+      <button class="action-btn ic del" onclick="deleteMilestone(${m.id})">${_icMuell()}</button>
     </div>`).join('');
 }
 
@@ -11001,8 +11019,8 @@ function renderTodoistSection() {
         </div>
       </div>
       <div style="display:flex;gap:2px;flex-shrink:0">
-        <button class="action-btn" data-id="${esc(t.id)}" onclick="tdEditTask(this.dataset.id)" title="${esc(tt('Bearbeiten'))}">✏️</button>
-        <button class="action-btn del" data-id="${esc(t.id)}" onclick="tdDeleteTask(this.dataset.id)" title="${esc(tt('Löschen'))}">🗑</button>
+        <button class="action-btn ic" data-id="${esc(t.id)}" onclick="tdEditTask(this.dataset.id)" title="${esc(tt('Bearbeiten'))}">${_icStift()}</button>
+        <button class="action-btn ic del" data-id="${esc(t.id)}" onclick="tdDeleteTask(this.dataset.id)" title="${esc(tt('Löschen'))}">${_icMuell()}</button>
         <a class="action-btn" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" title="${esc(tt('In Todoist öffnen'))}" style="text-decoration:none">↗</a>
       </div></div>`;
   }).join('');
@@ -11519,8 +11537,8 @@ function renderDiary() {
     return `
     <div class="diary-entry">
       <div class="diary-actions">
-        <button class="action-btn" onclick="editDiary(${e.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteDiary(${e.id})">🗑</button>
+        <button class="action-btn ic" onclick="editDiary(${e.id})" title="Bearbeiten">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteDiary(${e.id})">${_icMuell()}</button>
       </div>
       <div class="diary-date">${fmtDate(e.datum)}${e.datumBis && e.datumBis !== e.datum ? ' – ' + fmtDate(e.datumBis) : ''} · ${esc(_katName(e.weather))}${e.temp != null ? ` · ${e.temp}°C` : ''}</div>
       <div class="diary-title">${esc(e.title)}</div>
@@ -11759,8 +11777,8 @@ function renderNotizen() {
       return `
       <div class="card" style="background:${n.color && n.color !== 'white' ? n.color : 'var(--surface)'};position:relative">
         <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px;align-items:center">
-          <button class="action-btn" onclick="editNotiz(${n.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteNotiz(${n.id})">🗑</button>
+          <button class="action-btn ic" onclick="editNotiz(${n.id})" title="Bearbeiten">${_icStift()}</button>
+          <button class="action-btn ic del" onclick="deleteNotiz(${n.id})">${_icMuell()}</button>
         </div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text3);margin-bottom:5px">${fmtDate(n.datum)}${taskBadge ? '&nbsp;&nbsp;' + taskBadge : ''}</div>
         <div style="font-size:0.92rem;font-weight:700;margin-bottom:7px;padding-right:60px;color:var(--text)">${esc(n.title)}</div>
@@ -11969,7 +11987,7 @@ function renderDokumente() {
         <div style="display:flex;gap:4px">
           <button class="action-btn" onclick="openDokument(${d.id})" title="Öffnen">🔍</button>
           <button class="action-btn" onclick="downloadDokument(${d.id})" title="Herunterladen">⬇️</button>
-          <button class="action-btn del" onclick="deleteDokument(${d.id})" title="Löschen">🗑</button>
+          <button class="action-btn ic del" onclick="deleteDokument(${d.id})" title="Löschen">${_icMuell()}</button>
         </div>
       </div>
       <div style="font-size:0.84rem;font-weight:700;color:var(--text);word-break:break-all;line-height:1.3">${esc(d.name)}</div>
@@ -12051,8 +12069,8 @@ function renderKontakte() {
       <td data-label="${tt('E-Mail')}">${k.mail?`<a href="mailto:${esc(k.mail)}" style="color:var(--accent);text-decoration:none">${esc(k.mail)}</a>`:'–'}</td>
       <td data-label="${tt('Status')}"><span class="badge ${k.status==='Aktiv'?'badge-green':k.status==='Angefragt'?'badge-yellow':'badge-gray'}">${k.status}</span></td>
       <td style="display:flex;gap:4px">
-        <button class="action-btn" onclick="editKontakt(${k.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteKontakt(${k.id})">🗑</button>
+        <button class="action-btn ic" onclick="editKontakt(${k.id})" title="Bearbeiten">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteKontakt(${k.id})">${_icMuell()}</button>
       </td>
     </tr>`).join('');
 }
@@ -12223,8 +12241,8 @@ function renderGantt() {
                   </div>
                 </div>
                 <div style="display:flex;gap:2px;flex-shrink:0">
-                  <button class="action-btn" onclick="editGanttItem(${g.id})" title="Bearbeiten" style="padding:3px 5px;font-size:0.8rem">✏️</button>
-                  <button class="action-btn del" onclick="deleteGanttItem(${g.id})" style="padding:3px 5px;font-size:0.8rem">🗑</button>
+                  <button class="action-btn ic" onclick="editGanttItem(${g.id})" title="Bearbeiten" style="padding:3px 5px;font-size:0.8rem">${_icStift()}</button>
+                  <button class="action-btn ic del" onclick="deleteGanttItem(${g.id})" style="padding:3px 5px;font-size:0.8rem">${_icMuell()}</button>
                 </div>
               </div>`;
             }).join('')}
@@ -13987,8 +14005,8 @@ function renderDoku() {
     return `
     <div class="doku-card typ-${typCss}">
       <div class="doku-card-del" style="display:flex;gap:4px">
-        <button class="action-btn" onclick="editDoku(${d.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteDoku(${d.id})">🗑</button>
+        <button class="action-btn ic" onclick="editDoku(${d.id})" title="Bearbeiten">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteDoku(${d.id})">${_icMuell()}</button>
       </div>
       <div class="doku-card-type" style="color:${color}">${icon} ${d.typ}</div>
       <div class="doku-card-title">${d.title}</div>
@@ -14243,8 +14261,8 @@ function renderWartung() {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         <button class="btn btn-primary" style="padding:6px 12px;font-size:0.75rem" onclick="markWartungDone(${w.id})" title="Als erledigt markieren">✓ Erledigt</button>
-        <button class="action-btn" onclick="editWartung(${w.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteWartung(${w.id})">🗑</button>
+        <button class="action-btn ic" onclick="editWartung(${w.id})" title="Bearbeiten">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteWartung(${w.id})">${_icMuell()}</button>
       </div>
     </div>`;
   }).join('');
@@ -14442,8 +14460,8 @@ function renderHelferPersonList() {
   if (saved.length) {
     html += saved.map(h => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1"><div style="font-weight:600;font-size:0.88rem">${esc(h.name)}</div>${(h.tel || h.notiz) ? `<div style="font-size:0.76rem;color:var(--text3)">${esc([h.tel, h.notiz].filter(Boolean).join(' · '))}</div>` : ''}</div>
-        <button class="action-btn" onclick="editHelferPerson(${h.id})">✏️</button>
-        <button class="action-btn del" onclick="deleteHelferPerson(${h.id})">🗑</button>
+        <button class="action-btn ic" onclick="editHelferPerson(${h.id})">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteHelferPerson(${h.id})">${_icMuell()}</button>
       </div>`).join('');
   }
   if (_helferExtraList.length) {
@@ -14605,8 +14623,8 @@ function renderHelfer() {
           <div style="margin-top:6px"><span style="display:inline-block;padding:2px 9px;border-radius:99px;background:${col};color:#fff;font-size:0.74rem;font-weight:700">${besetztTxt}</span></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <button class="action-btn" onclick="editEinsatz(${e.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteEinsatz(${e.id})">🗑</button>
+          <button class="action-btn ic" onclick="editEinsatz(${e.id})" title="Bearbeiten">${_icStift()}</button>
+          <button class="action-btn ic del" onclick="deleteEinsatz(${e.id})">${_icMuell()}</button>
         </div>
       </div>`;
     }).join('');
@@ -14977,8 +14995,8 @@ function renderProjectSwitcher() {
         </div>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="action-btn" title="Bearbeiten" onclick="event.stopPropagation();editProject(${p.id})">✏️</button>
-        ${projects.length > 1 ? `<button class="action-btn del" title="Löschen" onclick="event.stopPropagation();deleteProject(${p.id})">🗑</button>` : ''}
+        <button class="action-btn ic" title="Bearbeiten" onclick="event.stopPropagation();editProject(${p.id})">${_icStift()}</button>
+        ${projects.length > 1 ? `<button class="action-btn ic del" title="Löschen" onclick="event.stopPropagation();deleteProject(${p.id})">${_icMuell()}</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -17109,9 +17127,9 @@ function renderAngVergleich() {
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)">
               <span class="badge ${statusColor[a.status]||'badge-gray'}">${a.status}</span>
               <div style="display:flex;gap:4px">
-                <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
+                <button class="action-btn ic" onclick="editAngebot(${a.id})" title="Bearbeiten">${_icStift()}</button>
                 ${a.datei ? `<button class="action-btn" onclick="openAngebotDatei(${a.id})" title="${a.datei.name}">📎</button>` : ''}
-                <button class="action-btn del" onclick="deleteAngebot(${a.id})" title="Löschen">🗑</button>
+                <button class="action-btn ic del" onclick="deleteAngebot(${a.id})" title="Löschen">${_icMuell()}</button>
               </div>
             </div>
           </div>`;
@@ -17322,9 +17340,9 @@ function renderAngebote() {
       <td data-label="${tt('Status')}"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
-        <button class="action-btn" onclick="editAngebot(${a.id})" title="Bearbeiten">✏️</button>
+        <button class="action-btn ic" onclick="editAngebot(${a.id})" title="Bearbeiten">${_icStift()}</button>
         <button class="action-btn" onclick="document.getElementById('ang-edit-id').value=${a.id};angebotZuRechnung()" title="Zu Rechnung umwandeln">→💶</button>
-        <button class="action-btn del" onclick="deleteAngebot(${a.id})">🗑</button>
+        <button class="action-btn ic del" onclick="deleteAngebot(${a.id})">${_icMuell()}</button>
       </td>
     </tr>`;
   }).join('');
@@ -17478,8 +17496,8 @@ function renderZahlungsplan() {
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         ${z.status !== 'Bezahlt' ? `<button class="btn btn-primary" style="padding:5px 10px;font-size:0.72rem" onclick="markZahlungBezahlt(${z.id})">✓ Bezahlt</button>` : ''}
         <div style="display:flex;gap:4px">
-          <button class="action-btn" onclick="editZahlung(${z.id})" title="Bearbeiten">✏️</button>
-          <button class="action-btn del" onclick="deleteZahlung(${z.id})">🗑</button>
+          <button class="action-btn ic" onclick="editZahlung(${z.id})" title="Bearbeiten">${_icStift()}</button>
+          <button class="action-btn ic del" onclick="deleteZahlung(${z.id})">${_icMuell()}</button>
         </div>
       </div>
     </div>`;
@@ -17609,8 +17627,8 @@ function renderMaengel() {
   }).map(m => `
     <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ${prioColor[m.prio]||'var(--border)'};border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);position:relative">
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px">
-        <button class="action-btn" onclick="editMangel(${m.id})" title="Bearbeiten">✏️</button>
-        <button class="action-btn del" onclick="deleteMangel(${m.id})">🗑</button>
+        <button class="action-btn ic" onclick="editMangel(${m.id})" title="Bearbeiten">${_icStift()}</button>
+        <button class="action-btn ic del" onclick="deleteMangel(${m.id})">${_icMuell()}</button>
       </div>
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;padding-right:60px">
         <div>
@@ -17741,8 +17759,8 @@ function renderGescannteRechnungen() {
         ${r.scanUrl
           ? `<a href="${esc(r.scanUrl)}" target="_blank" rel="noopener noreferrer" class="action-btn" title="Original öffnen">🔗</a>`
           : ''}
-        ${r.kostenId ? `<button class="action-btn" onclick="editKosten(${r.kostenId})" title="Bearbeiten">✏️</button>` : ''}
-        <button class="action-btn del" onclick="deleteGescannteRechnung(${r.id})" title="Löschen">🗑</button>
+        ${r.kostenId ? `<button class="action-btn ic" onclick="editKosten(${r.kostenId})" title="Bearbeiten">${_icStift()}</button>` : ''}
+        <button class="action-btn ic del" onclick="deleteGescannteRechnung(${r.id})" title="Löschen">${_icMuell()}</button>
       </td>
     </tr>`;
   }).join('');
@@ -17810,7 +17828,7 @@ function renderPersonenList() {
         ${esc(p.name.charAt(0).toUpperCase())}
       </div>
       <span style="flex:1;font-weight:600;font-size:0.875rem">${esc(p.name)}</span>
-      <button class="action-btn del" onclick="deleteZahlungsPerson(${p.id})">🗑</button>
+      <button class="action-btn ic del" onclick="deleteZahlungsPerson(${p.id})">${_icMuell()}</button>
     </div>`).join('');
 }
 

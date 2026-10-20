@@ -2443,6 +2443,33 @@ await scenario('Aufgaben: Aufklapp-Pfeil links, Linien-Symbole statt Emojis bei 
   return p.join(' · ');
 });
 
+await scenario('Listen: jede zweite Zeile abgesetzt (Computer), Bearbeiten/Löschen als Linien-Symbole', async () => {
+  const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  let r;
+  try {
+    r = await d.page.evaluate(() => {
+      showPage('kosten');
+      const rows = [...document.querySelectorAll('#kosten-table tr')].filter(tr => !tr.querySelector('td[colspan]'));
+      const bg = tr => getComputedStyle(tr.querySelector('td')).backgroundColor;
+      const zebra = rows.length >= 3 && bg(rows[0]) !== bg(rows[1]) && bg(rows[0]) === bg(rows[2]);
+      const knoepfe = [...document.querySelectorAll('#kosten-table .action-btn')];
+      const emojis = knoepfe.filter(b => /✏️|🗑/.test(b.textContent)).length;
+      const svg = knoepfe.length > 0 && knoepfe.every(b => b.querySelector('svg'));
+      const ueberall = [...document.querySelectorAll('.action-btn')].filter(b => /^(✏️|🗑)$/.test(b.textContent.trim())).length;
+      const brutto = rows[0] ? [...rows[0].querySelectorAll('td')].find(td => /€/.test(td.textContent) && td.getAttribute('style')?.includes('JetBrains')) : null;
+      let einzeilig = true;
+      if (brutto) { const rg = document.createRange(); rg.selectNodeContents(brutto); einzeilig = new Set([...rg.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size <= 1; }
+      return { zebra, emojis, svg, ueberall, einzeilig };
+    });
+  } finally { await d.ctx.close(); }
+  const p = [];
+  if (!r.zebra) p.push('keine abwechselnde Zeilenfarbe');
+  if (r.emojis || !r.svg) p.push(`Ausgaben-Knöpfe noch mit Emoji (${r.emojis})`);
+  if (r.ueberall) p.push(`${r.ueberall} Emoji-Knöpfe auf anderen Seiten`);
+  if (!r.einzeilig) p.push('Betrag bricht um');
+  return p.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
