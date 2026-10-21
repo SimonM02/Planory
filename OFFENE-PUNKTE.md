@@ -68,6 +68,9 @@ abo-api 10/10).
 - Ab v1.3 eingebaut: Die App prüft beim Start (höchstens alle 12 h) die Version im App Store und
   zeigt NUR bei einer wirklich neueren Version unten „🆕 Neue Planory-Version verfügbar · Jetzt
   aktualisieren“ (öffnet den App Store; „Später“ = 3 Tage Ruhe). Wirkt also ab dem Update auf v1.4.
+- Seit 21.10.2026 im Web, kommt mit **v1.4** aufs iPhone (v1.3 war schon eingereicht):
+  Ladebildschirm mit Logo, das sich aufbaut (Kran → Haus → Dach); ruhiges Erinnerungs-Kärtchen
+  „Demnächst fällig“ statt oranger Warn-Meldungen.
 - [ ] v1.4 – iPhone-Widgets (WidgetKit, braucht am Mac: Widget Extension + App Group):
       „Heute zu tun“ (Aufgaben), „Nächster Termin“ (Meilenstein/Zahlung), „Fällige Zahlungen &
       Skonto“ (nächste Zahlungstermine, Skonto-Frist mit Ersparnis – rot wenn heute/morgen).
