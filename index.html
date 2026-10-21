@@ -1426,6 +1426,22 @@
   /* Offenes Fenster: weder das Fenster noch der Hintergrund schiebt die Seite dahinter weiter */
   .modal-overlay, .modal, .lightbox { overscroll-behavior: contain; }
   html.fenster-offen, html.fenster-offen body { overflow: hidden !important; }
+  /* Erinnerung an Fälligkeiten (ruhiges Kärtchen statt Warn-Meldung) */
+  .erinnerung { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 10070; width: min(360px, calc(100vw - 32px));
+    background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(17,21,31,0.16);
+    padding: 12px 12px 8px; animation: slideUp 0.34s cubic-bezier(.34,1.5,.64,1); transition: opacity .3s, transform .3s; }
+  .erinnerung.weg { opacity: 0; transform: translateY(8px); }
+  .er-kopf { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-bottom: 4px; }
+  .er-ic { width: 26px; height: 26px; border-radius: 8px; background: var(--accent-light); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .er-zu { margin-left: auto; background: none; border: none; color: var(--text3); cursor: pointer; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+  .er-zeile { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: none; border: none;
+    border-top: 1px solid var(--border); padding: 9px 4px; font-family: inherit; font-size: 0.82rem; color: var(--text); cursor: pointer; }
+  .er-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .er-extra { color: var(--text3); }
+  .er-wann { flex-shrink: 0; color: var(--text2); font-weight: 600; }
+  .er-wann.ueber { color: var(--danger); }
+  .er-mehr { font-size: 0.75rem; color: var(--text3); padding: 6px 4px 2px; }
+  @media (max-width: 600px) { .erinnerung { right: 16px; left: 16px; width: auto; } }
   /* Probeabo-Fenster (ganzseitig) */
   .probeabo { display: none; position: fixed; inset: 0; z-index: 10045; background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch; padding: calc(28px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
@@ -9600,38 +9616,73 @@ function checkSkontoDeadlines() {
   });
 }
 
-function checkAllDeadlines() {
-  const msgs = [];
+// „heute“ / „morgen“ / „in 3 Tagen“ / „seit 2 Tagen überfällig“ – statt „in 0d fällig“
+function _faelligText(diff) {
+  const en = (_lang === 'en');
+  if (diff === 0) return en ? 'due today' : 'heute fällig';
+  if (diff === 1) return en ? 'due tomorrow' : 'morgen fällig';
+  if (diff > 1) return en ? `due in ${diff} days` : `in ${diff} Tagen fällig`;
+  if (diff === -1) return en ? 'overdue since yesterday' : 'seit gestern überfällig';
+  return en ? `overdue for ${-diff} days` : `seit ${-diff} Tagen überfällig`;
+}
 
-  // Fällige Zahlungen in 3 Tagen
+// Fälligkeiten beim Start: EIN ruhiges Erinnerungs-Kärtchen (höchstens einmal pro Tag und Projekt)
+// statt mehrerer oranger Meldungen, die wie ein Fehler wirkten.
+function checkAllDeadlines() {
+  const en = (_lang === 'en');
+  const items = [];   // { art, name, extra, diff, seite }
   (state.zahlungen||[]).filter(z => z.status !== 'Bezahlt' && z.faellig).forEach(z => {
     const diff = _daysUntilDateStr(z.faellig);
-    if (diff >= 0 && diff <= 3) msgs.push(`💳 Zahlung fällig in ${diff}d: ${z.beschr||'Zahlung'} (${fmt(z.betrag)})`);
-    else if (diff < 0) msgs.push(`⚠️ Zahlung überfällig (${Math.abs(diff)}d): ${z.beschr||'Zahlung'} (${fmt(z.betrag)})`);
+    if (diff <= 3) items.push({ art: en ? 'Payment' : 'Zahlung', name: z.beschr || (en ? 'Payment' : 'Zahlung'), extra: fmt(z.betrag), diff, seite: 'zahlungsplan' });
   });
-
-  // Überfällige Meilensteine (gespeichert als name/datum, nicht title/end!)
   (state.meilensteine||[]).filter(m => !m.done && m.datum).forEach(m => {
     const diff = _daysUntilDateStr(m.datum);
-    if (diff < 0) msgs.push(`🚩 Meilenstein überfällig: ${m.name}`);
-    else if (diff <= 3) msgs.push(`⏰ Meilenstein in ${diff}d fällig: ${m.name}`);
+    if (diff <= 3) items.push({ art: en ? 'Milestone' : 'Meilenstein', name: m.name, extra: '', diff, seite: 'planung' });
   });
-
-  // Skonto
   (state.kosten||[]).filter(k => k.skontoProz > 0 && k.skontoBis && k.status === 'Ausstehend').forEach(k => {
     const diff = _daysUntilDateStr(k.skontoBis);
-    if (diff >= 0 && diff <= 3) msgs.push(`💰 Skonto läuft ab in ${diff}d: ${k.beschr} (${fmt(k.betrag * k.skontoProz / 100)} sparen)`);
+    if (diff >= 0 && diff <= 3) items.push({ art: en ? 'Cash discount' : 'Skonto', name: k.beschr || k.anbieter || '',
+      extra: (en ? 'save ' : '') + fmt(k.betrag * k.skontoProz / 100) + (en ? '' : ' sparen'), diff, seite: 'kosten' });
   });
+  const ok = items.filter(i => !isNaN(i.diff)).sort((a, b) => a.diff - b.diff);
+  if (!ok.length) return;
+  try {
+    const key = 'planory_erinnert_' + new Date().toISOString().slice(0, 10) + '_' + (currentProjectId || '');
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch (e) {}
 
-  if (msgs.length === 0) return;
-
-  // Browser-Notification wenn erlaubt (in der nativen App gibt es kein Notification-Objekt → Toast-Fallback)
-  if (('Notification' in window) && Notification.permission === 'granted') {
-    msgs.forEach((msg, i) => setTimeout(() => new Notification('Planory', { body: msg, icon: '/favicon.ico' }), i * 800));
-  } else {
-    // Fallback: Toast-Nachrichten gestaffelt
-    msgs.forEach((msg, i) => setTimeout(() => showToast(msg, 'warning', 6000), i * 1200 + 1500));
+  // Browser-Mitteilung, wenn erlaubt (die native App plant ihre Mitteilungen selbst)
+  if (('Notification' in window) && Notification.permission === 'granted' && !isNativeApp()) {
+    const body = ok.slice(0, 4).map(i => `${i.art} „${i.name}“ – ${_faelligText(i.diff)}`).join('\n');
+    try { new Notification(en ? 'Planory – Reminder' : 'Planory – Erinnerung', { body, icon: '/favicon-192.png' }); return; } catch (e) {}
   }
+  _erinnerungZeigen(ok);
+}
+function _erinnerungZeigen(items) {
+  const en = (_lang === 'en');
+  document.getElementById('erinnerung-karte')?.remove();
+  const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const zeigen = items.slice(0, 3), rest = items.length - zeigen.length;
+  const k = document.createElement('div');
+  k.id = 'erinnerung-karte';
+  k.className = 'erinnerung';
+  k.setAttribute('role', 'status');
+  k.setAttribute('data-noi18n', '');
+  k.innerHTML = `
+    <div class="er-kopf">
+      <span class="er-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+      <b>${en ? 'Coming up' : 'Demnächst fällig'}</b>
+      <button type="button" class="er-zu" aria-label="${en ? 'Close' : 'Schließen'}" onclick="this.closest('.erinnerung').remove()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    ${zeigen.map(i => `<button type="button" class="er-zeile" onclick="this.closest('.erinnerung').remove();showPage('${i.seite}')">
+      <span class="er-name">${esc(i.art)} „${esc(i.name)}“${i.extra ? ` <span class="er-extra">· ${esc(i.extra)}</span>` : ''}</span>
+      <span class="er-wann${i.diff < 0 ? ' ueber' : ''}">${_faelligText(i.diff)}</span></button>`).join('')}
+    ${rest > 0 ? `<div class="er-mehr">${en ? `+ ${rest} more on the home screen` : `+ ${rest} weitere auf der Startseite`}</div>` : ''}`;
+  document.body.appendChild(k);
+  setTimeout(() => k.classList.add('weg'), 12000);
+  setTimeout(() => k.remove(), 12400);
 }
 
 async function requestNotifications() {
@@ -18927,7 +18978,7 @@ async function scheduleAllReminders() {
     sched('ms-' + m.id, m.datum, defT,
       '🏁 Meilenstein heute: ' + m.name, 'Fällig heute');
     sched('ms-pre-' + m.id, daysBefore(m.datum, 1), defT,
-      '⚠️ Morgen: ' + m.name, 'Meilenstein morgen fällig');
+      '📅 Morgen: ' + m.name, 'Meilenstein morgen fällig');
   }
 
   // ── Skonto-Fristen
