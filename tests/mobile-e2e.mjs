@@ -2719,6 +2719,20 @@ await scenario('Fälligkeiten: ein ruhiges Erinnerungs-Kärtchen („heute fäll
   return f.join(' · ');
 });
 
+await scenario('Web-Erinnerungen: Planung wird mit dem gültigen Schlüssel an Supabase geschickt (früher 401)', async () => {
+  const r = await page.evaluate(async () => {
+    const altFetch = window.fetch, altSession = supa.auth.getSession, altUser = currentUser;
+    const aufrufe = [];
+    window.fetch = async (url, opts = {}) => { aufrufe.push({ url: String(url), key: (opts.headers || {}).apikey, m: opts.method || 'GET' }); return new Response('[]', { status: 200 }); };
+    supa.auth.getSession = async () => ({ data: { session: { access_token: 'tok' } } });
+    currentUser = { id: 'u-push' };
+    try { await _syncPushSchedule([{ notif_id: 'x', title: 't', body: 'b', scheduled_for: new Date().toISOString() }]); }
+    finally { window.fetch = altFetch; supa.auth.getSession = altSession; currentUser = altUser; }
+    return { n: aufrufe.length, falsch: aufrufe.filter(a => a.key !== SUPA_KEY || !a.url.startsWith(SUPA_URL + '/rest/v1/scheduled_notifications')).map(a => a.m) };
+  });
+  return r.n === 2 && !r.falsch.length ? '' : `${r.n} Aufrufe, mit falschem Schlüssel/Adresse: ${r.falsch.join(', ') || '-'}`;
+});
+
 await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besucher weiterhin Englisch', async () => {
   const landing = async userAgent => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', serviceWorkers: 'block', ...(userAgent ? { userAgent } : {}) });

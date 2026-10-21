@@ -645,6 +645,12 @@ check('Server-Funktionen prüfen die Anmeldung echt (kein bloßes Auslesen des T
   const schlecht = dateien.filter(f => /split\(['"]\.['"]\)\[1\]/.test(read('api/' + f)));
   if (schlecht.length) return 'Token nur ausgelesen (fremde ID möglich): ' + schlecht.join(', ');
 });
+check('Supabase-Schlüssel nur einmal eingetragen (SUPA_KEY) – kein alter, ungültiger Schlüssel', () => {
+  const w = read(WEB);
+  const keys = w.match(/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g) || [];
+  if (keys.length !== 1) return `${keys.length} fest eingetragene Schlüssel (erlaubt: nur SUPA_KEY)`;
+  if (!w.includes(`const SUPA_KEY = '${keys[0]}'`)) return 'der einzige Schlüssel ist nicht SUPA_KEY';
+});
 check('Favicon als echte Datei (Google-Suche zeigt kein data:-Symbol)', () => {
   const groesse = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };   // PNG-Kopf
   for (const seite of [WEB, 'impressum.html', 'datenschutz.html', 'agb.html', 'support.html', 'privacy.html']) {
