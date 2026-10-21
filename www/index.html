@@ -8434,7 +8434,9 @@ async function doLogout() {
     return;
   }
   await syncToCloud();
-  await supa.auth.signOut();
+  // Nur DIESES Gerät abmelden. Ohne scope beendet Supabase alle Sitzungen des Kontos – wer ein
+  // Konto mit anderen teilt, hätte sonst alle anderen Geräte mit abgemeldet.
+  await supa.auth.signOut({ scope: 'local' });
   currentUser = null;
   try { _probeaboSchliessen(); } catch (e) {}
   ['_userPlan', '_hatteAbo', '_aboProbe', '_probeGratis'].forEach(k => { window[k] = undefined; });   // nichts ins naechste Konto mitnehmen
