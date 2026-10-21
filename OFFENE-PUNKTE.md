@@ -116,7 +116,7 @@ abo-api 10/10).
       neuen App-Store-Build aufs iPhone.
 
 ## Später
-- [ ] **App Store Connect – Vertrag:** Apple verlangt die Zustimmung zum aktualisierten „Paid Applications
+- [x] (21.10.2026 erledigt) **App Store Connect – Vertrag:** Apple verlangt die Zustimmung zum aktualisierten „Paid Applications
       Schedule“ (sonst keine Updates/In-App-Käufe): zuerst developer.apple.com/account → neue Lizenz-
       vereinbarung akzeptieren, dann App Store Connect → **Business** → Vereinbarung „Paid Apps“ ansehen
       und akzeptieren.
