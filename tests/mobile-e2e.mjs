@@ -2685,6 +2685,40 @@ await scenario('Probeabo iPhone: Apples Gratismonat wird angezeigt – ohne Ansp
   return f.join(' · ');
 });
 
+await scenario('Fälligkeiten: ein ruhiges Erinnerungs-Kärtchen („heute fällig“) statt oranger Warn-Meldungen, einmal pro Tag', async () => {
+  const r = await page.evaluate(async () => {
+    const tag = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+    const alt = { ms: state.meilensteine, z: state.zahlungen, k: state.kosten };
+    state.meilensteine = [{ id: 'm1', name: 'Rohbau fertig', datum: tag(0) }, { id: 'm2', name: 'Dach dicht', datum: tag(-2) }, { id: 'm3', name: 'Fenster', datum: tag(2) }];
+    state.zahlungen = []; state.kosten = alt.k.map(k => ({ ...k, skontoProz: 0 }));
+    Object.keys(localStorage).filter(k => k.startsWith('planory_erinnert_')).forEach(k => localStorage.removeItem(k));
+    const vorher = document.body.children.length;
+    checkAllDeadlines();
+    await new Promise(res => setTimeout(res, 300));
+    const karte = document.getElementById('erinnerung-karte');
+    const text = karte ? karte.textContent.replace(/\s+/g, ' ') : '';
+    const bg = karte ? getComputedStyle(karte).backgroundColor : '';
+    const orange = [...document.body.children].slice(vorher).filter(e => /rgb\(217, 119, 6\)/.test(getComputedStyle(e).backgroundColor)).length;
+    const breit = karte ? karte.getBoundingClientRect().right <= innerWidth + 1 && karte.getBoundingClientRect().left >= -1 : false;
+    karte?.querySelector('.er-zeile')?.click();
+    const seite = document.querySelector('.page.active')?.id;
+    checkAllDeadlines();   // derselbe Tag: nicht nochmal
+    await new Promise(res => setTimeout(res, 200));
+    const nochmal = !!document.getElementById('erinnerung-karte');
+    state.meilensteine = alt.ms; state.zahlungen = alt.z; state.kosten = alt.k; showPage('dashboard');
+    return { text, bg, orange, breit, seite, nochmal };
+  });
+  const f = [];
+  if (!/Demnächst fällig/.test(r.text) || !/Meilenstein „Dach dicht“ seit 2 Tagen überfällig/.test(r.text) || !/„Rohbau fertig“ heute fällig/.test(r.text) || !/„Fenster“ in 2 Tagen fällig/.test(r.text)) f.push('Text: ' + r.text);
+  if (/\dd\b/.test(r.text)) f.push('noch „0d“-Schreibweise');
+  if (r.orange) f.push(`${r.orange} orange Warn-Meldung(en)`);
+  if (/217, 119, 6|220, 38, 38/.test(r.bg)) f.push('Kärtchen wirkt wie Warnung: ' + r.bg);
+  if (!r.breit) f.push('ragt über den Rand');
+  if (r.seite !== 'page-planung') f.push('Antippen öffnet nicht den Zeitplan: ' + r.seite);
+  if (r.nochmal) f.push('erscheint am selben Tag nochmal');
+  return f.join(' · ');
+});
+
 await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besucher weiterhin Englisch', async () => {
   const landing = async userAgent => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', serviceWorkers: 'block', ...(userAgent ? { userAgent } : {}) });
