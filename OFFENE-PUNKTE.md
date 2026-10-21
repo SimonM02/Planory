@@ -116,6 +116,14 @@ abo-api 10/10).
       neuen App-Store-Build aufs iPhone.
 
 ## Später
+- [ ] **App Store Connect – Vertrag:** Apple verlangt die Zustimmung zum aktualisierten „Paid Applications
+      Schedule“ (sonst keine Updates/In-App-Käufe): zuerst developer.apple.com/account → neue Lizenz-
+      vereinbarung akzeptieren, dann App Store Connect → **Business** → Vereinbarung „Paid Apps“ ansehen
+      und akzeptieren.
+- [x] Google Search Console für planory.at bestätigt (21.10.2026, HTML-Tag in index.html – nicht entfernen).
+      Sitemap `sitemap.xml` einreichen und „Indexierung beantragen“.
+- [ ] Ab **April 2027**: App-Store-Bildschirmfotos auch für **iPhone Duo** (Pflicht bei Builds mit iOS-27.1-SDK).
+      Bei der Gelegenheit die Bilder für Aufgaben/Zeitplan im neuen Look erneuern.
 - [ ] **Startseite verbessern:** Funktionen in großen Abschnitten mit echten App-Bildern beschreiben
       (Budget, Rechnungen, Zeitplan, Aufgaben, Bautagebuch) – im Stil der Instagram-Postings aus
       Claude Design. Dafür die Postings als Bilder in den Chat schicken.

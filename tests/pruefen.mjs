@@ -651,6 +651,10 @@ check('Supabase-Schlüssel nur einmal eingetragen (SUPA_KEY) – kein alter, ung
   if (keys.length !== 1) return `${keys.length} fest eingetragene Schlüssel (erlaubt: nur SUPA_KEY)`;
   if (!w.includes(`const SUPA_KEY = '${keys[0]}'`)) return 'der einzige Schlüssel ist nicht SUPA_KEY';
 });
+check('Google-Search-Console-Bestätigung bleibt auf der Startseite', () => {
+  // Entfernt man das Tag, verliert planory.at die Bestätigung in der Search Console
+  if (!read(WEB).includes('<meta name="google-site-verification" content="TP9xcZaYMo--SASoN2I9H7PXi07fZcOnCw5B6R59YkE"')) return 'Bestätigungs-Tag fehlt';
+});
 check('Favicon als echte Datei (Google-Suche zeigt kein data:-Symbol)', () => {
   const groesse = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };   // PNG-Kopf
   for (const seite of [WEB, 'impressum.html', 'datenschutz.html', 'agb.html', 'support.html', 'privacy.html']) {
