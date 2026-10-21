@@ -2685,6 +2685,32 @@ await scenario('Probeabo iPhone: Apples Gratismonat wird angezeigt – ohne Ansp
   return f.join(' · ');
 });
 
+await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besucher weiterhin Englisch', async () => {
+  const landing = async userAgent => {
+    const c = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', serviceWorkers: 'block', ...(userAgent ? { userAgent } : {}) });
+    try {
+      const p = await c.newPage();
+      await p.addInitScript(() => {
+        window.supabase = { createClient: () => ({ from: () => { const o = { select() { return o; }, eq() { return o; }, maybeSingle: async () => ({ data: null }), then(r) { return Promise.resolve({ data: null, error: null }).then(r); } }; return o; },
+          auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; } },
+          channel() { const k = { on() { return k; }, subscribe() { return k; } }; return k; }, removeChannel() {}, storage: { from() { return {}; } } }) };
+      });
+      await p.route('**/*', r => r.request().url().startsWith('https://planory.test/index.html')
+        ? r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML }) : r.abort());
+      await p.goto('https://planory.test/index.html', { waitUntil: 'domcontentloaded' });
+      await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
+      return await p.evaluate(() => ({ lang: document.documentElement.lang,
+        faq: [...document.querySelectorAll('#lp-faq .lp-qa p')][0]?.textContent.trim().slice(0, 40) }));
+    } finally { await c.close(); }
+  };
+  const bot = await landing('Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)');
+  const mensch = await landing(null);
+  const f = [];
+  if (bot.lang !== 'de' || !/^Planory ist eine App/.test(bot.faq || '')) f.push('Google sieht: ' + JSON.stringify(bot));
+  if (mensch.lang !== 'en' || !/^Planory is an app/.test(mensch.faq || '')) f.push('englischer Besucher sieht: ' + JSON.stringify(mensch));
+  return f.join(' · ');
+});
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
