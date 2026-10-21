@@ -645,6 +645,20 @@ check('Server-Funktionen prüfen die Anmeldung echt (kein bloßes Auslesen des T
   const schlecht = dateien.filter(f => /split\(['"]\.['"]\)\[1\]/.test(read('api/' + f)));
   if (schlecht.length) return 'Token nur ausgelesen (fremde ID möglich): ' + schlecht.join(', ');
 });
+check('Favicon als echte Datei (Google-Suche zeigt kein data:-Symbol)', () => {
+  const groesse = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };   // PNG-Kopf
+  for (const seite of [WEB, 'impressum.html', 'datenschutz.html', 'agb.html', 'support.html', 'privacy.html']) {
+    const t = read(seite);
+    if (/rel="(icon|apple-touch-icon)"[^>]*href="data:/.test(t)) return seite + ': Symbol nur als data:-Grafik';
+    if (!t.includes('href="/favicon-96.png"')) return seite + ': Verweis auf /favicon-96.png fehlt';
+  }
+  for (const [f, n] of [['favicon-48.png', 48], ['favicon-96.png', 96], ['favicon-192.png', 192], ['apple-touch-icon.png', 180]]) {
+    if (!fs.existsSync(f)) return f + ' fehlt';
+    const [w, h] = groesse(f);
+    if (w !== n || h !== n) return `${f}: ${w}×${h} statt ${n}×${n}`;
+  }
+  if (!fs.existsSync('favicon.ico') || !fs.existsSync('favicon.svg')) return 'favicon.ico/favicon.svg fehlt';
+});
 check('Probeabo: Umstellungstag in App und Stripe-Checkout gleich, „ohneAbo“ sperrt', () => {
   const datum = t => (t.match(/PROBEABO_AB = Date\.parse\('([^']+)'\)/) || [])[1];
   const app = datum(read(WEB)), srv = datum(read('api/stripe-checkout.js'));
