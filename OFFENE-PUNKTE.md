@@ -71,6 +71,7 @@ abo-api 10/10).
 - Seit 21.10.2026 im Web, kommt mit **v1.4** aufs iPhone (v1.3 war schon eingereicht):
   Ladebildschirm mit Logo, das sich aufbaut (Kran → Haus → Dach); ruhiges Erinnerungs-Kärtchen
   „Demnächst fällig“ statt oranger Warn-Meldungen.
+  Abmelden meldet nur noch das eigene Gerät ab (vorher alle Geräte des Kontos).
 - [ ] v1.4 – iPhone-Widgets (WidgetKit, braucht am Mac: Widget Extension + App Group):
       „Heute zu tun“ (Aufgaben), „Nächster Termin“ (Meilenstein/Zahlung), „Fällige Zahlungen &
       Skonto“ (nächste Zahlungstermine, Skonto-Frist mit Ersparnis – rot wenn heute/morgen).
@@ -116,6 +117,14 @@ abo-api 10/10).
       neuen App-Store-Build aufs iPhone.
 
 ## Später
+- [ ] **Mehrere Personen in einem Projekt** (Info, noch nicht beauftragt):
+      - **A) Profile im gemeinsamen Konto** (klein): je Gerät „Wer bin ich?“ (z. B. Simon, Marie) →
+        Verantwortlich / Bezahlt von / Autor im Bautagebuch automatisch, Filter „Meine Aufgaben“.
+        Kein Datenbank-Umbau.
+      - **B) Projekt teilen** (groß): eigenes Login je Person, Besitzer lädt per E-Mail ein
+        (Bearbeiten/Ansehen), ein Abo fürs Projekt (Apple-Familienfreigabe fürs Abo möglich).
+        Umbau von Datenbank-Rechten, Abgleich und Abo.
+      - Empfehlung: erst A, später B.
 - [x] (21.10.2026 erledigt) **App Store Connect – Vertrag:** Apple verlangt die Zustimmung zum aktualisierten „Paid Applications
       Schedule“ (sonst keine Updates/In-App-Käufe): zuerst developer.apple.com/account → neue Lizenz-
       vereinbarung akzeptieren, dann App Store Connect → **Business** → Vereinbarung „Paid Apps“ ansehen

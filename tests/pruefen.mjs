@@ -664,6 +664,13 @@ check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare F
   const google = ld.mainEntity.map(q => q.name);
   if (JSON.stringify(sichtbar) !== JSON.stringify(google)) return 'FAQ für Google weicht ab: ' + google.join(' / ');
 });
+check('Abmelden betrifft nur dieses Gerät (nicht alle Geräte des Kontos)', () => {
+  const w = read(WEB);
+  const i = w.indexOf('async function doLogout('), body = w.slice(i, w.indexOf('\nasync function ', i + 10));
+  if (!body.includes("supa.auth.signOut({ scope: 'local' })")) return 'doLogout meldet alle Geräte ab';
+  const ohne = (w.match(/supa\.auth\.signOut\(\)/g) || []).length;
+  if (ohne > 1) return `${ohne}× signOut() ohne scope (erlaubt: nur Konto löschen)`;
+});
 check('Google-Search-Console-Bestätigung bleibt auf der Startseite', () => {
   // Entfernt man das Tag, verliert planory.at die Bestätigung in der Search Console
   if (!read(WEB).includes('<meta name="google-site-verification" content="TP9xcZaYMo--SASoN2I9H7PXi07fZcOnCw5B6R59YkE"')) return 'Bestätigungs-Tag fehlt';

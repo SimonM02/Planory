@@ -2733,6 +2733,21 @@ await scenario('Web-Erinnerungen: Planung wird mit dem gültigen Schlüssel an S
   return r.n === 2 && !r.falsch.length ? '' : `${r.n} Aufrufe, mit falschem Schlüssel/Adresse: ${r.falsch.join(', ') || '-'}`;
 });
 
+await scenario('Abmelden meldet nur dieses Gerät ab (andere Geräte im selben Konto bleiben angemeldet)', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      _demoMode = false; currentUser = { id: 'u-logout' }; _cloudLoadedOk = true;
+      window.showConfirm = async () => true; window.syncToCloud = async () => {};
+      let arg = 'nicht aufgerufen';
+      supa.auth.signOut = async a => { arg = a; return {}; };
+      try { await doLogout(); } catch (e) {}
+      return arg;
+    });
+    return r && r.scope === 'local' ? '' : 'signOut mit ' + JSON.stringify(r) + ' (meldet alle Geräte ab)';
+  } finally { await d.ctx.close(); }
+});
+
 await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, App-Bilder da, Englisch vollständig, App-Store-Knopf nur mit Link', async () => {
   const ROOT = path.join(here, '..');
   const lauf = async (breite, appstore) => {
