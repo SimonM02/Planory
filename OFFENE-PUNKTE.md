@@ -98,8 +98,24 @@ abo-api 10/10).
       Dabei auch fragen: Reicht die Beschriftung des Stripe-Bestellknopfs im Gratismonat („Testphase
       starten“ + unser Hinweis „danach 28,99 €/Jahr“) für § 8 Abs. 2 FAGG („zahlungspflichtig bestellen“)?
 
+- [ ] **Abo abgelaufen – Funktionen selbst prüfen** (Web + iPhone) mit einem Testkonto, dessen Abo
+      beendet ist (Stripe-Testabo kündigen bzw. Apple-Sandbox-Abo auslaufen lassen):
+      - eigene Daten bleiben sichtbar („Nur-Lese-Modus“, unten „👁 Nur-Lese-Modus · Abo aktivieren“)
+      - Aufgaben und Wartungen abhaken geht weiterhin
+      - Neues eintragen, bearbeiten, löschen und die KI (Bauberater, Rechnung scannen) öffnen das
+        Abo-Fenster mit dem normalen Preis – **ohne** „gratis“ (kein zweiter Gratismonat)
+      - neues Abo abschließen → sofort wieder alles frei
+      - zum Vergleich: ein neues Konto **ohne** jedes Abo sieht nur „Starte deinen Gratismonat“ bzw. die Demo
+- Testzeitraum bleibt **30 Tage** (Entscheidung 21.10.2026). Nach 2–3 Monaten mit echten Zahlen
+  (wie viele nach dem Gratismonat zahlen) neu bewerten.
+
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
+
+## Später
+- [ ] **Startseite verbessern:** Funktionen in großen Abschnitten mit echten App-Bildern beschreiben
+      (Budget, Rechnungen, Zeitplan, Aufgaben, Bautagebuch) – im Stil der Instagram-Postings aus
+      Claude Design. Dafür die Postings als Bilder in den Chat schicken.
 
 ## Todoist-Anbindung (Web) – Code fertig, Einrichtung bei Simon
 - [ ] Todoist → Einstellungen → Integrationen → Entwickler (App Management Console): App
