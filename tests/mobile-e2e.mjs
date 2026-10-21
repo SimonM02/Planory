@@ -2733,6 +2733,67 @@ await scenario('Web-Erinnerungen: Planung wird mit dem gültigen Schlüssel an S
   return r.n === 2 && !r.falsch.length ? '' : `${r.n} Aufrufe, mit falschem Schlüssel/Adresse: ${r.falsch.join(', ') || '-'}`;
 });
 
+await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, App-Bilder da, Englisch vollständig, App-Store-Knopf nur mit Link', async () => {
+  const ROOT = path.join(here, '..');
+  const lauf = async (breite, appstore) => {
+    const c = await browser.newContext({ viewport: { width: breite, height: 900 }, locale: 'de-AT', serviceWorkers: 'block' });
+    try {
+      const p = await c.newPage();
+      const fehler = []; p.on('pageerror', e => fehler.push(String(e.message || e)));
+      await p.addInitScript(() => {
+        localStorage.setItem('planoryLang', 'de');
+        window.supabase = { createClient: () => ({ from: () => { const o = { select() { return o; }, eq() { return o; }, maybeSingle: async () => ({ data: null }), then(r) { return Promise.resolve({ data: null, error: null }).then(r); } }; return o; },
+          auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; } },
+          channel() { const k = { on() { return k; }, subscribe() { return k; } }; return k; }, removeChannel() {}, storage: { from() { return {}; } } }) };
+      });
+      await p.route('**/*', r => {
+        const u = new URL(r.request().url());
+        if (u.href.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
+        if (u.pathname.endsWith('/api/app-version') && appstore) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '1.3', url: 'https://apps.apple.com/at/app/planory/id6700000000' }) });
+        const datei = path.join(ROOT, decodeURIComponent(u.pathname));
+        if (u.host === 'planory.test' && /^\/(lp\/[\w-]+\.jpg|favicon\.svg)$/.test(u.pathname)) {
+          try { return r.fulfill({ status: 200, body: readFileSync(datei), contentType: u.pathname.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg' }); } catch (e) { return r.fulfill({ status: 404, body: '' }); }
+        }
+        return r.abort();
+      });
+      await p.goto('https://planory.test/index.html', { waitUntil: 'domcontentloaded' });
+      await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
+      await p.waitForTimeout(500);
+      return await p.evaluate(async () => {
+        const o = document.getElementById('landing-overlay');
+        for (let y = 0; y < o.scrollHeight; y += 700) { o.scrollTop = y; await new Promise(r => setTimeout(r, 40)); }
+        await new Promise(r => setTimeout(r, 500)); o.scrollTop = 0;
+        const imgs = [...o.querySelectorAll('img')];
+        const zuBreit = [...o.querySelectorAll('*')].filter(e => { const b = e.getBoundingClientRect(); return b.width > 0 && b.right > innerWidth + 1; }).length;
+        const emoji = (o.innerText.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu) || []);
+        const knopf = [...o.querySelectorAll('.lp-appstore')].map(a => ({ sicht: getComputedStyle(a).display !== 'none', href: a.getAttribute('href') }));
+        const fehlend = imgs.filter(i => !(i.naturalWidth > 0) || !i.hasAttribute('alt')).map(i => i.getAttribute('src'));   // vor dem Sprachwechsel
+        lpSetLang('en');
+        const enText = o.innerText;
+        const deutsch = enText.split('\n').filter(z => /[äöüßÄÖÜ]|\b(und|der|die|das|mit|für|nicht|oder)\b/.test(z));
+        const bilderEn = imgs.filter(i => i.dataset.enSrc).every(i => i.getAttribute('src') === i.dataset.enSrc && i.alt === i.dataset.enAlt);
+        lpSetLang('de');
+        return { over: o.scrollWidth - o.clientWidth, zuBreit, emoji, fehlend,
+          knopf, deutsch: deutsch.slice(0, 3), bilderEn, h1: o.querySelector('h1').textContent };
+      }).then(r => ({ ...r, fehler }));
+    } finally { await c.close(); }
+  };
+  const f = [];
+  for (const [breite, appstore] of [[390, false], [1280, true]]) {
+    const r = await lauf(breite, appstore);
+    if (r.over > 0 || r.zuBreit) f.push(`${breite}px: ragt über den Rand (${r.over}px, ${r.zuBreit} Elemente)`);
+    if (r.emoji.length) f.push(`${breite}px: Emojis ${r.emoji.slice(0, 5).join(' ')}`);
+    if (r.fehlend.length) f.push(`${breite}px: Bilder fehlen/ohne alt: ${r.fehlend.join(', ')}`);
+    if (r.deutsch.length) f.push(`${breite}px: auf Englisch noch deutsch: ${r.deutsch.join(' | ')}`);
+    if (!r.bilderEn) f.push(`${breite}px: Bilder/alt nicht auf Englisch`);
+    if (!/^Behalte Budget/.test(r.h1)) f.push(`${breite}px: zurück auf Deutsch klappt nicht`);
+    const ok = appstore ? r.knopf.every(k => k.sicht && /^https:\/\/apps\.apple\.com\//.test(k.href)) : r.knopf.every(k => !k.sicht);
+    if (!r.knopf.length || !ok) f.push(`${breite}px: App-Store-Knopf ${JSON.stringify(r.knopf)}`);
+    if (r.fehler.length) f.push(`${breite}px: JS-Fehler ${r.fehler[0]}`);
+  }
+  return f.join(' · ');
+});
+
 await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besucher weiterhin Englisch', async () => {
   const landing = async userAgent => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', serviceWorkers: 'block', ...(userAgent ? { userAgent } : {}) });

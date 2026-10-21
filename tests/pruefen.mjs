@@ -651,6 +651,19 @@ check('Supabase-Schlüssel nur einmal eingetragen (SUPA_KEY) – kein alter, ung
   if (keys.length !== 1) return `${keys.length} fest eingetragene Schlüssel (erlaubt: nur SUPA_KEY)`;
   if (!w.includes(`const SUPA_KEY = '${keys[0]}'`)) return 'der einzige Schlüssel ist nicht SUPA_KEY';
 });
+check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare FAQ', () => {
+  const w = read(WEB);
+  const bilder = [...new Set([...w.matchAll(/(?:src|data-en-src)="(lp\/[\w-]+\.jpg)"/g)].map(m => m[1]))];
+  if (bilder.length < 10) return `nur ${bilder.length} Startseiten-Bilder verlinkt`;
+  for (const b of bilder) {
+    if (!fs.existsSync(b)) return b + ' fehlt';
+    if (fs.statSync(b).size > 150 * 1024) return b + ' größer als 150 KB';
+  }
+  const sichtbar = [...w.matchAll(/<div class="lp-qa"><h3[^>]*>(.*?)<\/h3>/g)].map(m => m[1].replace(/&amp;/g, '&'));
+  const ld = JSON.parse(w.match(/<script type="application\/ld\+json">\n(\{"@context":"https:\/\/schema.org","@type":"FAQPage".*?)\n<\/script>/s)[1]);
+  const google = ld.mainEntity.map(q => q.name);
+  if (JSON.stringify(sichtbar) !== JSON.stringify(google)) return 'FAQ für Google weicht ab: ' + google.join(' / ');
+});
 check('Google-Search-Console-Bestätigung bleibt auf der Startseite', () => {
   // Entfernt man das Tag, verliert planory.at die Bestätigung in der Search Console
   if (!read(WEB).includes('<meta name="google-site-verification" content="TP9xcZaYMo--SASoN2I9H7PXi07fZcOnCw5B6R59YkE"')) return 'Bestätigungs-Tag fehlt';
