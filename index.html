@@ -5751,8 +5751,12 @@ const I18N = {
     set_language:'🌐 Language', set_language_hint:'App language – applies to this device and is saved to your account.'
   }
 };
+// Suchmaschinen (Googlebot & Co. laufen mit englischer Browsersprache) bekommen immer die deutsche
+// Startseite – sonst zeigt Google den Titel deutsch, die Beschreibung englisch und „Seite übersetzen“.
+const _istSuchmaschine = /Googlebot|Google-InspectionTool|AdsBot-Google|Storebot-Google|bingbot|BingPreview|DuckDuckBot|YandexBot|Baiduspider|Applebot|Slurp|facebookexternalhit|crawler|spider/i
+  .test(navigator.userAgent || '');
 let _lang = localStorage.getItem('planoryLang')
-  || (((navigator.language || 'de').toLowerCase().startsWith('de')) ? 'de' : 'en');
+  || ((_istSuchmaschine || (navigator.language || 'de').toLowerCase().startsWith('de')) ? 'de' : 'en');
 function t(key) { return I18N[_lang]?.[key] ?? I18N.de[key] ?? key; }
 // Statische UI-Phrasen (Buttons, Titel, Labels). Nur EXAKTE Voll-Treffer
 // werden getauscht – Nutzerdaten (Projektnamen, Notizen ...) bleiben unberuehrt.
