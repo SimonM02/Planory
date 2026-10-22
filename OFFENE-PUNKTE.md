@@ -116,15 +116,21 @@ abo-api 10/10).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
 
+## Geplant (v1.4)
+- [ ] **Profile im gemeinsamen Konto („Wer bin ich?“)** – für Konten, die mehrere Personen nutzen:
+      - je Gerät einmal Person wählen/anlegen (Name), lokal gespeichert – keine eigene Anmeldung
+      - damit automatisch vorausfüllen: „Verantwortlich“ bei neuen Aufgaben, „Bezahlt von“ bei
+        Ausgaben und Rechnungs-Scan, Autor im Bautagebuch
+      - Filter **„Meine Aufgaben“** in der Aufgabenliste
+      - kleines Namens-Kürzel oben in der App, in den Einstellungen wechselbar
+      - keine Änderung an Datenbank/Anmeldung; Namen kommen aus den vorhandenen Personen- und
+        Zahlungspersonen-Listen (auf allen Geräten gleich)
+      - Tests: Handy-Test (Vorausfüllen, Filter), Cloud-Test (nichts doppelt gespeichert)
+
 ## Später
-- [ ] **Mehrere Personen in einem Projekt** (Info, noch nicht beauftragt):
-      - **A) Profile im gemeinsamen Konto** (klein): je Gerät „Wer bin ich?“ (z. B. Simon, Marie) →
-        Verantwortlich / Bezahlt von / Autor im Bautagebuch automatisch, Filter „Meine Aufgaben“.
-        Kein Datenbank-Umbau.
-      - **B) Projekt teilen** (groß): eigenes Login je Person, Besitzer lädt per E-Mail ein
-        (Bearbeiten/Ansehen), ein Abo fürs Projekt (Apple-Familienfreigabe fürs Abo möglich).
-        Umbau von Datenbank-Rechten, Abgleich und Abo.
-      - Empfehlung: erst A, später B.
+- [ ] **Projekt teilen** (Info, nach „Profile“): eigenes Login je Person, Besitzer lädt per E-Mail
+      ein (Bearbeiten/Ansehen), ein Abo fürs Projekt (Apple-Familienfreigabe fürs Abo möglich).
+      Großer Umbau von Datenbank-Rechten, Abgleich und Abo.
 - [x] (21.10.2026 erledigt) **App Store Connect – Vertrag:** Apple verlangt die Zustimmung zum aktualisierten „Paid Applications
       Schedule“ (sonst keine Updates/In-App-Käufe): zuerst developer.apple.com/account → neue Lizenz-
       vereinbarung akzeptieren, dann App Store Connect → **Business** → Vereinbarung „Paid Apps“ ansehen
