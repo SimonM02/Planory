@@ -1,4 +1,4 @@
-# Rettung Kunde (sachs.spiess@gmail.com)
+# Rettung Kunde (Kontakt siehe Supabase – keine Kundendaten im Repo)
 
 Stand: 28.07.2026 · **Bereit zum Ausführen, sobald Supabase-Zugriff da ist.**
 
@@ -31,7 +31,7 @@ Backups vom 24.–28.07. ebenfalls nicht.)
 
 ### 2) Prüfen, ob die Einträge zurück sind
 ```sql
-select id from auth.users where email = 'sachs.spiess@gmail.com';
+select id from auth.users where email = '<E-MAIL>';
 -- ID oben einsetzen:
 select item_type, count(*) from projekt_items
 where user_id = 'KUNDEN-ID' group by item_type order by 2 desc;

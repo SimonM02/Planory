@@ -1,0 +1,8 @@
+# Vercel: interne Notizen, Tests und App-Bündel nicht mit ausliefern.
+# NICHT hier eintragen: api/ und package*.json (daraus baut Vercel die Server-Funktionen).
+*.md
+tests
+marketing
+www
+capacitor.config.json
+_config.yml
