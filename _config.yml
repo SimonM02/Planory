@@ -1,0 +1,12 @@
+# GitHub Pages (Jekyll): nur die Website veröffentlichen – keine internen Notizen, Tests oder Quelltexte.
+exclude:
+  - "*.md"
+  - tests
+  - api
+  - marketing
+  - www
+  - node_modules
+  - package.json
+  - package-lock.json
+  - capacitor.config.json
+  - vercel.json

@@ -664,6 +664,22 @@ check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare F
   const google = ld.mainEntity.map(q => q.name);
   if (JSON.stringify(sichtbar) !== JSON.stringify(google)) return 'FAQ für Google weicht ab: ' + google.join(' / ');
 });
+check('Website veröffentlicht keine internen Dateien, keine Kunden-E-Mails in Notizen', () => {
+  // Das GitHub-Projekt ist öffentlich und planory.at liefert den Projektordner aus
+  if (!fs.existsSync('_config.yml')) return '_config.yml fehlt (GitHub Pages würde alle Dateien veröffentlichen)';
+  const cfg = read('_config.yml');
+  for (const x of ['"*.md"', 'tests', 'api']) if (!new RegExp('^\\s*-\\s*' + x.replace(/[*.]/g, m => '\\' + m) + '\\s*$', 'm').test(cfg)) return '_config.yml schließt ' + x + ' nicht aus';
+  if (!fs.existsSync('.vercelignore')) return '.vercelignore fehlt';
+  const vi = read('.vercelignore').split('\n').map(z => z.trim()).filter(z => z && !z.startsWith('#'));
+  if (!vi.includes('*.md')) return '.vercelignore schließt *.md nicht aus';
+  if (vi.some(z => /^\/?api\/?$|^package/.test(z))) return '.vercelignore darf api/ und package.json nicht ausschließen (Server-Funktionen)';
+  const erlaubt = /^(noreply@anthropic\.com|moser\.simon5211@gmail\.com|simon\.moser@iu-study\.org|info@planory\.app|demo@planory\.app|deine@email\.at|deine-kontakt@e-mail\.at|office@mueller-bau\.at|huber@elektro-graz\.at|berger@architektur\.at)$/i;
+  const fremd = [];
+  for (const f of fs.readdirSync('.').filter(f => f.endsWith('.md'))) {
+    for (const m of read(f).matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) if (!erlaubt.test(m[0])) fremd.push(`${f}: ${m[0]}`);
+  }
+  if (fremd.length) return 'fremde E-Mail-Adressen in Notizen: ' + fremd.slice(0, 3).join(', ');
+});
 check('Abmelden betrifft nur dieses Gerät (nicht alle Geräte des Kontos)', () => {
   const w = read(WEB);
   const i = w.indexOf('async function doLogout('), body = w.slice(i, w.indexOf('\nasync function ', i + 10));
