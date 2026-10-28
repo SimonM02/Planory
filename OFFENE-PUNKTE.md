@@ -1,6 +1,30 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 20.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 28.10.2026.
+
+## 👉 Jetzt zu tun (Simon) – Stand 28.10.2026
+**Wichtig, jetzt:**
+1. **Neue Startseite:** OK geben oder Änderungswünsche sagen (fertig auf dem Dev-Branch, noch nicht live).
+2. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
+   auf „Privat“. **Vorher:** App Store Connect → App-Informationen → Datenschutz-URL auf
+   `https://planory.at/datenschutz.html`.
+3. **Stripe → Kundenportal → Abos kündigen:** „Am Ende des Abrechnungszeitraums“ (sonst endet der
+   Gratismonat beim Kündigen sofort). Optional: Erinnerungs-Mail 7 Tage vor Testende.
+4. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,
+   **Widerrufs-Button** („Vertrag widerrufen“, § 13a FAGG) fürs Web-Abo, Stripe-Bestellknopf im
+   Gratismonat. Danach baut Claude ein, was nötig ist.
+5. **Auftragsverarbeitungsverträge** ablegen + EU-US Data Privacy Framework je Anbieter prüfen
+   (Checkliste in `VERARBEITUNGSVERZEICHNIS.md`).
+
+**Sobald Apple v1.3 freigibt:**
+6. Neues Testkonto am iPhone: Gratismonat-Fenster („1 Monat gratis“), Sandbox-Kauf, Käufe wiederherstellen.
+7. Abo abgelaufen durchspielen (Details unten im Abschnitt Probeabo).
+8. Vercel-Umgebungsvariable `APNS_BUNDLE_ID` (falls vorhanden) = `com.planory.bauassistent`.
+9. Die 3 seit 14.08. bearbeiteten Ausgaben kurz auf richtige MwSt prüfen.
+
+**Wenn Zeit ist:** Supabase-Auth-E-Mails (Absender „Planory“, Texte, Leaked Password Protection) ·
+Todoist einrichten · planory.at in Instagram-Bio und App-Store-Eintrag · v1.4 (Profile, Widgets,
+neue App-Store-Bilder).
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
@@ -11,19 +35,19 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 20.10.2026.
   **Abo-Glückwunsch + Pro-Knopf**, **Landing-Preis**, **komplette DE/EN-Übersetzung**,
   **Eigenleistung-Fix**.
 
-## 🔴 NÄCHSTER SCHRITT: iOS-Build v1.3 (Sammel-Update, alles geprüft)
+## iOS-Build v1.3 – hochgeladen & eingereicht (21.10.2026), wartet auf Apple
 **→ Genaue Schritt-für-Schritt-Anleitung: `NAECHSTER-BUILD-v1.3.md`**
 
 Die iPhone-App läuft noch mit v1.2. Im Web (planory.at) sind seit 16.10.2026 alle Fixes live –
 in die App kommen sie nur mit einem neuen Build. Stand Dev-Branch: alle Tests grün
 (pruefen 118/118, mobile-e2e 120/120, sync-e2e 22/22, todoist-api 14/14, push-api 4/4, app-version-api 6/6,
 abo-api 10/10).
-- [ ] **VOR dem Upload – App Store Connect → Planory → Abos (Monat UND Jahr), je:**
+- [x] **VOR dem Upload – App Store Connect → Planory → Abos (Monat UND Jahr), je:**
       „Einführungsangebote“ → **+** → alle Länder → Start: heute, kein Ende →
       **„Kostenlos“ (Free Trial), Dauer „1 Monat“**. Ohne dieses Angebot zeigt die App neuen Nutzern
       den normalen Preis ohne Gratismonat (sie zahlen dann sofort). Apple prüft automatisch, wer schon
       einmal gratis getestet hat.
-- [ ] Mac, im Planory-Ordner im Terminal (der Reihe nach):
+- [x] Mac, im Planory-Ordner im Terminal (der Reihe nach):
       1. `git checkout -- package.json package-lock.json` (verwirft nur die lokal von Hand
          installierten Paket-Einträge – RevenueCat/Abo und Kamera stehen jetzt fest im Projekt;
          ohne diesen Schritt bricht der Pull ab)
@@ -34,7 +58,7 @@ abo-api 10/10).
          (neu: für den Hinweis „Neue Version verfügbar“) stehen
       5. Xcode: **Version 1.3**, Build +1 → Product → Archive → Distribute → Upload (Ablauf wie
          NAECHSTER-BUILD-v1.2.md; Info.plist-Kamera-Einträge sind schon drin)
-- [ ] What's New (final):
+- [x] What's New (final):
       „Großes Update:
        • 1 Monat gratis testen – danach jederzeit kündbar
        • NEU: Aufgaben – eigene Kategorien, Unteraufgaben, „Heute“ und „Kommende Tage“,
@@ -177,10 +201,10 @@ abo-api 10/10).
 
 ## Landing-Page (live auf planory.at)
 - [x] **Preis eingetragen** (3,99 €/Monat · 28,99 €/Jahr) – im Preis-Abschnitt und in der FAQ.
-- [ ] **„Im App Store laden"-Knopf** ergänzen → dazu den **App-Store-Link** an Claude schicken.
+- [x] **„Für iPhone laden"-Knopf** – in der neuen Startseite enthalten (Link kommt automatisch aus dem App Store).
 
 ## SEO / Google-Sichtbarkeit
-- [ ] **Google Search Console** einrichten (search.google.com/search-console →
+- [x] **Google Search Console** eingerichtet (21.10.2026) (search.google.com/search-console →
       Property `https://planory.at` → HTML-Tag-Code **an Claude schicken** → einbauen →
       bestätigen → Sitemap `sitemap.xml` senden → Indexierung beantragen).
 - [ ] Backlinks: planory.at in Instagram-Bio + App-Store-Eintrag hinterlegen.
@@ -222,10 +246,10 @@ abo-api 10/10).
       und `stripe-portal` lasen die Nutzer-ID nur aus dem Login-Token, ohne es zu prüfen – mit
       einem gefälschten Token hätte man u. a. das Stripe-Kundenportal eines fremden Kontos öffnen
       können. Jetzt prüft Supabase jedes Token (`api/_auth.js`), Test `tests/push-api.mjs`.
-- [ ] `privacy.html` ist veraltet (info@planory.app) und evtl. noch im App Store verlinkt →
-      auf `datenschutz.html` umleiten oder aktualisieren.
+- [x] `privacy.html` leitet jetzt auf `datenschutz.html` weiter (28.10.2026).
 - [ ] Rechtlich prüfen lassen: Widerrufs-Button („Vertrag widerrufen“, § 13a FAGG seit
-      01.10.2026) und AGB/Widerrufsbelehrung für das Web-Abo (Stripe).
+      01.10.2026) und AGB/Widerrufsbelehrung für das Web-Abo (Stripe). → steht jetzt oben unter
+      „Jetzt zu tun“, Punkt 4.
 - [ ] Wird die App in der ~1 Sekunde zwischen Speichern und Cloud-Abgleich hart beendet, ist ein
       eben eingetragener Eintrag beim nächsten Start weg (lokal Ungesichertes wird bewusst nicht
       wiederbelebt, damit Gelöschtes nicht zurückkommt). Lösung: ungesicherte Einträge dauerhaft
