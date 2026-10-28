@@ -9991,6 +9991,7 @@ async function handleRechnungScan(input) {
 async function _processScanFile(file) {
   if (!requireSub()) return;
   if (!file) return;
+  if (!(await _kiHinweis())) return;
   const lauf = ++_scanLauf;
 
   document.getElementById('scan-upload-area').style.display = 'none';
@@ -10435,6 +10436,7 @@ let _kiZeitplanData = null;
 
 async function generateKIMeilensteine(regen = false) {
   if (!requireSub()) return;
+  if (!(await _kiHinweis())) return;
 
   openModal('modal-ki-zeitplan');
   document.getElementById('ki-zeitplan-loading').style.display = 'block';
@@ -15082,6 +15084,18 @@ function escapeHtml(s) {
 const esc = escapeHtml;
 
 // Header für KI-Aufrufe inkl. Login-Token (der Server prüft/deckelt darüber).
+// Vor der ersten KI-Nutzung (Scan, Bauberater, KI-Zeitplan) einmal pro Gerät transparent machen,
+// dass die Inhalte an den KI-Dienstleister Anthropic (USA) gehen (DSGVO-Transparenz).
+async function _kiHinweis() {
+  try { if (localStorage.getItem('planory_ki_hinweis')) return true; } catch (e) {}
+  const en = (_lang === 'en');
+  const ok = await showConfirm(en
+    ? 'For this feature the content (e.g. the photo of the invoice or your project details) is sent to our AI service provider Anthropic (USA) and processed there only for this analysis – it is not used to train the AI. Details in the privacy policy.'
+    : 'Für diese Funktion wird der Inhalt (z. B. das Foto der Rechnung oder deine Projektangaben) an unseren KI-Dienstleister Anthropic (USA) übermittelt und dort nur für diese Auswertung verarbeitet – nicht zum Trainieren der KI. Details in der Datenschutzerklärung.',
+    { title: en ? 'About the AI' : 'Hinweis zur KI', okText: en ? 'Got it' : 'Verstanden', danger: false });
+  if (ok) { try { localStorage.setItem('planory_ki_hinweis', '1'); } catch (e) {} }
+  return !!ok;
+}
 async function _kiHeaders() {
   const h = { 'Content-Type': 'application/json' };
   try {
@@ -15196,6 +15210,7 @@ Liefere 3-6 insights. Sei spezifisch mit Zahlen aus den Projektdaten. Wenn das P
 
 async function runKIAnalysis() {
   if (!requireSub()) return;
+  if (!(await _kiHinweis())) return;
   const snapshot = buildProjectSnapshot();
   document.getElementById('ki-empty').style.display    = 'none';
   document.getElementById('ki-results').style.display  = 'none';
@@ -15317,6 +15332,7 @@ async function askKI() {
   if (!requireSub()) return;
   const question = document.getElementById('ki-chat-input').value.trim();
   if (!question) return;
+  if (!(await _kiHinweis())) return;
 
   const btn = document.getElementById('ki-ask-btn');
   btn.disabled = true;
@@ -17627,6 +17643,7 @@ async function scanAngKI() {
   const text = document.getElementById('ang-ki-text').value.trim();
   const file = document.getElementById('ang-ki-file').files[0];
   if (!text && !file) { showToast('Bitte Text einfügen oder Foto hochladen', 'error'); return; }
+  if (!(await _kiHinweis())) return;
   document.getElementById('ang-ki-loading').style.display = '';
   document.getElementById('ang-ki-result').style.display  = 'none';
   document.getElementById('ang-ki-save-btn').style.display = 'none';
