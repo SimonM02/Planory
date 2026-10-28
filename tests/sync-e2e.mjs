@@ -158,6 +158,7 @@ function fakeSupabase({ uid, pid, cfg, seedItems }) {
   // Dauerhaft angemeldeter Nutzer mit lokalem Zwischenspeicher (wie ein wiederkehrender Nutzer)
   try {
     localStorage.setItem('dsgvoAccepted', '1');
+    localStorage.setItem('planory_ki_hinweis', '1');
     localStorage.setItem('planoryLang', 'de');
   } catch (e) {}
 }

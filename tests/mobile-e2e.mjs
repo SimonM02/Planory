@@ -41,7 +41,7 @@ async function boot(geraet = {}) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message || e)));
   await page.addInitScript(() => {
-    try { localStorage.setItem('planoryLang', 'de'); localStorage.setItem('dsgvoAccepted', '1'); } catch (e) {}
+    try { localStorage.setItem('planoryLang', 'de'); localStorage.setItem('dsgvoAccepted', '1'); localStorage.setItem('planory_ki_hinweis', '1'); } catch (e) {}
     const q = () => { const o = { select(){return o}, eq(){return o}, in(){return o}, order(){return o}, maybeSingle(){return o},
       single(){return o}, insert(){return o}, update(){return o}, upsert(){return o}, delete(){return o},
       then(r){ return Promise.resolve({ data: null, error: null }).then(r); } }; return o; };
@@ -2731,6 +2731,40 @@ await scenario('Web-Erinnerungen: Planung wird mit dem gültigen Schlüssel an S
     return { n: aufrufe.length, falsch: aufrufe.filter(a => a.key !== SUPA_KEY || !a.url.startsWith(SUPA_URL + '/rest/v1/scheduled_notifications')).map(a => a.m) };
   });
   return r.n === 2 && !r.falsch.length ? '' : `${r.n} Aufrufe, mit falschem Schlüssel/Adresse: ${r.falsch.join(', ') || '-'}`;
+});
+
+await scenario('KI-Hinweis (Anthropic, USA): vor der ersten KI-Nutzung genau einmal, Abbrechen schickt nichts an die KI', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      localStorage.removeItem('planory_ki_hinweis');
+      let fragen = 0, antwort = false, kiAufrufe = 0;
+      window.showConfirm = async (text, o) => { fragen++; window.__kiText = text + ' | ' + (o && o.title); return antwort; };
+      const altFetch = window.fetch;
+      window.fetch = async (url, opts) => { if (String(url).includes('/api/ki')) { kiAufrufe++; return new Response(JSON.stringify({ content: [{ text: '{}' }] }), { status: 200 }); } return altFetch(url, opts); };
+      const datei = new File([new Uint8Array([137, 80, 78, 71])], 'r.png', { type: 'image/png' });
+      const lauf0 = _scanLauf;
+      try {
+        openModal('modal-rechnung-scan');
+        await _processScanFile(datei);                 // Abbrechen
+        const nachAbbruch = { fragen, kiAufrufe, lauf: _scanLauf, gemerkt: !!localStorage.getItem('planory_ki_hinweis') };
+        antwort = true;
+        await _processScanFile(datei);                 // Verstanden -> KI läuft
+        await new Promise(res => setTimeout(res, 300));
+        const nachOk = { fragen, kiAufrufe, lauf: _scanLauf, gemerkt: !!localStorage.getItem('planory_ki_hinweis') };
+        await _processScanFile(datei);                 // zweites Mal: keine Frage mehr
+        await new Promise(res => setTimeout(res, 300));
+        return { lauf0, nachAbbruch, nachOk, ende: { fragen, kiAufrufe }, text: window.__kiText };
+      } finally { window.fetch = altFetch; closeModal('modal-rechnung-scan'); }
+    });
+    const f = [];
+    // Gestartet = Scan-Lauf weitergezählt (läuft erst NACH dem Hinweis los)
+    if (r.nachAbbruch.fragen !== 1 || r.nachAbbruch.kiAufrufe !== 0 || r.nachAbbruch.lauf !== r.lauf0 || r.nachAbbruch.gemerkt) f.push('Abbrechen: ' + JSON.stringify(r.nachAbbruch));
+    if (r.nachOk.fragen !== 2 || r.nachOk.lauf !== r.lauf0 + 1 || !r.nachOk.gemerkt) f.push('Verstanden: ' + JSON.stringify(r.nachOk));
+    if (r.ende.fragen !== 2) f.push('fragt nach dem OK nochmal');
+    if (!/Anthropic \(USA\)/.test(r.text || '') || !/nicht zum Trainieren/.test(r.text || '')) f.push('Text: ' + r.text);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
 });
 
 await scenario('Abmelden meldet nur dieses Gerät ab (andere Geräte im selben Konto bleiben angemeldet)', async () => {

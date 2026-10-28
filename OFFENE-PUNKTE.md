@@ -116,6 +116,18 @@ abo-api 10/10).
 - [ ] Später überlegen: Live-Updates (z. B. Capgo/Appflow) – dann kämen reine Web-Fixes ohne
       neuen App-Store-Build aufs iPhone.
 
+## Datenschutz (KI & Dienstleister) – Stand 28.10.2026
+- [x] Datenschutzerklärung: Anthropic genau beschrieben (kein Training, kurze Aufbewahrung), RevenueCat
+      ergänzt, neuer Punkt „Übermittlung in Drittländer“ (USA: DPF/Standardvertragsklauseln).
+      `privacy.html` (alt) leitet auf `datenschutz.html` weiter.
+- [x] App: einmaliger Hinweis vor der ersten KI-Nutzung („… an Anthropic (USA) … nicht zum Training“).
+      Web live, iPhone mit v1.4.
+- [ ] **Auftragsverarbeitungsverträge (DPA) herunterladen und ablegen**: Anthropic, Supabase, Vercel,
+      Stripe, RevenueCat, GitHub – Liste in `VERARBEITUNGSVERZEICHNIS.md`.
+- [ ] Je Anbieter prüfen, ob er im **EU-US Data Privacy Framework** zertifiziert ist
+      (dataprivacyframework.gov) – sonst gelten die Standardvertragsklauseln aus dem DPA.
+- [ ] **Datenschutzerklärung zusammen mit den AGB** von WKO/Anwalt gegenlesen lassen.
+
 ## Geplant (v1.4)
 - [ ] **Profile im gemeinsamen Konto („Wer bin ich?“)** – für Konten, die mehrere Personen nutzen:
       - je Gerät einmal Person wählen/anlegen (Name), lokal gespeichert – keine eigene Anmeldung

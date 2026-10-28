@@ -664,6 +664,17 @@ check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare F
   const google = ld.mainEntity.map(q => q.name);
   if (JSON.stringify(sichtbar) !== JSON.stringify(google)) return 'FAQ für Google weicht ab: ' + google.join(' / ');
 });
+check('KI: Hinweis vor der Nutzung in allen KI-Funktionen, Datenschutz nennt Anthropic + Drittland', () => {
+  const w = read(WEB);
+  const ohne = ['_processScanFile', 'generateKIMeilensteine', 'runKIAnalysis', 'askKI', 'scanAngKI'].filter(f => {
+    const i = w.indexOf('function ' + f + '('); const body = w.slice(i, w.indexOf('\nasync function ', i + 10));
+    return i < 0 || !body.includes('await _kiHinweis()');
+  });
+  if (ohne.length) return 'ohne KI-Hinweis: ' + ohne.join(', ');
+  const d = read('datenschutz.html');
+  if (!/Anthropic PBC \(USA\)/.test(d) || !/nicht zum Trainieren/.test(d)) return 'Datenschutz: Anthropic nicht genau beschrieben';
+  if (!/Übermittlung in Drittländer/.test(d) || !/Standardvertragsklauseln/.test(d)) return 'Datenschutz: Drittland-Absatz fehlt';
+});
 check('Website veröffentlicht keine internen Dateien, keine Kunden-E-Mails in Notizen', () => {
   // Das GitHub-Projekt ist öffentlich und planory.at liefert den Projektordner aus
   if (!fs.existsSync('_config.yml')) return '_config.yml fehlt (GitHub Pages würde alle Dateien veröffentlichen)';
