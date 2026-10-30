@@ -2618,7 +2618,7 @@
     #landing-overlay .lp-shots img{width:100%;display:block;border-bottom:1px solid var(--lp-border)}
     #landing-overlay .lp-shots figcaption{padding:12px 14px;font-size:.85rem;color:var(--lp-text2)}
     #landing-overlay .lp-cmp{max-width:720px;margin:0 auto;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:16px;overflow:hidden}
-    #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{display:grid;grid-template-columns:1.15fr 1.15fr 0.85fr}
+    #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,0.85fr)}
     #landing-overlay .lp-cmp-head>div{padding:13px 12px;font-weight:800;font-size:.82rem;border-bottom:1px solid var(--lp-border)}
     #landing-overlay .lp-cmp-head .lp-cmp-p{color:var(--lp-accent)}
     #landing-overlay .lp-cmp-head .lp-cmp-x{color:var(--lp-text3)}
@@ -2629,6 +2629,14 @@
     #landing-overlay .lp-cmp-yes{color:#4ade80;font-weight:600;background:rgba(255,159,28,.05)}
     #landing-overlay .lp-cmp-head .lp-cmp-p{background:rgba(255,159,28,.05)}
     @media(max-width:640px){ #landing-overlay .lp-hero h1{font-size:2rem} #landing-overlay .lp-hero{padding:48px 0 40px} }
+      /* Vergleichstabelle: feste Spaltenanteile (sonst verrutschen die Zeilen je nach Wortlänge, z. B. im
+       Instagram-Browser mit größerer Schrift). Am Handy: Titel über der Zeile, darunter Planory | Excel. */
+    #landing-overlay .lp-cmp-head>div,#landing-overlay .lp-cmp-row>div{min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
+    @media(max-width:560px){
+      #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+      #landing-overlay .lp-cmp-head>div:first-child{display:none}
+      #landing-overlay .lp-cmp-row>.lp-cmp-feat{grid-column:1 / -1;border-bottom:none;padding-bottom:2px}
+    }
   </style>
 
   <header class="lp-header"><div class="lp-wrap lp-nav">
