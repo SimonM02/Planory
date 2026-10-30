@@ -2631,7 +2631,7 @@
     #landing-overlay .lp-card p{color:var(--lp-text2);font-size:.9rem;margin:0}
     /* Vergleich */
     #landing-overlay .lp-cmp{max-width:760px;margin:0 auto;background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:16px;overflow:hidden}
-    #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{display:grid;grid-template-columns:1fr 1.25fr .95fr}
+    #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,.95fr)}
     #landing-overlay .lp-cmp-head>div{padding:14px;font-weight:800;font-size:.85rem;border-bottom:1px solid var(--lp-border)}
     #landing-overlay .lp-cmp-row>div{padding:13px 14px;font-size:.86rem;border-bottom:1px solid var(--lp-border);line-height:1.4;display:flex;gap:8px;align-items:flex-start}
     #landing-overlay .lp-cmp-row:last-child>div{border-bottom:none}
@@ -2642,7 +2642,7 @@
     #landing-overlay .lp-cmp-yes .lp-ic{color:var(--lp-accent);width:17px;height:17px;margin-top:1px}
     #landing-overlay .lp-cmp-no{color:var(--lp-text3)}
     #landing-overlay .lp-cmp-no .lp-ic{width:17px;height:17px;margin-top:1px}
-    @media(max-width:560px){ #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{grid-template-columns:.9fr 1.2fr .9fr} #landing-overlay .lp-cmp-row>div{padding:11px 9px;font-size:.8rem} #landing-overlay .lp-cmp-row .lp-ic{display:none} }
+    @media(max-width:560px){ #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr) minmax(0,.9fr)} #landing-overlay .lp-cmp-row>div{padding:11px 9px;font-size:.8rem} #landing-overlay .lp-cmp-row .lp-ic{display:none} }
     /* Schritte */
     #landing-overlay .lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px}
     #landing-overlay .lp-step{background:var(--lp-surface);border:1px solid var(--lp-border);border-radius:16px;padding:22px}
@@ -2676,6 +2676,14 @@
     #landing-overlay .lp-footer a{color:var(--lp-text2)}
     #landing-overlay .lp-footer a:hover{color:var(--lp-text)}
     @media(max-width:640px){ #landing-overlay .lp-footer .lp-wrap{flex-direction:column;text-align:center} #landing-overlay .lp-footer nav{justify-content:center} }
+      /* Vergleichstabelle: feste Spaltenanteile (sonst verrutschen die Zeilen je nach Wortlänge, z. B. im
+       Instagram-Browser mit größerer Schrift). Am Handy: Titel über der Zeile, darunter Planory | Excel. */
+    #landing-overlay .lp-cmp-head>div,#landing-overlay .lp-cmp-row>div{min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
+    @media(max-width:560px){
+      #landing-overlay .lp-cmp-head,#landing-overlay .lp-cmp-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+      #landing-overlay .lp-cmp-head>div:first-child{display:none}
+      #landing-overlay .lp-cmp-row>.lp-cmp-feat{grid-column:1 / -1;border-bottom:none;padding-bottom:2px}
+    }
   </style>
 
   <!-- Symbole (Linien) – einmal definiert, unten per <use> eingebunden -->
