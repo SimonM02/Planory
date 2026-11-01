@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Planory Reel – Baustelle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;background:#000;overflow:hidden}
+body{font-family:'Inter Display','Inter',sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;background:#0b0f17}
+#cam{position:absolute;inset:0}
+#bgwrap{position:absolute;inset:0;overflow:hidden;background:#1a1f28}
+#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 45%}
+#ph{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font:700 40px Inter;color:rgba(255,255,255,.35);background:linear-gradient(160deg,#5b6b7a,#2c3440 55%,#1b2027)}
+#scrimT{position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(to bottom,rgba(0,0,0,.62),rgba(0,0,0,.28) 55%,rgba(0,0,0,0))}
+#scrimB{position:absolute;left:0;right:0;bottom:0;height:1100px;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.42) 50%,rgba(0,0,0,0))}
+#dim{position:absolute;inset:0;background:#05070b;opacity:0}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+.scene{position:absolute;inset:0;visibility:hidden}
+.line{position:absolute;overflow:hidden;line-height:1.04;padding:0 .05em .14em;white-space:nowrap;font-weight:900;letter-spacing:-.04em;word-spacing:.12em;text-shadow:0 6px 40px rgba(0,0,0,.45)}
+.line.c{left:0;right:0;text-align:center}
+.line.l{left:70px}
+.line>span{display:inline-block;transform-origin:0 100%}
+em{font-style:normal;color:#ff9f1c}
+.eyebrow{font-family:'Inter';font-weight:700;font-size:28px;letter-spacing:.24em;color:#ffb347;line-height:1.3;text-shadow:0 2px 16px rgba(0,0,0,.6)}
+.sub{position:absolute;left:74px;font-family:'Inter';font-weight:600;font-size:36px;color:rgba(255,255,255,.86);letter-spacing:-.005em;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.glass{position:absolute;border-radius:38px;background:rgba(16,20,28,.5);backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 30px 80px rgba(0,0,0,.45);font-family:'Inter';color:#fff}
+#brand{position:absolute;left:66px;top:232px;display:flex;align-items:center;gap:16px;font-family:'Inter Display';font-weight:900;font-size:40px;letter-spacing:-.03em;text-shadow:0 2px 16px rgba(0,0,0,.5)}
+#brandIcon{width:66px;height:66px;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+/* phone (common.js) */
+.phone{position:absolute;background:linear-gradient(150deg,#454c5c 0%,#161a23 26%,#0b0e14 70%,#2d3340 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.14),inset 0 0 0 5px rgba(0,0,0,.55),0 70px 140px -20px rgba(0,0,0,.8),0 25px 50px rgba(0,0,0,.4)}
+.screen{position:relative;width:100%;height:100%;overflow:hidden;background:#f3f4f7}
+.scroll{position:absolute;left:0;right:0}
+.scroll img{display:block}
+.sbar{position:absolute;left:0;right:0;top:0;background:#fff;display:flex;align-items:center;justify-content:space-between;font-family:'Inter';font-weight:600;color:#000;z-index:2}
+.island{position:absolute;left:50%;transform:translateX(-50%);background:#000;border-radius:999px}
+.glare{position:absolute;left:-60%;top:-20%;width:220%;height:140%;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.20) 49%,rgba(255,255,255,.05) 53%,transparent 58%);pointer-events:none;z-index:3}
+/* scan */
+.cor{position:absolute;width:96px;height:96px;border-color:#ff9f1c;border-style:solid;border-width:0;filter:drop-shadow(0 0 10px rgba(255,159,28,.6))}
+#laser{position:absolute;left:150px;right:150px;height:6px;background:#ffb24d;border-radius:3px;box-shadow:0 0 18px 4px rgba(255,159,28,.9),0 0 70px 14px rgba(255,159,28,.45)}
+#trail{position:absolute;left:150px;right:150px;height:240px;background:linear-gradient(to bottom,rgba(255,159,28,0),rgba(255,159,28,.16))}
+/* rows */
+.row{display:flex;align-items:center;gap:22px;padding:16px 0;font-size:34px;font-weight:700}
+.row+.row{border-top:1px solid rgba(255,255,255,.12)}
+.ck{position:relative;width:52px;height:52px;flex:none}
+.ck svg{position:absolute;inset:0;overflow:visible}
+.row .st{color:rgba(255,255,255,.55);font-size:26px;font-weight:600;margin-left:auto}
+.cta{position:absolute;left:50%;top:1222px;height:124px;padding:0 62px;border-radius:62px;background:linear-gradient(180deg,#ffb042,#ff9f1c 55%,#f28c00);color:#11151f;font-family:'Inter';font-weight:800;font-size:50px;letter-spacing:-.01em;display:flex;align-items:center;white-space:nowrap;overflow:hidden;box-shadow:0 30px 70px -10px rgba(255,159,28,.55),inset 0 2px 0 rgba(255,255,255,.45)}
+.shim{position:absolute;top:0;bottom:0;width:180px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);left:0}
+.burst{position:absolute;width:10px;height:44px;border-radius:5px;background:#ff9f1c;left:-5px;top:-22px}
+#grain{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.12;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse 90% 75% at 50% 46%,transparent 55%,rgba(0,0,0,.45) 100%);pointer-events:none}
+</style></head><body>
+<div id="stage"><div id="cam">
+  <div id="bgwrap"><img id="bg" alt=""><div id="ph">Hintergrund fehlt</div></div>
+  <div id="scrimT"></div><div id="scrimB"></div><div id="dim"></div>
+
+  <div id="brand"><div id="brandIcon"></div><span>Plan<em>ory</em></span></div>
+
+  <!-- A: Hook -->
+  <div class="scene" id="sA">
+    <div class="line l eyebrow" id="aE" style="top:1060px"><span>FÜR DEIN EIGENHEIM</span></div>
+    <div class="line l" id="a1" style="top:1110px;font-size:132px"><span>Dein Hausbau.</span></div>
+    <div class="line l" id="a2" style="top:1262px;font-size:132px"><span><em>Endlich im Griff.</em></span></div>
+  </div>
+
+  <!-- B: Budget -->
+  <div class="scene" id="sB">
+    <div class="line l eyebrow" id="bE" style="top:340px"><span>BUDGET</span></div>
+    <div class="line l" id="b1" style="top:384px;font-size:110px"><span>Kosten</span></div>
+    <div class="line l" id="b2" style="top:500px;font-size:110px"><span><em>immer im Blick.</em></span></div>
+    <div id="phBwrap"></div>
+    <div class="glass" id="gB" style="left:56px;top:1090px;width:500px;padding:34px 36px 38px">
+      <div style="font-weight:700;font-size:26px;color:rgba(255,255,255,.7)">Gesamtbudget</div>
+      <div style="display:flex;align-items:center;gap:26px;margin-top:18px">
+        <div style="position:relative;width:150px;height:150px;flex:none">
+          <svg viewBox="0 0 150 150" width="150" height="150" style="transform:rotate(-90deg)"><circle cx="75" cy="75" r="58" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="20"/><circle id="donut" cx="75" cy="75" r="58" fill="none" stroke="#ff9f1c" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/></svg>
+          <div id="pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 44px 'Inter Display';letter-spacing:-.03em">0%</div>
+        </div>
+        <div><div style="font-size:24px;color:rgba(255,255,255,.7);font-weight:600">Verbleibend</div>
+          <div id="rest" style="font:900 46px 'Inter Display';letter-spacing:-.03em;color:#5fe39a;font-variant-numeric:tabular-nums;white-space:nowrap">€ 0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Rechnung -->
+  <div class="scene" id="sC">
+    <div class="line l eyebrow" id="cE" style="top:340px"><span>RECHNUNGEN</span></div>
+    <div class="line l" id="c1" style="top:384px;font-size:110px"><span>Rechnung</span></div>
+    <div class="line l" id="c2" style="top:500px;font-size:110px"><span><em>fotografieren.</em></span></div>
+    <div class="line l" id="c2b" style="top:500px;font-size:110px"><span><em>erledigt.</em> <svg viewBox="0 0 100 100" style="width:.62em;height:.62em;vertical-align:.02em"><circle cx="50" cy="50" r="50" fill="#1aa35c"/><path id="cTick" pathLength="1" d="M28 52 L44 67 L73 36" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+    <div class="sub" id="cS" style="top:640px">KI erkennt Betrag, Datum &amp; Kategorie</div>
+    <div id="scan" style="position:absolute;left:0;top:0;width:1080px;height:1920px">
+      <div id="trailC" style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden"><div id="trail"></div></div>
+      <div id="laser"></div>
+      <div class="cor" id="k1" style="left:130px;top:760px;border-width:10px 0 0 10px;border-radius:28px 0 0 0"></div>
+      <div class="cor" id="k2" style="left:854px;top:760px;border-width:10px 10px 0 0;border-radius:0 28px 0 0"></div>
+      <div class="cor" id="k3" style="left:130px;top:1254px;border-width:0 0 10px 10px;border-radius:0 0 0 28px"></div>
+      <div class="cor" id="k4" style="left:854px;top:1254px;border-width:0 10px 10px 0;border-radius:0 0 28px 0"></div>
+    </div>
+    <div class="glass" id="gC" style="left:90px;top:1180px;width:900px;padding:30px 36px;display:flex;align-items:center;gap:26px">
+      <svg viewBox="0 0 100 100" width="92" height="92" style="flex:none"><circle cx="50" cy="50" r="50" fill="#1aa35c"/><path id="gCTick" pathLength="1" d="M28 52 L44 67 L73 36" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div style="flex:1"><div style="font-weight:800;font-size:38px;letter-spacing:-.02em">Ausgabe erfasst</div>
+        <div style="font-size:28px;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Sanitär · 30.10.2026</div></div>
+      <div style="font:900 46px 'Inter Display';letter-spacing:-.03em;white-space:nowrap">€ 20.000</div>
+    </div>
+  </div>
+
+  <!-- D: Zeitplan -->
+  <div class="scene" id="sD">
+    <div class="line l eyebrow" id="dE" style="top:340px"><span>ZEITPLAN &amp; AUFGABEN</span></div>
+    <div class="line l" id="d1" style="top:384px;font-size:110px"><span>Jeder Termin</span></div>
+    <div class="line l" id="d2" style="top:500px;font-size:110px"><span><em>im Blick.</em></span></div>
+    <div class="glass" id="noti" style="left:70px;top:670px;width:880px;border-radius:40px;padding:24px 30px;display:flex;gap:24px;align-items:center">
+      <div id="notiIcon" style="width:80px;height:80px;flex:none;border-radius:20px;overflow:hidden"></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:24px;color:rgba(255,255,255,.65);font-weight:600"><span>PLANORY</span><span>jetzt</span></div>
+        <div style="font-size:32px;font-weight:700;margin-top:4px">📅 Morgen 7:00: Dachdecker kommt</div></div>
+    </div>
+    <div class="glass" id="gD" style="left:70px;top:860px;width:700px;padding:30px 38px 26px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-weight:800;font-size:36px">Zeitplan</div><div id="dCount" style="font-size:26px;color:rgba(255,255,255,.7);font-weight:700">2/4 erledigt</div></div>
+      <div style="height:12px;border-radius:6px;background:rgba(255,255,255,.14);margin:18px 0 10px;overflow:hidden"><div id="dBar" style="height:100%;width:50%;background:#ff9f1c;border-radius:6px"></div></div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <!-- E: Wort-Schnitte -->
+  <div class="scene" id="sE">
+    <div class="line c" id="eW" style="top:840px;font-size:170px"><span id="eWs">Budget.</span></div>
+    <div class="line c" id="eF1" style="top:800px;font-size:118px"><span><em>+ viele weitere</em></span></div>
+    <div class="line c" id="eF2" style="top:930px;font-size:118px"><span>Funktionen</span></div>
+  </div>
+
+  <!-- F: Ende -->
+  <div class="scene" id="sF">
+    <div id="fBurst" style="position:absolute;left:540px;top:740px"></div>
+    <div id="fLogo" style="position:absolute;left:380px;top:580px;width:320px;height:320px"></div>
+    <div class="line c" id="fW" style="top:930px;font-size:168px"><span id="fWs"></span></div>
+    <div class="line c" id="fT" style="top:1122px;font-size:48px;font-family:Inter;font-weight:700;letter-spacing:-.01em;word-spacing:0"><span>Dein Bauprojekt <em>im Griff.</em></span></div>
+    <div class="cta" id="cta"><div class="shim" id="shim"></div><span style="position:relative">Jetzt starten →</span></div>
+    <div class="line c" id="fU" style="top:1392px;font-size:40px;font-family:Inter;font-weight:700;letter-spacing:.01em;word-spacing:0"><span>planory.at <span style="color:#ff9f1c">·</span> iPhone &amp; Web</span></div>
+  </div>
+  <div id="flash"></div>
+</div>
+<div id="vig"></div>
+<div id="grain"></div>
+</div>
+<script src="../reel/common.js"></script>
+<script>
+// ---------- Zeitplan (Sekunden) ----------
+const DUR=17, FPS=30;
+const A=[0,3], B=[3,6], C=[6,9], D=[9,12], Ew=[12,12.4,12.8,13.2,13.6], EF=14.0, F=14.4;
+const WORDS=['Budget.','Rechnungen.','Zeitplan.','Aufgaben.','Bautagebuch.'];
+const ROWS=[['Spatenstich','15.04.',1],['Rohbau','14.09.',9.7],['Dach','in Arbeit',10.25],['Innenausbau','ab Jänner',0]];
+
+// ---------- Hintergrund (Bilder aus bg.sh: bg/f_0001.jpg …) ----------
+const bg=$('bg');let curF=-1;
+async function setBg(t){
+  const f=Math.min(DUR*FPS,Math.max(1,Math.round(t*FPS)+1));
+  if(f===curF)return; curF=f;
+  bg.src=`bg/f_${String(f).padStart(4,'0')}.jpg`;
+  try{await bg.decode();bg.style.display='';$('ph').style.display='none'}catch(e){bg.style.display='none';$('ph').style.display='flex'}
+}
+function fitLine(el,maxW){const s=el.firstElementChild;let fs=parseFloat(getComputedStyle(el).fontSize);while(s.offsetWidth>maxW&&fs>40){fs-=2;el.style.fontSize=fs+'px'}}
+
+function setup(){
+  $('brandIcon').innerHTML=logoSVG();$('notiIcon').innerHTML=logoSVG();$('fLogo').innerHTML=logoSVG();
+  $('phBwrap').innerHTML=phone('phB','../budget.png',500);PH.phB=$('phB');
+  $('rows').innerHTML=ROWS.map(([n,d],i)=>`<div class="row" id="r${i}"><div class="ck"><svg viewBox="0 0 52 52"><circle class="cc" cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="4"/><circle class="cf" cx="26" cy="26" r="24.5" fill="#1aa35c" style="transform-origin:26px 26px;transform:scale(0)"/><path class="ckp" pathLength="1" d="M15 27 L23 35 L38 18" stroke="#fff" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:1 1;stroke-dashoffset:1"/></svg></div><span>${n}</span><span class="st">${d}</span></div>`).join('');
+  $('fWs').innerHTML='Planory'.split('').map((c,i)=>`<span style="display:inline-block;${i>=4?'color:#ff9f1c':''}">${c}</span>`).join('');
+  $('fBurst').innerHTML=Array.from({length:12},()=>`<i class="burst"></i>`).join('');
+  [['a1',940],['a2',940],['b1',940],['b2',940],['c1',940],['c2',940],['c2b',940],['d1',940],['d2',940],['eF1',940],['eF2',940]].forEach(([id,w])=>fitLine($(id),w));
+  const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d'),im=g.createImageData(256,256),r=rnd(3);
+  for(let i=0;i<im.data.length;i+=4){const v=Math.floor(r()*255);im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}
+  g.putImageData(im,0,0);$('grain').style.backgroundImage=`url(${c.toDataURL()})`;
+}
+const SHAKES=[[EF-.02,4],[F+.55,4]].concat(Ew.map(t=>[t,5]));
+function shake(t){let x=0,y=0;for(const[t0,a]of SHAKES){const l=t-t0;if(l>=0&&l<.3){const k=a*Math.pow(1-l/.3,2);x+=k*Math.sin(l*95);y+=k*Math.cos(l*81)}}return{x,y}}
+
+function pop(el,t,t0,{y=60,r=0,s0=.8}={}){const q=spring(t-t0,1.5,7);el.style.opacity=p(t,t0,t0+.08);el.style.transform=`translateY(${(1-q)*y}px) rotate(${(1-q)*r}deg) scale(${s0+(1-s0)*q})`;return q}
+function check(row,t,tc){
+  const c=tc>0?p(t,tc,tc+.22):1;
+  row.querySelector('.cf').style.transform=`scale(${tc>0?E.outBack(c,2.5):1})`;row.querySelector('.cc').style.opacity=1-c;
+  row.querySelector('.ckp').style.strokeDashoffset=tc>0?1-E.outCubic(p(t,tc+.1,tc+.32)):0;
+}
+function scA(t){const on=t<A[1]+.05;vis($('sA'),on);if(!on)return;
+  const o=E.inCubic(p(t,A[1]-.25,A[1]));$('sA').style.opacity=1-o;$('sA').style.transform=`translateY(${-40*o}px)`;
+  reveal($('aE'),t,.15);reveal($('a1'),t,.25);reveal($('a2'),t,1.05);}
+function scB(t){const on=t>=B[0]-.05&&t<B[1]+.05;vis($('sB'),on);if(!on)return;
+  const o=E.inCubic(p(t,B[1]-.22,B[1]));$('sB').style.opacity=1-o;
+  reveal($('bE'),t,B[0]+.08);reveal($('b1'),t,B[0]+.12);reveal($('b2'),t,B[0]+.22);
+  const q=E.outExpo(p(t,B[0]+.1,B[0]+.85));
+  placePhone('phB',{x:500+(1-q)*200,y:700+(1-q)*1200+Math.sin(t*1.6)*8,ry:-16+4*p(t,B[0],B[1]),rx:5,rz:3*(1-q)+2});
+  $('phBg').style.transform=`translateX(${lerp(-40,30,p(t,B[0],B[1]))}%)`;
+  $('phBs').style.transform=`translateY(${-60*E.inOutCubic(p(t,B[0]+1.2,B[1]))}px)`;
+  pop($('gB'),t,B[0]+.55,{y:120,r:-6});
+  const dq=E.outCubic(p(t,B[0]+.7,B[0]+1.6));$('donut').setAttribute('stroke-dasharray',`${30*dq} 100`);$('pct').textContent=Math.round(30*dq)+'%';
+  $('rest').textContent=fmt(407315*E.outCubic(p(t,B[0]+.8,B[0]+1.8)));}
+function scC(t){const on=t>=C[0]-.05&&t<C[1]+.05;vis($('sC'),on);if(!on)return;
+  const o=E.inCubic(p(t,C[1]-.22,C[1]));$('sC').style.opacity=1-o;
+  reveal($('cE'),t,C[0]+.08);reveal($('c1'),t,C[0]+.12);reveal($('c2'),t,C[0]+.22,.62,C[0]+1.45);reveal($('c2b'),t,C[0]+1.55);
+  $('cTick').style.strokeDasharray='1 1';$('cTick').style.strokeDashoffset=1-E.outCubic(p(t,C[0]+1.75,C[0]+2));
+  const sq=p(t,C[0]+.4,C[0]+.7);$('cS').style.opacity=sq;$('cS').style.transform=`translateY(${(1-E.outCubic(sq))*20}px)`;
+  const cq=E.outBack(p(t,C[0]+.3,C[0]+.55),2.2),so=p(t,C[0]+.3,C[0]+.36)*(1-p(t,C[0]+1.5,C[0]+1.7));
+  [['k1',-1,-1],['k2',1,-1],['k3',-1,1],['k4',1,1]].forEach(([id,sx,sy])=>{$(id).style.transform=`translate(${sx*80*(1-cq)}px,${sy*80*(1-cq)}px)`;$(id).style.opacity=so});
+  const lq=E.inOutCubic(p(t,C[0]+.6,C[0]+1.3)),ly=780+520*lq,lon=t>C[0]+.58&&t<C[0]+1.34;
+  vis($('laser'),lon);vis($('trail'),lon);$('laser').style.top=ly+'px';$('trail').style.top=(ly-240)+'px';
+  $('trailC').style.clipPath='inset(780px 0 600px 0)';
+  pop($('gC'),t,C[0]+1.45,{y:140,s0:.85});
+  $('gCTick').style.strokeDasharray='1 1';$('gCTick').style.strokeDashoffset=1-E.outCubic(p(t,C[0]+1.6,C[0]+1.85));}
+function scD(t){const on=t>=D[0]-.05&&t<D[1]+.05;vis($('sD'),on);if(!on)return;
+  const o=E.inCubic(p(t,D[1]-.15,D[1]));$('sD').style.opacity=1-o;
+  reveal($('dE'),t,D[0]+.08);reveal($('d1'),t,D[0]+.12);reveal($('d2'),t,D[0]+.22);
+  pop($('gD'),t,D[0]+.35,{y:160,s0:.9});
+  ROWS.forEach((r,i)=>{const el=$('r'+i),q=E.outExpo(p(t,D[0]+.45+i*.08,D[0]+1+i*.08));el.style.opacity=q;el.style.transform=`translateX(${(1-q)*-60}px)`;check(el,t,r[2]>1?r[2]:(r[2]?0:-1));
+    if(!r[2]){el.querySelector('.cf').style.transform='scale(0)';el.querySelector('.cc').style.opacity=1;el.querySelector('.ckp').style.strokeDashoffset=1}});
+  const done=1+(t>=9.7?1:0)+(t>=10.25?1:0);$('dCount').textContent=done+'/4 erledigt';$('dBar').style.width=(25*(1+E.outCubic(p(t,9.7,10))+E.outCubic(p(t,10.25,10.55))))+'%';
+  $('r2').querySelector('.st').textContent=t>=10.25?'erledigt':'in Arbeit';
+  const nq=spring(t-10.7,1.4,6.5);$('noti').style.opacity=p(t,10.7,10.78);$('noti').style.transform=`translateY(${(1-nq)*-140}px) scale(${.92+.08*nq})`;}
+function scE(t){const on=t>=Ew[0]&&t<F+.02;vis($('sE'),on);if(!on)return;
+  let i=-1;Ew.forEach((w,k)=>{if(t>=w)i=k});const fin=t>=EF;
+  vis($('eW'),!fin);vis($('eF1'),fin);vis($('eF2'),fin);
+  if(!fin){const ws=$('eWs');if(ws.textContent!==WORDS[i]){ws.textContent=WORDS[i];$('eW').style.fontSize='170px';fitLine($('eW'),940)}
+    const q=E.outExpo(p(t-Ew[i],0,.24));ws.style.transformOrigin='50% 60%';ws.style.transform=`scale(${1+.4*(1-q)})`;ws.style.filter=`blur(${(1-q)*10}px)`;}
+  reveal($('eF1'),t,EF+.02,.5);reveal($('eF2'),t,EF+.09,.5);
+  const o=E.inCubic(p(t,F-.12,F));$('sE').style.opacity=1-o;}
+function scF(t){const on=t>=F;vis($('sF'),on);if(!on)return;const l=t-F;
+  const lg=$('fLogo'),q=spring(l-.1,1.4,6.5);lg.style.opacity=p(l,.1,.16);lg.style.transform=`scale(${.4+.6*q}) rotate(${(1-q)*-10}deg)`;
+  buildLogo(lg,(l-.1)*2.1);
+  $('fBurst').querySelectorAll('.burst').forEach((b,k)=>{const z=p(l,.55,1.0);b.style.transform=`rotate(${k*30}deg) translateY(${-175-120*E.outCubic(z)}px) scaleY(${1-z})`;b.style.opacity=z>0&&z<1?1:0});
+  $('fWs').querySelectorAll('span').forEach((s,k)=>{const z=E.outExpo(p(l,.3+k*.04,.9+k*.04));s.style.transform=`translateY(${(1-z)*115}%) rotate(${(1-z)*8}deg)`});
+  reveal($('fT'),t,F+.6);reveal($('fU'),t,F+.85);
+  const c=spring(l-.72,1.5,7);$('cta').style.opacity=p(l,.72,.78);$('cta').style.transform=`translateX(-50%) scale(${.5+.5*c})`;
+  $('shim').style.transform=`translateX(${lerp(-260,900,E.inOutCubic(p(l,1.15,1.7)))}px) skewX(-18deg)`;}
+async function render(t){
+  await setBg(t);
+  // Hintergrund: leichter Zoom pro Szene, Ende weich + dunkel
+  const seg=[A,B,C,D].find(s=>t>=s[0]&&t<s[1]);const z=seg?1+.05*p(t,seg[0],seg[1]):(t<F?1.03:1.03+.04*p(t,F,DUR));
+  const fb=E.inOutCubic(p(t,F,F+.7));bg.style.transform=`scale(${z+.04*fb})`;bg.style.filter=`blur(${14*fb}px) brightness(${1-.45*fb}) saturate(${1-.2*fb})`;
+  $('dim').style.opacity=(t>=Ew[0]&&t<F?.28:0)+.15*fb;
+  $('scrimB').style.opacity=t<A[1]?1:(t>=F?1:.35);$('scrimT').style.opacity=t>=B[0]-.1&&t<D[1]+.1?1:.55;
+  // Blitz bei den schnellen Schnitten
+  let fl=0;Ew.concat([EF]).forEach(w=>{const d=t-w;if(d>=0&&d<.1)fl=Math.max(fl,.22*(1-d/.1))});$('flash').style.opacity=fl;
+  $('brand').style.opacity=(1-p(t,F-.2,F))*p(t,.05,.3);
+  scA(t);scB(t);scC(t);scD(t);scE(t);scF(t);
+  const s=shake(t);$('cam').style.transform=`translate(${s.x}px,${s.y}px)`;
+  const fr=Math.round(t*30),r=rnd(fr*7919+13);$('grain').style.backgroundPosition=`${Math.floor(r()*256)}px ${Math.floor(r()*256)}px`;
+}
+window.render=render;
+(async()=>{
+  await document.fonts.load('900 100px "Inter Display"');await document.fonts.load('700 30px Inter');await document.fonts.load('800 30px Inter');
+  setup();
+  await Promise.all([...document.images].map(i=>i.decode().catch(()=>{})));
+  await render(+(new URLSearchParams(location.search).get('t')||0));
+  window.READY=true;
+})();
+</script>
+</body></html>

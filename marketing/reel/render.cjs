@@ -3,32 +3,34 @@
 // node reel/render.cjs stills 1.5,5,14.9 stills   (Einzelbilder zum Prüfen)
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
+// Optionen: REEL_PAGE=reel2/reel2.html REEL_DUR=17 REEL_ALPHA=1 (durchsichtige PNGs fürs Überlagern)
+const PAGE = process.env.REEL_PAGE || 'reel/reel.html', DURATION = +(process.env.REEL_DUR || 16.5), ALPHA = process.env.REEL_ALPHA === '1';
 (async () => {
   const [, , mode, a, b, c] = process.argv;
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
   page.on('pageerror', e => console.error('PAGEERR', e.message));
   page.on('console', m => { if (m.type() === 'error') console.error('CONSOLE', m.text()); });
-  await page.goto('http://127.0.0.1:8765/reel/reel.html');
+  await page.goto('http://127.0.0.1:' + (process.env.REEL_PORT || 8765) + '/' + PAGE);
   await page.waitForFunction(() => window.READY === true, null, { timeout: 30000 });
   if (mode === 'stills') {
     const out = b; fs.mkdirSync(out, { recursive: true });
     for (const t of a.split(',').map(Number)) {
       await page.evaluate(t => render(t), t);
-      await page.screenshot({ path: `${out}/s_${t.toFixed(2)}.png` });
+      await page.screenshot({ path: `${out}/s_${t.toFixed(2)}.png`, omitBackground: ALPHA });
     }
   } else {
-    const out = a, SUB = +(b || 1), FPS = 30, N = 495, SHUT = 0.5;
-    const [K0, K1] = (c || '0-495').split('-').map(Number);
+    const out = a, SUB = +(b || 1), FPS = 30, N = Math.round(DURATION * FPS), SHUT = 0.5;
+    const [K0, K1] = (c || '0-' + N).split('-').map(Number);
     fs.mkdirSync(out, { recursive: true });
     const t0 = Date.now();
     for (let k = K0; k < K1; k++) {
       let idx = k * SUB;
       for (let j = 0; j < SUB; j++) {
         const off = SUB > 1 ? ((j + 0.5) / SUB - 0.5) * SHUT / FPS : 0;
-        const t = Math.max(0, Math.min(16.5, k / FPS + off));
+        const t = Math.max(0, Math.min(DURATION, k / FPS + off));
         await page.evaluate(t => render(t), t);
-        await page.screenshot({ path: `${out}/f_${String(idx++).padStart(5, '0')}.png` });
+        await page.screenshot({ path: `${out}/f_${String(idx++).padStart(5, '0')}.png`, omitBackground: ALPHA });
       }
       if (k % 50 === 0) console.log(K0, 'frame', k, ((Date.now() - t0) / 1000).toFixed(1) + 's');
     }

@@ -8,3 +8,7 @@ ios/App/Pods/
 ios/App/build/
 ios/DerivedData/
 .DS_Store
+
+# Reel 2: Stock-Clips und Hintergrundbilder (Lizenz: nicht weitergeben)
+marketing/reel2/clips/
+marketing/reel2/bg/
