@@ -82,6 +82,10 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - `marketing/planory-reel.mp4` – Instagram-Reel (16,5 s, 1080×1920) mit eigenen Soundeffekten
   (`reel/sound.cjs`, selbst erzeugt, −14 LUFS; Musik legt Simon in Instagram leise darunter) +
   `reel-titelbild.jpg`. Schluss bewusst ohne Preis/Gratis-Hinweis: „Jetzt starten →“.
+- `marketing/planory-reel-baustelle.mp4` – Reel 2 (17 s) mit echten Baustellen-Clips von Mixkit
+  (nur „Free License“ – Werbung erlaubt; Liste + Prüfdatum in `marketing/reel2/QUELLEN.md`, Clips
+  selbst nicht im Repo). Bauen: `bash marketing/reel2/bg.sh`, dann `REEL_PAGE=reel2/reel2.html
+  REEL_DUR=17 node marketing/reel/render.cjs full …`. Gemeinsame Bausteine: `reel/common.js`, `reel/sfx.cjs`.
   Quelle: `marketing/reel/` (`reel.html` mit `render(t)`, `render.cjs` = Playwright, Bild für Bild).
   Video bauen: 4 Teilbilder pro Bild rendern, dann
   `ffmpeg -framerate 120 -i f_%05d.png -vf "tmix=frames=4,select='eq(mod(n\,4)\,3)',setpts=N/30/TB" -r 30 …`

@@ -37,7 +37,7 @@ em{font-style:normal;color:#ff9f1c}
 #laser{position:absolute;left:150px;right:150px;height:6px;background:#ffb24d;border-radius:3px;box-shadow:0 0 18px 4px rgba(255,159,28,.9),0 0 70px 14px rgba(255,159,28,.45)}
 #trail{position:absolute;left:150px;right:150px;height:240px;background:linear-gradient(to bottom,rgba(255,159,28,0),rgba(255,159,28,.16))}
 /* rows */
-.row{display:flex;align-items:center;gap:22px;padding:16px 0;font-size:34px;font-weight:700}
+.row{display:flex;align-items:center;gap:20px;padding:14px 0;font-size:31px;font-weight:700}
 .row+.row{border-top:1px solid rgba(255,255,255,.12)}
 .ck{position:relative;width:52px;height:52px;flex:none}
 .ck svg{position:absolute;inset:0;overflow:visible}
@@ -108,12 +108,12 @@ em{font-style:normal;color:#ff9f1c}
     <div class="line l eyebrow" id="dE" style="top:340px"><span>ZEITPLAN &amp; AUFGABEN</span></div>
     <div class="line l" id="d1" style="top:384px;font-size:110px"><span>Jeder Termin</span></div>
     <div class="line l" id="d2" style="top:500px;font-size:110px"><span><em>im Blick.</em></span></div>
-    <div class="glass" id="noti" style="left:70px;top:670px;width:880px;border-radius:40px;padding:24px 30px;display:flex;gap:24px;align-items:center">
+    <div class="glass" id="noti" style="left:70px;top:1330px;width:880px;border-radius:40px;padding:24px 30px;display:flex;gap:24px;align-items:center">
       <div id="notiIcon" style="width:80px;height:80px;flex:none;border-radius:20px;overflow:hidden"></div>
       <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:24px;color:rgba(255,255,255,.65);font-weight:600"><span>PLANORY</span><span>jetzt</span></div>
         <div style="font-size:32px;font-weight:700;margin-top:4px">📅 Morgen 7:00: Dachdecker kommt</div></div>
     </div>
-    <div class="glass" id="gD" style="left:70px;top:860px;width:700px;padding:30px 38px 26px">
+    <div class="glass" id="gD" style="left:56px;top:740px;width:560px;padding:28px 32px 22px;font-size:30px">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-weight:800;font-size:36px">Zeitplan</div><div id="dCount" style="font-size:26px;color:rgba(255,255,255,.7);font-weight:700">2/4 erledigt</div></div>
       <div style="height:12px;border-radius:6px;background:rgba(255,255,255,.14);margin:18px 0 10px;overflow:hidden"><div id="dBar" style="height:100%;width:50%;background:#ff9f1c;border-radius:6px"></div></div>
       <div id="rows"></div>
@@ -212,7 +212,7 @@ function scD(t){const on=t>=D[0]-.05&&t<D[1]+.05;vis($('sD'),on);if(!on)return;
     if(!r[2]){el.querySelector('.cf').style.transform='scale(0)';el.querySelector('.cc').style.opacity=1;el.querySelector('.ckp').style.strokeDashoffset=1}});
   const done=1+(t>=9.7?1:0)+(t>=10.25?1:0);$('dCount').textContent=done+'/4 erledigt';$('dBar').style.width=(25*(1+E.outCubic(p(t,9.7,10))+E.outCubic(p(t,10.25,10.55))))+'%';
   $('r2').querySelector('.st').textContent=t>=10.25?'erledigt':'in Arbeit';
-  const nq=spring(t-10.7,1.4,6.5);$('noti').style.opacity=p(t,10.7,10.78);$('noti').style.transform=`translateY(${(1-nq)*-140}px) scale(${.92+.08*nq})`;}
+  const nq=spring(t-10.7,1.4,6.5);$('noti').style.opacity=p(t,10.7,10.78);$('noti').style.transform=`translateY(${(1-nq)*160}px) scale(${.92+.08*nq})`;}
 function scE(t){const on=t>=Ew[0]&&t<F+.02;vis($('sE'),on);if(!on)return;
   let i=-1;Ew.forEach((w,k)=>{if(t>=w)i=k});const fin=t>=EF;
   vis($('eW'),!fin);vis($('eF1'),fin);vis($('eF2'),fin);
