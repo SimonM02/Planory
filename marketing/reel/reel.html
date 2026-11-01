@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Planory Reel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;background:#0b0f17;overflow:hidden}
+body{font-family:'Inter Display','Inter',sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;background:#0b0f17}
+#cam{position:absolute;inset:0}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 75% at 50% 35%,#171e2c 0%,#0c1019 58%,#06080d 100%)}
+.grid{position:absolute;left:-360px;top:-360px;width:1800px;height:2640px;
+ background-image:linear-gradient(rgba(255,255,255,.055) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.055) 2px,transparent 2px),linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+ background-size:180px 180px,180px 180px,36px 36px,36px 36px;
+ -webkit-mask-image:radial-gradient(closest-side,#000 35%,transparent 100%)}
+.glow{position:absolute;width:1500px;height:1500px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,159,28,.26),rgba(255,159,28,0));pointer-events:none}
+.glow.b{background:radial-gradient(closest-side,rgba(80,120,255,.14),rgba(80,120,255,0))}
+.scene{position:absolute;inset:0;visibility:hidden}
+.line{position:absolute;overflow:hidden;line-height:1.02;padding:0 .05em .14em;white-space:nowrap;font-weight:900;letter-spacing:-.045em;word-spacing:.14em}
+.line.c{left:0;right:0;text-align:center}
+.line.l{left:74px}
+.line>span{display:inline-block;transform-origin:0 100%}
+em{font-style:normal;color:#ff9f1c}
+.eyebrow{font-family:'Inter';font-weight:700;font-size:30px;letter-spacing:.24em;color:#ff9f1c;line-height:1.3}
+.sub{font-family:'Inter';font-weight:500;font-size:38px;color:#9aa6b8;letter-spacing:-.01em;position:absolute;left:78px}
+/* phone */
+.phone{position:absolute;background:linear-gradient(150deg,#454c5c 0%,#161a23 26%,#0b0e14 70%,#2d3340 100%);
+ box-shadow:inset 0 0 0 2px rgba(255,255,255,.14),inset 0 0 0 5px rgba(0,0,0,.55),0 60px 120px -20px rgba(0,0,0,.75),0 25px 50px rgba(0,0,0,.35)}
+.screen{position:relative;width:100%;height:100%;overflow:hidden;background:#f3f4f7}
+.scroll{position:absolute;left:0;right:0}
+.scroll img{display:block}
+.sbar{position:absolute;left:0;right:0;top:0;background:#fff;display:flex;align-items:center;justify-content:space-between;font-family:'Inter';font-weight:600;color:#000;z-index:2}
+.island{position:absolute;left:50%;transform:translateX(-50%);background:#000;border-radius:999px}
+.glare{position:absolute;left:-60%;top:-20%;width:220%;height:140%;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.20) 49%,rgba(255,255,255,.05) 53%,transparent 58%);pointer-events:none;z-index:3}
+/* cards */
+.card{position:absolute;background:#fff;color:#14202e;border-radius:34px;box-shadow:0 40px 80px -10px rgba(0,0,0,.55),0 10px 24px rgba(0,0,0,.25);font-family:'Inter'}
+/* papers */
+.pp{position:absolute;left:0;top:0;will-change:transform}
+.pp .pc{position:absolute;left:0;top:0;transform:translate(-50%,-50%)}
+.inv{width:290px;height:390px;background:#fdfdfb;border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:26px 24px;font-family:'Inter';color:#1d2430}
+.inv h4{font-size:26px;font-weight:900;letter-spacing:.06em;margin-bottom:6px}
+.inv .hd{height:8px;width:70%;background:#ff9f1c;border-radius:4px;margin-bottom:22px}
+.bar{height:10px;border-radius:5px;background:#dde2ea;margin:13px 0}
+.inv .tot{margin-top:26px;border-top:2px solid #1d2430;padding-top:12px;font-weight:800;font-size:22px;display:flex;justify-content:space-between}
+.rcp{width:220px;height:300px;background:#f7f6f1;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:22px 20px;font-family:'DejaVu Sans Mono',monospace;color:#2a2f38;font-size:15px;line-height:1.55}
+.rcp b{display:block;text-align:center;font-size:18px;margin-bottom:6px}
+.stk{width:220px;height:210px;box-shadow:0 18px 36px rgba(0,0,0,.4);padding:26px 22px;font-family:'Inter';font-weight:800;font-size:33px;line-height:1.12;color:#2a2410;letter-spacing:-.02em}
+.xls{width:340px;height:236px;background:#fff;border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);overflow:hidden;font-family:'Inter';color:#1d2430}
+.xls .xh{background:#1f7a44;color:#fff;font-weight:700;font-size:20px;padding:10px 16px}
+.xls table{border-collapse:collapse;width:100%;font-size:17px}
+.xls td{border:1px solid #d7dce3;padding:7px 10px;height:36px}
+.xls .err{color:#d62b2b;font-weight:800}
+/* receipt scene 4 */
+.rc{position:absolute;left:84px;top:820px;width:410px;height:570px;filter:drop-shadow(0 40px 50px rgba(0,0,0,.55))}
+.rc-paper{position:absolute;inset:0;background:#fbfaf6;border-radius:12px 12px 0 0;padding:34px 32px;color:#1d2430;font-family:'Inter'}
+.rc-paper .co{font-weight:900;font-size:22px;letter-spacing:.01em}
+.rc-paper .ad{font-size:16px;color:#7a8394;margin-top:4px}
+.rc-paper .ti{font-weight:900;font-size:30px;letter-spacing:.04em;margin:24px 0 16px}
+.rr{display:flex;justify-content:space-between;font-size:20px;padding:7px 0;font-variant-numeric:tabular-nums}
+.rr span:first-child{color:#5b6475}
+.rr.it{font-weight:700;color:#1d2430}
+.rr.it span{color:#1d2430!important}
+.rsep{border-top:2px dashed #c9ced8;margin:8px 0}
+.rr.tt{font-size:27px;font-weight:900;padding-top:12px}
+.rr.tt span{color:#1d2430!important}
+.cor{position:absolute;width:74px;height:74px;border-color:#ff9f1c;border-style:solid;border-width:0}
+.hl{position:absolute;border:4px solid #ff9f1c;border-radius:10px;background:rgba(255,159,28,.10)}
+.hl i{position:absolute;right:-6px;top:-40px;background:#ff9f1c;color:#11151f;font-family:'Inter';font-weight:800;font-style:normal;font-size:17px;padding:5px 12px;border-radius:999px;white-space:nowrap}
+.laser{position:absolute;left:-14px;right:-14px;height:6px;background:#ffb24d;border-radius:3px;box-shadow:0 0 18px 4px rgba(255,159,28,.9),0 0 60px 12px rgba(255,159,28,.45)}
+.trail{position:absolute;left:0;right:0;height:220px;background:linear-gradient(to bottom,rgba(255,159,28,0),rgba(255,159,28,.18))}
+/* chips */
+.chip{position:absolute;height:96px;background:#fff;border-radius:48px;display:flex;align-items:center;padding:0 34px 0 22px;gap:22px;font-family:'Inter';font-weight:700;font-size:33px;color:#14202e;box-shadow:0 30px 60px -10px rgba(0,0,0,.55);white-space:nowrap}
+.chk{position:relative;width:58px;height:58px;flex:none}
+.chk svg{position:absolute;inset:0;overflow:visible}
+.ctx{position:relative}
+.ctx .st{position:absolute;left:0;top:52%;height:4px;background:#8b95a6;border-radius:2px;width:0}
+.pt{position:absolute;left:29px;top:29px;width:12px;height:12px;border-radius:50%;margin:-6px 0 0 -6px}
+.noti{position:absolute;left:110px;top:660px;width:860px;border-radius:40px;background:rgba(36,42,56,.78);backdrop-filter:blur(24px) saturate(1.4);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.10),0 30px 60px rgba(0,0,0,.45);padding:24px 30px;display:flex;gap:24px;align-items:center;font-family:'Inter'}
+/* scene 6 */
+#s6bg{position:absolute;inset:0}
+.ico{position:absolute;overflow:visible}
+.ico path,.ico circle{fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* end card */
+.cta{position:absolute;left:50%;top:1222px;height:124px;padding:0 62px;border-radius:62px;background:linear-gradient(180deg,#ffb042,#ff9f1c 55%,#f28c00);color:#11151f;font-family:'Inter';font-weight:800;font-size:50px;letter-spacing:-.01em;display:flex;align-items:center;white-space:nowrap;overflow:hidden;box-shadow:0 30px 70px -10px rgba(255,159,28,.55),inset 0 2px 0 rgba(255,255,255,.45)}
+.shim{position:absolute;top:0;bottom:0;width:180px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);left:0}
+.burst{position:absolute;width:10px;height:44px;border-radius:5px;background:#ff9f1c;left:-5px;top:-22px}
+.dust{position:absolute;border-radius:50%;background:#fff}
+#grain{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.16;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse 85% 70% at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%);pointer-events:none}
+#wipe{position:absolute;left:50%;top:50%;width:3000px;height:3400px;margin:-1700px 0 0 -1500px;background:#ff9f1c;visibility:hidden}
+#wipe2{position:absolute;left:50%;top:50%;width:3000px;height:3400px;margin:-1700px 0 0 -1500px;background:#fff;visibility:hidden}
+.ring{position:absolute;left:540px;top:1080px;width:1000px;height:1000px;margin:-500px 0 0 -500px;border-radius:50%;border:12px solid #ff9f1c;visibility:hidden}
+</style></head><body>
+<div id="stage"><div id="cam">
+  <div class="bg"></div>
+  <div class="grid" id="grid"></div>
+  <div class="glow" id="glowA"></div>
+  <div class="glow b" id="glowB"></div>
+
+  <!-- 1: Hook -->
+  <div class="scene" id="s1">
+    <div class="glow" id="s1glow" style="width:1100px;height:1100px;left:-10px;top:180px"></div>
+    <div id="s1logo" style="position:absolute;left:310px;top:470px;width:460px;height:460px"></div>
+    <div class="line c" id="s1a" style="top:1080px;font-size:156px"><span>Du baust</span></div>
+    <div class="line c" id="s1b" style="top:1246px;font-size:156px;padding-bottom:.32em"><span>ein <em id="haus" style="position:relative">Haus?<svg id="ul" viewBox="0 0 300 40" style="position:absolute;left:-2%;bottom:-.24em;width:104%;height:.3em;overflow:visible"><path pathLength="1" d="M6 26 C 70 12, 150 8, 294 18" stroke="#ff9f1c" stroke-width="11" fill="none" stroke-linecap="round"/></svg></em></span></div>
+  </div>
+
+  <!-- 2: Chaos -->
+  <div class="scene" id="s2">
+    <div id="papers"></div>
+    <div class="line c" id="s2a" style="top:236px;font-size:176px"><span>Zettel-</span></div>
+    <div class="line c" id="s2b" style="top:410px;font-size:176px"><span><em>chaos?</em></span></div>
+    <div class="line c" id="s2c" style="top:1452px;text-shadow:0 2px 12px #000;font-size:40px;font-family:Inter;font-weight:600;letter-spacing:0;color:#9aa6b8"><span>Rechnungen · Excel · Notizen · Ordner</span></div>
+    <div class="ring" id="ring1"></div>
+    <div class="ring" id="ring2" style="border-color:#fff;border-width:4px"></div>
+  </div>
+
+  <!-- 3: Budget -->
+  <div class="scene" id="s3">
+    <div class="line l eyebrow" id="s3e" style="top:250px;font-weight:700;letter-spacing:.24em"><span>01 — BUDGET</span></div>
+    <div class="line l" id="s3a" style="top:300px;font-size:134px"><span>Budget</span></div>
+    <div class="line l" id="s3b" style="top:440px;font-size:134px"><span><em>im Griff.</em></span></div>
+    <div class="sub" id="s3s" style="top:610px">Kosten &amp; Restbudget auf einen Blick</div>
+    <div id="ph3wrap"></div>
+    <div class="card" id="c3a" style="left:34px;top:1000px;width:330px;padding:30px 30px 34px">
+      <div style="font-weight:700;font-size:24px;color:#5b6475;margin-bottom:14px">Gesamtbudget</div>
+      <div style="position:relative;width:270px;height:270px">
+        <svg viewBox="0 0 270 270" width="270" height="270" style="transform:rotate(-90deg)">
+          <circle cx="135" cy="135" r="104" fill="none" stroke="#eef0f4" stroke-width="34"/>
+          <circle id="donut" cx="135" cy="135" r="104" fill="none" stroke="#ff9f1c" stroke-width="34" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div id="pct" style="font-family:'Inter Display';font-weight:900;font-size:76px;letter-spacing:-.04em;line-height:1">0%</div>
+          <div style="font-size:24px;color:#7a8394;font-weight:600;margin-top:4px">verbraucht</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="c3b" style="left:540px;top:1290px;width:420px;padding:28px 34px 30px">
+      <div style="display:flex;align-items:center;gap:12px;font-weight:700;font-size:25px;color:#5b6475"><span style="width:16px;height:16px;border-radius:50%;background:#1aa35c;display:inline-block"></span>Verbleibend</div>
+      <div id="rest" style="font-family:'Inter Display';font-weight:900;font-size:64px;letter-spacing:-.035em;color:#13995a;margin-top:6px;font-variant-numeric:tabular-nums">€ 0</div>
+      <div style="height:14px;border-radius:7px;background:#e7f6ee;margin-top:14px;overflow:hidden"><div id="restbar" style="height:100%;width:0;background:#1aa35c;border-radius:7px"></div></div>
+    </div>
+  </div>
+
+  <!-- 4: Rechnung -->
+  <div class="scene" id="s4">
+    <div class="line l eyebrow" id="s4e" style="top:250px"><span>02 — RECHNUNGEN</span></div>
+    <div class="line l" id="s4a" style="top:300px;font-size:134px"><span>Rechnung</span></div>
+    <div class="line l" id="s4b" style="top:440px;font-size:134px"><span><em>scannen.</em></span></div>
+    <div class="line l" id="s4b2" style="top:440px;font-size:134px"><span><em>erfasst.</em> <svg viewBox="0 0 100 100" style="width:.62em;height:.62em;vertical-align:.02em"><circle cx="50" cy="50" r="50" fill="#1aa35c"/><path id="s4tick" pathLength="1" d="M28 52 L44 67 L73 36" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+    <div class="sub" id="s4s" style="top:610px">KI erkennt Betrag, Datum &amp; Kategorie</div>
+    <div id="ph4wrap"></div>
+    <div class="rc" id="rc">
+      <div class="rc-paper" id="rcp">
+        <div class="co">MUSTER INSTALLATIONEN</div>
+        <div class="ad">Musterstraße 1 · 8010 Graz</div>
+        <div class="ti">RECHNUNG</div>
+        <div class="rr" id="rDate"><span>Datum</span><span>30.10.2026</span></div>
+        <div class="rr it" id="rItem" style="margin-top:40px"><span>Sanitär Rohinstallation</span></div>
+        <div class="rsep"></div>
+        <div class="rr"><span>Material</span><span>12.400,00</span></div>
+        <div class="rr"><span>Arbeitszeit</span><span>4.266,67</span></div>
+        <div class="rr"><span>USt. 20 %</span><span>3.333,33</span></div>
+        <div class="rsep"></div>
+        <div class="rr tt" id="rTot"><span>GESAMT</span><span>€ 20.000,00</span></div>
+      </div>
+      <div id="scanclip" style="position:absolute;inset:0;overflow:hidden">
+        <div class="trail" id="trail"></div>
+      </div>
+      <div class="laser" id="laser"></div>
+      <div class="hl" id="hlDate"><i>Datum</i></div>
+      <div class="hl" id="hlItem"><i>Kategorie: Sanitär</i></div>
+      <div class="hl" id="hlTot"><i style="top:auto;bottom:-42px">Betrag</i></div>
+      <div class="cor" id="co1" style="left:-26px;top:-26px;border-width:9px 0 0 9px;border-radius:22px 0 0 0"></div>
+      <div class="cor" id="co2" style="right:-26px;top:-26px;border-width:9px 9px 0 0;border-radius:0 22px 0 0"></div>
+      <div class="cor" id="co3" style="left:-26px;bottom:-26px;border-width:0 0 9px 9px;border-radius:0 0 0 22px"></div>
+      <div class="cor" id="co4" style="right:-26px;bottom:-26px;border-width:0 9px 9px 0;border-radius:0 0 22px 0"></div>
+    </div>
+    <div class="card" id="c4" style="left:56px;top:1170px;width:440px;padding:30px 32px;display:flex;gap:22px;align-items:center">
+      <svg viewBox="0 0 100 100" width="84" height="84" style="flex:none"><circle cx="50" cy="50" r="50" fill="#1aa35c"/><path id="c4tick" pathLength="1" d="M28 52 L44 67 L73 36" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><div style="font-weight:800;font-size:34px;letter-spacing:-.02em">Ausgabe erfasst</div>
+      <div style="font-size:25px;color:#6b7486;font-weight:600;margin-top:4px">Sanitär · € 20.000,00</div></div>
+    </div>
+  </div>
+
+  <!-- 5: Zeitplan & Aufgaben -->
+  <div class="scene" id="s5">
+    <div class="line l eyebrow" id="s5e" style="top:250px"><span>03 — ZEITPLAN &amp; AUFGABEN</span></div>
+    <div class="line l" id="s5a" style="top:300px;font-size:134px"><span>Termine &amp;</span></div>
+    <div class="line l" id="s5b" style="top:440px;font-size:134px"><span><em>Aufgaben.</em></span></div>
+    <div class="sub" id="s5s" style="top:610px">Alles im Blick – mit Erinnerung</div>
+    <div id="ph5wrap"></div>
+    <div class="noti" id="noti">
+      <div id="notiIcon" style="width:84px;height:84px;flex:none;border-radius:20px;overflow:hidden"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;font-size:24px;color:#aab4c4;font-weight:600"><span>PLANORY</span><span>jetzt</span></div>
+        <div style="font-size:33px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:-.01em">📅 Morgen: Estrich Termin fixieren</div>
+      </div>
+    </div>
+    <div class="chip" id="ch1" style="left:46px;top:1236px"></div>
+    <div class="chip" id="ch2" style="left:46px;top:1352px"></div>
+  </div>
+
+  <!-- 6: Kinetic -->
+  <div class="scene" id="s6">
+    <div id="s6bg"></div>
+    <div id="s6icons"></div>
+    <div class="line c" id="s6w" style="top:860px;font-size:200px"><span id="s6ws">Budget.</span></div>
+    <div class="line c" id="s6f1" style="top:800px;font-size:164px"><span>Alles in</span></div>
+    <div class="line c" id="s6f2" style="top:975px;font-size:164px"><span><em>einer App.</em></span></div>
+    <div id="s6bars" style="position:absolute;left:0;right:0;top:1330px;display:flex;justify-content:center;gap:16px"></div>
+  </div>
+
+  <!-- 7: End -->
+  <div class="scene" id="s7">
+    <div class="bg"></div>
+    <div class="grid" id="grid7"></div>
+    <div class="glow" id="s7glow" style="left:-210px;top:60px"></div>
+    <div id="s7burst" style="position:absolute;left:540px;top:740px"></div>
+    <div id="s7logo" style="position:absolute;left:380px;top:580px;width:320px;height:320px"></div>
+    <div class="line c" id="s7w" style="top:930px;font-size:168px"><span id="s7ws"></span></div>
+    <div class="line c" id="s7t" style="top:1128px;font-size:42px;font-family:Inter;font-weight:600;letter-spacing:0;color:#aab4c4"><span>Dein digitaler Bauassistent</span></div>
+    <div class="cta" id="cta"><div class="shim" id="shim"></div><span style="position:relative">1 Monat gratis testen</span></div>
+    <div class="line c" id="s7u" style="top:1392px;font-size:40px;font-family:Inter;font-weight:700;letter-spacing:.01em;color:#fff"><span>planory.at <span style="color:#ff9f1c">·</span> iPhone &amp; Web</span></div>
+  </div>
+
+  <div id="dustL"></div>
+  <div id="wipe"></div><div id="wipe2"></div>
+</div>
+<div id="vig"></div>
+<div id="grain"></div>
+</div>
+
+<script>
+// ---------- helpers ----------
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const p=(t,a,b)=>clamp((t-a)/(b-a));
+const E={
+  outExpo:x=>x>=1?1:1-Math.pow(2,-10*x),
+  inExpo:x=>x<=0?0:Math.pow(2,10*x-10),
+  outCubic:x=>1-Math.pow(1-x,3),
+  inCubic:x=>x*x*x,
+  inOutCubic:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+  inOutExpo:x=>x<=0?0:x>=1?1:x<.5?Math.pow(2,20*x-10)/2:(2-Math.pow(2,-20*x+10))/2,
+  outQuint:x=>1-Math.pow(1-x,5),
+  outBack:(x,s=1.70158)=>1+(s+1)*Math.pow(x-1,3)+s*Math.pow(x-1,2),
+  inBack:(x,s=1.70158)=>(s+1)*x*x*x-s*x*x,
+  outBounce:x=>{const n=7.5625,d=2.75;if(x<1/d)return n*x*x;if(x<2/d)return n*(x-=1.5/d)*x+.75;if(x<2.5/d)return n*(x-=2.25/d)*x+.9375;return n*(x-=2.625/d)*x+.984375}
+};
+// damped spring 0->1, x in seconds
+const spring=(x,f=2.2,d=7)=>x<=0?0:1-Math.exp(-d*x)*Math.cos(f*2*Math.PI*x);
+const $=id=>document.getElementById(id);
+function rnd(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+const vis=(el,on)=>{el.style.visibility=on?(el.classList.contains('scene')?'visible':'inherit'):'hidden'};
+function reveal(el,t,t0,dur=.62,out){
+  const s=el.firstElementChild, q=E.outExpo(p(t,t0,t0+dur));
+  let y=(1-q)*118, r=(1-q)*7;
+  if(out){const o=E.inExpo(p(t,out,out+.32));y-=o*118;}
+  s.style.transform=`translateY(${y}%) rotate(${r}deg)`;
+}
+const fmt=n=>'€ '+Math.round(n).toLocaleString('de-DE');
+
+// ---------- logo ----------
+function logoSVG(){return `<svg viewBox="0 0 100 100" width="100%" height="100%" style="overflow:visible">
+ <rect class="lg-bg" width="100" height="100" rx="24" fill="#121826" stroke="rgba(255,255,255,.10)" stroke-width=".6"/>
+ <rect x="42" y="8.5" width="16" height="4" rx="2" fill="#222b3c"/><rect x="40" y="90" width="20" height="2.6" rx="1.3" fill="#2a3446"/>
+ <g class="lg-k" stroke="#ff9f1c" stroke-width="1.35" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path pathLength="1" d="M79.5 84 V26 M83 84 V26"/>
+  <path pathLength="1" d="M79.5 82 L83 79 L79.5 76 L83 73 L79.5 70 L83 67 L79.5 64 L83 61 L79.5 58 L83 55 L79.5 52 L83 49 L79.5 46 L83 43 L79.5 40 L83 37 L79.5 34 L83 31 L79.5 28"/>
+  <path pathLength="1" d="M76 84 H86.5"/><path pathLength="1" d="M79.5 26 L81.25 19 L83 26"/>
+  <path pathLength="1" d="M83 26 H32"/><path pathLength="1" d="M79.5 29.5 H37"/>
+  <path pathLength="1" d="M79 29.5 L72 26 L65 29.5 L58 26 L51 29.5 L44 26 L37 29.5 L32 26"/>
+  <path pathLength="1" d="M81.25 19 L48 26 M81.25 19 L60 26 M81.25 19 L72 26 M81.25 19 L89 26"/>
+  <path pathLength="1" d="M83 26 H90"/><path pathLength="1" d="M48 29.5 V34"/>
+ </g>
+ <g class="lg-kt" style="transform-box:fill-box;transform-origin:50% 50%"><rect x="86.5" y="26.3" width="4.4" height="5.4" rx=".8" fill="#ff9f1c"/><circle cx="48" cy="29.5" r="1.1" fill="#ff9f1c"/></g>
+ <g class="lg-h" style="transform-box:fill-box;transform-origin:50% 100%"><rect x="20" y="56" width="30" height="28" fill="#fff"/><rect x="50" y="69" width="20" height="15" fill="#fff"/></g>
+ <g class="lg-d" style="transform-box:fill-box;transform-origin:50% 50%"><rect x="48" y="66" width="24" height="3.5" rx="1" fill="#ff9f1c"/><rect x="52.5" y="72" width="15" height="12" fill="#121826"/>
+  <rect x="24" y="72" width="9" height="12" fill="#121826"/><rect x="38" y="62" width="8" height="8" fill="#ff9f1c"/></g>
+ <path class="lg-r" d="M15 56 L35 44 L55 56 Z" fill="#ff9f1c"/>
+</svg>`}
+function buildLogo(root,lt){
+  const ks=root.querySelectorAll('.lg-k path');
+  ks.forEach((pa,i)=>{const q=E.outCubic(p(lt,.04+i*.045,.04+i*.045+.34));pa.style.strokeDasharray='1 1';pa.style.strokeDashoffset=1-q;pa.style.opacity=q>0?1:0});
+  const kt=root.querySelector('.lg-kt');kt.style.transform=`scale(${Math.max(0,E.outBack(p(lt,.55,.75),3))})`;
+  const h=root.querySelector('.lg-h');h.style.transform=`scaleY(${Math.max(0,E.outBack(p(lt,.42,.78),2.2))})`;
+  const d=root.querySelector('.lg-d');const dq=p(lt,.74,.94);d.style.opacity=dq;d.style.transform=`scale(${.6+.4*E.outBack(dq,3)})`;
+  const r=root.querySelector('.lg-r');const rq=p(lt,.8,1.2);r.style.opacity=rq>0?1:0;r.style.transform=`translateY(${-46*(1-E.outBounce(rq))}px)`;
+}
+// ---------- phone ----------
+function phone(id,src,sw){
+  const B=Math.round(sw*.032),W=sw+2*B,SH=Math.round(sw*2.165),H=SH+2*B,R=Math.round(W*.152),sb=Math.round(sw*.125);
+  const f=Math.round(sw*.044);
+  return `<div class="phone" id="${id}" style="left:0;top:0;width:${W}px;height:${H}px;border-radius:${R}px;padding:${B}px">
+   <div class="screen" style="border-radius:${R-B}px">
+    <div class="scroll" id="${id}s" style="top:${sb}px"><img src="${src}" style="width:${sw}px"></div>
+    <div class="sbar" style="height:${sb}px;font-size:${f}px;padding:${Math.round(sw*.012)}px ${Math.round(sw*.085)}px 0">
+      <span style="letter-spacing:-.01em">9:41</span>
+      <span class="island" style="width:${Math.round(sw*.31)}px;height:${Math.round(sw*.09)}px;top:${Math.round(sw*.026)}px"></span>
+      <span style="display:flex;gap:${Math.round(sw*.014)}px;align-items:center">
+        <svg viewBox="0 0 18 12" width="${f}" height="${Math.round(f*.66)}"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg viewBox="0 0 16 12" width="${f}" height="${Math.round(f*.72)}"><path d="M8 11.5 L5.6 9 a3.4 3.4 0 0 1 4.8 0z M2.8 6.3 a7.4 7.4 0 0 1 10.4 0 L11.8 7.7 a5.4 5.4 0 0 0 -7.6 0z M0 3.5 a11.3 11.3 0 0 1 16 0 L14.6 4.9 a9.3 9.3 0 0 0 -13.2 0z"/></svg>
+        <svg viewBox="0 0 27 13" width="${Math.round(f*1.5)}" height="${Math.round(f*.72)}"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="#000" stroke-opacity=".4"/><rect x="2.3" y="2.3" width="17" height="8.4" rx="2"/><path d="M25 4.5 v4 a2 2 0 0 0 0 -4z" fill-opacity=".45"/></svg>
+      </span>
+    </div>
+    <div class="glare" id="${id}g"></div>
+   </div></div>`;
+}
+const PH={};
+function placePhone(id,{x,y,s=1,rx=0,ry=0,rz=0}){const el=PH[id];el.style.transform=`translate(${x}px,${y}px) perspective(2600px) rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${s})`}
+
+// ---------- icons for kinetic ----------
+const ICONS={
+ donut:`<circle cx="50" cy="50" r="34" pathLength="1" style="opacity:.35"/><path pathLength="1" d="M50 16 A34 34 0 0 1 82.3 39.5"/>`,
+ receipt:`<path pathLength="1" d="M26 12 H74 V88 L66 82 L58 88 L50 82 L42 88 L34 82 L26 88 Z"/><path pathLength="1" d="M38 33 H62 M38 47 H62 M38 61 H53"/>`,
+ cal:`<path pathLength="1" d="M18 26 H82 V84 H18 Z"/><path pathLength="1" d="M18 43 H82"/><path pathLength="1" d="M34 15 V32 M66 15 V32"/><path pathLength="1" d="M33 59 h2 M49 59 h2 M65 59 h2 M33 71 h2 M49 71 h2"/>`,
+ check:`<path pathLength="1" d="M20 16 H80 Q84 16 84 20 V80 Q84 84 80 84 H20 Q16 84 16 80 V20 Q16 16 20 16 Z"/><path pathLength="1" d="M32 51 L45 64 L70 37"/>`,
+ camera:`<path pathLength="1" d="M14 34 H32 L38 24 H62 L68 34 H86 V80 H14 Z"/><circle cx="50" cy="56" r="14" pathLength="1"/>`
+};
+const WORDS=[
+ {w:'Budget.',t:11.05,bg:'#0b0f17',fg:'#fff',ic:'donut'},
+ {w:'Rechnungen.',t:11.41,bg:'#ff9f1c',fg:'#11151f',ic:'receipt'},
+ {w:'Zeitplan.',t:11.77,bg:'#0b0f17',fg:'#fff',ic:'cal'},
+ {w:'Aufgaben.',t:12.13,bg:'#ff9f1c',fg:'#11151f',ic:'check'},
+ {w:'Bautagebuch.',t:12.49,bg:'#0b0f17',fg:'#fff',ic:'camera'},
+];
+const FINAL_T=12.85;
+
+// ---------- build ----------
+const papers=[];
+function setup(){
+  $('s1logo').innerHTML=logoSVG(); $('s7logo').innerHTML=logoSVG();
+  $('notiIcon').innerHTML=logoSVG();
+  $('ph3wrap').innerHTML=phone('ph3','../budget.png',560);
+  $('ph4wrap').innerHTML=phone('ph4','../kosten.png',510);
+  $('ph5wrap').innerHTML=phone('ph5a','../zeitplan.png',430)+phone('ph5b','../aufgaben.png',430);
+  ['ph3','ph4','ph5a','ph5b'].forEach(i=>PH[i]=$(i));
+  // highlight on kosten card (relative to image)
+  const sw=510, hl=document.createElement('div');
+  hl.id='ph4hl';hl.style.cssText=`position:absolute;left:${.022*sw}px;top:${.447*sw}px;width:${.952*sw}px;height:${.578*sw}px;border:5px solid #ff9f1c;border-radius:${.032*sw}px;box-shadow:0 0 0 6px rgba(255,159,28,.25),0 0 40px rgba(255,159,28,.55);opacity:0`;
+  hl.innerHTML=`<div style="position:absolute;right:18px;top:-22px;background:#ff9f1c;color:#11151f;font:800 20px Inter;padding:6px 14px;border-radius:999px">NEU</div>`;
+  $('ph4s').appendChild(hl);
+  // receipt zigzag
+  const zz=[];const W=410,H=570,n=14;zz.push('0 0',`${W}px 0`,`${W}px ${H}px`);
+  for(let i=n*2;i>=0;i--){const x=W*i/(n*2);zz.push(`${x.toFixed(1)}px ${i%2? H-16: H}px`)}
+  $('rcp').style.clipPath=`polygon(${zz.join(',')})`;
+  // highlight boxes from rows
+  const rp=$('rcp');
+  [['rDate','hlDate'],['rItem','hlItem'],['rTot','hlTot']].forEach(([r,h])=>{const e=$(r),b=$(h);
+    b.style.left=(e.offsetLeft-12)+'px';b.style.top=(e.offsetTop-4)+'px';b.style.width=(e.offsetWidth+24)+'px';b.style.height=(e.offsetHeight+8)+'px';
+    b.dataset.y=e.offsetTop+e.offsetHeight/2;});
+  // papers
+  const P=[
+   {k:'inv',x:300,y:1000,r:-13},{k:'xls',x:770,y:880,r:9},{k:'stk',x:230,y:800,r:-7,c:'#ffe066',tx:'Elektriker<br>anrufen!'},
+   {k:'rcp',x:820,y:1210,r:15},{k:'stk',x:690,y:1130,r:8,c:'#ffd23f',tx:'Fliesen<br>bestellen??'},{k:'inv',x:560,y:870,r:4},
+   {k:'rcp',x:190,y:1230,r:-18},{k:'stk',x:870,y:790,r:-11,c:'#ff9fb2',tx:'Anzahlung<br>€ 15.000'},{k:'xls',x:440,y:1290,r:-6},
+   {k:'rcp',x:520,y:1060,r:21},{k:'stk',x:150,y:990,r:12,c:'#9be7c4',tx:'Termin<br>Baumeister'},{k:'inv',x:860,y:1000,r:-4},
+   {k:'stk',x:640,y:1320,r:-3,c:'#ffe066',tx:'Wo ist die<br>Rechnung?'}
+  ];
+  const box=$('papers');
+  P.forEach((o,i)=>{const d=document.createElement('div');d.className='pp';
+    let inner='';
+    if(o.k==='inv') inner=`<div class="pc inv"><h4>RECHNUNG</h4><div class="hd"></div>${[90,70,82,60,76,50].map(w=>`<div class="bar" style="width:${w}%"></div>`).join('')}<div class="tot"><span>Summe</span><span>${['€ 4.380','€ 12.960','€ 2.145'][i%3]}</span></div></div>`;
+    if(o.k==='rcp') inner=`<div class="pc rcp"><b>BAUMARKT</b>Fliesenkleber 4x<br>Silikon weiß<br>Schrauben 6x60<br>--------------<br>SUMME&nbsp;&nbsp;187,40<br>BAR&nbsp;&nbsp;&nbsp;&nbsp;200,00</div>`;
+    if(o.k==='stk') inner=`<div class="pc stk" style="background:${o.c}">${o.tx}</div>`;
+    if(o.k==='xls') inner=`<div class="pc xls"><div class="xh">Kosten_final_v3.xlsx</div><table><tr><td>Rohbau</td><td>93.685</td></tr><tr><td>Dach</td><td class="err">#WERT!</td></tr><tr><td>Elektro</td><td>???</td></tr><tr><td>Summe</td><td class="err">#BEZUG!</td></tr></table></div>`;
+    d.innerHTML=inner;box.appendChild(d);
+    const dx=o.x-540,dy=o.y-1060,L=Math.hypot(dx,dy)||1;
+    papers.push({el:d,...o,sx:o.x+dx/L*1500,sy:o.y+dy/L*1500+300,sr:o.r+(i%2?80:-80)});
+  });
+  // chips
+  [['ch1','Fensterangebot einholen'],['ch2','Steckdosen zählen']].forEach(([id,tx])=>{
+    $(id).innerHTML=`<div class="chk"><svg viewBox="0 0 58 58"><circle class="cc" cx="29" cy="29" r="25" fill="none" stroke="#ff9f1c" stroke-width="5"/><circle class="cf" cx="29" cy="29" r="27.5" fill="#1aa35c" style="transform-origin:29px 29px;transform:scale(0)"/><path class="ck" pathLength="1" d="M17 30 L26 39 L42 21" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:1 1;stroke-dashoffset:1"/></svg>${Array.from({length:10},(_,k)=>`<i class="pt" style="background:${k%2?'#ff9f1c':'#1aa35c'}"></i>`).join('')}</div><div class="ctx"><span>${tx}</span><i class="st"></i></div>`;
+  });
+  // kinetic icons row + single icon
+  const ic=$('s6icons');
+  ic.innerHTML=`<svg class="ico" id="s6main" viewBox="0 0 100 100" style="left:440px;top:560px;width:200px;height:200px" stroke-width="7"></svg>`+
+    Object.keys(ICONS).map((k,i)=>`<svg class="ico s6row" viewBox="0 0 100 100" style="left:${540-(5*112+4*30)/2+i*142}px;top:600px;width:112px;height:112px" stroke-width="7.5">${ICONS[k]}</svg>`).join('');
+  $('s6bars').innerHTML=WORDS.map((_,i)=>`<div style="width:120px;height:10px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,.18)" class="bt"><div class="bf" style="height:100%;width:0;border-radius:5px"></div></div>`).join('');
+  // fit word sizes
+  const w=$('s6ws');WORDS.forEach(o=>{w.textContent=o.w;let fs=200;$('s6w').style.fontSize=fs+'px';while(w.offsetWidth>900&&fs>60){fs-=4;$('s6w').style.fontSize=fs+'px'}o.fs=fs});
+  // wordmark letters
+  $('s7ws').innerHTML='Planory'.split('').map((c,i)=>`<span style="display:inline-block;${i>=4?'color:#ff9f1c':''}">${c}</span>`).join('');
+  // burst
+  $('s7burst').innerHTML=Array.from({length:12},()=>`<i class="burst"></i>`).join('');
+  // dust
+  const R=rnd(7);$('dustL').innerHTML=Array.from({length:34},(_,i)=>{const s=2+R()*4;return `<i class="dust" style="width:${s}px;height:${s}px;${R()<.35?'background:#ffb24d;':''}" data-x="${R()*1080}" data-y="${R()*1920}" data-v="${20+R()*50}" data-o="${.12+R()*.3}" data-ph="${R()*6.28}"></i>`}).join('');
+  // grain tile
+  const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d'),id=g.createImageData(256,256),r2=rnd(3);
+  for(let i=0;i<id.data.length;i+=4){const v=Math.floor(r2()*255);id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=255}
+  g.putImageData(id,0,0);$('grain').style.backgroundImage=`url(${c.toDataURL()})`;
+  // receipt highlight times (laser crossing)
+  ['hlDate','hlItem','hlTot'].forEach(h=>{const y=+$(h).dataset.y;let a=6.8,b=7.3;for(let k=0;k<30;k++){const m=(a+b)/2;if(laserY(m)<y)a=m;else b=m}$(h).dataset.t=a});
+}
+const laserY=t=>570*E.inOutCubic(p(t,6.8,7.32));
+
+// ---------- shake ----------
+const SHAKES=[[1.16,11],[3.64,9],[7.56,5],[11.05,7],[11.41,7],[11.77,7],[12.13,7],[12.49,7],[12.85,5],[13.84,5]];
+function shake(t){let x=0,y=0;for(const[t0,a]of SHAKES){const l=t-t0;if(l>=0&&l<.34){const k=a*Math.pow(1-l/.34,2);x+=k*Math.sin(l*95);y+=k*Math.cos(l*81)}}return{x,y}}
+
+// ---------- scenes ----------
+function S1(t){
+  const on=t<2.16;vis($('s1'),on);if(!on)return;
+  $('s1').style.transform=`scale(${1+.045*E.outCubic(p(t,0,2.15))})`;
+  const lg=$('s1logo'),q=spring(t,1.6,6.5);
+  lg.style.transform=`translateY(${(1-E.outExpo(p(t,0,.5)))*60}px) scale(${.55+.45*q})`;lg.style.opacity=p(t,0,.08);
+  buildLogo(lg,t);
+  $('s1glow').style.opacity=.4+.6*p(t,.9,1.3);$('s1glow').style.transform=`scale(${.8+.25*E.outCubic(p(t,.9,1.6))})`;
+  reveal($('s1a'),t,.3);reveal($('s1b'),t,.44);
+  const u=$('ul').querySelector('path');const uq=E.outCubic(p(t,1.18,1.55));u.style.strokeDasharray='1 1';u.style.strokeDashoffset=1-uq;u.style.opacity=uq>0?1:0;
+}
+function wipe(t){
+  const w=$('wipe'),w2=$('wipe2');
+  const a=p(t,1.9,2.1),b=p(t,2.13,2.36);const on=t>1.9&&t<2.36;vis(w,on);vis(w2,on&&t>1.94);
+  const x=a<1?lerp(-3300,0,E.inOutCubic(a)):lerp(0,3300,E.inOutCubic(b));
+  w.style.transform=`rotate(-22deg) translateX(${x}px)`;
+  const a2=p(t,1.94,2.12),x2=a2<1?lerp(-3300,-1560,E.inOutCubic(a2)):lerp(-1560,3300,E.inOutCubic(p(t,2.12,2.34)));
+  w2.style.transform=`rotate(-22deg) translateX(${x2}px) scaleX(.012)`;w2.style.transformOrigin='100% 50%';
+}
+function S2(t){
+  const on=t>=2.12&&t<4.26;vis($('s2'),on);if(!on)return;
+  const n=papers.length;
+  papers.forEach((o,i)=>{
+    const t0=2.13+i*.032,q=E.outExpo(p(t,t0,t0+.55));
+    let x=lerp(o.sx,o.x,q),y=lerp(o.sy,o.y,q),r=lerp(o.sr,o.r,q),s=1;
+    x+=Math.sin(t*1.4+i*1.7)*7;y+=Math.cos(t*1.1+i)*6;r+=Math.sin(t*.9+i)*1.6;
+    const sq=E.inBack(p(t,3.2+(n-1-i)*.012,3.62),1.4);
+    x=lerp(x,540,sq);y=lerp(y,1080,sq);r+=sq*(i%2?170:-170);s=lerp(1,.04,sq);
+    o.el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+    o.el.style.opacity=t<t0?0:1-p(sq,.85,1);
+  });
+  reveal($('s2a'),t,2.2,.6,3.18);reveal($('s2b'),t,2.3,.6,3.22);reveal($('s2c'),t,2.62,.6,3.1);
+  // glitch
+  const g=(t>2.42&&t<2.56)||(t>2.93&&t<3.0)?1:0;const j=g?Math.sin(t*173)*14:0;
+  [$('s2a'),$('s2b')].forEach(e=>{e.style.textShadow=g?`${j}px 0 rgba(255,40,90,.75),${-j}px 0 rgba(0,220,255,.75)`:'none';e.style.transform=g?`translateX(${Math.sin(t*251)*8}px)`:'none'});
+  // shockwave
+  [['ring1',3.62,.5],['ring2',3.68,.55]].forEach(([id,t0,d])=>{const q=p(t,t0,t0+d);vis($(id),q>0&&q<1);$(id).style.transform=`scale(${.05+2.3*E.outCubic(q)})`;$(id).style.opacity=1-q})
+}
+function S3(t){
+  const on=t>=3.58&&t<6.16;vis($('s3'),on);if(!on)return;
+  const wq=E.inCubic(p(t,5.95,6.13));$('s3').style.transform=`translateX(${-1500*wq}px)`;
+  reveal($('s3e'),t,3.72);reveal($('s3a'),t,3.76);reveal($('s3b'),t,3.86);
+  const sq=p(t,4.0,4.4);$('s3s').style.opacity=sq;$('s3s').style.transform=`translateY(${(1-E.outCubic(sq))*24}px)`;
+  const q=spring(t-3.6,1.5,6),W=560*1.064;
+  const x=540-W/2,y=660+Math.sin(t*1.7)*8;
+  placePhone('ph3',{x:lerp(x,x,q),y:lerp(1080-620,y,q),s:lerp(.12,1,q),ry:lerp(-38,-14,q)+6*E.inOutCubic(p(t,4,6)),rx:6,rz:lerp(-12,0,q)});
+  PH.ph3.style.opacity=p(t,3.6,3.66);
+  $('ph3s').style.transform=`translateY(${-70*E.inOutCubic(p(t,4.7,5.9))}px)`;
+  $('ph3g').style.transform=`translateX(${lerp(-30,40,p(t,3.7,6))}%)`;
+  // donut card
+  const ca=spring(t-4.05,1.6,7);$('c3a').style.opacity=p(t,4.05,4.12);
+  $('c3a').style.transform=`translateY(${(1-ca)*120+Math.sin(t*2.1+1)*6}px) rotate(${-5+ (1-ca)*-14}deg) scale(${.7+.3*ca})`;
+  const dq=E.outCubic(p(t,4.2,5.05));$('donut').setAttribute('stroke-dasharray',`${30*dq} 100`);$('pct').textContent=Math.round(30*dq)+'%';
+  const cb=spring(t-4.4,1.6,7);$('c3b').style.opacity=p(t,4.4,4.47);
+  $('c3b').style.transform=`translateY(${(1-cb)*120+Math.sin(t*1.9)*6}px) rotate(${3+(1-cb)*10}deg) scale(${.7+.3*cb})`;
+  const rq=E.outCubic(p(t,4.5,5.4));$('rest').textContent=fmt(407315*rq);$('restbar').style.width=(70*rq)+'%';
+}
+function S4(t){
+  const on=t>=6.06&&t<8.72;vis($('s4'),on);if(!on)return;
+  const iq=E.outCubic(p(t,6.06,6.34)),oq=E.inCubic(p(t,8.42,8.7));
+  $('s4').style.transform=`translateX(${1500*(1-iq)}px) translateY(${-520*oq}px) scale(${1-.12*oq})`;$('s4').style.opacity=1-oq;
+  reveal($('s4e'),t,6.14);reveal($('s4a'),t,6.18);reveal($('s4b'),t,6.28,.62,7.55);reveal($('s4b2'),t,7.66);
+  const tk=$('s4tick');tk.style.strokeDasharray='1 1';tk.style.strokeDashoffset=1-E.outCubic(p(t,7.85,8.1));
+  const sq=p(t,6.45,6.8);$('s4s').style.opacity=sq;$('s4s').style.transform=`translateY(${(1-E.outCubic(sq))*24}px)`;
+  placePhone('ph4',{x:468,y:720+Math.sin(t*1.6+2)*8,ry:16-5*E.inOutCubic(p(t,6.1,8.5)),rx:4,rz:2});
+  $('ph4g').style.transform=`translateX(${lerp(-40,30,p(t,6.1,8.6))}%)`;
+  $('ph4s').style.transform=`translateY(${-30*E.inOutCubic(p(t,7.6,8.4))}px)`;
+  // receipt
+  const rc=$('rc'),rq=E.outExpo(p(t,6.2,6.75));
+  const fq=E.inOutCubic(p(t,7.34,7.62));
+  let rx=lerp(-420,0,rq),ry=lerp(760,0,rq),rr=lerp(-28,-5,rq)+Math.sin(t*1.3)*1.2,rs=1;
+  rx=lerp(rx,420,fq);ry=lerp(ry,-120,fq);rr=lerp(rr,8,fq);rs=lerp(1,.18,E.inCubic(p(t,7.34,7.62)));
+  rc.style.transform=`translate(${rx}px,${ry}px) rotate(${rr}deg) scale(${rs})`;rc.style.opacity=t<6.2?0:1-p(t,7.52,7.62);
+  vis(rc,t<7.63&&on);
+  const cq=E.outBack(p(t,6.55,6.82),2.2);
+  [['co1',-1,-1],['co2',1,-1],['co3',-1,1],['co4',1,1]].forEach(([id,sx,sy])=>{$(id).style.transform=`translate(${sx*60*(1-cq)}px,${sy*60*(1-cq)}px)`;$(id).style.opacity=p(t,6.55,6.6)});
+  const ly=laserY(t),lon=t>6.78&&t<7.36;vis($('laser'),lon&&on);vis($('trail'),lon&&on);
+  $('laser').style.top=(ly-3)+'px';$('trail').style.top=(ly-220)+'px';$('laser').style.opacity=1-p(t,7.3,7.36);
+  ['hlDate','hlItem','hlTot'].forEach(h=>{const t0=+$(h).dataset.t,q=p(t,t0,t0+.18);$(h).style.opacity=q;$(h).style.transform=`scale(${1.15-.15*E.outBack(q)})`;});
+  // phone highlight + success card
+  const hq=p(t,7.6,7.8);$('ph4hl').style.opacity=hq*(.75+.25*Math.cos((t-7.6)*9));$('ph4hl').style.transform=`scale(${1.08-.08*E.outBack(hq)})`;
+  const cs=spring(t-7.66,1.6,7);$('c4').style.opacity=p(t,7.66,7.72);
+  $('c4').style.transform=`translateY(${(1-cs)*140+Math.sin(t*2)*5}px) rotate(${-3+(1-cs)*-10}deg) scale(${.7+.3*cs})`;
+  const ct=$('c4tick');ct.style.strokeDasharray='1 1';ct.style.strokeDashoffset=1-E.outCubic(p(t,7.8,8.05));
+}
+function chip(id,t,tin,tc){
+  const el=$(id),q=E.outExpo(p(t,tin,tin+.6));
+  el.style.transform=`translateX(${(1-q)*-760}px) rotate(${(1-q)*-6}deg)`;
+  const c=p(t,tc,tc+.22);
+  el.querySelector('.cf').style.transform=`scale(${E.outBack(c,2.5)})`;
+  el.querySelector('.cc').style.opacity=1-c;
+  el.querySelector('.ck').style.strokeDashoffset=1-E.outCubic(p(t,tc+.1,tc+.32));
+  el.querySelector('.st').style.width=(100*E.inOutCubic(p(t,tc+.12,tc+.4)))+'%';
+  el.querySelector('.ctx span').style.color=c>.5?'#8b95a6':'#14202e';
+  el.querySelectorAll('.pt').forEach((pt,k)=>{const l=p(t,tc+.04,tc+.55),a=k/10*6.283+.3;const r=18+62*E.outCubic(l);pt.style.transform=`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(${1-l})`;pt.style.opacity=l>0&&l<1?1:0});
+}
+function S5(t){
+  const on=t>=8.5&&t<11.08;vis($('s5'),on);if(!on)return;
+  const zq=E.inExpo(p(t,10.86,11.06));$('s5').style.transform=`scale(${1+.9*zq})`;$('s5').style.opacity=1-zq;
+  reveal($('s5e'),t,8.58);reveal($('s5a'),t,8.62);reveal($('s5b'),t,8.72);
+  const sq=p(t,8.9,9.25);$('s5s').style.opacity=sq;$('s5s').style.transform=`translateY(${(1-E.outCubic(sq))*24}px)`;
+  const a=E.outExpo(p(t,8.56,9.2)),b=E.outExpo(p(t,8.68,9.32));
+  placePhone('ph5a',{x:70,y:760+1300*(1-a)+Math.sin(t*1.5)*7,rz:-6,ry:14,rx:3});
+  placePhone('ph5b',{x:540,y:830+1300*(1-b)+Math.sin(t*1.5+1.5)*7,rz:5,ry:-14,rx:3});
+  $('ph5as').style.transform=`translateY(${-50*E.inOutCubic(p(t,9.2,10.8))}px)`;
+  $('ph5bg').style.transform=`translateX(${lerp(-40,30,p(t,8.6,11))}%)`;$('ph5ag').style.transform=`translateX(${lerp(-40,30,p(t,8.6,11))}%)`;
+  const nq=spring(t-9.28,1.4,6.5);$('noti').style.opacity=p(t,9.28,9.36);
+  $('noti').style.transform=`translateY(${(1-nq)*-150}px) scale(${.9+.1*nq})`;
+  chip('ch1',t,9.5,9.95);chip('ch2',t,9.62,10.3);
+}
+function S6(t){
+  const on=t>=11.04&&t<13.62;vis($('s6'),on);if(!on)return;
+  let i=-1;WORDS.forEach((o,k)=>{if(t>=o.t)i=k});
+  const fin=t>=FINAL_T;
+  const o=WORDS[Math.max(0,i)];
+  $('s6bg').style.background=fin?'#0b0f17':o.bg;
+  const w=$('s6w'),ws=$('s6ws'),mi=$('s6main');
+  vis(w,!fin&&on);vis(mi,!fin&&on);
+  if(!fin){
+    if(ws.textContent!==o.w)ws.textContent=o.w;
+    const l=t-o.t,q=E.outExpo(p(l,0,.26));
+    w.style.fontSize=o.fs+'px';w.style.color=o.fg;
+    ws.style.transform=`scale(${1+.42*(1-q)}) translateY(${(1-q)*18}%)`;ws.style.transformOrigin='50% 60%';
+    ws.style.letterSpacing=(-.045+.06*(1-q))+'em';ws.style.filter=`blur(${(1-q)*10}px)`;
+    w.querySelectorAll('em').forEach(()=>{});
+    if(mi.dataset.k!==o.ic){mi.innerHTML=ICONS[o.ic];mi.dataset.k=o.ic}
+    mi.style.stroke=o.fg==='#fff'?'#ff9f1c':'#11151f';
+    mi.querySelectorAll('path,circle').forEach(pa=>{pa.style.strokeDasharray='1 1';pa.style.strokeDashoffset=1-E.outCubic(p(l,.02,.3))});
+    mi.style.transform=`translateY(${(1-q)*-40}px) scale(${.8+.2*q})`;
+  }
+  // bars
+  const bars=$('s6bars');bars.style.opacity=1-p(t,FINAL_T,FINAL_T+.15);
+  bars.querySelectorAll('.bt').forEach((b,k)=>{const f=b.firstElementChild;const dark=o.fg==='#fff';b.style.background=dark?'rgba(255,255,255,.18)':'rgba(17,21,31,.22)';f.style.background=dark?'#ff9f1c':'#11151f';f.style.width=(100*p(t,WORDS[k].t,WORDS[k].t+.36))+'%'});
+  // final
+  vis($('s6f1'),fin&&on);vis($('s6f2'),fin&&on);
+  reveal($('s6f1'),t,FINAL_T+.02,.55);reveal($('s6f2'),t,FINAL_T+.1,.55);
+  document.querySelectorAll('.s6row').forEach((r,k)=>{vis(r,fin&&on);const q=E.outBack(p(t,FINAL_T+k*.045,FINAL_T+k*.045+.3),2);r.style.transform=`scale(${q})`;r.style.stroke='#ff9f1c';r.querySelectorAll('path,circle').forEach(pa=>{pa.style.strokeDasharray='1 1';pa.style.strokeDashoffset=0})});
+}
+function S7(t){
+  const on=t>=13.28;vis($('s7'),on);if(!on)return;
+  const R=1700*E.inOutCubic(p(t,13.28,13.62));$('s7').style.clipPath=`circle(${R}px at 540px 900px)`;
+  const lg=$('s7logo'),q=spring(t-13.3,1.4,6.5);
+  lg.style.transform=`scale(${.4+.6*q}) rotate(${(1-q)*-10}deg)`;
+  buildLogo(lg,(t-13.3)*2.1);
+  $('s7glow').style.opacity=.7+.3*Math.sin(t*3);
+  $('s7burst').querySelectorAll('.burst').forEach((b,k)=>{const l=p(t,13.84,14.3),a=k*30;const r=175+120*E.outCubic(l);b.style.transform=`rotate(${a}deg) translateY(${-r}px) scaleY(${1-l})`;b.style.opacity=l>0&&l<1?1:0});
+  $('s7ws').querySelectorAll('span').forEach((s,k)=>{const q=E.outExpo(p(t,13.48+k*.04,13.48+k*.04+.6));s.style.transform=`translateY(${(1-q)*115}%) rotate(${(1-q)*8}deg)`});
+  reveal($('s7t'),t,13.78);reveal($('s7u'),t,14.02);
+  const c=spring(t-13.92,1.5,7);$('cta').style.opacity=p(t,13.92,13.98);$('cta').style.transform=`translateX(-50%) scale(${.5+.5*c})`;
+  $('shim').style.transform=`translateX(${lerp(-260,900,E.inOutCubic(p(t,14.3,14.85)))}px) skewX(-18deg)`;
+  $('grid7').style.transform=`translate(${-(t*24)%180}px,${-(t*40)%180}px)`;
+}
+function bgAnim(t){
+  $('grid').style.transform=`translate(${-(t*24)%180}px,${-(t*40)%180}px)`;
+  $('glowA').style.transform=`translate(${lerp(-500,-80,(Math.sin(t*.45)+1)/2)}px,${lerp(100,700,(Math.cos(t*.35)+1)/2)}px)`;
+  $('glowB').style.transform=`translate(${lerp(-200,300,(Math.cos(t*.5)+1)/2)}px,${lerp(900,1300,(Math.sin(t*.4)+1)/2)}px)`;
+  document.querySelectorAll('#dustL .dust').forEach(d=>{const x=+d.dataset.x+Math.sin(t*.8+ +d.dataset.ph)*20;let y=(+d.dataset.y- t*+d.dataset.v)%1920;if(y<0)y+=1920;d.style.transform=`translate(${x}px,${y}px)`;d.style.opacity=d.dataset.o});
+  const f=Math.round(t*30),r=rnd(f*7919+13);$('grain').style.backgroundPosition=`${Math.floor(r()*256)}px ${Math.floor(r()*256)}px`;
+}
+function render(t){
+  bgAnim(t);S1(t);wipe(t);S2(t);S3(t);S4(t);S5(t);S6(t);S7(t);
+  const s=shake(t);$('cam').style.transform=`translate(${s.x}px,${s.y}px)`;
+}
+window.render=render;
+(async()=>{
+  await document.fonts.load('900 100px "Inter Display"');await document.fonts.load('700 30px Inter');await document.fonts.load('800 30px Inter');
+  await Promise.all([...document.images].map(i=>i.decode().catch(()=>{})));
+  setup();
+  await Promise.all([...document.images].map(i=>i.decode().catch(()=>{})));
+  const q=new URLSearchParams(location.search);render(+(q.get('t')||0));
+  window.READY=true;
+})();
+</script>
+</body></html>

@@ -79,6 +79,11 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - `NATIVE-PUSH-SETUP.md` – Push · `MAIL-VORLAGEN.md` – Mail-Texte · `SYNC-FINDINGS.md` – Sync-Wissen.
 - `agb.html`, `datenschutz.html`, `impressum.html`, `support.html` – Rechtliches/Support (live).
 - `marketing/` – Instagram-Prompt & Bilder · `lp/` – Bilder der neuen Startseite.
+- `marketing/planory-reel.mp4` – Instagram-Reel (15 s, 1080×1920, ohne Musik) + `reel-titelbild.jpg`.
+  Quelle: `marketing/reel/` (`reel.html` mit `render(t)`, `render.cjs` = Playwright, Bild für Bild).
+  Video bauen: 4 Teilbilder pro Bild rendern, dann
+  `ffmpeg -framerate 120 -i f_%05d.png -vf "tmix=frames=4,select='eq(mod(n\,4)\,3)',setpts=N/30/TB" -r 30 …`
+  (= Bewegungsunschärfe), danach 2-Pass ca. 9 Mbit/s → ~17 MB.
 
 ## 7. Offen & laufend (Kurzfassung – Details in `OFFENE-PUNKTE.md`)
 - v1.3 bei Apple in Prüfung → danach testen (Gratismonat, Kauf, Wiederherstellen).
