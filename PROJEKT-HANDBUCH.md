@@ -79,7 +79,9 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - `NATIVE-PUSH-SETUP.md` – Push · `MAIL-VORLAGEN.md` – Mail-Texte · `SYNC-FINDINGS.md` – Sync-Wissen.
 - `agb.html`, `datenschutz.html`, `impressum.html`, `support.html` – Rechtliches/Support (live).
 - `marketing/` – Instagram-Prompt & Bilder · `lp/` – Bilder der neuen Startseite.
-- `marketing/planory-reel.mp4` – Instagram-Reel (15 s, 1080×1920, ohne Musik) + `reel-titelbild.jpg`.
+- `marketing/planory-reel.mp4` – Instagram-Reel (16,5 s, 1080×1920) mit eigenen Soundeffekten
+  (`reel/sound.cjs`, selbst erzeugt, −14 LUFS; Musik legt Simon in Instagram leise darunter) +
+  `reel-titelbild.jpg`. Schluss bewusst ohne Preis/Gratis-Hinweis: „Jetzt starten →“.
   Quelle: `marketing/reel/` (`reel.html` mit `render(t)`, `render.cjs` = Playwright, Bild für Bild).
   Video bauen: 4 Teilbilder pro Bild rendern, dann
   `ffmpeg -framerate 120 -i f_%05d.png -vf "tmix=frames=4,select='eq(mod(n\,4)\,3)',setpts=N/30/TB" -r 30 …`

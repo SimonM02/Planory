@@ -18,15 +18,15 @@ const fs = require('fs');
       await page.screenshot({ path: `${out}/s_${t.toFixed(2)}.png` });
     }
   } else {
-    const out = a, SUB = +(b || 1), FPS = 30, N = 450, SHUT = 0.5;
-    const [K0, K1] = (c || '0-450').split('-').map(Number);
+    const out = a, SUB = +(b || 1), FPS = 30, N = 495, SHUT = 0.5;
+    const [K0, K1] = (c || '0-495').split('-').map(Number);
     fs.mkdirSync(out, { recursive: true });
     const t0 = Date.now();
     for (let k = K0; k < K1; k++) {
       let idx = k * SUB;
       for (let j = 0; j < SUB; j++) {
         const off = SUB > 1 ? ((j + 0.5) / SUB - 0.5) * SHUT / FPS : 0;
-        const t = Math.max(0, Math.min(15, k / FPS + off));
+        const t = Math.max(0, Math.min(16.5, k / FPS + off));
         await page.evaluate(t => render(t), t);
         await page.screenshot({ path: `${out}/f_${String(idx++).padStart(5, '0')}.png` });
       }
