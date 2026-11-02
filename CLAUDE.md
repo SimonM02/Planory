@@ -23,6 +23,8 @@ So effizient, vollständig und korrekt wie möglich arbeiten:
 - Wichtige neue Entscheidungen in `PROJEKT-HANDBUCH.md` nachtragen.
 - Hat der Dev-Branch noch nicht freigegebene Änderungen (z. B. neue Startseite), beim Live-Stellen
   nicht die ganze `index.html` kopieren, sondern nur den Fix auf `main` anwenden.
-- **Datenschutz:** In Kundendaten (Supabase) nur mit Grund schauen (Support/Fehlersuche, mit
-  Einverständnis); sonst nur Gesamtzahlen. Keine Kundendaten in Dateien/Commits (Repo öffentlich).
+- **Datenschutz:** Fragt Simon nach einem bestimmten Kunden (Support/Kontrolle), **direkt in
+  Supabase nachschauen und die Daten im Chat zeigen – nicht nachfragen**. Ohne konkreten Anlass
+  nicht in Kundendaten stöbern (sonst nur Gesamtzahlen). Kundendaten **nie** in Dateien/Commits
+  (Repo öffentlich).
 - Offene Punkte: siehe `OFFENE-PUNKTE.md`.

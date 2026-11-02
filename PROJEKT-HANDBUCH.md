@@ -65,8 +65,12 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - **Ladebildschirm:** Logo baut sich auf (Kran → Haus → Dach).
 
 ## 5. Datenschutz – Regeln für die Arbeit
-- **In Kundendaten nur mit Grund schauen** (Support-Anfrage, Fehlersuche) – sonst nur
-  Gesamtzahlen. Inhalte (Beträge, Texte) nur auf ausdrücklichen Wunsch des Kunden.
+- **Simons Anfrage zu einem bestimmten Kunden = Support-Anlass:** direkt nachschauen und alles
+  zeigen, was er zum Kontrollieren braucht – ohne Rückfrage. Ohne Anlass nicht in Kundendaten
+  stöbern, sonst nur Gesamtzahlen.
+  So geht's: Konto in `auth.users` über Name/E-Mail finden · Projekt, Adresse, Einstellungen in
+  `projektdaten` (`typ='all_projects'`, `daten->'projects'`) · Einträge in `projekt_items`
+  (`item_type`, `payload`, `deleted`).
 - **Keine Kundendaten in Projektdateien/Commits** – das Repo ist (noch) öffentlich. Prüfung
   `tests/pruefen.mjs` schlägt bei fremden E-Mail-Adressen in `.md`-Dateien an.
 - Verzeichnis der Verarbeitungstätigkeiten + Vertrags-Checkliste: `VERARBEITUNGSVERZEICHNIS.md`.
