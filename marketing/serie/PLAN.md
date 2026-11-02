@@ -11,8 +11,9 @@ Bauherren nach der Arbeit am Handy.
 
 | # | Datum | Funktion | Status |
 |---|---|---|---|
-| 1 | Di 10.11.2026 | Budget | ✅ Beispiel fertig |
-| 2 | Fr 13.11.2026 | Rechnung scannen (KI) | ✅ Beispiel fertig |
+| 0 | So 08.11.2026 | **Intro: Was ist Planory + die Serie** | ✅ fertig |
+| 1 | Di 10.11.2026 | Budget | ✅ fertig |
+| 2 | Fr 13.11.2026 | Rechnung scannen (KI) | ✅ fertig |
 | 3 | Di 17.11.2026 | Zeitplan & Meilensteine (Erinnerungen) | offen |
 | 4 | Fr 20.11.2026 | Aufgaben (Heute/Kommende, Unteraufgaben, wiederkehrend) | offen |
 | 5 | Di 24.11.2026 | Bautagebuch (Fotos, Wetter, Erinnerungs-Buch als PDF) | offen |
@@ -28,8 +29,25 @@ Bauherren nach der Arbeit am Handy.
 - **Regel:** Vor jeder Folge prüfe ich in der App, dass die Funktion genau so existiert. Nichts
   zeigen, was es (noch) nicht gibt, z. B. „Projekt teilen“.
 - **Bilder:** echte App-Bildschirme aus dem Demo-Modus (Musterhaus Graz), keine Kundendaten.
+- **Intro:** nennt bewusst keine Termine (kein „Di & Fr“, kein „bald“).
+
+## Titelbild (Cover)
+Jede Folge beginnt mit einem einheitlichen Titelbild: „PLANORY ERKLÄRT“, große Nummer, Titel und
+Symbol. Beim Hochladen in Instagram unter **Titelbild bearbeiten → Aus Kamerarolle** die Datei
+`folgeNN-…-titelbild.jpg` wählen. Alles Wichtige liegt in der Mitte, damit es auch im Profil-Raster
+(Ausschnitt 3:4) vollständig zu sehen ist. So sieht das Profil wie eine geordnete Reihe aus.
 
 ## Beschreibungstexte
+
+**Folge 0 – Intro**
+```
+Du baust ein Haus? 🏡
+Planory ist dein digitaler Bauassistent – Budget, Rechnungen, Zeitplan, Aufgaben, Bautagebuch und mehr in einer App.
+In unserer Serie „Planory erklärt“ zeigen wir dir alle Funktionen – Folge für Folge.
+Los geht’s mit Folge 1: Budget 💶
+👉 Folge uns, damit du keine Folge verpasst · planory.at (iPhone & Web)
+#hausbau #häuslbauer #eigenheim #hausbauen #bauherren #neubau #bauplanung #hausbau2026 #österreich
+```
 
 **Folge 1 – Budget**
 ```

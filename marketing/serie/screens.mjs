@@ -58,7 +58,11 @@ const shot = async (name, fn, { full = false, el = null, scroll = 0, boxes = {} 
   BOXES[name] = await p.evaluate(({ boxes, el }) => {
     const base = el ? document.querySelector(el).getBoundingClientRect() : { left: 0, top: 0 };
     const out = {};
-    for (const [k, sel] of Object.entries(boxes)) { const e = document.querySelector(sel); if (!e) { out[k] = null; continue; }
+    // „text=Speichern@#modal-kosten“ = sichtbarer Knopf mit diesem Text (optional innerhalb eines Bereichs)
+    const finde = sel => { if (!sel.startsWith('text=')) return document.querySelector(sel);
+      const [txt, scope] = sel.slice(5).split('@'); const root = scope ? document.querySelector(scope) : document;
+      return [...root.querySelectorAll('button, a, .btn')].find(e => e.textContent.trim().includes(txt) && e.getClientRects().length); };
+    for (const [k, sel] of Object.entries(boxes)) { const e = finde(sel); if (!e) { out[k] = null; continue; }
       const r = e.getBoundingClientRect(); const sy = el ? 0 : window.scrollY;
       out[k] = [r.left - base.left, r.top - base.top + sy, r.width, r.height].map(v => Math.round(v * 3)); }
     return out; }, { boxes, el });
@@ -67,11 +71,12 @@ const shot = async (name, fn, { full = false, el = null, scroll = 0, boxes = {} 
 const heute = () => new Date().toISOString().slice(0, 10);
 
 // ── Folge 1: Budget ──
-await shot('dash-sichtbar', () => showPage('dashboard'), { full: true, boxes: { qaScan: '#qa-tiles > *:first-child', qa: '#qa-tiles', toggle: '#privacy-btn', cards: '#dash-cards' } });
-await shot('dash-verborgen', () => { togglePrivacy(); }, { full: true, boxes: { toggle: '#privacy-btn', cards: '#dash-cards' } });
+await shot('dash-sichtbar', () => showPage('dashboard'), { full: true, boxes: { qaScan: '#qa-tiles > *:first-child', qa: '#qa-tiles', toggle: '#privacy-btn', budgetKopf: '#privacy-btn', cards: '#dash-cards', karte1: '#dash-cards > .card:first-child', karte2: '#dash-cards > .card:nth-child(2)' } });
+await shot('dash-verborgen', () => { togglePrivacy(); }, { full: true, boxes: { toggle: '#privacy-btn', cards: '#dash-cards', karte1: '#dash-cards > .card:first-child', karte2: '#dash-cards > .card:nth-child(2)' } });
 await p.evaluate(() => togglePrivacy());
-await shot('budget', () => showPage('budget'), { full: true, boxes: { blick: '.bg-blick', page: '#page-budget' } });
-await shot('kostenchart', () => showPage('kostenchart'), { full: true, boxes: { page: '#page-kostenchart', canvas: '#page-kostenchart canvas' } });
+await shot('budget', () => showPage('budget'), { full: true, boxes: { blick: '.bg-blick', ring: '.bg-ring', zahlen: '.bg-zahlen', katGrafik: '.bg-kat-grafik', page: '#page-budget' } });
+await shot('kostenchart', () => showPage('kostenchart'), { full: true, boxes: { page: '#page-kostenchart', tabs: '#page-kostenchart .chart-tabs', chart: '#kc-chart-wrap', top: '#page-kostenchart .two-col .chart-container' } });
+await shot('kosten-vorher', () => showPage('kosten'), { full: true, boxes: { btnNeu: 'text=Ausgabe erfassen@#page-kosten', karten: '#page-kosten .cards-grid' } });
 await shot('ausgabe-form', () => {
   showPage('kosten'); openModal('modal-kosten');
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
@@ -81,7 +86,7 @@ await shot('ausgabe-form', () => {
   set('k-anbieter', 'Baumarkt');
   document.getElementById('k-im-budget').checked = false;
 }, { el: '#modal-kosten .modal' });
-await shot('ausgabe-form-unten', () => {}, { el: '#modal-kosten .modal', scroll: 9999, boxes: { check: '#k-im-budget', checkRow: '#k-im-budget' } });
+await shot('ausgabe-form-unten', () => {}, { el: '#modal-kosten .modal', scroll: 9999, boxes: { check: '#k-im-budget', checkRow: '#modal-kosten .form-row:has(#k-im-budget)', speichern: 'text=Speichern@#modal-kosten' } });
 await p.evaluate(() => closeModal('modal-kosten'));
 await shot('kosten-nib', () => {
   state.kosten.unshift({ id: 990001, datum: new Date().toISOString().slice(0, 10), beschr: 'Malerarbeiten (Eigenleistung)', kat: (state.kosten.find(k => /Innen/i.test(k.kat || ''))?.kat) || state.kosten[0].kat, betrag: 850, netto: 708.33, mwst: 20, status: 'Bezahlt', anbieter: 'Baumarkt', imBudget: false });
@@ -121,7 +126,7 @@ await shot('kosten-filter', () => {
   showPage('kosten');
   const f = document.getElementById('kosten-filter-kat'); renderKosten();
   const o = [...f.options].find(x => /Sanit/i.test(x.textContent)) || f.options[2]; if (o) f.value = o.value; renderKosten();
-}, { full: true, boxes: { filter: '#kosten-filter-kat', info: '#kosten-filter-info', table: '#kosten-table' } });
+}, { full: true, boxes: { kopf: '#kosten-ausgaben-panel .k-kopf', filter: '#kosten-filter-kat', info: '#kosten-filter-info', table: '#kosten-table', ersteKarte: '#kosten-table tr:first-child' } });
 console.log('Personen bei „Bezahlt von“:', await p.evaluate(() => [...document.getElementById('scan-bezahlt-von').options].map(o => o.textContent).join(' | ')));
 (await import('fs')).writeFileSync(OUT + '/boxes.json', JSON.stringify(BOXES, null, 1));
 await b.close();

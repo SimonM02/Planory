@@ -25,6 +25,12 @@ em{font-style:normal;color:#ff9f1c}
 #num{position:absolute;left:66px;top:352px;width:66px;height:66px;border-radius:50%;background:#ff9f1c;color:#11151f;font:900 40px 'Inter Display';display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(255,159,28,.4)}
 #dots{position:absolute;left:66px;top:440px;display:flex;flex-direction:column;gap:10px}
 #dots i{display:block;width:8px;height:22px;border-radius:4px;background:rgba(255,255,255,.18)}
+/* Titelbild */
+#cv .kick{position:absolute;left:0;right:0;top:470px;text-align:center;font:800 34px Inter;letter-spacing:.3em;color:#ff9f1c}
+#cvBig{position:absolute;left:0;right:0;top:540px;text-align:center;font:900 330px/1 'Inter Display';letter-spacing:-.04em;color:transparent;-webkit-text-stroke:7px #ff9f1c}
+#cvT{top:900px}
+#cvIcon{position:absolute;left:430px;top:1170px;width:220px;height:220px}
+#cvLine{position:absolute;left:390px;top:1450px;width:300px;height:8px;border-radius:4px;background:#ff9f1c}
 /* Handy */
 .phone{position:absolute;background:linear-gradient(150deg,#454c5c 0%,#161a23 26%,#0b0e14 70%,#2d3340 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.14),inset 0 0 0 5px rgba(0,0,0,.55),0 60px 120px -20px rgba(0,0,0,.75),0 25px 50px rgba(0,0,0,.35)}
 .screen{position:relative;width:100%;height:100%;overflow:hidden;background:#f3f4f7}
@@ -32,11 +38,13 @@ em{font-style:normal;color:#ff9f1c}
 .sbar{position:absolute;left:0;right:0;top:0;background:#fff;display:flex;align-items:center;justify-content:space-between;font-family:'Inter';font-weight:600;color:#000;z-index:6}
 .island{position:absolute;left:50%;transform:translateX(-50%);background:#000;border-radius:999px}
 .glare{position:absolute;left:-60%;top:-20%;width:220%;height:140%;background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.16) 49%,rgba(255,255,255,.04) 53%,transparent 58%);pointer-events:none;z-index:7}
-.stack{position:absolute;inset:0;overflow:hidden}
+.stack{position:absolute;inset:0;overflow:hidden;background:#f3f4f7}
+.stack .pgw{position:absolute;inset:0}
 .stack .pg{position:absolute;left:0;top:0;display:block}
 .stack .dim{position:absolute;inset:0;background:rgba(10,14,22,.42)}
 .stack .md{position:absolute;overflow:hidden;border-radius:22px;box-shadow:0 20px 50px rgba(0,0,0,.35);background:#fff}
 .stack .md img{position:absolute;left:0;top:0;display:block}
+.stack .shade{position:absolute;inset:0;background:#000;opacity:0}
 #fxl{position:absolute;inset:0;z-index:5;pointer-events:none}
 .hl{position:absolute;border:5px solid #ff9f1c;border-radius:16px;box-shadow:0 0 0 6px rgba(255,159,28,.22),0 0 30px rgba(255,159,28,.5)}
 .rip{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,159,28,.35);border:4px solid #ff9f1c}
@@ -45,7 +53,6 @@ em{font-style:normal;color:#ff9f1c}
 /* Lupe */
 #lens{position:absolute;overflow:hidden;border-radius:30px;background:#fff;box-shadow:0 0 0 6px #fff,0 0 0 10px #ff9f1c,0 50px 100px -10px rgba(0,0,0,.7)}
 #lens img{position:absolute;left:0;top:0;display:block}
-#lensTag{position:absolute;background:#ff9f1c;color:#11151f;font:800 24px Inter;padding:8px 18px;border-radius:999px;white-space:nowrap}
 .chip{position:absolute;left:50%;transform:translateX(-50%);background:rgba(20,24,32,.85);backdrop-filter:blur(16px);color:#fff;font:700 34px Inter;padding:20px 34px;border-radius:999px;white-space:nowrap;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 20px 50px rgba(0,0,0,.5)}
 /* Rechnung (wie Reel 1) */
 .rc{position:absolute;width:430px;height:600px;filter:drop-shadow(0 40px 50px rgba(0,0,0,.55))}
@@ -57,12 +64,17 @@ em{font-style:normal;color:#ff9f1c}
 .rsep{border-top:2px dashed #c9ced8;margin:8px 0}.rr.tt{font-size:28px;font-weight:900;padding-top:12px}.rr.tt span{color:#1d2430!important}
 .cor{position:absolute;width:80px;height:80px;border-color:#ff9f1c;border-style:solid;border-width:0}
 .laser{position:absolute;left:-16px;right:-16px;height:6px;background:#ffb24d;border-radius:3px;box-shadow:0 0 18px 4px rgba(255,159,28,.9),0 0 60px 12px rgba(255,159,28,.45)}
+/* Intro: Kacheln */
+.tile{position:absolute;width:300px;height:190px;border-radius:30px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.13);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:'Inter'}
+.tile svg{width:78px;height:78px;stroke:#ff9f1c}
+.tile b{font:800 25px Inter;letter-spacing:-.01em;text-align:center;line-height:1.15}
+.tile i{position:absolute;left:18px;top:14px;font:800 18px Inter;font-style:normal;color:rgba(255,255,255,.45);letter-spacing:.06em}
 /* Ende */
 .cta{position:absolute;left:50%;top:1290px;height:120px;padding:0 60px;border-radius:60px;background:linear-gradient(180deg,#ffb042,#ff9f1c 55%,#f28c00);color:#11151f;font-family:'Inter';font-weight:800;font-size:48px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;box-shadow:0 30px 70px -10px rgba(255,159,28,.55),inset 0 2px 0 rgba(255,255,255,.45)}
 .shim{position:absolute;top:0;bottom:0;width:180px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);left:0}
 #nextPill{position:absolute;left:50%;top:1160px;display:flex;align-items:center;gap:14px;padding:16px 30px;border-radius:999px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16);font:700 32px Inter;white-space:nowrap}
 .burst{position:absolute;width:10px;height:44px;border-radius:5px;background:#ff9f1c;left:-5px;top:-22px}
-.ico path,.ico circle{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ico path,.ico circle,.ico rect{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .dust{position:absolute;border-radius:50%;background:#fff}
 #grain{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.14;pointer-events:none}
 #vig{position:absolute;inset:0;background:radial-gradient(ellipse 85% 70% at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%);pointer-events:none}
@@ -73,10 +85,24 @@ em{font-style:normal;color:#ff9f1c}
   <div class="glow" id="glowA"></div><div class="glow b" id="glowB"></div>
   <div id="dustL"></div>
 
+  <div class="scene" id="cv">
+    <div class="kick" id="cvK">PLANORY ERKLÄRT</div>
+    <div id="cvBig"></div>
+    <div class="line c" id="cvT" style="font-size:190px"><span></span></div>
+    <div id="cvIcon"></div>
+    <div id="cvLine"></div>
+  </div>
+
   <div class="scene" id="sH">
     <svg class="ico" id="hIcon" viewBox="0 0 100 100" style="position:absolute;left:440px;top:520px;width:200px;height:200px;stroke:#ff9f1c" stroke-width="7"></svg>
     <div class="line c" id="h1" style="top:780px;font-size:118px"><span></span></div>
     <div class="line c" id="h2" style="top:920px;font-size:118px"><span><em></em></span></div>
+  </div>
+
+  <div class="scene" id="sB">
+    <div id="bLogo" style="position:absolute;left:375px;top:560px;width:330px;height:330px"></div>
+    <div class="line c" id="bW" style="top:940px;font-size:170px"><span id="bWs"></span></div>
+    <div class="line c" id="bT" style="top:1140px;font-size:58px;letter-spacing:-.02em"><span>Dein digitaler <em>Bauassistent.</em></span></div>
   </div>
 
   <div class="scene" id="sS">
@@ -90,6 +116,18 @@ em{font-style:normal;color:#ff9f1c}
     <div class="chip" id="chip"></div>
   </div>
 
+  <div class="scene" id="sG">
+    <div class="line l" id="g1" style="top:330px;font-size:92px;left:66px"><span></span></div>
+    <div class="line l" id="g2" style="top:432px;font-size:92px;left:66px"><span><em></em></span></div>
+    <div class="sub" id="gsub" style="top:556px;left:68px"></div>
+    <div id="tiles"></div>
+  </div>
+
+  <div class="scene" id="sR">
+    <div class="line c" id="r1" style="top:760px;font-size:96px"><span></span></div>
+    <div class="line c" id="r2" style="top:880px;font-size:124px"><span><em></em></span></div>
+  </div>
+
   <div class="scene" id="sE">
     <div class="bg"></div><div class="grid" id="grid2"></div>
     <div class="glow" id="eGlow" style="left:-210px;top:60px"></div>
@@ -98,7 +136,7 @@ em{font-style:normal;color:#ff9f1c}
     <div class="line c" id="eW" style="top:880px;font-size:156px"><span id="eWs"></span></div>
     <div class="line c" id="eT" style="top:1064px;font-size:56px;letter-spacing:-.02em"><span></span></div>
     <div id="nextPill"><span style="color:#ff9f1c">▶</span><span id="nextTxt"></span></div>
-    <div class="cta" id="cta"><div class="shim" id="shim"></div><span style="position:relative">Jetzt starten →</span></div>
+    <div class="cta" id="cta"><div class="shim" id="shim"></div><span style="position:relative" id="ctaTxt">Jetzt starten →</span></div>
     <div class="line c" id="eU" style="top:1440px;font-size:38px;font-family:Inter;font-weight:700;letter-spacing:.01em;word-spacing:0"><span>planory.at <span style="color:#ff9f1c">·</span> iPhone &amp; Web</span></div>
   </div>
 
@@ -110,29 +148,62 @@ em{font-style:normal;color:#ff9f1c}
 <script src="folgen.js"></script>
 <script>
 const EP = FOLGEN[+(new URLSearchParams(location.search).get('ep') || 1)];
+const COVER = 1.3;   // Titelbild am Anfang (auch Vorschau im Feed)
 const ICONS = {
   donut: `<circle cx="50" cy="50" r="34" pathLength="1" style="opacity:.35"/><path pathLength="1" d="M50 16 A34 34 0 0 1 82.3 39.5"/>`,
   receipt: `<path pathLength="1" d="M26 12 H74 V88 L66 82 L58 88 L50 82 L42 88 L34 82 L26 88 Z"/><path pathLength="1" d="M38 33 H62 M38 47 H62 M38 61 H53"/>`,
+  cal: `<path pathLength="1" d="M18 26 H82 V84 H18 Z"/><path pathLength="1" d="M18 43 H82"/><path pathLength="1" d="M34 15 V32 M66 15 V32"/><path pathLength="1" d="M33 59 h2 M49 59 h2 M65 59 h2 M33 71 h2 M49 71 h2"/>`,
+  check: `<path pathLength="1" d="M20 16 H80 Q84 16 84 20 V80 Q84 84 80 84 H20 Q16 84 16 80 V20 Q16 16 20 16 Z"/><path pathLength="1" d="M32 51 L45 64 L70 37"/>`,
+  camera: `<path pathLength="1" d="M14 34 H32 L38 24 H62 L68 34 H86 V80 H14 Z"/><circle cx="50" cy="56" r="14" pathLength="1"/>`,
+  compare: `<path pathLength="1" d="M12 22 H44 V82 H12 Z"/><path pathLength="1" d="M56 22 H88 V82 H56 Z"/><path pathLength="1" d="M20 38 H36 M20 50 H36 M64 38 H80 M64 50 H80 M20 64 H30 M64 64 H76"/>`,
+  euro: `<circle cx="50" cy="50" r="36" pathLength="1"/><path pathLength="1" d="M63 36 A15 15 0 1 0 63 64"/><path pathLength="1" d="M33 46 H55 M33 55 H55"/>`,
+  doc: `<path pathLength="1" d="M24 12 H62 L78 28 V88 H24 Z"/><path pathLength="1" d="M62 12 V28 H78"/><path pathLength="1" d="M34 46 H68 M34 58 H68 M34 70 H56"/>`,
+  warn: `<path pathLength="1" d="M50 14 L88 82 H12 Z"/><path pathLength="1" d="M50 40 V60 M50 70 V71"/>`,
+  people: `<circle cx="38" cy="36" r="12" pathLength="1"/><path pathLength="1" d="M14 80 Q14 58 38 58 Q62 58 62 80"/><circle cx="68" cy="40" r="9" pathLength="1"/><path pathLength="1" d="M66 58 Q88 58 88 78"/>`,
+  spark: `<path pathLength="1" d="M50 12 C53 38 62 47 88 50 C62 53 53 62 50 88 C47 62 38 53 12 50 C38 47 47 38 50 12 Z"/>`,
+  devices: `<path pathLength="1" d="M8 24 H68 V62 H8 Z"/><path pathLength="1" d="M2 72 H70"/><path pathLength="1" d="M74 36 H94 V84 H74 Z"/><path pathLength="1" d="M82 78 h4"/>`,
+  house: `<path pathLength="1" d="M14 50 L50 18 L86 50"/><path pathLength="1" d="M24 42 V84 H76 V42"/><path pathLength="1" d="M44 84 V62 H56 V84"/>`,
 };
-const HOOK_END = EP.steps[0].t0, END = EP.end.t0;
-// Handy-Maße (flach, ohne Neigung – damit Lupen/Rahmen exakt sitzen)
+const HOOK_END = EP.hookEnd || EP.steps[0].t0, PH_IN = EP.steps[0].t0, END = EP.end.t0;
+const STEPS_END = EP.grid ? EP.grid.t0 : END;
+// Handy-Maße (flach, damit Lupen/Rahmen exakt sitzen)
 const SW = 520, B = Math.round(SW * .032), PW = SW + 2 * B, PX = Math.round((1080 - PW) / 2), PY0 = 690;
-const SB = Math.round(SW * .125), K = SW / 1170, MX = 10, MW = SW - 2 * MX, MT = 18;
-const IMG = {};   // name -> {src, w, h}
+const SB = Math.round(SW * .125), K = SW / 1170, MX = 10, MW = SW - 2 * MX, MT = 18, SH = Math.round(SW * 2.165);
+const IMG = {};   // Bild -> {src, w, h}
+let BOX = {};     // aus screens/boxes.json
+
+// ---------- gemessene Stellen ----------
+function R(spec) {
+  if (Array.isArray(spec) && typeof spec[0] !== 'number') { const rs = spec.map(R); const x = Math.min(...rs.map(r => r[0])), y = Math.min(...rs.map(r => r[1])), x2 = Math.max(...rs.map(r => r[0] + r[2])), y2 = Math.max(...rs.map(r => r[1] + r[3])); return [x, y, x2 - x, y2 - y]; }
+  if (typeof spec === 'string') { const [img, n] = spec.split('.'); const r = BOX[img] && BOX[img][n]; if (!r) throw new Error('Box fehlt: ' + spec); return r; }
+  if (spec && spec.b) { const r = R(spec.b); return [r[0] + (spec.dx || 0), r[1] + (spec.dy || 0), spec.w || r[2] - (spec.dx || 0), spec.h || r[3] - (spec.dy || 0)]; }
+  return spec;
+}
 
 function stepAt(t) { let s = null; EP.steps.forEach(x => { if (t >= x.t0 - .001) s = x; }); return s; }
 function shotsAll() { return EP.steps.flatMap(s => s.shots); }
+function scrollAt(sh, t) { const [a, b] = sh.scroll || [0, 0]; const st = sh.st || [sh.t, sh.t + .01]; return lerp(a, b, E.inOutCubic(p(t, st[0], st[1]))); }
 function msAt(sh, t) { const m = sh.mscroll || 0; if (!Array.isArray(m)) return m; const st = sh.mst || [sh.t, sh.t + .01]; return lerp(m[0], m[1], E.inOutCubic(p(t, st[0], st[1]))); }
 function fitLine(el, maxW, fs0) { const sp = el.firstElementChild; let fs = fs0; el.style.fontSize = fs + 'px'; while (sp.offsetWidth > maxW && fs > 40) { fs -= 2; el.style.fontSize = fs + 'px'; } }
-function scrollAt(sh, t) { const [a, b] = sh.scroll || [0, 0]; const st = sh.st || [sh.t, sh.t + .01]; return lerp(a, b, E.inOutCubic(p(t, st[0], st[1]))); }
 // Rechteck (Bild-Pixel) -> Bildschirm-Koordinaten im Handy
 function toScreen(sh, r, t) {
-  if (sh.modal) { const km = MW / IMG[sh.modal].w, my = msAt(sh, t); return [MX + r[0] * km, SB + MT + (r[1] - my) * km, r[2] * km, r[3] * km]; }
+  if (sh.modal) { const km = MW / IMG[sh.modal].w; return [MX + r[0] * km, SB + MT + (r[1] - msAt(sh, t)) * km, r[2] * km, r[3] * km]; }
   const s = scrollAt(sh, t); return [r[0] * K, SB + (r[1] - s) * K, r[2] * K, r[3] * K];
 }
 function shotAt(t) { const all = shotsAll(); let i = -1; all.forEach((s, k) => { if (t >= s.t - .001) i = k; }); return { cur: all[Math.max(0, i)], prev: i > 0 ? all[i - 1] : null }; }
+// Art des Übergangs zwischen zwei Bildschirmen
+function trType(prev, cur) {
+  if (!prev) return 'none';
+  if (cur.tr) return cur.tr;
+  if (prev.modal && !cur.modal) return 'close';
+  if (!prev.modal && cur.modal) return prev.page === cur.page ? 'open' : 'push';
+  if (prev.page !== cur.page) return 'push';
+  if (prev.modal !== cur.modal) return 'fade';
+  return 'none';
+}
+const TR_DUR = { push: .5, open: .45, close: .4, fade: .3, none: 0 };
 
-function buildStack(id) { return `<div class="stack" id="${id}"><img class="pg"><div class="dim"></div><div class="md"><img></div></div>`; }
+function buildStack(id) { return `<div class="stack" id="${id}"><div class="pgw"><img class="pg"><div class="shade"></div></div><div class="dim"></div><div class="md"><img></div></div>`; }
 function paintStack(el, sh, t) {
   const pg = el.querySelector('.pg'), md = el.querySelector('.md'), dim = el.querySelector('.dim');
   const src = IMG[sh.page].src; if (pg.getAttribute('src') !== src) pg.setAttribute('src', src);
@@ -141,12 +212,38 @@ function paintStack(el, sh, t) {
   if (on) { const m = IMG[sh.modal], km = MW / m.w, im = md.querySelector('img');
     if (im.getAttribute('src') !== m.src) im.setAttribute('src', m.src);
     im.style.width = MW + 'px'; im.style.transform = `translateY(${-msAt(sh, t) * km}px)`;
-    md.style.left = MX + 'px'; md.style.top = (SB + MT) + 'px'; md.style.width = MW + 'px'; md.style.height = Math.min(m.h * km, 2165 * SW / 1000 - SB - MT - 10) + 'px'; }
+    md.style.left = MX + 'px'; md.style.top = (SB + MT) + 'px'; md.style.width = MW + 'px'; md.style.height = Math.min(m.h * km, SH - SB - MT - 10) + 'px'; }
+  // Grundzustand (Übergänge setzen danach)
+  el.style.transform = ''; el.style.opacity = 1; el.style.background = ''; el.querySelector('.pgw').style.transform = ''; el.querySelector('.pgw').style.opacity = 1;
+  el.querySelector('.shade').style.opacity = 0; dim.style.opacity = 1; md.style.transform = '';
+}
+function phoneScreen(t) {
+  const { cur, prev } = shotAt(t), A = $('stA'), Bs = $('stB');
+  paintStack(Bs, cur, t);
+  const ty = trType(prev, cur), d = TR_DUR[ty], q = d ? p(t, cur.t, cur.t + d) : 1;
+  const active = prev && q < 1 && ty !== 'none';
+  vis(A, active); if (active) paintStack(A, prev, t);
+  if (!active) return;
+  if (ty === 'push') { const e = E.inOutCubic(q);
+    Bs.style.transform = `translateX(${(1 - e) * 100}%)`; A.style.transform = `translateX(${-28 * e}%)`; A.querySelector('.shade').style.opacity = .25 * e;
+    Bs.style.boxShadow = '-20px 0 40px rgba(0,0,0,.18)'; }
+  if (ty === 'open') { const e = E.outCubic(q);   // Fenster gleitet von unten hoch
+    vis(A, false); Bs.querySelector('.dim').style.opacity = e; Bs.querySelector('.md').style.transform = `translateY(${(1 - e) * SH}px)`; }
+  if (ty === 'close') { const e = E.inOutCubic(q);   // Fenster gleitet nach unten weg, neue Seite darunter
+    A.querySelector('.pgw').style.opacity = 1 - e; A.querySelector('.dim').style.opacity = 1 - e; A.querySelector('.md').style.transform = `translateY(${e * SH}px)`;
+    A.style.background = 'transparent'; A.style.zIndex = 2; Bs.style.zIndex = 1; return; }
+  if (ty === 'fade') { Bs.style.opacity = E.inOutCubic(q); }
+  A.style.zIndex = 1; Bs.style.zIndex = 2;
 }
 
 function setup() {
   $('badgeIcon').innerHTML = logoSVG(); $('eLogo').innerHTML = logoSVG();
-  $('badgeT').textContent = `Folge ${EP.nr} · ${EP.titel}`;
+  $('badgeT').textContent = EP.intro ? 'Die Serie' : `Folge ${EP.nr} · ${EP.titel}`;
+  // Titelbild
+  $('cvBig').textContent = EP.cover.big;
+  $('cvT').firstElementChild.textContent = EP.cover.title; fitLine($('cvT'), 960, 190);
+  $('cvIcon').innerHTML = EP.cover.icon === 'logo' ? `<div style="width:220px;height:220px;border-radius:48px;overflow:hidden">${logoSVG()}</div>` : `<svg class="ico" viewBox="0 0 100 100" width="220" height="220" style="stroke:#ff9f1c" stroke-width="6">${ICONS[EP.cover.icon]}</svg>`;
+  // Einstieg
   $('hIcon').innerHTML = ICONS[EP.icon] || '';
   $('h1').firstElementChild.textContent = EP.hook[0]; $('h2').querySelector('em').textContent = EP.hook[1];
   fitLine($('h1'), 960, 118); fitLine($('h2'), 960, 118);
@@ -164,20 +261,30 @@ function setup() {
     <div class="cor" id="q3" style="left:-28px;bottom:-28px;border-width:0 0 9px 9px;border-radius:0 0 0 24px"></div><div class="cor" id="q4" style="right:-28px;bottom:-28px;border-width:0 9px 9px 0;border-radius:0 0 24px 0"></div></div>`;
   const zz = [], W = 430, H = 600, n = 15; zz.push('0 0', `${W}px 0`, `${W}px ${H}px`); for (let i = n * 2; i >= 0; i--) zz.push(`${(W * i / (n * 2)).toFixed(1)}px ${i % 2 ? H - 16 : H}px`);
   $('rcp').style.clipPath = `polygon(${zz.join(',')})`;
-  // Effekt-Elemente im Handy anlegen
+  // Effekte: Stellen auflösen + Elemente im Handy anlegen
   const fxl = $('fxl'); EP.steps.forEach((s, si) => s.fx.forEach((f, fi) => { f.id = `fx${si}_${fi}`;
+    if (f.r) f.R = R(f.r); if (f.rs) f.RS = f.rs.map(R);
     if (f.k === 'hl') fxl.insertAdjacentHTML('beforeend', `<div class="hl" id="${f.id}"></div>`);
     if (f.k === 'tap') fxl.insertAdjacentHTML('beforeend', `<div class="rip" id="${f.id}"></div>`);
     if (f.k === 'grow') fxl.insertAdjacentHTML('beforeend', `<div id="${f.id}" style="position:absolute;background:#fff"></div>`);
     if (f.k === 'uncheck') fxl.insertAdjacentHTML('beforeend', `<div id="${f.id}" style="position:absolute;border-radius:5px;background:#ff9f1c;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:80%;height:80%"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`);
-    if (f.k === 'checks') f.rs.forEach((r, j) => fxl.insertAdjacentHTML('beforeend', `<div class="hl" id="${f.id}_h${j}" style="border-color:#1aa35c;box-shadow:0 0 0 5px rgba(26,163,92,.18)"></div><div class="chk" id="${f.id}_c${j}"><svg viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`));
+    if (f.k === 'checks') f.RS.forEach((r, j) => fxl.insertAdjacentHTML('beforeend', `<div class="hl" id="${f.id}_h${j}" style="border-color:#1aa35c;box-shadow:0 0 0 5px rgba(26,163,92,.18)"></div><div class="chk" id="${f.id}_c${j}"><svg viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`));
     if (f.k === 'toast') fxl.insertAdjacentHTML('beforeend', `<div class="toast" id="${f.id}">${f.text}</div>`);
   }));
+  // Intro: Marke + Kacheln + Start
+  if (EP.intro) {
+    $('bLogo').innerHTML = logoSVG();
+    $('bWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
+    $('g1').firstElementChild.textContent = EP.grid.title[0]; $('g2').querySelector('em').textContent = EP.grid.title[1]; $('gsub').textContent = EP.grid.sub;
+    $('tiles').innerHTML = EP.grid.items.map(([nr, name, ic], i) => { const c = i % 3, r = Math.floor(i / 3);
+      return `<div class="tile" id="tl${i}" style="left:${70 + c * 320}px;top:${660 + r * 212}px"><i>${nr}</i><svg class="ico" viewBox="0 0 100 100" stroke-width="7">${ICONS[ic]}</svg><b>${name}</b></div>`; }).join('');
+    $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r2'), 960, 124);
+  }
   $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
   $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`;
-  $('nextTxt').textContent = 'Nächste Folge: ' + EP.end.next;
+  $('nextTxt').textContent = EP.end.next; if (EP.end.cta) $('ctaTxt').textContent = EP.end.cta;
   $('eBurst').innerHTML = Array.from({ length: 12 }, () => '<i class="burst"></i>').join('');
-  const R = rnd(7); $('dustL').innerHTML = Array.from({ length: 30 }, () => { const s = 2 + R() * 4; return `<i class="dust" style="width:${s}px;height:${s}px;${R() < .35 ? 'background:#ffb24d;' : ''}" data-x="${R() * 1080}" data-y="${R() * 1920}" data-v="${20 + R() * 50}" data-o="${.12 + R() * .3}" data-ph="${R() * 6.28}"></i>`; }).join('');
+  const Rn = rnd(7); $('dustL').innerHTML = Array.from({ length: 30 }, () => { const s = 2 + Rn() * 4; return `<i class="dust" style="width:${s}px;height:${s}px;${Rn() < .35 ? 'background:#ffb24d;' : ''}" data-x="${Rn() * 1080}" data-y="${Rn() * 1920}" data-v="${20 + Rn() * 50}" data-o="${.12 + Rn() * .3}" data-ph="${Rn() * 6.28}"></i>`; }).join('');
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), im = g.createImageData(256, 256), r2 = rnd(3);
   for (let i = 0; i < im.data.length; i += 4) { const v = Math.floor(r2() * 255); im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
   g.putImageData(im, 0, 0); $('grain').style.backgroundImage = `url(${c.toDataURL()})`;
@@ -185,26 +292,26 @@ function setup() {
 
 // ---------- Effekte ----------
 function place(el, sh, r, t, pad = 8) { const [x, y, w, h] = toScreen(sh, r, t); el.style.left = (x - pad) + 'px'; el.style.top = (y - pad) + 'px'; el.style.width = (w + 2 * pad) + 'px'; el.style.height = (h + 2 * pad) + 'px'; }
-function shotFor(f) { const all = shotsAll(); let s = all[0]; all.forEach(x => { if (f.t >= x.t - .001) s = x; }); return s; }
+function shotFor(tt) { const all = shotsAll(); let s = all[0]; all.forEach(x => { if (tt >= x.t - .001) s = x; }); return s; }
 function fxRender(t) {
   let lens = null, chip = null;
   vis($('rc'), false);   // Rechnung nur während eines scan-Effekts
   EP.steps.forEach(s => s.fx.forEach(f => {
-    const el = $(f.id), sh = shotFor(f);
-    if (f.k === 'hl') { const q = p(t, f.t, f.t + .25), o = p(t, f.t1 - .2, f.t1); vis(el, t >= f.t && t < f.t1); place(el, sh, f.r, t); el.style.opacity = q * (1 - o); el.style.transform = `scale(${1.08 - .08 * E.outBack(q)})`; }
-    if (f.k === 'tap') { const l = p(t, f.t, f.t + .45); vis(el, l > 0 && l < 1); const [x, y, w, h] = toScreen(sh, f.r, t); el.style.left = (x + w / 2) + 'px'; el.style.top = (y + h / 2) + 'px'; el.style.transform = `scale(${.3 + 1.2 * E.outCubic(l)})`; el.style.opacity = 1 - l; }
-    if (f.k === 'grow') { const q = E.outCubic(p(t, f.t, f.t + f.d)); const on = t >= s.t0 && t < s.t1 && q < 1; vis(el, on); const [x, y, w, h] = toScreen(sh, f.r, t); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = (h * (1 - q)) + 'px'; }
-    if (f.k === 'uncheck') { const on = t >= s.t0 && t < f.t + .35 && t < s.t1; vis(el, on); place(el, sh, f.r, t, 0); const q = p(t, f.t, f.t + .3); el.style.opacity = 1 - q; el.style.transform = `scale(${1 - .4 * q})`; }
-    if (f.k === 'checks') f.rs.forEach((r, j) => { const tj = f.t + j * f.dt, h = $(`${f.id}_h${j}`), c = $(`${f.id}_c${j}`), on = t >= tj && t < s.t1 - .05, q = p(t, tj, tj + .25);
+    const el = $(f.id), sh = shotFor(Math.max(f.t, t));
+    if (f.k === 'hl') { const q = p(t, f.t, f.t + .25), o = p(t, f.t1 - .2, f.t1); vis(el, t >= f.t && t < f.t1); place(el, sh, f.R, t); el.style.opacity = q * (1 - o); el.style.transform = `scale(${1.08 - .08 * E.outBack(q)})`; }
+    if (f.k === 'tap') { const l = p(t, f.t, f.t + .45); vis(el, l > 0 && l < 1); const [x, y, w, h] = toScreen(shotFor(f.t), f.R, t); el.style.left = (x + w / 2) + 'px'; el.style.top = (y + h / 2) + 'px'; el.style.transform = `scale(${.3 + 1.2 * E.outCubic(l)})`; el.style.opacity = 1 - l; }
+    if (f.k === 'grow') { const q = E.outCubic(p(t, f.t, f.t + f.d)); const on = t >= s.t0 && t < s.t1 && q < 1; vis(el, on); const [x, y, w, h] = toScreen(sh, f.R, t); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = (h * (1 - q)) + 'px'; }
+    if (f.k === 'uncheck') { const shf = shotFor(f.t), on = t >= shf.t + TR_DUR.open && t < f.t + .35 && t < s.t1; vis(el, on); place(el, shf, f.R, t, 0); const q = p(t, f.t, f.t + .3); el.style.opacity = 1 - q; el.style.transform = `scale(${1 - .4 * q})`; }
+    if (f.k === 'checks') f.RS.forEach((r, j) => { const tj = f.t + j * f.dt, h = $(`${f.id}_h${j}`), c = $(`${f.id}_c${j}`), on = t >= tj && t < s.t1 - .05, q = p(t, tj, tj + .25);
       vis(h, on); vis(c, on); place(h, sh, r, t, 6); h.style.opacity = q; const [x, y, w, hh] = toScreen(sh, r, t); c.style.left = (x + w - 58) + 'px'; c.style.top = (y + hh / 2 - 22) + 'px'; c.style.transform = `scale(${E.outBack(q, 3)})`; });
     if (f.k === 'toast') { const q = spring(t - f.t, 1.6, 7); vis(el, t >= f.t && t < f.t1); el.style.opacity = p(t, f.t, f.t + .08) * (1 - p(t, f.t1 - .15, f.t1)); el.style.transform = `translateX(-50%) translateY(${(1 - q) * 60}px)`; }
-    if (f.k === 'lens' && t >= f.t && t < f.t1) lens = { f, sh };
+    if (f.k === 'lens' && t >= f.t && t < f.t1) lens = { f, sh: shotFor(f.t) };
     if (f.k === 'chip' && t >= f.t && t < f.t1) chip = f;
     if (f.k === 'scan') scanRender(t, f);
   }));
   // Lupe
   const L = $('lens'); vis(L, !!lens);
-  if (lens) { const { f, sh } = lens, pad = 22, r = [f.r[0] - pad, f.r[1] - pad, f.r[2] + 2 * pad, f.r[3] + 2 * pad];
+  if (lens) { const { f, sh } = lens, pad = 22, r = [f.R[0] - pad, f.R[1] - pad, f.R[2] + 2 * pad, f.R[3] + 2 * pad];
     const w = f.w || 920, sc = w / r[2], h = r[3] * sc, img = sh.modal ? IMG[sh.modal] : IMG[sh.page];
     L.style.left = ((1080 - w) / 2) + 'px'; L.style.top = f.y + 'px'; L.style.width = w + 'px'; L.style.height = h + 'px';
     const li = $('lensImg'); if (li.getAttribute('src') !== img.src) li.setAttribute('src', img.src);
@@ -215,11 +322,10 @@ function fxRender(t) {
   if (chip) { C.textContent = chip.text; C.style.top = chip.y + 'px'; const q = spring(t - chip.t, 1.6, 7); C.style.opacity = p(t, chip.t, chip.t + .08) * (1 - p(t, chip.t1 - .15, chip.t1)); C.style.transform = `translateX(-50%) scale(${.85 + .15 * q})`; }
 }
 function scanRender(t, f) {
-  const rc = $('rc'), on = t >= f.t && t < f.t1; vis(rc, on); if (!on) return;
+  const rc = $('rc'), on = t >= f.t && t < f.t1; if (!on) return; vis(rc, true);
   const l = t - f.t, inq = E.outExpo(p(l, 0, .5)), fly = E.inOutCubic(p(t, f.t1 - .4, f.t1));
-  const x0 = 325, y0 = 760;
-  rc.style.left = x0 + 'px'; rc.style.top = y0 + 'px';
-  rc.style.transform = `translate(${(1 - inq) * -500 + fly * 0}px,${(1 - inq) * 700 + fly * 200}px) rotate(${(1 - inq) * -25 - 4 + fly * 4}deg) scale(${1 - .82 * fly})`;
+  rc.style.left = '325px'; rc.style.top = '760px';
+  rc.style.transform = `translate(${(1 - inq) * -500}px,${(1 - inq) * 700 + fly * 200}px) rotate(${(1 - inq) * -25 - 4 + fly * 4}deg) scale(${1 - .82 * fly})`;
   rc.style.opacity = 1 - p(t, f.t1 - .12, f.t1);
   const cq = E.outBack(p(l, .45, .7), 2.2), co = p(l, .45, .5);
   [['q1', -1, -1], ['q2', 1, -1], ['q3', -1, 1], ['q4', 1, 1]].forEach(([id, sx, sy]) => { $(id).style.transform = `translate(${sx * 60 * (1 - cq)}px,${sy * 60 * (1 - cq)}px)`; $(id).style.opacity = co * (1 - fly); });
@@ -227,32 +333,55 @@ function scanRender(t, f) {
   $('rcLaser').style.top = (ly - 3) + 'px'; $('rcTrail').style.top = (ly - 200) + 'px';
 }
 
-// ---------- Szenen ----------
-function hook(t) { const on = t < HOOK_END + .05; vis($('sH'), on); if (!on) return;
-  const o = E.inCubic(p(t, HOOK_END - .3, HOOK_END)); $('sH').style.opacity = 1 - o; $('sH').style.transform = `scale(${1 + .15 * o})`;
-  reveal($('h1'), t, .25); reveal($('h2'), t, .5);
-  const ic = $('hIcon'); ic.querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(t, .05, .7)); });
+// ---------- Szenen (t = Zeit ab Ende des Titelbilds) ----------
+function cover(T) { const on = T < COVER + .02; vis($('cv'), on); if (!on) return;
+  const o = E.inCubic(p(T, COVER - .28, COVER)); $('cv').style.opacity = 1 - o; $('cv').style.transform = `scale(${1 + .18 * o})`;
+  const k = p(T, 0, .25); $('cvK').style.opacity = k; $('cvK').style.letterSpacing = (.6 - .3 * E.outCubic(k)) + 'em';
+  const b = E.outExpo(p(T, .08, .5)); $('cvBig').style.opacity = p(T, .08, .14); $('cvBig').style.transform = `scale(${1.5 - .5 * b})`;
+  reveal($('cvT'), T, .2, .55);
+  $('cvIcon').querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(T, .3, .85)); });
+  const iq = spring(T - .3, 1.4, 6); $('cvIcon').style.transform = `scale(${.6 + .4 * iq})`; $('cvIcon').style.opacity = p(T, .3, .36);
+  $('cvLine').style.transform = `scaleX(${E.outExpo(p(T, .35, .9))})`; }
+function hook(t) { const on = t >= -.02 && t < HOOK_END + .05; vis($('sH'), on); if (!on) return;
+  const o = E.inCubic(p(t, HOOK_END - .3, HOOK_END)); $('sH').style.opacity = (1 - o) * p(t, -.02, .12); $('sH').style.transform = `scale(${1 + .15 * o})`;
+  reveal($('h1'), t, .1); reveal($('h2'), t, .35);
+  const ic = $('hIcon'); ic.querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(t, .0, .6)); });
   ic.style.transform = `scale(${.7 + .3 * spring(t, 1.4, 6)})`; }
-function steps(t) { const on = t >= HOOK_END - .05 && t < END + .3; vis($('sS'), on); if (!on) return;
+function brand(t) { const b = EP.brand; const on = !!b && t >= b.t0 && t < b.t1 + .02; vis($('sB'), on); if (!on) return; const l = t - b.t0;
+  const o = E.inCubic(p(t, b.t1 - .3, b.t1)); $('sB').style.opacity = 1 - o; $('sB').style.transform = `scale(${1 + .12 * o})`;
+  const lg = $('bLogo'), q = spring(l, 1.4, 6.5); lg.style.transform = `scale(${.4 + .6 * q})`; buildLogo(lg, l * 1.4);
+  $('bWs').querySelectorAll('span').forEach((s, k) => { const z = E.outExpo(p(l, .55 + k * .04, 1.15 + k * .04)); s.style.transform = `translateY(${(1 - z) * 115}%) rotate(${(1 - z) * 8}deg)`; });
+  reveal($('bT'), t, b.t0 + 1.0); }
+function steps(t) { const on = t >= PH_IN - .05 && t < STEPS_END + .3; vis($('sS'), on); if (!on) return;
   const s = stepAt(t) || EP.steps[0], si = EP.steps.indexOf(s);
-  const o = E.inCubic(p(t, END - .05, END + .3)); $('sS').style.opacity = 1 - o;
-  // Überschrift
-  if ($('st1').dataset.i !== String(si)) { $('st1').dataset.i = si; $('st1').firstElementChild.textContent = s.title[0]; $('st2').querySelector('em').textContent = s.title[1]; $('ssub').textContent = s.sub; $('num').textContent = si + 1; fitLine($('st1'), 810, 92); fitLine($('st2'), 810, 92); }
+  const o = E.inCubic(p(t, STEPS_END - .05, STEPS_END + .3)); $('sS').style.opacity = 1 - o;
+  if ($('st1').dataset.i !== String(si)) { $('st1').dataset.i = si; $('st1').firstElementChild.textContent = s.title[0]; $('st2').querySelector('em').textContent = s.title[1]; $('ssub').textContent = s.sub; $('num').textContent = si + 1; fitLine($('st1'), 810, 92); fitLine($('st2'), 810, 92);
+    ['st1', 'st2'].forEach(id => $(id).style.left = s.noNum ? '66px' : '150px'); $('ssub').style.left = s.noNum ? '68px' : '152px'; }
+  vis($('num'), !s.noNum); vis($('dots'), !s.noNum);
   reveal($('st1'), t, s.t0 + .05, .55, s.t1 - .28); reveal($('st2'), t, s.t0 + .13, .55, s.t1 - .24);
   const sq = p(t, s.t0 + .3, s.t0 + .6), so = p(t, s.t1 - .25, s.t1 - .05); $('ssub').style.opacity = sq * (1 - so); $('ssub').style.transform = `translateY(${(1 - E.outCubic(sq)) * 18}px)`;
   const nq = spring(t - s.t0, 1.6, 7); $('num').style.transform = `scale(${.4 + .6 * nq}) rotate(${(1 - nq) * -90}deg)`; $('num').style.opacity = 1 - so;
   $('dots').querySelectorAll('i').forEach((d, k) => { d.style.background = k < si ? 'rgba(255,159,28,.55)' : k === si ? '#ff9f1c' : 'rgba(255,255,255,.18)'; d.style.height = (k === si ? 36 : 22) + 'px'; });
-  // Handy
-  const pin = E.outExpo(p(t, HOOK_END, HOOK_END + .7));
+  const pin = E.outExpo(p(t, PH_IN, PH_IN + .7));
   placePhone('ph', { x: PX, y: PY0 + (1 - pin) * 1300 + Math.sin(t * 1.5) * 4 });
-  const { cur, prev } = shotAt(t), mix = prev ? E.inOutCubic(p(t, cur.t, cur.t + .3)) : 1;
-  paintStack($('stB'), cur, t); $('stB').style.opacity = mix;
-  vis($('stA'), !!prev && mix < 1); if (prev) paintStack($('stA'), prev, t);
-  $('phg').style.transform = `translateX(${lerp(-40, 30, p(t, HOOK_END, END))}%)`;
+  phoneScreen(t);
+  $('phg').style.transform = `translateX(${lerp(-40, 30, p(t, PH_IN, STEPS_END))}%)`;
   fxRender(t);
 }
+function grid(t) { const g = EP.grid; const on = !!g && t >= g.t0 - .05 && t < g.t1 + .02; vis($('sG'), on); if (!on) return;
+  const o = E.inCubic(p(t, g.t1 - .3, g.t1)); $('sG').style.opacity = 1 - o; $('sG').style.transform = `scale(${1 + .1 * o})`;
+  reveal($('g1'), t, g.t0 + .05); reveal($('g2'), t, g.t0 + .13);
+  const sq = p(t, g.t0 + .3, g.t0 + .6); $('gsub').style.opacity = sq;
+  g.items.forEach((it, i) => { const el = $('tl' + i), ti = g.t0 + .7 + i * .2, q = spring(t - ti, 1.6, 7);
+    el.style.opacity = p(t, ti, ti + .08); el.style.transform = `translateY(${(1 - q) * 70}px) scale(${.7 + .3 * q})`;
+    el.querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(t, ti + .05, ti + .45)); });
+    const hl = i === 0 ? p(t, g.t1 - 1.0, g.t1 - .7) : 0; el.style.boxShadow = hl ? `inset 0 0 0 ${2 + 4 * hl}px #ff9f1c, 0 0 ${40 * hl}px rgba(255,159,28,.5)` : ''; }); }
+function start(t) { const r = EP.start; const on = !!r && t >= r.t0 && t < r.t1 + .02; vis($('sR'), on); if (!on) return;
+  const o = E.inCubic(p(t, r.t1 - .25, r.t1)); $('sR').style.opacity = 1 - o;
+  reveal($('r1'), t, r.t0 + .05); reveal($('r2'), t, r.t0 + .2);
+  const q = E.outExpo(p(t, r.t0 + .2, r.t0 + .6)); $('r2').firstElementChild.style.transform += ` scale(${1.25 - .25 * q})`; }
 function ende(t) { const on = t >= END; vis($('sE'), on); if (!on) return; const l = t - END;
-  const R = 1700 * E.inOutCubic(p(l, 0, .35)); $('sE').style.clipPath = `circle(${R}px at 540px 1100px)`;
+  const Rr = 1700 * E.inOutCubic(p(l, 0, .35)); $('sE').style.clipPath = `circle(${Rr}px at 540px 1100px)`;
   const lg = $('eLogo'), q = spring(l - .05, 1.4, 6.5); lg.style.transform = `scale(${.4 + .6 * q}) rotate(${(1 - q) * -10}deg)`; buildLogo(lg, (l - .05) * 2.1);
   $('eBurst').querySelectorAll('.burst').forEach((b, k) => { const z = p(l, .5, .95); b.style.transform = `rotate(${k * 30}deg) translateY(${-165 - 110 * E.outCubic(z)}px) scaleY(${1 - z})`; b.style.opacity = z > 0 && z < 1 ? 1 : 0; });
   $('eWs').querySelectorAll('span').forEach((s, k) => { const z = E.outExpo(p(l, .2 + k * .04, .8 + k * .04)); s.style.transform = `translateY(${(1 - z) * 115}%) rotate(${(1 - z) * 8}deg)`; });
@@ -262,17 +391,22 @@ function ende(t) { const on = t >= END; vis($('sE'), on); if (!on) return; const
   $('shim').style.transform = `translateX(${lerp(-260, 900, E.inOutCubic(p(l, 1.4, 1.95)))}px) skewX(-18deg)`;
   $('grid2').style.transform = `translate(${-(t * 24) % 180}px,${-(t * 40) % 180}px)`; $('eGlow').style.opacity = .7 + .3 * Math.sin(t * 3); }
 function badge(t) { const q = spring(t - .1, 1.5, 7), o = p(t, END, END + .3); $('badge').style.opacity = p(t, .1, .2) * (1 - o); $('badge').style.transform = `translateY(${(1 - q) * -30}px)`; }
-function bgAnim(t) {
-  $('grid').style.transform = `translate(${-(t * 24) % 180}px,${-(t * 40) % 180}px)`;
-  $('glowA').style.transform = `translate(${lerp(-500, -80, (Math.sin(t * .45) + 1) / 2)}px,${lerp(100, 700, (Math.cos(t * .35) + 1) / 2)}px)`;
-  $('glowB').style.transform = `translate(${lerp(-200, 300, (Math.cos(t * .5) + 1) / 2)}px,${lerp(900, 1300, (Math.sin(t * .4) + 1) / 2)}px)`;
-  document.querySelectorAll('#dustL .dust').forEach(d => { const x = +d.dataset.x + Math.sin(t * .8 + +d.dataset.ph) * 20; let y = (+d.dataset.y - t * +d.dataset.v) % 1920; if (y < 0) y += 1920; d.style.transform = `translate(${x}px,${y}px)`; d.style.opacity = d.dataset.o; });
-  const f = Math.round(t * 30), r = rnd(f * 7919 + 13); $('grain').style.backgroundPosition = `${Math.floor(r() * 256)}px ${Math.floor(r() * 256)}px`;
+function bgAnim(T) {
+  $('grid').style.transform = `translate(${-(T * 24) % 180}px,${-(T * 40) % 180}px)`;
+  $('glowA').style.transform = `translate(${lerp(-500, -80, (Math.sin(T * .45) + 1) / 2)}px,${lerp(100, 700, (Math.cos(T * .35) + 1) / 2)}px)`;
+  $('glowB').style.transform = `translate(${lerp(-200, 300, (Math.cos(T * .5) + 1) / 2)}px,${lerp(900, 1300, (Math.sin(T * .4) + 1) / 2)}px)`;
+  document.querySelectorAll('#dustL .dust').forEach(d => { const x = +d.dataset.x + Math.sin(T * .8 + +d.dataset.ph) * 20; let y = (+d.dataset.y - T * +d.dataset.v) % 1920; if (y < 0) y += 1920; d.style.transform = `translate(${x}px,${y}px)`; d.style.opacity = d.dataset.o; });
+  const f = Math.round(T * 30), r = rnd(f * 7919 + 13); $('grain').style.backgroundPosition = `${Math.floor(r() * 256)}px ${Math.floor(r() * 256)}px`;
 }
-function render(t) { bgAnim(t); hook(t); steps(t); ende(t); badge(t); }
+function render(T) {   // T = Gesamtzeit inkl. Titelbild
+  const t = T - COVER;
+  bgAnim(T); cover(T); hook(t); brand(t); steps(t); grid(t); start(t); ende(t);
+  if (t >= 0) badge(t); else $('badge').style.opacity = 0;
+}
 window.render = render;
 (async () => {
   await document.fonts.load('900 100px "Inter Display"'); await document.fonts.load('700 30px Inter'); await document.fonts.load('800 30px Inter');
+  BOX = await (await fetch('screens/boxes.json')).json();
   const names = [...new Set(shotsAll().flatMap(s => [s.page, s.modal].filter(Boolean)))];
   await Promise.all(names.map(n => new Promise(res => { const im = new Image(); im.onload = () => { IMG[n] = { src: im.src, w: im.naturalWidth, h: im.naturalHeight }; res(); }; im.onerror = res; im.src = `screens/${n}.png`; })));
   setup();
