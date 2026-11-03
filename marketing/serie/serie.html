@@ -70,10 +70,8 @@ em{font-style:normal;color:#ff9f1c}
 .tile b{font:800 25px Inter;letter-spacing:-.01em;text-align:center;line-height:1.15}
 .tile i{position:absolute;left:18px;top:14px;font:800 18px Inter;font-style:normal;color:rgba(255,255,255,.45);letter-spacing:.06em}
 /* Ende */
-.cta{position:absolute;left:50%;top:1290px;height:120px;padding:0 60px;border-radius:60px;background:linear-gradient(180deg,#ffb042,#ff9f1c 55%,#f28c00);color:#11151f;font-family:'Inter';font-weight:800;font-size:48px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;box-shadow:0 30px 70px -10px rgba(255,159,28,.55),inset 0 2px 0 rgba(255,255,255,.45)}
-.shim{position:absolute;top:0;bottom:0;width:180px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);left:0}
+.cta{position:absolute;left:50%;top:1290px;height:112px;padding:0 56px;border-radius:56px;background:#ff9f1c;color:#11151f;font-family:'Inter';font-weight:800;font-size:46px;display:flex;align-items:center;white-space:nowrap;box-shadow:0 18px 40px -12px rgba(255,159,28,.45)}
 #nextPill{position:absolute;left:50%;top:1160px;display:flex;align-items:center;gap:14px;padding:16px 30px;border-radius:999px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16);font:700 32px Inter;white-space:nowrap}
-.burst{position:absolute;width:10px;height:44px;border-radius:5px;background:#ff9f1c;left:-5px;top:-22px}
 .ico path,.ico circle,.ico rect{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .dust{position:absolute;border-radius:50%;background:#fff}
 #grain{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.14;pointer-events:none}
@@ -129,14 +127,11 @@ em{font-style:normal;color:#ff9f1c}
   </div>
 
   <div class="scene" id="sE">
-    <div class="bg"></div><div class="grid" id="grid2"></div>
-    <div class="glow" id="eGlow" style="left:-210px;top:60px"></div>
-    <div id="eBurst" style="position:absolute;left:540px;top:700px"></div>
-    <div id="eLogo" style="position:absolute;left:390px;top:550px;width:300px;height:300px"></div>
+    <div class="bg"></div>    <div id="eLogo" style="position:absolute;left:390px;top:550px;width:300px;height:300px"></div>
     <div class="line c" id="eW" style="top:880px;font-size:156px"><span id="eWs"></span></div>
     <div class="line c" id="eT" style="top:1064px;font-size:56px;letter-spacing:-.02em"><span></span></div>
     <div id="nextPill"><span style="color:#ff9f1c">▶</span><span id="nextTxt"></span></div>
-    <div class="cta" id="cta"><div class="shim" id="shim"></div><span style="position:relative" id="ctaTxt">Jetzt starten →</span></div>
+    <div class="cta" id="cta"><span id="ctaTxt">Jetzt starten →</span></div>
     <div class="line c" id="eU" style="top:1440px;font-size:38px;font-family:Inter;font-weight:700;letter-spacing:.01em;word-spacing:0"><span>planory.at <span style="color:#ff9f1c">·</span> iPhone &amp; Web</span></div>
   </div>
 
@@ -237,7 +232,7 @@ function phoneScreen(t) {
 }
 
 function setup() {
-  $('badgeIcon').innerHTML = logoSVG(); $('eLogo').innerHTML = logoSVG();
+  $('badgeIcon').innerHTML = logoSVG(); $('eLogo').innerHTML = logoSVG(); buildLogo($('eLogo'), 10);   // fertiges Icon, ohne Aufbau
   $('badgeT').textContent = EP.intro ? 'Die Serie' : `Folge ${EP.nr} · ${EP.titel}`;
   // Titelbild
   $('cvBig').textContent = EP.cover.big;
@@ -283,7 +278,6 @@ function setup() {
   $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
   $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`;
   $('nextTxt').textContent = EP.end.next; if (EP.end.cta) $('ctaTxt').textContent = EP.end.cta;
-  $('eBurst').innerHTML = Array.from({ length: 12 }, () => '<i class="burst"></i>').join('');
   const Rn = rnd(7); $('dustL').innerHTML = Array.from({ length: 30 }, () => { const s = 2 + Rn() * 4; return `<i class="dust" style="width:${s}px;height:${s}px;${Rn() < .35 ? 'background:#ffb24d;' : ''}" data-x="${Rn() * 1080}" data-y="${Rn() * 1920}" data-v="${20 + Rn() * 50}" data-o="${.12 + Rn() * .3}" data-ph="${Rn() * 6.28}"></i>`; }).join('');
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), im = g.createImageData(256, 256), r2 = rnd(3);
   for (let i = 0; i < im.data.length; i += 4) { const v = Math.floor(r2() * 255); im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
@@ -381,15 +375,10 @@ function start(t) { const r = EP.start; const on = !!r && t >= r.t0 && t < r.t1 
   reveal($('r1'), t, r.t0 + .05); reveal($('r2'), t, r.t0 + .2);
   const q = E.outExpo(p(t, r.t0 + .2, r.t0 + .6)); $('r2').firstElementChild.style.transform += ` scale(${1.25 - .25 * q})`; }
 function ende(t) { const on = t >= END; vis($('sE'), on); if (!on) return; const l = t - END;
-  const Rr = 1700 * E.inOutCubic(p(l, 0, .35)); $('sE').style.clipPath = `circle(${Rr}px at 540px 1100px)`;
-  const lg = $('eLogo'), q = spring(l - .05, 1.4, 6.5); lg.style.transform = `scale(${.4 + .6 * q}) rotate(${(1 - q) * -10}deg)`; buildLogo(lg, (l - .05) * 2.1);
-  $('eBurst').querySelectorAll('.burst').forEach((b, k) => { const z = p(l, .5, .95); b.style.transform = `rotate(${k * 30}deg) translateY(${-165 - 110 * E.outCubic(z)}px) scaleY(${1 - z})`; b.style.opacity = z > 0 && z < 1 ? 1 : 0; });
-  $('eWs').querySelectorAll('span').forEach((s, k) => { const z = E.outExpo(p(l, .2 + k * .04, .8 + k * .04)); s.style.transform = `translateY(${(1 - z) * 115}%) rotate(${(1 - z) * 8}deg)`; });
-  reveal($('eT'), t, END + .5); reveal($('eU'), t, END + .95);
-  const nq = spring(l - .7, 1.5, 7); $('nextPill').style.opacity = p(l, .7, .78); $('nextPill').style.transform = `translateX(-50%) translateY(${(1 - nq) * 40}px)`;
-  const c = spring(l - .85, 1.5, 7); $('cta').style.opacity = p(l, .85, .9); $('cta').style.transform = `translateX(-50%) scale(${.5 + .5 * c})`;
-  $('shim').style.transform = `translateX(${lerp(-260, 900, E.inOutCubic(p(l, 1.4, 1.95)))}px) skewX(-18deg)`;
-  $('grid2').style.transform = `translate(${-(t * 24) % 180}px,${-(t * 40) % 180}px)`; $('eGlow').style.opacity = .7 + .3 * Math.sin(t * 3); }
+  // Ruhig & klar: weich einblenden, nacheinander sanft nach oben – keine Strahlen, kein Glanz, kein Federn
+  $('sE').style.opacity = E.inOutCubic(p(l, 0, .5));
+  const up = (el, t0, vor = '') => { const q = E.outCubic(p(l, t0, t0 + .7)); el.style.opacity = q; el.style.transform = `${vor} translateY(${(1 - q) * 26}px)`; };
+  up($('eLogo'), .2); up($('eW'), .35); up($('eT'), .5); up($('nextPill'), .65, 'translateX(-50%)'); up($('cta'), .8, 'translateX(-50%)'); up($('eU'), .95); }
 function badge(t) { const q = spring(t - .1, 1.5, 7), o = p(t, END, END + .3); $('badge').style.opacity = p(t, .1, .2) * (1 - o); $('badge').style.transform = `translateY(${(1 - q) * -30}px)`; }
 function bgAnim(T) {
   $('grid').style.transform = `translate(${-(T * 24) % 180}px,${-(T * 40) % 180}px)`;
