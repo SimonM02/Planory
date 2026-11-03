@@ -25,6 +25,9 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
      paar Tage). Wichtig: Bei einem **privaten** Konto verlangt Google vor der Veröffentlichung einen
      geschlossenen Test mit **mindestens 12 Testern über 14 Tage** – bei einem **Firmenkonto**
      (braucht D-U-N-S-Nummer) entfällt das. Vorher entscheiden, welches Konto.
+     Weg zum Firmenkonto: ① prüfen, ob es schon eine D-U-N-S gibt (bei Apple-Firmenkonto vorhanden),
+     sonst kostenlos über developer.apple.com/enroll/duns-lookup beantragen (Daten genau wie
+     Gewerbeanmeldung, ca. 5 Werktage) → ② Google Play Console → „Organisation“ → D-U-N-S eingeben.
    - **Claude:** Android-Teil im Projekt anlegen (Capacitor), Icon/Startbild, Kamera/Fotos/Teilen,
      Push über Firebase, Abo über Google Play in RevenueCat, App-Bundle, Store-Texte, Screenshots,
      Formular „Datensicherheit“.
