@@ -1,30 +1,40 @@
 # Offene Punkte / To-do (Planory)
 
-Kurze Merkliste, damit wir nichts vergessen. Stand: 28.10.2026.
+Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
 
-## 👉 Jetzt zu tun (Simon) – Stand 28.10.2026
-**Wichtig, jetzt:**
-1. **Neue Startseite:** OK geben oder Änderungswünsche sagen (fertig auf dem Dev-Branch, noch nicht live).
-2. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
-   auf „Privat“. **Vorher:** App Store Connect → App-Informationen → Datenschutz-URL auf
-   `https://planory.at/datenschutz.html`.
-3. **Stripe → Kundenportal → Abos kündigen:** „Am Ende des Abrechnungszeitraums“ (sonst endet der
+## 👉 Jetzt zu tun (Simon) – Stand 03.11.2026
+**🔴 Diese Woche:**
+1. **Apple v1.3** freigegeben? → am iPhone testen: neues Testkonto, Gratismonat-Fenster, Sandbox-Kauf,
+   Käufe wiederherstellen, Abo abgelaufen durchspielen (Details unten im Abschnitt Probeabo).
+2. **Stripe → Kundenportal → Abos kündigen:** „Am Ende des Abrechnungszeitraums“ (sonst endet der
    Gratismonat beim Kündigen sofort). Optional: Erinnerungs-Mail 7 Tage vor Testende.
-4. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,
+3. **Support-Fall einer Kundin** (Budget-Eingabe/Adresse fehlt) – Details im Chat, Antwort an sie offen.
+4. **Serie „Planory erklärt“ starten:** Musik aus den 3 Proben wählen → Claude setzt sie unter Intro,
+   Folge 1 und 2. Posten: Intro So 8.11., Folge 1 Di 10.11., Folge 2 Fr 13.11.
+   (Texte + Titelbilder: `marketing/serie/PLAN.md`).
+5. **Instagram:** Profil auf Business/Creator (nötig für „Beitrag bewerben“), planory.at in die Bio,
+   Instagram-Namen an Claude (für „@…“ in den Texten).
+
+**🟠 Bald (1–2 Wochen):**
+6. **Neue Startseite:** OK geben oder Änderungswünsche sagen (fertig auf dem Dev-Branch, noch nicht live).
+7. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,
    **Widerrufs-Button** („Vertrag widerrufen“, § 13a FAGG) fürs Web-Abo, Stripe-Bestellknopf im
-   Gratismonat. Danach baut Claude ein, was nötig ist.
-5. **Auftragsverarbeitungsverträge** ablegen + EU-US Data Privacy Framework je Anbieter prüfen
-   (Checkliste in `VERARBEITUNGSVERZEICHNIS.md`).
+   Gratismonat, Kennzeichnung von KI-Personen in Werbung (Reel 3). Danach baut Claude ein, was nötig ist.
+8. **Folgen 3–4** (Zeitplan, Aufgaben) – Claude baut mit derselben Vorlage, Simon prüft.
+9. **Erste kleine Werbung testen:** z. B. 5 €/Tag, Österreich, Interessen Hausbau/Eigenheim
+   (Musik ist eingebaut und für Werbung erlaubt).
 
-**Sobald Apple v1.3 freigibt:**
-6. Neues Testkonto am iPhone: Gratismonat-Fenster („1 Monat gratis“), Sandbox-Kauf, Käufe wiederherstellen.
-7. Abo abgelaufen durchspielen (Details unten im Abschnitt Probeabo).
-8. Vercel-Umgebungsvariable `APNS_BUNDLE_ID` (falls vorhanden) = `com.planory.bauassistent`.
-9. Die 3 seit 14.08. bearbeiteten Ausgaben kurz auf richtige MwSt prüfen.
-
-**Wenn Zeit ist:** Supabase-Auth-E-Mails (Absender „Planory“, Texte, Leaked Password Protection) ·
-Todoist einrichten · planory.at in Instagram-Bio und App-Store-Eintrag · v1.4 (Profile, Widgets,
-neue App-Store-Bilder).
+**🟡 Wenn Zeit ist:**
+10. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
+    auf „Privat“. **Vorher:** App Store Connect → App-Informationen → Datenschutz-URL auf
+    `https://planory.at/datenschutz.html`.
+11. **Auftragsverarbeitungsverträge** ablegen + EU-US Data Privacy Framework je Anbieter prüfen
+    (Checkliste in `VERARBEITUNGSVERZEICHNIS.md`).
+12. **Reel 3 „Ein Tag auf der Baustelle“** (KI-Fotos + echte App): wartet auf Freischaltung der Domain
+    `d8j0ntlcm91z4.cloudfront.net`; Fotos sind erstellt (0,6 von 6 Gratis-Credits verbraucht).
+13. Vercel `APNS_BUNDLE_ID` = `com.planory.bauassistent` · die 3 seit 14.08. bearbeiteten Ausgaben auf
+    MwSt prüfen · Supabase-Auth-E-Mails (Absender „Planory“, Texte, Leaked Password Protection) ·
+    Todoist einrichten · v1.4 (Profile, Widgets, neue App-Store-Bilder).
 
 ## Aktueller Stand (kurz)
 - ✅ **App ist LIVE im App Store** – „Planory - Bauassistent" (`com.planory.bauassistent`).
