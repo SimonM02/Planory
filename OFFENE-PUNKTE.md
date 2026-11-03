@@ -4,8 +4,7 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
 
 ## 👉 Jetzt zu tun (Simon) – Stand 03.11.2026
 **🔴 Diese Woche:**
-1. **Apple v1.3** freigegeben? → am iPhone testen: neues Testkonto, Gratismonat-Fenster, Sandbox-Kauf,
-   Käufe wiederherstellen, Abo abgelaufen durchspielen (Details unten im Abschnitt Probeabo).
+1. ✅ **iOS v1.3 ist live** im App Store.
 2. **Stripe → Kundenportal → Abos kündigen:** „Am Ende des Abrechnungszeitraums“ (sonst endet der
    Gratismonat beim Kündigen sofort). Optional: Erinnerungs-Mail 7 Tage vor Testende.
 3. **Support-Fall einer Kundin** (Budget-Eingabe/Adresse fehlt) – Details im Chat, Antwort an sie offen.
@@ -21,18 +20,26 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    **Widerrufs-Button** („Vertrag widerrufen“, § 13a FAGG) fürs Web-Abo, Stripe-Bestellknopf im
    Gratismonat, Kennzeichnung von KI-Personen in Werbung (Reel 3). Danach baut Claude ein, was nötig ist.
 8. **Folgen 3–4** (Zeitplan, Aufgaben) – Claude baut mit derselben Vorlage, Simon prüft.
-9. **Erste kleine Werbung testen:** z. B. 5 €/Tag, Österreich, Interessen Hausbau/Eigenheim
+9. **Android-App (Google Play)** – bald starten:
+   - **Simon:** Google-Play-Entwicklerkonto anlegen (einmalig ca. 25 $, Identitätsprüfung dauert ein
+     paar Tage). Wichtig: Bei einem **privaten** Konto verlangt Google vor der Veröffentlichung einen
+     geschlossenen Test mit **mindestens 12 Testern über 14 Tage** – bei einem **Firmenkonto**
+     (braucht D-U-N-S-Nummer) entfällt das. Vorher entscheiden, welches Konto.
+   - **Claude:** Android-Teil im Projekt anlegen (Capacitor), Icon/Startbild, Kamera/Fotos/Teilen,
+     Push über Firebase, Abo über Google Play in RevenueCat, App-Bundle, Store-Texte, Screenshots,
+     Formular „Datensicherheit“.
+10. **Erste kleine Werbung testen:** z. B. 5 €/Tag, Österreich, Interessen Hausbau/Eigenheim
    (Musik ist eingebaut und für Werbung erlaubt).
 
 **🟡 Wenn Zeit ist:**
-10. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
+11. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
     auf „Privat“. **Vorher:** App Store Connect → App-Informationen → Datenschutz-URL auf
     `https://planory.at/datenschutz.html`.
-11. **Auftragsverarbeitungsverträge** ablegen + EU-US Data Privacy Framework je Anbieter prüfen
+12. **Auftragsverarbeitungsverträge** ablegen + EU-US Data Privacy Framework je Anbieter prüfen
     (Checkliste in `VERARBEITUNGSVERZEICHNIS.md`).
-12. **Reel 3 „Ein Tag auf der Baustelle“** (KI-Fotos + echte App): wartet auf Freischaltung der Domain
+13. **Reel 3 „Ein Tag auf der Baustelle“** (KI-Fotos + echte App): wartet auf Freischaltung der Domain
     `d8j0ntlcm91z4.cloudfront.net`; Fotos sind erstellt (0,6 von 6 Gratis-Credits verbraucht).
-13. Vercel `APNS_BUNDLE_ID` = `com.planory.bauassistent` · die 3 seit 14.08. bearbeiteten Ausgaben auf
+14. Vercel `APNS_BUNDLE_ID` = `com.planory.bauassistent` · die 3 seit 14.08. bearbeiteten Ausgaben auf
     MwSt prüfen · Supabase-Auth-E-Mails (Absender „Planory“, Texte, Leaked Password Protection) ·
     Todoist einrichten · v1.4 (Profile, Widgets, neue App-Store-Bilder).
 
