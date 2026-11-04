@@ -1,4 +1,4 @@
-// Inhalte der Serie „Planory erklärt“ – eine Folge = ein Datenobjekt.
+// Inhalte der Serie „Planory erklärt“ – ein Video = eine Funktion (bewusst ohne Folgen-Nummern).
 // Zeiten in Sekunden ab Ende des Titelbilds (das Titelbild davor dauert COVER s, siehe serie.html).
 // r = gemessene Stelle aus screens/boxes.json: 'bild.name', { b: 'bild.name', dx, dy, w, h } oder
 //     eine Liste davon (= umschließendes Rechteck). Nie geschätzte Zahlen eintragen.
@@ -10,23 +10,23 @@
 const FOLGEN = {
   0: {
     nr: 0, titel: 'Die Serie', intro: true, dur: 21.5, icon: 'house',
-    cover: { big: '00', title: 'DIE SERIE', icon: 'logo' },
+    cover: { big: '', title: ['SO VIELE', 'FUNKTIONEN'], icon: 'logo' },
     hook: ['Du baust', 'ein Haus?'], hookEnd: 2.6,
     brand: { t0: 2.6, t1: 5.6 },
     steps: [
       { t0: 5.6, t1: 9.6, title: ['Alles für deinen', 'Hausbau.'], sub: 'In einer App – auf iPhone & im Web', noNum: true,
         shots: [{ t: 5.6, page: 'dash-sichtbar', scroll: [0, 2400], st: [6.3, 9.4] }], fx: [] },
     ],
-    grid: { t0: 9.6, t1: 15.6, title: ['In dieser Serie:', 'alle Funktionen.'], sub: 'Folge für Folge erklärt',
+    grid: { t0: 9.6, t1: 15.6, title: ['So viele', 'Funktionen.'], sub: 'Alles für deinen Hausbau – in einer App',
       items: [['01', 'Budget', 'donut'], ['02', 'Rechnung scannen', 'receipt'], ['03', 'Zeitplan', 'cal'], ['04', 'Aufgaben', 'check'],
         ['05', 'Bautagebuch', 'camera'], ['06', 'Angebote', 'compare'], ['07', 'Zahlungsplan', 'euro'], ['08', 'Pläne & Dokumente', 'doc'],
         ['09', 'Mängel', 'warn'], ['10', 'Kontakte & Helfer', 'people'], ['11', 'KI-Berater', 'spark'], ['12', 'iPhone & Web', 'devices']] },
-    start: { t0: 15.6, t1: 18.0, lines: ['Los geht’s mit', 'Folge 1: Budget'] },
-    end: { t0: 18.0, tagline: ['Keine Folge ', 'verpassen.'], next: 'Folge 1: Budget', cta: 'Planory folgen' },
+    start: { t0: 15.6, t1: 18.0, lines: ['Seid gespannt!', 'Jede Funktion bekommt ihr eigenes Video.'] },
+    end: { t0: 18.0, tagline: ['Keine Funktion ', 'verpassen.'], next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
   },
   1: {
     nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',
-    cover: { big: '01', title: 'BUDGET', icon: 'donut' },
+    cover: { big: '', title: 'BUDGET', icon: 'donut' },
     hook: ['Wie viel Budget', 'ist noch übrig?'],
     steps: [
       { t0: 2.6, t1: 7.6, title: ['Alles auf', 'einen Blick.'], sub: 'Gesamtbudget · ausgegeben · verbleibend',
@@ -61,11 +61,11 @@ const FOLGEN = {
              { k: 'hl', t: 22.35, t1: 24.6, r: 'dash-verborgen.toggle' },
              { k: 'lens', t: 22.7, t1: 24.6, r: ['dash-verborgen.toggle', 'dash-verborgen.karte1'], y: 1110 }] },
     ],
-    end: { t0: 24.8, tagline: ['Budget ', 'im Griff.'], next: 'Nächste Folge: Rechnung scannen' },
+    end: { t0: 24.8, tagline: ['Budget ', 'im Griff.'], next: 'Als Nächstes: Rechnung scannen' },
   },
   2: {
     nr: 2, titel: 'Rechnung scannen', dur: 27.5, icon: 'receipt',
-    cover: { big: '02', title: 'RECHNUNG SCANNEN', icon: 'receipt' },
+    cover: { big: '', title: ['RECHNUNG', 'SCANNEN'], icon: 'receipt' },
     hook: ['Rechnung abtippen?', 'Nie wieder.'],
     steps: [
       { t0: 2.6, t1: 6.4, title: ['Rechnung', 'scannen.'], sub: 'Direkt auf der Startseite',
@@ -96,7 +96,7 @@ const FOLGEN = {
         fx: [{ k: 'hl', t: 21.0, t1: 23.8, r: ['kosten-filter.filter', 'kosten-filter.info'] },
              { k: 'lens', t: 21.3, t1: 23.8, r: ['kosten-filter.filter', 'kosten-filter.info'], y: 1180 }] },
     ],
-    end: { t0: 24.0, tagline: ['Rechnungen ', 'im Griff.'], next: 'Nächste Folge: Zeitplan & Meilensteine' },
+    end: { t0: 24.0, tagline: ['Rechnungen ', 'im Griff.'], next: 'Als Nächstes: Zeitplan' },
   },
 };
 window.FOLGEN = FOLGEN;

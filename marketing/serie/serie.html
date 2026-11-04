@@ -87,6 +87,7 @@ em{font-style:normal;color:#ff9f1c}
     <div class="kick" id="cvK">PLANORY ERKLÄRT</div>
     <div id="cvBig"></div>
     <div class="line c" id="cvT" style="font-size:190px"><span></span></div>
+    <div class="line c" id="cvT2" style="font-size:190px"><span></span></div>
     <div id="cvIcon"></div>
     <div id="cvLine"></div>
   </div>
@@ -122,8 +123,8 @@ em{font-style:normal;color:#ff9f1c}
   </div>
 
   <div class="scene" id="sR">
-    <div class="line c" id="r1" style="top:760px;font-size:96px"><span></span></div>
-    <div class="line c" id="r2" style="top:880px;font-size:124px"><span><em></em></span></div>
+    <div class="line c" id="r1" style="top:780px;font-size:132px"><span></span></div>
+    <div class="line c" id="r2" style="top:950px;font-size:62px;letter-spacing:-.02em"><span><em></em></span></div>
   </div>
 
   <div class="scene" id="sE">
@@ -233,10 +234,20 @@ function phoneScreen(t) {
 
 function setup() {
   $('badgeIcon').innerHTML = logoSVG(); $('eLogo').innerHTML = logoSVG(); buildLogo($('eLogo'), 10);   // fertiges Icon, ohne Aufbau
-  $('badgeT').textContent = EP.intro ? 'Die Serie' : `Folge ${EP.nr} · ${EP.titel}`;
+  $('badgeT').textContent = EP.intro ? 'Die Serie' : EP.titel;   // keine Folgen-Nummern (Simon)
   // Titelbild
   $('cvBig').textContent = EP.cover.big;
-  $('cvT').firstElementChild.textContent = EP.cover.title; fitLine($('cvT'), 960, 190);
+  // Titelbild: 1–2 Zeilen Titel, große Nummer nur wenn gesetzt; Block mittig (3:4-Ausschnitt)
+  const tl = Array.isArray(EP.cover.title) ? EP.cover.title : [EP.cover.title], big = !!EP.cover.big;
+  $('cvT').firstElementChild.textContent = tl[0]; $('cvT2').firstElementChild.textContent = tl[1] || '';
+  fitLine($('cvT'), 960, 190); let fs = parseFloat($('cvT').style.fontSize);
+  if (tl[1]) { fitLine($('cvT2'), 960, fs); fs = Math.min(fs, parseFloat($('cvT2').style.fontSize)); $('cvT').style.fontSize = $('cvT2').style.fontSize = fs + 'px'; }
+  $('cvBig').style.display = big ? '' : 'none'; vis($('cvT2'), !!tl[1]);
+  const lh = fs * 1.04, hBlock = 90 + (big ? 370 : 0) + tl.length * lh + 70 + 220 + 70;
+  let y = Math.round(960 - hBlock / 2); $('cvK').style.top = y + 'px'; y += 90;
+  if (big) { $('cvBig').style.top = (y - 20) + 'px'; y += 370; }
+  $('cvT').style.top = y + 'px'; if (tl[1]) $('cvT2').style.top = (y + lh) + 'px'; y += tl.length * lh + 70;
+  $('cvIcon').style.top = y + 'px'; $('cvLine').style.top = (y + 220 + 70) + 'px';
   $('cvIcon').innerHTML = EP.cover.icon === 'logo' ? `<div style="width:220px;height:220px;border-radius:48px;overflow:hidden">${logoSVG()}</div>` : `<svg class="ico" viewBox="0 0 100 100" width="220" height="220" style="stroke:#ff9f1c" stroke-width="6">${ICONS[EP.cover.icon]}</svg>`;
   // Einstieg
   $('hIcon').innerHTML = ICONS[EP.icon] || '';
@@ -272,8 +283,8 @@ function setup() {
     $('bWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
     $('g1').firstElementChild.textContent = EP.grid.title[0]; $('g2').querySelector('em').textContent = EP.grid.title[1]; $('gsub').textContent = EP.grid.sub;
     $('tiles').innerHTML = EP.grid.items.map(([nr, name, ic], i) => { const c = i % 3, r = Math.floor(i / 3);
-      return `<div class="tile" id="tl${i}" style="left:${70 + c * 320}px;top:${660 + r * 212}px"><i>${nr}</i><svg class="ico" viewBox="0 0 100 100" stroke-width="7">${ICONS[ic]}</svg><b>${name}</b></div>`; }).join('');
-    $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r2'), 960, 124);
+      return `<div class="tile" id="tl${i}" style="left:${70 + c * 320}px;top:${660 + r * 212}px"><svg class="ico" viewBox="0 0 100 100" stroke-width="7">${ICONS[ic]}</svg><b>${name}</b></div>`; }).join('');
+    $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r2'), 960, 62);
   }
   $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
   $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`;
@@ -332,7 +343,7 @@ function cover(T) { const on = T < COVER + .02; vis($('cv'), on); if (!on) retur
   const o = E.inCubic(p(T, COVER - .28, COVER)); $('cv').style.opacity = 1 - o; $('cv').style.transform = `scale(${1 + .18 * o})`;
   const k = p(T, 0, .25); $('cvK').style.opacity = k; $('cvK').style.letterSpacing = (.6 - .3 * E.outCubic(k)) + 'em';
   const b = E.outExpo(p(T, .08, .5)); $('cvBig').style.opacity = p(T, .08, .14); $('cvBig').style.transform = `scale(${1.5 - .5 * b})`;
-  reveal($('cvT'), T, .2, .55);
+  reveal($('cvT'), T, .2, .55); reveal($('cvT2'), T, .28, .55);
   $('cvIcon').querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(T, .3, .85)); });
   const iq = spring(T - .3, 1.4, 6); $('cvIcon').style.transform = `scale(${.6 + .4 * iq})`; $('cvIcon').style.opacity = p(T, .3, .36);
   $('cvLine').style.transform = `scaleX(${E.outExpo(p(T, .35, .9))})`; }
