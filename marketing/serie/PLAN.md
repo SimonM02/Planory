@@ -11,7 +11,7 @@ Bauherren nach der Arbeit am Handy.
 
 | Reihenfolge | Datum | Funktion | Status |
 |---|---|---|---|
-| Start | sofort (Event) | **Intro: „So viele Funktionen – seid gespannt“** | ✅ fertig |
+| Start | sofort (Event) | **Intro: Überblick – „Dein Hausbau. Organisiert.“** | ✅ fertig |
 | 1 | Di 10.11.2026 | Budget | ✅ fertig |
 | 2 | Fr 13.11.2026 | Rechnung scannen (KI) | ✅ fertig |
 | 3 | Di 17.11.2026 | Zeitplan & Meilensteine (Erinnerungen) | offen |
@@ -39,13 +39,13 @@ die Datei `planory-erklaert-…-titelbild.jpg` wählen. Alles Wichtige liegt in 
 
 ## Beschreibungstexte
 
-**Intro – So viele Funktionen**
+**Intro – Überblick**
 ```
-Du baust ein Haus? 🏡
-Planory ist dein digitaler Bauassistent – Budget, Rechnungen, Zeitplan, Aufgaben, Bautagebuch und vieles mehr in einer App.
-So viele Funktionen – seid gespannt! In „Planory erklärt“ bekommt jede Funktion ihr eigenes Video.
+Du planst ein Haus – oder baust schon? 🏡
+Planory ist die App für Bauherren: Kosten, Termine und Unterlagen an einem Ort – am iPhone und im Web.
+In „Planory erklärt“ zeigen wir dir jede Funktion – kurz, klar, Schritt für Schritt.
 Als Nächstes: Budget 💶
-👉 Folge uns, damit du keine Funktion verpasst · planory.at (iPhone & Web)
+👉 Folge uns, damit du nichts verpasst · planory.at
 #hausbau #häuslbauer #eigenheim #hausbauen #bauherren #neubau #bauplanung #hausbau2026 #österreich
 ```
 

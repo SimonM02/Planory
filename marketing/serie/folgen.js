@@ -10,19 +10,19 @@
 const FOLGEN = {
   0: {
     nr: 0, titel: 'Die Serie', intro: true, dur: 21.5, icon: 'house',
-    cover: { big: '', title: ['SO VIELE', 'FUNKTIONEN'], icon: 'logo' },
-    hook: ['Du baust', 'ein Haus?'], hookEnd: 2.6,
+    cover: { big: '', title: ['DEIN HAUSBAU.', 'ORGANISIERT.'], icon: 'logo' },
+    hook: ['Du planst ein Haus', 'oder baust schon?'], hookEnd: 2.6,
     brand: { t0: 2.6, t1: 5.6 },
     steps: [
-      { t0: 5.6, t1: 9.6, title: ['Alles für deinen', 'Hausbau.'], sub: 'In einer App – auf iPhone & im Web', noNum: true,
+      { t0: 5.6, t1: 9.6, title: ['Kosten, Termine,', 'Unterlagen.'], sub: 'Alles an einem Ort – am iPhone & im Web', noNum: true,
         shots: [{ t: 5.6, page: 'dash-sichtbar', scroll: [0, 2400], st: [6.3, 9.4] }], fx: [] },
     ],
-    grid: { t0: 9.6, t1: 15.6, title: ['So viele', 'Funktionen.'], sub: 'Alles für deinen Hausbau – in einer App',
+    grid: { t0: 9.6, t1: 15.6, title: ['Alles, was dein', 'Bauprojekt braucht.'], sub: 'Budget, Rechnungen, Zeitplan und mehr',
       items: [['01', 'Budget', 'donut'], ['02', 'Rechnung scannen', 'receipt'], ['03', 'Zeitplan', 'cal'], ['04', 'Aufgaben', 'check'],
         ['05', 'Bautagebuch', 'camera'], ['06', 'Angebote', 'compare'], ['07', 'Zahlungsplan', 'euro'], ['08', 'Pläne & Dokumente', 'doc'],
         ['09', 'Mängel', 'warn'], ['10', 'Kontakte & Helfer', 'people'], ['11', 'KI-Berater', 'spark'], ['12', 'iPhone & Web', 'devices']] },
-    start: { t0: 15.6, t1: 18.0, lines: ['Seid gespannt!', 'Jede Funktion bekommt ihr eigenes Video.'] },
-    end: { t0: 18.0, tagline: ['Keine Funktion ', 'verpassen.'], next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
+    start: { t0: 15.6, t1: 18.0, lines: ['Wir zeigen dir jede Funktion.', 'Kurz, klar, Schritt für Schritt.'] },
+    end: { t0: 18.0, tagline: ['Dein Bauprojekt ', 'im Griff.'], next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
   },
   1: {
     nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',

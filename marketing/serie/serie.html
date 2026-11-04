@@ -101,7 +101,7 @@ em{font-style:normal;color:#ff9f1c}
   <div class="scene" id="sB">
     <div id="bLogo" style="position:absolute;left:375px;top:560px;width:330px;height:330px"></div>
     <div class="line c" id="bW" style="top:940px;font-size:170px"><span id="bWs"></span></div>
-    <div class="line c" id="bT" style="top:1140px;font-size:58px;letter-spacing:-.02em"><span>Dein digitaler <em>Bauassistent.</em></span></div>
+    <div class="line c" id="bT" style="top:1140px;font-size:58px;letter-spacing:-.02em"><span>Die App für <em>Bauherren.</em></span></div>
   </div>
 
   <div class="scene" id="sS">
@@ -123,7 +123,7 @@ em{font-style:normal;color:#ff9f1c}
   </div>
 
   <div class="scene" id="sR">
-    <div class="line c" id="r1" style="top:780px;font-size:132px"><span></span></div>
+    <div class="line c" id="r1" style="top:800px;font-size:96px"><span></span></div>
     <div class="line c" id="r2" style="top:950px;font-size:62px;letter-spacing:-.02em"><span><em></em></span></div>
   </div>
 
@@ -234,7 +234,7 @@ function phoneScreen(t) {
 
 function setup() {
   $('badgeIcon').innerHTML = logoSVG(); $('eLogo').innerHTML = logoSVG(); buildLogo($('eLogo'), 10);   // fertiges Icon, ohne Aufbau
-  $('badgeT').textContent = EP.intro ? 'Die Serie' : EP.titel;   // keine Folgen-Nummern (Simon)
+  $('badgeT').textContent = EP.intro ? 'Überblick' : EP.titel;   // keine Folgen-Nummern (Simon)
   // Titelbild
   $('cvBig').textContent = EP.cover.big;
   // Titelbild: 1–2 Zeilen Titel, große Nummer nur wenn gesetzt; Block mittig (3:4-Ausschnitt)
@@ -284,7 +284,7 @@ function setup() {
     $('g1').firstElementChild.textContent = EP.grid.title[0]; $('g2').querySelector('em').textContent = EP.grid.title[1]; $('gsub').textContent = EP.grid.sub;
     $('tiles').innerHTML = EP.grid.items.map(([nr, name, ic], i) => { const c = i % 3, r = Math.floor(i / 3);
       return `<div class="tile" id="tl${i}" style="left:${70 + c * 320}px;top:${660 + r * 212}px"><svg class="ico" viewBox="0 0 100 100" stroke-width="7">${ICONS[ic]}</svg><b>${name}</b></div>`; }).join('');
-    $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r2'), 960, 62);
+    $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r1'), 960, 96); fitLine($('r2'), 960, 62);
   }
   $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
   $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`;
