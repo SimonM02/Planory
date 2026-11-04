@@ -88,6 +88,7 @@ em{font-style:normal;color:#ff9f1c}
     <div id="cvBig"></div>
     <div class="line c" id="cvT" style="font-size:190px"><span></span></div>
     <div class="line c" id="cvT2" style="font-size:190px"><span></span></div>
+    <div class="line c" id="cvSub" style="font-size:58px;font-family:Inter;font-weight:800;letter-spacing:-.015em;word-spacing:0"><span><em></em></span></div>
     <div id="cvIcon"></div>
     <div id="cvLine"></div>
   </div>
@@ -131,6 +132,7 @@ em{font-style:normal;color:#ff9f1c}
     <div class="bg"></div>    <div id="eLogo" style="position:absolute;left:390px;top:550px;width:300px;height:300px"></div>
     <div class="line c" id="eW" style="top:880px;font-size:156px"><span id="eWs"></span></div>
     <div class="line c" id="eT" style="top:1064px;font-size:56px;letter-spacing:-.02em"><span></span></div>
+    <div class="line c" id="eT2" style="top:1132px;font-size:56px;letter-spacing:-.02em"><span><em></em></span></div>
     <div id="nextPill"><span style="color:#ff9f1c">▶</span><span id="nextTxt"></span></div>
     <div class="cta" id="cta"><span id="ctaTxt">Jetzt starten →</span></div>
     <div class="line c" id="eU" style="top:1440px;font-size:38px;font-family:Inter;font-weight:700;letter-spacing:.01em;word-spacing:0"><span>planory.at <span style="color:#ff9f1c">·</span> iPhone &amp; Web</span></div>
@@ -243,10 +245,12 @@ function setup() {
   fitLine($('cvT'), 960, 190); let fs = parseFloat($('cvT').style.fontSize);
   if (tl[1]) { fitLine($('cvT2'), 960, fs); fs = Math.min(fs, parseFloat($('cvT2').style.fontSize)); $('cvT').style.fontSize = $('cvT2').style.fontSize = fs + 'px'; }
   $('cvBig').style.display = big ? '' : 'none'; vis($('cvT2'), !!tl[1]);
-  const lh = fs * 1.04, hBlock = 90 + (big ? 370 : 0) + tl.length * lh + 70 + 220 + 70;
+  const sub = EP.cover.sub || ''; $('cvSub').querySelector('em').textContent = sub; vis($('cvSub'), !!sub); if (sub) fitLine($('cvSub'), 960, 58);
+  const lh = fs * 1.04, hSub = sub ? 95 : 0, hBlock = 90 + (big ? 370 : 0) + tl.length * lh + hSub + 70 + 220 + 70;
   let y = Math.round(960 - hBlock / 2); $('cvK').style.top = y + 'px'; y += 90;
   if (big) { $('cvBig').style.top = (y - 20) + 'px'; y += 370; }
-  $('cvT').style.top = y + 'px'; if (tl[1]) $('cvT2').style.top = (y + lh) + 'px'; y += tl.length * lh + 70;
+  $('cvT').style.top = y + 'px'; if (tl[1]) $('cvT2').style.top = (y + lh) + 'px'; y += tl.length * lh;
+  if (sub) { $('cvSub').style.top = (y + 10) + 'px'; y += hSub; } y += 70;
   $('cvIcon').style.top = y + 'px'; $('cvLine').style.top = (y + 220 + 70) + 'px';
   $('cvIcon').innerHTML = EP.cover.icon === 'logo' ? `<div style="width:220px;height:220px;border-radius:48px;overflow:hidden">${logoSVG()}</div>` : `<svg class="ico" viewBox="0 0 100 100" width="220" height="220" style="stroke:#ff9f1c" stroke-width="6">${ICONS[EP.cover.icon]}</svg>`;
   // Einstieg
@@ -287,7 +291,11 @@ function setup() {
     $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r1'), 960, 96); fitLine($('r2'), 960, 62);
   }
   $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
-  $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`;
+  $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`; fitLine($('eT'), 960, 56);
+  // optionale zweite Zeile am Ende – darunter liegende Elemente rücken nach unten
+  const t2 = EP.end.tagline2 || ''; vis($('eT2'), !!t2);
+  if (t2) { $('eT2').querySelector('em').textContent = t2; fitLine($('eT2'), 960, 56); $('eT').style.top = '1040px'; $('eT2').style.top = '1108px';
+    $('nextPill').style.top = '1210px'; $('cta').style.top = '1322px'; $('eU').style.top = '1466px'; }
   $('nextTxt').textContent = EP.end.next; if (EP.end.cta) $('ctaTxt').textContent = EP.end.cta;
   const Rn = rnd(7); $('dustL').innerHTML = Array.from({ length: 30 }, () => { const s = 2 + Rn() * 4; return `<i class="dust" style="width:${s}px;height:${s}px;${Rn() < .35 ? 'background:#ffb24d;' : ''}" data-x="${Rn() * 1080}" data-y="${Rn() * 1920}" data-v="${20 + Rn() * 50}" data-o="${.12 + Rn() * .3}" data-ph="${Rn() * 6.28}"></i>`; }).join('');
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), im = g.createImageData(256, 256), r2 = rnd(3);
@@ -343,7 +351,7 @@ function cover(T) { const on = T < COVER + .02; vis($('cv'), on); if (!on) retur
   const o = E.inCubic(p(T, COVER - .28, COVER)); $('cv').style.opacity = 1 - o; $('cv').style.transform = `scale(${1 + .18 * o})`;
   const k = p(T, 0, .25); $('cvK').style.opacity = k; $('cvK').style.letterSpacing = (.6 - .3 * E.outCubic(k)) + 'em';
   const b = E.outExpo(p(T, .08, .5)); $('cvBig').style.opacity = p(T, .08, .14); $('cvBig').style.transform = `scale(${1.5 - .5 * b})`;
-  reveal($('cvT'), T, .2, .55); reveal($('cvT2'), T, .28, .55);
+  reveal($('cvT'), T, .2, .55); reveal($('cvT2'), T, .28, .55); reveal($('cvSub'), T, .42, .55);
   $('cvIcon').querySelectorAll('path,circle').forEach(pa => { pa.style.strokeDasharray = '1 1'; pa.style.strokeDashoffset = 1 - E.outCubic(p(T, .3, .85)); });
   const iq = spring(T - .3, 1.4, 6); $('cvIcon').style.transform = `scale(${.6 + .4 * iq})`; $('cvIcon').style.opacity = p(T, .3, .36);
   $('cvLine').style.transform = `scaleX(${E.outExpo(p(T, .35, .9))})`; }
@@ -389,7 +397,7 @@ function ende(t) { const on = t >= END; vis($('sE'), on); if (!on) return; const
   // Ruhig & klar: weich einblenden, nacheinander sanft nach oben – keine Strahlen, kein Glanz, kein Federn
   $('sE').style.opacity = E.inOutCubic(p(l, 0, .5));
   const up = (el, t0, vor = '') => { const q = E.outCubic(p(l, t0, t0 + .7)); el.style.opacity = q; el.style.transform = `${vor} translateY(${(1 - q) * 26}px)`; };
-  up($('eLogo'), .2); up($('eW'), .35); up($('eT'), .5); up($('nextPill'), .65, 'translateX(-50%)'); up($('cta'), .8, 'translateX(-50%)'); up($('eU'), .95); }
+  up($('eLogo'), .2); up($('eW'), .35); up($('eT'), .5); up($('eT2'), .58); up($('nextPill'), .65, 'translateX(-50%)'); up($('cta'), .8, 'translateX(-50%)'); up($('eU'), .95); }
 function badge(t) { const q = spring(t - .1, 1.5, 7), o = p(t, END, END + .3); $('badge').style.opacity = p(t, .1, .2) * (1 - o); $('badge').style.transform = `translateY(${(1 - q) * -30}px)`; }
 function bgAnim(T) {
   $('grid').style.transform = `translate(${-(T * 24) % 180}px,${-(T * 40) % 180}px)`;
