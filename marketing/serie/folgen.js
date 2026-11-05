@@ -10,7 +10,7 @@
 const FOLGEN = {
   0: {
     nr: 0, titel: 'Die Serie', intro: true, dur: 21.5, icon: 'house',
-    cover: { big: '', title: ['DEIN', 'BAUPROJEKT'], sub: 'Alles in einer App organisiert.', icon: 'logo' },
+    cover: { big: '', title: ['DEIN', 'BAUPROJEKT'], sub: 'Eine App. Mehr brauchst du nicht.', icon: 'logo' },
     hook: ['Du planst ein Haus', 'oder baust schon?'], hookEnd: 2.6,
     brand: { t0: 2.6, t1: 5.6 },
     steps: [
@@ -22,7 +22,7 @@ const FOLGEN = {
         ['05', 'Bautagebuch', 'camera'], ['06', 'Angebote', 'compare'], ['07', 'Zahlungsplan', 'euro'], ['08', 'Pläne & Dokumente', 'doc'],
         ['09', 'Mängel', 'warn'], ['10', 'Kontakte & Helfer', 'people'], ['11', 'KI-Berater', 'spark'], ['12', 'iPhone & Web', 'devices']] },
     start: { t0: 15.6, t1: 18.0, lines: ['Wir zeigen dir jede Funktion.', 'Kurz, klar, Schritt für Schritt.'] },
-    end: { t0: 18.0, tagline: ['Dein Bauprojekt –', ''], tagline2: 'alles in einer App organisiert.', next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
+    end: { t0: 18.0, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
   },
   1: {
     nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',

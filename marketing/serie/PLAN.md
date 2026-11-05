@@ -11,7 +11,7 @@ Bauherren nach der Arbeit am Handy.
 
 | Reihenfolge | Datum | Funktion | Status |
 |---|---|---|---|
-| Start | sofort (Event) | **Intro: Überblick – „Dein Bauprojekt – alles in einer App organisiert.“** | ✅ fertig |
+| Start | sofort (Event) | **Intro: Überblick – „Eine App. Mehr brauchst du nicht.“** | ✅ fertig |
 | 1 | Di 10.11.2026 | Budget | ✅ fertig |
 | 2 | Fr 13.11.2026 | Rechnung scannen (KI) | ✅ fertig |
 | 3 | Di 17.11.2026 | Zeitplan & Meilensteine (Erinnerungen) | offen |
@@ -42,12 +42,14 @@ die Datei `planory-erklaert-…-titelbild.jpg` wählen. Alles Wichtige liegt in 
 **Intro – Überblick**
 ```
 Du planst ein Haus – oder baust schon? 🏡
-Dein Bauprojekt – alles in einer App organisiert: Kosten, Termine und Unterlagen, immer aktuell am iPhone und im Web.
+Planory ist die eine App für dein ganzes Bauprojekt: Budget, Rechnungen, Zeitplan, Bautagebuch und mehr – immer aktuell am iPhone und im Web.
+Eine App. Mehr brauchst du nicht.
 In „Planory erklärt“ zeigen wir dir jede Funktion – kurz, klar, Schritt für Schritt.
 Als Nächstes: Budget 💶
 👉 Folge uns, damit du nichts verpasst · planory.at
 #hausbau #häuslbauer #eigenheim #hausbauen #bauherren #neubau #bauplanung #hausbau2026 #österreich
 ```
+- Bewusst „die eine App“ statt „die einzige App“: „einzige“ wäre eine Alleinstellungs-Behauptung (Werberecht).
 
 **Budget**
 ```
