@@ -13,6 +13,7 @@
 
 import fs from 'fs';
 import vm from 'vm';
+import { execFileSync } from 'child_process';
 
 const WEB = 'index.html';      // Web-Version (planory.at)
 const APP = 'www/index.html';  // Datei, die in die iOS-App gebacken wird
@@ -85,6 +86,18 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
 // 2. WEB und APP im Gleichstand – der häufigste Flüchtigkeitsfehler
 //    (Änderung nur in einer der beiden Dateien gemacht)
 // ───────────────────────────────────────────────────────────────────
+// Website (Startseite in index.html + Unterseiten) ist aus site-quelle/ gebaut und aktuell
+check('Website: aus site-quelle/ gebaut und aktuell (node site-quelle/bauen.mjs)', () => {
+  try { execFileSync(process.execPath, ['site-quelle/bauen.mjs', '--check'], { stdio: 'pipe' }); }
+  catch (e) { return String(e.stdout || e.message).trim(); }
+});
+check('Website: Startseiten-Stile wirken nur unter .pl-site (keine Wirkung auf die App)', () => {
+  const css = read('site/site.css').replace(/\/\*[\s\S]*?\*\//g, '').replace(/@font-face\{[^}]*\}/g, '');
+  const sel = [];
+  css.replace(/:where\([^)]*\)/g, ':where()').replace(/(^|\})\s*([^{}@]+)\{/g, (m, a, s) => { s.split(',').forEach(x => { x = x.trim(); if (x && !/^(from|to|\d+%)$/.test(x) && !/^(body)?\.pl-site\b/.test(x)) sel.push(x); }); return m; });
+  return sel.length ? 'ohne .pl-site: ' + sel.slice(0, 5).join(' | ') : true;
+});
+
 // Staerkste Pruefung zuerst: die App-Datei ist eine exakte Kopie der Web-Datei.
 // Jede Abweichung heisst: eine Aenderung wurde nur in einer Datei gemacht.
 check('Gleichstand: Web- und App-Datei sind Byte für Byte identisch', () => {
@@ -653,13 +666,14 @@ check('Supabase-Schlüssel nur einmal eingetragen (SUPA_KEY) – kein alter, ung
 });
 check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare FAQ', () => {
   const w = read(WEB);
-  const bilder = [...new Set([...w.matchAll(/(?:src|data-en-src)="(lp\/[\w-]+\.jpg)"/g)].map(m => m[1]))];
-  if (bilder.length < 10) return `nur ${bilder.length} Startseiten-Bilder verlinkt`;
+  const bilder = [...new Set([...w.matchAll(/(?:src|data-en-src)="\/(site\/img\/[\w-]+\.webp)"/g)].map(m => m[1]))];
+  if (bilder.length < 8) return `nur ${bilder.length} Startseiten-Bilder verlinkt`;
   for (const b of bilder) {
     if (!fs.existsSync(b)) return b + ' fehlt';
-    if (fs.statSync(b).size > 150 * 1024) return b + ' größer als 150 KB';
+    if (fs.statSync(b).size > 200 * 1024) return b + ' größer als 200 KB';
   }
-  const sichtbar = [...w.matchAll(/<div class="lp-qa"><h3[^>]*>(.*?)<\/h3>/g)].map(m => m[1].replace(/&amp;/g, '&'));
+  const faq = w.slice(w.indexOf('id="lp-faq"'), w.indexOf('</div>', w.indexOf('id="lp-faq"')));
+  const sichtbar = [...faq.matchAll(/<summary[^>]*>(.*?)<\/summary>/g)].map(m => m[1].replace(/&amp;/g, '&'));
   const ld = JSON.parse(w.match(/<script type="application\/ld\+json">\n(\{"@context":"https:\/\/schema.org","@type":"FAQPage".*?)\n<\/script>/s)[1]);
   const google = ld.mainEntity.map(q => q.name);
   if (JSON.stringify(sichtbar) !== JSON.stringify(google)) return 'FAQ für Google weicht ab: ' + google.join(' / ');

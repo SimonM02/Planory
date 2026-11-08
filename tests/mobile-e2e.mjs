@@ -2782,53 +2782,6 @@ await scenario('Abmelden meldet nur dieses Gerät ab (andere Geräte im selben K
   } finally { await d.ctx.close(); }
 });
 
-await scenario('Startseite: Vergleichstabelle bleibt bündig – auch schmales Handy + größere Schrift (Instagram-Browser)', async () => {
-  const f = [];
-  for (const breite of [320, 360, 390]) {
-    const c = await browser.newContext({ viewport: { width: breite, height: 800 }, locale: 'de-AT', serviceWorkers: 'block' });
-    try {
-      const p = await c.newPage();
-      await p.addInitScript(() => {
-        localStorage.setItem('planoryLang', 'de');
-        window.supabase = { createClient: () => ({ from: () => { const o = { select() { return o; }, eq() { return o; }, maybeSingle: async () => ({ data: null }), then(r) { return Promise.resolve({ data: null, error: null }).then(r); } }; return o; },
-          auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; } },
-          channel() { const k = { on() { return k; }, subscribe() { return k; } }; return k; }, removeChannel() {}, storage: { from() { return {}; } } }) };
-      });
-      await p.route('**/*', r => r.request().url().startsWith('https://planory.test/index.html')
-        ? r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML }) : r.abort());
-      await p.goto('https://planory.test/index.html', { waitUntil: 'domcontentloaded' });
-      await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
-      await p.addStyleTag({ content: 'html{font-size:18px !important}' });   // größere Schrift wie im Instagram-/In-App-Browser
-      await p.waitForTimeout(200);
-      const r = await p.evaluate(() => {
-        const kopf = document.querySelector('#landing-overlay .lp-cmp-head');
-        if (!kopf) return { fehlt: true };
-        // Planory- und Excel-Spalte jeder Zeile müssen genau unter der Kopfzeile stehen
-        const L = el => el ? Math.round(el.getBoundingClientRect().left) : NaN;
-        const soll = [L(kopf.querySelector('.lp-cmp-p')), L(kopf.querySelector('.lp-cmp-x'))];
-        const zeilen = [...document.querySelectorAll('#landing-overlay .lp-cmp-row')];
-        const schief = zeilen.filter(z => [L(z.querySelector('.lp-cmp-yes')), L(z.querySelector('.lp-cmp-no'))].some((x, i) => !(Math.abs(x - soll[i]) <= 1)))
-          .map(z => z.firstElementChild.textContent.trim());
-        // Wörter dürfen nicht mitten drin auseinanderbrechen (Zellen breit genug)
-        const zerhackt = [...document.querySelectorAll('#landing-overlay .lp-cmp-row>div')].filter(d => {
-          const w = d.getBoundingClientRect().width; const sp = document.createElement('span');
-          sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:inherit'; d.appendChild(sp);
-          const zu = d.textContent.split(/\s+/).some(wort => { sp.textContent = wort; return sp.getBoundingClientRect().width > w - 16; });
-          sp.remove(); return zu; }).length;
-        const tab = document.querySelector('#landing-overlay .lp-cmp').getBoundingClientRect();
-        return { schief, zerhackt, ueber: Math.round(tab.right - innerWidth) };
-      });
-      if (r.fehlt) f.push(`${breite}px: Vergleichstabelle fehlt`);
-      else {
-        if (r.schief.length) f.push(`${breite}px: verschoben: ${r.schief.join(', ')}`);
-        if (r.ueber > 0) f.push(`${breite}px: ragt ${r.ueber}px über den Rand`);
-        if (r.zerhackt) f.push(`${breite}px: ${r.zerhackt} Zellen zu schmal für ein Wort`);
-      }
-    } finally { await c.close(); }
-  }
-  return f.join(' · ');
-});
-
 await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, App-Bilder da, Englisch vollständig, App-Store-Knopf nur mit Link', async () => {
   const ROOT = path.join(here, '..');
   const lauf = async (breite, appstore) => {
@@ -2847,8 +2800,9 @@ await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, Ap
         if (u.href.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
         if (u.pathname.endsWith('/api/app-version') && appstore) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '1.3', url: 'https://apps.apple.com/at/app/planory/id6700000000' }) });
         const datei = path.join(ROOT, decodeURIComponent(u.pathname));
-        if (u.host === 'planory.test' && /^\/(lp\/[\w-]+\.jpg|favicon\.svg)$/.test(u.pathname)) {
-          try { return r.fulfill({ status: 200, body: readFileSync(datei), contentType: u.pathname.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg' }); } catch (e) { return r.fulfill({ status: 404, body: '' }); }
+        if (u.host === 'planory.test' && /^\/(site\/(img|fonts)\/[\w.-]+|site\/site\.css|favicon\.svg)$/.test(u.pathname)) {
+          const typ = { svg: 'image/svg+xml', webp: 'image/webp', css: 'text/css', woff2: 'font/woff2' }[u.pathname.split('.').pop()] || 'application/octet-stream';
+          try { return r.fulfill({ status: 200, body: readFileSync(datei), contentType: typ }); } catch (e) { return r.fulfill({ status: 404, body: '' }); }
         }
         return r.abort();
       });
@@ -2882,7 +2836,7 @@ await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, Ap
     if (r.fehlend.length) f.push(`${breite}px: Bilder fehlen/ohne alt: ${r.fehlend.join(', ')}`);
     if (r.deutsch.length) f.push(`${breite}px: auf Englisch noch deutsch: ${r.deutsch.join(' | ')}`);
     if (!r.bilderEn) f.push(`${breite}px: Bilder/alt nicht auf Englisch`);
-    if (!/^Behalte Budget/.test(r.h1)) f.push(`${breite}px: zurück auf Deutsch klappt nicht`);
+    if (!/^Bauen ist kompliziert/.test(r.h1)) f.push(`${breite}px: zurück auf Deutsch klappt nicht`);
     const ok = appstore ? r.knopf.every(k => k.sicht && /^https:\/\/apps\.apple\.com\//.test(k.href)) : r.knopf.every(k => !k.sicht);
     if (!r.knopf.length || !ok) f.push(`${breite}px: App-Store-Knopf ${JSON.stringify(r.knopf)}`);
     if (r.fehler.length) f.push(`${breite}px: JS-Fehler ${r.fehler[0]}`);
@@ -2905,7 +2859,7 @@ await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besuc
       await p.goto('https://planory.test/index.html', { waitUntil: 'domcontentloaded' });
       await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
       return await p.evaluate(() => ({ lang: document.documentElement.lang,
-        faq: [...document.querySelectorAll('#lp-faq .lp-qa p')][0]?.textContent.trim().slice(0, 40) }));
+        faq: [...document.querySelectorAll('#lp-faq details p')][0]?.textContent.trim().slice(0, 40) }));
     } finally { await c.close(); }
   };
   const bot = await landing('Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)');

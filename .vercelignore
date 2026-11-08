@@ -3,6 +3,7 @@
 *.md
 tests
 marketing
+site-quelle
 www
 capacitor.config.json
 _config.yml

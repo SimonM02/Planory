@@ -32,7 +32,7 @@ Vercel baut den Dev-Zweig zusätzlich als Vorschau (Link in der Vercel-Übersich
 **Tests (vor jedem Live-Stellen, alle grün):**
 `node tests/pruefen.mjs` · `node tests/mobile-e2e.mjs` · `node tests/sync-e2e.mjs`
 (bei Speichern/Sync) · `node tests/abo-api.mjs` · `node tests/push-api.mjs` ·
-`node tests/todoist-api.mjs` · `node tests/app-version-api.mjs`.
+`node tests/todoist-api.mjs` · `node tests/app-version-api.mjs` · `node tests/website.mjs`.
 Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 
 ## 3. Abo-Modell (Stand 21.10.2026)
@@ -54,8 +54,12 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   teils von mehreren Personen geteilt. Nur „Konto löschen“ meldet alle Geräte ab.
 - **Mehrere Personen:** v1.4 = Profile „Wer bin ich?“ im gemeinsamen Konto; später evtl.
   „Projekt teilen“ mit eigenen Logins.
-- **Startseite:** dunkel, sachlich, keine erfundenen Zahlen/Bewertungen; neue Fassung mit
-  echten App-Bildern (`lp/`) liegt auf dem Dev-Zweig, geht nach Simons OK live.
+- **Website (08.11.2026, Simons Wahl „Richtung A“):** hell im Bauplan-Stil (Papierton, Tinte, Orange
+  nur als Akzent, Planraster/Plankopf), 5 Seiten: Start, Funktionen, Preise, Über Planory, Hilfe.
+  Keine erfundenen Zahlen, Bewertungen oder Kundenstimmen; nur zeigen, was es in der App gibt.
+  „Über Planory“ neutral: nur Vorname „Simon“, eigenes Bauprojekt als Anlass, kein Foto.
+  Schriften (Archivo, IBM Plex Mono) liegen auf dem eigenen Server (DSGVO), nicht bei Google.
+  „die einzige App“ wird bewusst nicht behauptet (Werberecht) – stattdessen „Eine App. Mehr brauchst du nicht.“
 - **Google:** Search Console bestätigt (Meta-Tag in `index.html` – nicht entfernen);
   Suchmaschinen bekommen immer die deutsche Startseite; Favicon als echte Dateien.
 - **Supabase-Schlüssel** nur einmal im Code (`SUPA_KEY`) – ein alter, fest eingetragener
@@ -82,7 +86,18 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - `APP-STORE-TEXT.md` – App-Store-Texte DE/EN · `ABO-IN-APP-SETUP.md` – Apple-Abo/RevenueCat.
 - `NATIVE-PUSH-SETUP.md` – Push · `MAIL-VORLAGEN.md` – Mail-Texte · `SYNC-FINDINGS.md` – Sync-Wissen.
 - `agb.html`, `datenschutz.html`, `impressum.html`, `support.html` – Rechtliches/Support (live).
-- `marketing/` – Instagram-Prompt & Bilder · `lp/` – Bilder der neuen Startseite.
+- `marketing/` – Instagram-Prompt & Bilder.
+- **Website** (`planory.at`, `/funktionen/`, `/preise/`, `/ueber/`, `/hilfe/`):
+  **Texte nie direkt in den fertigen Seiten ändern**, sondern in `site-quelle/`
+  (`seiten/<name>.html` = Inhalt, `teile/kopf.html` + `teile/fuss.html` = Kopf/Fuß für alle Seiten),
+  danach `node site-quelle/bauen.mjs`. Das schreibt die Unterseiten, die Startseite in `index.html` +
+  `www/index.html` (zwischen `WEBSITE:START/END`) und Kopf/Fuß von Impressum/Datenschutz/AGB (deren Text
+  steht zwischen `RECHT:START/END` und bleibt unverändert). `support.html` leitet auf `/hilfe/` weiter
+  (App-Store-Support-Link). Aussehen: `site/site.css` (alle Regeln unter `.pl-site`, wird in der App
+  erst beim Anzeigen der Startseite geladen), Sprache/Menü: `site/site.js`. Englisch über `data-en`.
+  App-Bilder: `node site-quelle/screens.mjs` (Demo „Musterhaus Graz“ + Beispieldaten → `site/img/*.webp`).
+  Unterseiten verlinken auf `/?start=register` bzw. `/?start=login` (öffnet in der App direkt das Formular).
+  Test: `node tests/website.mjs`; `tests/pruefen.mjs` prüft, ob alles neu gebaut ist.
 - `marketing/planory-reel.mp4` – Instagram-Reel (16,5 s, 1080×1920) mit eigenen Soundeffekten
   (`reel/sound.cjs`, selbst erzeugt, −14 LUFS; Musik legt Simon in Instagram leise darunter) +
   `reel-titelbild.jpg`. Schluss bewusst ohne Preis/Gratis-Hinweis: „Jetzt starten →“.
@@ -101,7 +116,7 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 
 ## 7. Offen & laufend (Kurzfassung – Details in `OFFENE-PUNKTE.md`)
 - v1.3 bei Apple in Prüfung → danach testen (Gratismonat, Kauf, Wiederherstellen).
-- Neue Startseite: wartet auf OK.
+- Neue Website (5 Seiten): wartet auf OK.
 - GitHub-Projekt privat machen: Website zu Vercel (Domain-Anbieter klären), vorher
   Datenschutz-URL in App Store Connect auf `https://planory.at/datenschutz.html`.
 - Stripe-Kundenportal: Kündigen „am Ende des Zeitraums“.

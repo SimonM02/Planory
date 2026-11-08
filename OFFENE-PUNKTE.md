@@ -15,7 +15,8 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    Instagram-Namen an Claude (für „@…“ in den Texten).
 
 **🟠 Bald (1–2 Wochen):**
-6. **Neue Startseite:** OK geben oder Änderungswünsche sagen (fertig auf dem Dev-Branch, noch nicht live).
+6. **Neue Website (5 Seiten, Stil „Bauplan“):** Vorschau-Bilder ansehen, „Über Planory“-Text gegenlesen,
+   OK geben → Claude stellt live (fertig auf dem Dev-Branch, noch nicht live; ersetzt die alte „neue Startseite“).
 7. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,
    **Widerrufs-Button** („Vertrag widerrufen“, § 13a FAGG) fürs Web-Abo, Stripe-Bestellknopf im
    Gratismonat, Kennzeichnung von KI-Personen in Werbung (Reel 3). Danach baut Claude ein, was nötig ist.
@@ -195,7 +196,7 @@ abo-api 10/10).
       Sitemap `sitemap.xml` einreichen und „Indexierung beantragen“.
 - [ ] Ab **April 2027**: App-Store-Bildschirmfotos auch für **iPhone Duo** (Pflicht bei Builds mit iOS-27.1-SDK).
       Bei der Gelegenheit die Bilder für Aufgaben/Zeitplan im neuen Look erneuern.
-- [ ] **Startseite verbessern:** Funktionen in großen Abschnitten mit echten App-Bildern beschreiben
+- [x] **Startseite verbessern:** neue Website mit eigener Funktionen-Seite und echten App-Bildern (Dev-Branch)
       (Budget, Rechnungen, Zeitplan, Aufgaben, Bautagebuch) – im Stil der Instagram-Postings aus
       Claude Design. Dafür die Postings als Bilder in den Chat schicken.
 
