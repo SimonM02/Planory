@@ -94,7 +94,7 @@ check('Website: aus site-quelle/ gebaut und aktuell (node site-quelle/bauen.mjs)
 check('Website: Startseiten-Stile wirken nur unter .pl-site (keine Wirkung auf die App)', () => {
   const css = read('site/site.css').replace(/\/\*[\s\S]*?\*\//g, '').replace(/@font-face\{[^}]*\}/g, '');
   const sel = [];
-  css.replace(/:where\([^)]*\)/g, ':where()').replace(/(^|\})\s*([^{}@]+)\{/g, (m, a, s) => { s.split(',').forEach(x => { x = x.trim(); if (x && !/^(from|to|\d+%)$/.test(x) && !/^(body)?\.pl-site\b/.test(x)) sel.push(x); }); return m; });
+  css.replace(/:(where|is)\([^)]*\)/g, ':is()').replace(/(^|\})\s*([^{}@]+)\{/g, (m, a, s) => { s.split(',').forEach(x => { x = x.trim(); if (x && !/^(from|to|\d+%)$/.test(x) && !/^(body(\.[\w-]+)?\s+)?\.pl-site\b|^body\.pl-site\b/.test(x)) sel.push(x); }); return m; });
   return sel.length ? 'ohne .pl-site: ' + sel.slice(0, 5).join(' | ') : true;
 });
 
@@ -666,7 +666,7 @@ check('Supabase-Schlüssel nur einmal eingetragen (SUPA_KEY) – kein alter, ung
 });
 check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare FAQ', () => {
   const w = read(WEB);
-  const bilder = [...new Set([...w.matchAll(/(?:src|data-en-src)="\/(site\/img\/[\w-]+\.webp)"/g)].map(m => m[1]))];
+  const bilder = [...new Set([...w.matchAll(/(?:src|data-en-src)="\/(site\/img\/(?:geraet\/)?[\w-]+\.webp)"/g)].map(m => m[1]))];
   if (bilder.length < 8) return `nur ${bilder.length} Startseiten-Bilder verlinkt`;
   for (const b of bilder) {
     if (!fs.existsSync(b)) return b + ' fehlt';

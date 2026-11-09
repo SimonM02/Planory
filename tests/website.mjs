@@ -170,6 +170,27 @@ await scenario('Startseite: Stile geladen, Menü-Knöpfe öffnen Anmelden/Regist
   } finally { await c.close(); }
 });
 
+await scenario('Startseite im dunklen Modus des Handys: Überschriften bleiben lesbar (dunkel auf hell)', async () => {
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', serviceWorkers: 'block' });
+  await c.addInitScript(SUPA);
+  await c.route(/^https?:\/\/(?!localhost)/, r => r.abort());
+  try {
+    const p = await c.newPage();
+    await p.goto(BASIS + '/');
+    await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
+    const r = await p.evaluate(() => ({ dunkel: document.body.classList.contains('dark-mode'),
+      h1: getComputedStyle(document.querySelector('#landing-overlay h1')).color,
+      h2hell: getComputedStyle(document.querySelector('#landing-overlay .s-abschnitt h2')).color,
+      h2band: getComputedStyle(document.querySelector('#landing-overlay .s-band h2')).color }));
+    const f = [];
+    if (!r.dunkel) f.push('dunkler Modus nicht aktiv (Test ungültig)');
+    if (r.h1 !== 'rgb(22, 25, 31)') f.push('Hauptüberschrift ' + r.h1);
+    if (r.h2hell !== 'rgb(22, 25, 31)') f.push('Überschrift auf hellem Grund ' + r.h2hell);
+    if (r.h2band !== 'rgb(243, 240, 232)') f.push('Überschrift auf dunklem Band ' + r.h2band);
+    return f.join(' · ');
+  } finally { await c.close(); }
+});
+
 await browser.close();
 server.close();
 console.log('\n  PLANORY – Website-Test (alle Seiten, Handy + Computer)');

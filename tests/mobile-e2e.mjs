@@ -2635,8 +2635,12 @@ await scenario('Probeabo: ältere Konten wie bisher, beendetes Abo = Nur-Lesen, 
     const lauf = async (erstellt, zeile) => { await alsKonto(d.page, erstellt, zeile); await d.page.evaluate(() => loadUserPlan()); await d.page.waitForTimeout(100);
       return d.page.evaluate(() => ({ ...(() => { const o = document.getElementById('probeabo-overlay'); return { plan: window._userPlan, offen: o.classList.contains('open') }; })(),
         banner: document.getElementById('readonly-banner').style.display, ende: document.getElementById('plan-period-end').textContent })); };
-    const a = await lauf('2026-10-10T08:00:00Z', null);
-    if (a.plan !== 'trial' || a.offen) f.push('altes Konto im Gratismonat: ' + JSON.stringify(a));
+    // Ältere Konten (vor dem 21.10.2026) haben 30 Tage ab Registrierung gratis – das späteste solche Konto
+    // (20.10.) ist bis 19.11.2026 im Gratismonat; danach gibt es diesen Fall nicht mehr.
+    if (Date.now() < Date.parse('2026-11-19T08:00:00Z')) {
+      const a = await lauf('2026-10-20T08:00:00Z', null);
+      if (a.plan !== 'trial' || a.offen) f.push('altes Konto im Gratismonat: ' + JSON.stringify(a));
+    }
     const b = await lauf('2026-08-01T08:00:00Z', null);
     if (b.plan !== 'expired' || b.offen || b.banner !== '') f.push('altes Konto nach dem Gratismonat: ' + JSON.stringify(b));
     const c = await lauf('2026-10-25T08:00:00Z', { plan: 'free', status: 'canceled', stripe_subscription_id: 'sub_1' });
@@ -2800,7 +2804,7 @@ await scenario('Startseite: kein Querscroll (Handy + Computer), keine Emojis, Ap
         if (u.href.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
         if (u.pathname.endsWith('/api/app-version') && appstore) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '1.3', url: 'https://apps.apple.com/at/app/planory/id6700000000' }) });
         const datei = path.join(ROOT, decodeURIComponent(u.pathname));
-        if (u.host === 'planory.test' && /^\/(site\/(img|fonts)\/[\w.-]+|site\/site\.css|favicon\.svg)$/.test(u.pathname)) {
+        if (u.host === 'planory.test' && /^\/(site\/(img|fonts)\/(geraet\/)?[\w.-]+|site\/site\.css|favicon\.svg)$/.test(u.pathname)) {
           const typ = { svg: 'image/svg+xml', webp: 'image/webp', css: 'text/css', woff2: 'font/woff2' }[u.pathname.split('.').pop()] || 'application/octet-stream';
           try { return r.fulfill({ status: 200, body: readFileSync(datei), contentType: typ }); } catch (e) { return r.fulfill({ status: 404, body: '' }); }
         }
