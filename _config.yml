@@ -4,6 +4,7 @@ exclude:
   - tests
   - api
   - marketing
+  - site-quelle
   - www
   - node_modules
   - package.json
