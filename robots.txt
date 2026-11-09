@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /site/muster/
 
 Sitemap: https://planory.at/sitemap.xml
