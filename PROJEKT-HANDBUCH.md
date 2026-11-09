@@ -54,7 +54,7 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   teils von mehreren Personen geteilt. Nur „Konto löschen“ meldet alle Geräte ab.
 - **Mehrere Personen:** v1.4 = Profile „Wer bin ich?“ im gemeinsamen Konto; später evtl.
   „Projekt teilen“ mit eigenen Logins.
-- **Website (08.11.2026, Simons Wahl „Richtung A“):** hell im Bauplan-Stil (Papierton, Tinte, Orange
+- **Website (live seit 09.11.2026, Simons Wahl „Richtung A“):** hell im Bauplan-Stil (Papierton, Tinte, Orange
   nur als Akzent, Planraster/Plankopf), 5 Seiten: Start, Funktionen, Preise, Über Planory, Hilfe.
   Keine erfundenen Zahlen, Bewertungen oder Kundenstimmen; nur zeigen, was es in der App gibt.
   „Über Planory“ neutral: nur Vorname „Simon“, eigenes Bauprojekt als Anlass, kein Foto.
@@ -116,7 +116,7 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 
 ## 7. Offen & laufend (Kurzfassung – Details in `OFFENE-PUNKTE.md`)
 - v1.3 bei Apple in Prüfung → danach testen (Gratismonat, Kauf, Wiederherstellen).
-- Neue Website (5 Seiten): wartet auf OK.
+- ✅ Neue Website (5 Seiten) live seit 09.11.2026.
 - GitHub-Projekt privat machen: Website zu Vercel (Domain-Anbieter klären), vorher
   Datenschutz-URL in App Store Connect auf `https://planory.at/datenschutz.html`.
 - Stripe-Kundenportal: Kündigen „am Ende des Zeitraums“.

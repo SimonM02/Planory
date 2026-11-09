@@ -15,8 +15,8 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    Instagram-Namen an Claude (für „@…“ in den Texten).
 
 **🟠 Bald (1–2 Wochen):**
-6. **Neue Website (5 Seiten, Stil „Bauplan“):** Vorschau-Bilder ansehen, „Über Planory“-Text gegenlesen,
-   OK geben → Claude stellt live (fertig auf dem Dev-Branch, noch nicht live; ersetzt die alte „neue Startseite“).
+6. ✅ **Neue Website (5 Seiten, Stil „Bauplan“)** – live seit 09.11.2026 (planory.at, /funktionen/,
+   /preise/, /ueber/, /hilfe/). Tipp: in der Instagram-Bio direkt auf eine Seite verlinken.
 7. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,
    **Widerrufs-Button** („Vertrag widerrufen“, § 13a FAGG) fürs Web-Abo, Stripe-Bestellknopf im
    Gratismonat, Kennzeichnung von KI-Personen in Werbung (Reel 3). Danach baut Claude ein, was nötig ist.
