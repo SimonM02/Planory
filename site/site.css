@@ -15,6 +15,9 @@
 body.pl-site{margin:0}
 .pl-site *,.pl-site *::before,.pl-site *::after{box-sizing:border-box}
 .pl-site :where(h1,h2,h3,h4,p,ul,ol,dl,dd,figure,blockquote){margin:0;padding:0}
+/* Dunkler Modus der App (body.dark-mode färbt h1–h3 mit !important hell) darf die Website nicht umfärben */
+body.dark-mode .pl-site :is(h1,h2,h3,h4){color:inherit!important;border-color:currentColor!important}
+body.dark-mode .pl-site .s-fuss h2{color:#8f8a80!important}
 .pl-site :where(ul,ol){list-style:none}
 .pl-site a{color:inherit;text-decoration:none}
 .pl-site img{display:block;max-width:100%;height:auto}
@@ -93,16 +96,13 @@ body.pl-site{margin:0}
 .pl-site .s-plankopf>span:nth-last-child(-n+2){border-bottom:0}
 
 /* Handy-Rahmen */
-.pl-site .s-ph{position:relative;background:#0d0f14;border-radius:44px;padding:11px;box-shadow:0 40px 80px -30px rgba(22,25,31,.45)}
-.pl-site .s-ph img{width:100%;border-radius:34px;background:#f4f5f7}
-.pl-site .s-ph.s-klein{border-radius:36px;padding:9px}
-.pl-site .s-ph.s-klein img{border-radius:28px}
-.pl-site .s-blatt .s-ph.s-a{position:absolute;left:50%;top:56px;width:330px;margin-left:-165px;z-index:1}
-.pl-site .s-blatt .s-ph.s-b{position:absolute;right:-4px;top:250px;width:250px;transform:rotate(4deg);z-index:2}
+/* iPhone-Bilder (fertig gerahmt aus site-quelle/geraete.mjs, transparenter Hintergrund) */
+.pl-site .s-geraet{display:block;width:100%;height:auto;filter:drop-shadow(0 26px 30px rgba(22,25,31,.26)) drop-shadow(0 6px 10px rgba(22,25,31,.14))}
+.pl-site .s-blatt .s-geraet.s-a{position:absolute;left:50%;top:48px;width:340px;margin-left:-170px;z-index:1}
+.pl-site .s-blatt .s-geraet.s-b{position:absolute;right:-6px;top:236px;width:250px;transform:rotate(4deg);z-index:2}
 /* abgeschnittenes Handy (unten offen) in einem Bildfeld */
-.pl-site .s-bild{position:relative;display:flex;justify-content:center;align-items:flex-end;height:560px;padding-top:48px}
-.pl-site .s-bild .s-ph{width:320px;height:100%;border-radius:44px 44px 0 0;padding:11px 11px 0;overflow:hidden;box-shadow:0 30px 60px -30px rgba(22,25,31,.35)}
-.pl-site .s-bild .s-ph img{border-radius:34px 34px 0 0}
+.pl-site .s-bild{position:relative;display:flex;justify-content:center;align-items:center;padding:48px 24px 52px}
+.pl-site .s-bild .s-geraet{width:300px}
 .pl-site .s-bild.s-breit{height:auto;padding:40px 40px 0}
 .pl-site .s-bild.s-breit .s-web{width:100%;border-radius:10px 10px 0 0;background:#0d0f14;padding:10px 10px 0;overflow:hidden;box-shadow:0 30px 60px -30px rgba(22,25,31,.35)}
 .pl-site .s-bild.s-breit .s-web img{border-radius:4px 4px 0 0}
@@ -218,8 +218,8 @@ body.pl-site{margin:0}
 .pl-site .s-fn-teil .s-h2{font-size:44px}
 .pl-site .s-fn-teil .s-mono{margin-bottom:16px}
 .pl-site .s-fn-teil .s-text{margin-top:18px}
-.pl-site .s-fn-teil .s-bild{height:520px;padding-top:36px}
-.pl-site .s-fn-teil .s-bild .s-ph{width:290px}
+.pl-site .s-fn-teil .s-bild{padding:36px 20px 40px}
+.pl-site .s-fn-teil .s-bild .s-geraet{width:270px}
 .pl-site .s-fn-teil.s-voll{grid-template-columns:1fr}
 .pl-site .s-fn-teil.s-voll .s-bild.s-breit{margin-top:8px}
 
@@ -284,9 +284,9 @@ body.pl-site{margin:0}
   .pl-site .s-fakten{grid-template-columns:1fr;margin:36px 0 40px}
   .pl-site .s-fakten>div{padding:12px 0;border-bottom:1px solid var(--rule)}
   .pl-site .s-blatt{min-height:520px}
-  .pl-site .s-blatt .s-ph.s-a{width:268px;margin-left:-134px;top:40px}
-  .pl-site .s-blatt .s-ph.s-b{display:none}
-  .pl-site .s-mass{left:16px;top:40px}
+  .pl-site .s-blatt .s-geraet.s-a{width:280px;margin-left:-140px;top:36px}
+  .pl-site .s-blatt .s-geraet.s-b{display:none}
+  .pl-site .s-mass{display:none}
   .pl-site .s-band-in{grid-template-columns:1fr;gap:36px;padding-top:64px;padding-bottom:64px}
   .pl-site .s-toc .s-t{font-size:19px}
   .pl-site .s-toc a{grid-template-columns:44px 1fr 20px}
@@ -294,8 +294,8 @@ body.pl-site{margin:0}
   .pl-site .s-kopfzeile{grid-template-columns:1fr;gap:18px;margin-bottom:36px}
   .pl-site .s-feat{grid-template-columns:1fr;gap:36px}
   .pl-site .s-feat.s-um>.s-feat-text{order:0}
-  .pl-site .s-bild{height:460px;padding-top:36px}
-  .pl-site .s-bild .s-ph{width:264px}
+  .pl-site .s-bild{padding:32px 16px 36px}
+  .pl-site .s-bild .s-geraet{width:250px}
   .pl-site .s-bild.s-breit{padding:20px 14px 0}
   .pl-site .s-zahlen b{font-size:24px}
   .pl-site .s-schritte{grid-template-columns:1fr}
@@ -315,8 +315,7 @@ body.pl-site{margin:0}
   .pl-site .s-schluss .s-cta{justify-content:flex-start}
   .pl-site .s-seitenkopf{padding-top:48px;padding-bottom:48px}
   .pl-site .s-fn-teil{grid-template-columns:1fr;gap:28px;padding:48px 0}
-  .pl-site .s-fn-teil .s-bild{height:440px}
-  .pl-site .s-fn-teil .s-bild .s-ph{width:250px}
+  .pl-site .s-fn-teil .s-bild .s-geraet{width:240px}
   .pl-site .s-recht{padding-top:44px}
   .pl-site .s-recht h1{font-size:42px}
   .pl-site .s-fuss-in{grid-template-columns:1fr 1fr;gap:32px 20px;padding-top:48px}
