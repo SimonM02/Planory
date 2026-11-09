@@ -117,7 +117,7 @@ async function lauf(lang, web) {
     ];
 
     state.wartungen = [
-      { id: 9601, name: 'Filter Wohnraumlüftung tauschen', kat: '📋 Sonstiges', desc: 'Zu- und Abluftfilter am Lüftungsgerät wechseln', intervall: 6, einheit: 'Monate', next: tag(-3), remind: '7', who: 'selbst', kosten: 65 },
+      { id: 9601, name: 'Filter Wohnraumlüftung tauschen', kat: '📋 Sonstiges', desc: 'Zu- und Abluftfilter am Lüftungsgerät wechseln', intervall: 6, einheit: 'Monate', next: tag(6), remind: '7', who: 'selbst', kosten: 65 },
       { id: 9602, name: 'Wärmepumpe – Jahresservice', kat: '🔥 Heizung', desc: 'Kältekreis prüfen, Filter reinigen, Fehlerspeicher auslesen', intervall: 1, einheit: 'Jahre', next: tag(12), remind: '14', who: 'Haustechnik Steiner GmbH', kosten: 280 },
       { id: 9603, name: 'Dachrinnen reinigen', kat: '🏠 Dach & Fassade', desc: 'Laub entfernen, Fallrohre durchspülen', intervall: 1, einheit: 'Jahre', next: tag(20), remind: '7', who: 'Dachdeckerei Berger', kosten: 180 },
       { id: 9604, name: 'Rauchmelder testen', kat: '🔑 Sicherheit', desc: 'Prüftaste drücken, Batterien kontrollieren', intervall: 1, einheit: 'Jahre', next: tag(26), remind: '3', who: 'selbst', kosten: 0 },
@@ -189,18 +189,96 @@ async function lauf(lang, web) {
     ];
 
     state.dateien = [
-      { id: 9801, name: 'Baubewilligung_Bescheid.pdf', type: 'application/pdf', size: 1258291, kat: 'Genehmigung', datum: tag(-240), storage: 'demo/1.pdf' },
-      { id: 9802, name: 'Einreichplan_Musterhaus.pdf', type: 'application/pdf', size: 4718592, kat: 'Bauplan', datum: tag(-230), storage: 'demo/2.pdf' },
-      { id: 9803, name: 'Werkvertrag_Baumeister.pdf', type: 'application/pdf', size: 880640, kat: 'Vertrag', datum: tag(-200), storage: 'demo/3.pdf' },
-      { id: 9804, name: 'Energieausweis.pdf', type: 'application/pdf', size: 655360, kat: 'Genehmigung', datum: tag(-120), storage: 'demo/4.pdf' },
-      { id: 9805, name: 'Angebot_Fenster_Huber.pdf', type: 'application/pdf', size: 389120, kat: 'Kostenvoranschlag', datum: tag(-41), storage: 'demo/5.pdf' },
-      { id: 9806, name: 'Elektroplan_EG_OG.pdf', type: 'application/pdf', size: 1887437, kat: 'Bauplan', datum: tag(-14), storage: 'demo/6.pdf' },
-      { id: 9807, name: 'Abnahme_Fenster.jpg', type: 'image/jpeg', size: 2202010, kat: 'Foto', datum: tag(-4), storage: 'demo/7.jpg' },
+      { id: 9801, name: 'Baubewilligung_Bescheid.pdf', type: 'application/pdf', size: 1258291, kat: 'Genehmigung', datum: tag(-240) },
+      { id: 9802, name: 'Einreichplan_Musterhaus.pdf', type: 'application/pdf', size: 4718592, kat: 'Bauplan', datum: tag(-230) },
+      { id: 9803, name: 'Werkvertrag_Baumeister.pdf', type: 'application/pdf', size: 880640, kat: 'Vertrag', datum: tag(-200) },
+      { id: 9804, name: 'Energieausweis.pdf', type: 'application/pdf', size: 655360, kat: 'Genehmigung', datum: tag(-120) },
+      { id: 9805, name: 'Angebot_Fenster_Huber.pdf', type: 'application/pdf', size: 389120, kat: 'Kostenvoranschlag', datum: tag(-41) },
+      { id: 9806, name: 'Elektroplan_EG_OG.pdf', type: 'application/pdf', size: 1887437, kat: 'Bauplan', datum: tag(-14) },
+      { id: 9807, name: 'Abnahme_Fenster.jpg', type: 'image/jpeg', size: 2202010, kat: 'Foto', datum: tag(-4) },
     ];
     state.notizen = [
       { id: 9851, title: 'Fragen an den Installateur', text: '• Außenwasserhahn Terrasse – wo genau?\n• Fußbodenheizung im Abstellraum nötig?\n• Zirkulationsleitung ja oder nein?', ergebnis: '', color: '#dbeafe', datum: tag(-9) },
       { id: 9852, title: 'Estrich – Trocknungszeit', text: 'Belegreif erst nach ca. 4–6 Wochen. Vor dem Parkettverlegen CM-Messung machen lassen!', ergebnis: 'Messung übernimmt der Bodenleger.', color: '#fef9c3', datum: tag(-5) },
       { id: 9853, title: 'Farben Innenräume', text: 'Wohnen: Kalkweiß\nSchlafzimmer: Salbeigrün\nBad: Fliesen grau 60×120', ergebnis: '', color: '#dcfce7', datum: tag(-2) },
+    ];
+
+    // Wer hat bezahlt? (Kostenaufteilung) – Feld in den Ausgaben: bezahltVon = Name
+    state.zahlungspersonen = [
+      { id: 9001, name: 'Eigenkapital' },
+      { id: 9002, name: 'Bankkredit' },
+      { id: 9003, name: 'Wohnbauförderung' },
+    ];
+    // Vorhandene Demo-Ausgaben ergänzen (Firma, Bezahlt von; Datum der Sanitär-Rechnung nicht in der Zukunft)
+    const dk = { 2001: ['Baumeister Müller GmbH', 'Eigenkapital'], 2002: ['Baumeister Müller GmbH', 'Eigenkapital'], 2003: ['Baumeister Müller GmbH', 'Bankkredit'],
+      2004: ['Zimmerei Holzer', 'Bankkredit'], 2005: ['Dachdeckerei Berger', 'Wohnbauförderung'], 2006: ['Elektro Gruber', ''], 2007: ['Haustechnik Steiner GmbH', ''] };
+    state.kosten.forEach(k => { const x = dk[k.id]; if (!x) return; k.anbieter = x[0]; k.bezahltVon = x[1]; });
+    const k5 = state.kosten.find(k => k.id === 2005); if (k5) k5.status = 'Bezahlt';
+    const k7 = state.kosten.find(k => k.id === 2007); if (k7) k7.datum = tag(-2);
+    const ausgabe = (id, n, beschr, kat, anbieter, betrag, status, von, extra = {}) => {
+      const mwst = extra.mwst ?? 20;
+      return { id, datum: tag(n), beschr, kat, mwst, netto: Math.round(betrag / (1 + mwst / 100) * 100) / 100, betrag, status, bezahltVon: von, anbieter, skontoProz: 0, skontoBis: '', aiScanned: false, scanUrl: null, scanPath: null, scanData: null, ...extra };
+    };
+    state.kosten.push(
+      ausgabe(9021, -200, 'Statik & Bauaufsicht', 'Rohbau', 'Statikbüro Kern', 4560, 'Bezahlt', 'Eigenkapital'),
+      ausgabe(9022, -185, 'Baustelleneinrichtung & Kran', 'Rohbau', 'Baumeister Müller GmbH', 6480, 'Bezahlt', 'Eigenkapital'),
+      ausgabe(9023, -183, 'Baustrom & Netzanschluss', 'Elektro', 'Netzbetreiber', 2350, 'Bezahlt', 'Eigenkapital'),
+      ausgabe(9024, -140, 'Kanal- & Wasseranschluss', 'Außenanlagen', 'Tiefbau Lang GmbH', 7920, 'Bezahlt', 'Bankkredit', { aiScanned: true }),
+      ausgabe(9025, -120, 'Drainage & Rollierung', 'Außenanlagen', 'Tiefbau Lang GmbH', 4260, 'Bezahlt', 'Eigenkapital'),
+      ausgabe(9026, -75, 'Stahlbetondecke EG', 'Rohbau', 'Baumeister Müller GmbH', 28800, 'Bezahlt', 'Bankkredit'),
+      ausgabe(9027, -60, 'Ziegelmauerwerk OG', 'Rohbau', 'Baumeister Müller GmbH', 26400, 'Bezahlt', 'Bankkredit'),
+      ausgabe(9028, -35, 'Fenster – Anzahlung 30 %', 'Innenausbau', 'Fenster Huber GmbH', 11520, 'Bezahlt', 'Bankkredit'),
+      ausgabe(9029, -30, 'Dachfenster (2 Stück)', 'Dach', 'Dachdeckerei Berger', 2940, 'Bezahlt', 'Eigenkapital', { aiScanned: true }),
+      ausgabe(9030, -25, 'Eigenleistung: Schlitze stemmen (24 Std)', 'Elektro', 'Familie & Freunde', 840, 'Bezahlt', '', { mwst: 0, imBudget: false }),
+      ausgabe(9031, -20, 'Wärmepumpe – Anzahlung', 'Sanitär', 'Haustechnik Steiner GmbH', 9600, 'Bezahlt', 'Wohnbauförderung', { aiScanned: true }),
+      ausgabe(9032, -12, 'Spenglerarbeiten Dachrinnen', 'Dach', 'Dachdeckerei Berger', 5880, 'Bezahlt', 'Wohnbauförderung'),
+      ausgabe(9033, -3, 'Mineralwolle & Dampfbremse', 'Dach', 'Baustoffhandel Koller', 3180, 'Bezahlt', 'Eigenkapital', { aiScanned: true }),
+      ausgabe(9034, -1, 'Eigenleistung: Dämmung Dachboden (21 Std)', 'Dach', 'Familie & Freunde', 735, 'Bezahlt', '', { mwst: 0, imBudget: false }),
+    );
+    // Liste zeigt die zuletzt angelegte Ausgabe zuerst -> nach Datum ordnen
+    state.kosten.sort((a, b) => (a.datum || '').localeCompare(b.datum || '') || a.id - b.id);
+    // Gescannte Rechnungen (gehören zu Ausgaben mit aiScanned: true, verknüpft über kostenId)
+    state.gescannteRechnungen = state.kosten.filter(k => k.aiScanned).map((k, i) => ({
+      id: 9041 + i, kostenId: k.id, datum: k.datum, beschr: k.beschr, anbieter: k.anbieter, kat: k.kat, mwst: k.mwst,
+      netto: k.netto, brutto: k.betrag, status: k.status, scanUrl: null, scanPath: null, scanData: null, gescannt: k.datum }));
+
+    // Ordentliche Kontakte (die Demo-Kontakte nutzen alte Feldnamen und zeigen kein Gewerk)
+    state.kontakte = [
+      { id: 5001, name: 'Baumeister Müller GmbH', gewerk: 'Baumeister', tel: '', mail: '', status: 'Aktiv', notiz: 'Rohbau inkl. Decken, Bauleitung' },
+      { id: 5003, name: 'Architekturbüro Lindner', gewerk: 'Architekt', tel: '', mail: '', status: 'Aktiv', notiz: 'Einreichplanung & Polierplanung' },
+      { id: 5004, name: 'Dachdeckerei Berger', gewerk: 'Dachdecker', tel: '', mail: '', status: 'Abgeschlossen', notiz: 'Eindeckung & Spenglerarbeiten' },
+      { id: 5002, name: 'Elektro Gruber', gewerk: 'Elektriker', tel: '', mail: '', status: 'Aktiv', notiz: 'Rohinstallation EG/OG läuft' },
+      { id: 5005, name: 'Haustechnik Steiner GmbH', gewerk: 'Installateur', tel: '', mail: '', status: 'Aktiv', notiz: 'Sanitär, Wärmepumpe, Lüftung' },
+      { id: 5006, name: 'Fenster Huber GmbH', gewerk: 'Sonstiges', tel: '', mail: '', status: 'Aktiv', notiz: 'Fenster & Hebeschiebetür, Abnahme offen' },
+      { id: 5007, name: 'Fliesen Pichler', gewerk: 'Fliesenleger', tel: '', mail: '', status: 'Angefragt', notiz: 'Angebot Bad & WC liegt vor' },
+    ];
+
+    // Leitungen & Rohre (Dokumentation)
+    state.dokumentation = [
+      { id: 9061, title: 'Unterzug über dem Wohnzimmer', typ: 'Statik', raum: 'Wohnen / Essen', text: 'Stahlbeton-Unterzug 25/40 cm über der Öffnung zur Küche, trägt die Decke.', hinweis: 'Nicht anbohren oder schlitzen!', datum: tag(-75), tags: ['Statik', 'EG'], fotos: [] },
+      { id: 9062, title: 'Wasserleitung Kochinsel', typ: 'Wasser', raum: 'Küche', text: 'Kalt- und Warmwasser kommen aus dem Boden, ca. 40 cm von der Wand entfernt. Abfluss DN 50 daneben.', hinweis: 'Beim Befestigen der Insel nicht in den Boden bohren.', datum: tag(-9), tags: ['Küche'], fotos: [] },
+      { id: 9063, title: 'Heizkreisverteiler OG', typ: 'Heizung', raum: 'Gang OG, Nische neben dem Bad', text: '6 Heizkreise für die Fußbodenheizung, alle beschriftet. Vorlauf rot, Rücklauf blau.', hinweis: '', datum: tag(-6), tags: ['Fußbodenheizung', 'OG'], fotos: [] },
+      { id: 9064, title: 'Außensteckdosen Terrasse', typ: 'Elektro', raum: 'Terrasse Süd', text: '2 Außensteckdosen und ein Leerrohr für die Markise. Eigener FI-Schalter im Verteiler.', hinweis: '', datum: tag(-5), tags: ['Außen'], fotos: [] },
+      { id: 9065, title: 'Leerrohre Netzwerk EG', typ: 'Elektro', raum: 'Wohnzimmer → Technikraum', text: '2 × Leerrohr M25 im Fußbodenaufbau, ca. 30 cm parallel zur Außenwand Süd.', hinweis: 'Hier keine Bodenanker oder Dübel setzen!', datum: tag(-2), tags: ['Netzwerk', 'EG'], fotos: [] },
+    ];
+
+    // Ablauf-Blöcke (Abhängigkeiten): Namen wie die Bauphasen im Zeitplan
+    state.abhaengigkeiten = [
+      { id: 9081, name: 'Rohbau', col: 0, status: 'Erledigt', deps: [], parallel: [], notiz: 'inkl. Decken' },
+      { id: 9082, name: 'Dach', col: 1, status: 'In Arbeit', deps: ['Rohbau'], parallel: ['Fenster'], notiz: '' },
+      { id: 9083, name: 'Fenster', col: 1, status: 'In Arbeit', deps: ['Rohbau'], parallel: ['Dach'], notiz: 'Abnahme offen' },
+      { id: 9084, name: 'Haustechnik', col: 2, status: 'Offen', deps: ['Dach', 'Fenster'], parallel: [], notiz: 'Elektro, Sanitär, Heizung roh' },
+      { id: 9085, name: 'Estrich', col: 3, status: 'Offen', deps: ['Haustechnik'], parallel: [], notiz: '4–6 Wochen trocknen' },
+      { id: 9086, name: 'Innenausbau', col: 4, status: 'Offen', deps: ['Estrich'], parallel: [], notiz: '' },
+      { id: 9087, name: 'Fertigstellung', col: 5, status: 'Offen', deps: ['Innenausbau'], parallel: [], notiz: '' },
+    ];
+
+    // Foto-Alben (Fotos selbst kommen später dazu; albumId der Fotos = id des Albums, als Zahl)
+    state.fotoAlben = [
+      { id: 9091, title: 'Spatenstich & Aushub', datum: tag(-179), kat: 'Fundament' },
+      { id: 9092, title: 'Rohbau EG & OG', datum: tag(-80), kat: 'Rohbau' },
+      { id: 9093, title: 'Dachstuhl & Eindeckung', datum: tag(-45), kat: 'Dach' },
+      { id: 9094, title: 'Fenster & Innenausbau', datum: tag(-4), kat: 'Fenster & Türen' },
     ];
     // Beispiel-Ergebnis einer gescannten Rechnung (wie in marketing/serie/screens.mjs)
     window._scanBeispiel = () => {
