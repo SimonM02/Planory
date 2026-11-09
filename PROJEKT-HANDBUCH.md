@@ -105,6 +105,11 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   (nur „Free License“ – Werbung erlaubt; Liste + Prüfdatum in `marketing/reel2/QUELLEN.md`, Clips
   selbst nicht im Repo). Bauen: `bash marketing/reel2/bg.sh`, dann `REEL_PAGE=reel2/reel2.html
   REEL_DUR=17 node marketing/reel/render.cjs full …`. Gemeinsame Bausteine: `reel/common.js`, `reel/sfx.cjs`.
+- **Musterprojekt „Musterhaus Graz“ in Simons Konto** (seit 09.11.2026, zum Herzeigen der App): alle Bereiche
+  gefüllt, Daten = Demo-Projekt + Beispieldaten aus `site-quelle/screens.mjs`. Fotos, Belege, Muster-PDFs und
+  Grundriss liegen als Dateien unter `site/muster/` (planory.at/site/muster/…, in `robots.txt` gesperrt); im
+  Projekt stehen nur Links. Eingetragen direkt in Supabase (`projektdaten.daten.projects` + `projekt_items`,
+  Projekt-ID 1794216386717). Neu anlegen/aktualisieren: Claude bitten (Termine sind relativ zu „heute“ gebaut).
 - `marketing/serie/` – Instagram-Serie „Planory erklärt“ (eine Funktion pro Folge, Di + Fr). Plan, Termine
   und Beschreibungstexte in `marketing/serie/PLAN.md`; Folgen als Daten in `folgen.js`, echte App-Bildschirme
   per `screens.mjs` (Demo-Modus). Reel 3 (KI-Fotos, Higgsfield) wartet auf Freigabe der Domain
