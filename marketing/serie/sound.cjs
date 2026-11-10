@@ -6,7 +6,7 @@
 const _w = {}; new Function('window', 'module', require('fs').readFileSync(__dirname + '/folgen.js', 'utf8'))(_w, undefined);
 const FOLGEN = _w.FOLGEN;
 const EP = FOLGEN[+(process.argv[2] || 1)];
-const COVER = 1.3;   // wie in serie.html
+const COVER = EP.coverDur || 1.3;   // wie in serie.html
 const M = require('../reel/sfx.cjs')(COVER + EP.dur, 900 + EP.nr);
 const off = f => (t, ...a) => f(t + COVER, ...a);   // alles nach dem Titelbild um COVER versetzt
 const [whoosh, tick, bell, scanner] = ['whoosh', 'tick', 'bell', 'scanner'].map(n => off(M[n]));

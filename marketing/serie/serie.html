@@ -146,7 +146,7 @@ em{font-style:normal;color:#ff9f1c}
 <script src="folgen.js"></script>
 <script>
 const EP = FOLGEN[+(new URLSearchParams(location.search).get('ep') || 1)];
-const COVER = 1.3;   // Titelbild am Anfang (auch Vorschau im Feed)
+const COVER = EP.coverDur || 1.3;   // Titelbild am Anfang (auch Vorschau im Feed); je Video einstellbar
 const ICONS = {
   donut: `<circle cx="50" cy="50" r="34" pathLength="1" style="opacity:.35"/><path pathLength="1" d="M50 16 A34 34 0 0 1 82.3 39.5"/>`,
   receipt: `<path pathLength="1" d="M26 12 H74 V88 L66 82 L58 88 L50 82 L42 88 L34 82 L26 88 Z"/><path pathLength="1" d="M38 33 H62 M38 47 H62 M38 61 H53"/>`,

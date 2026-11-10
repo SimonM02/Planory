@@ -1,5 +1,5 @@
 // Inhalte der Serie „Planory erklärt“ – ein Video = eine Funktion (bewusst ohne Folgen-Nummern).
-// Zeiten in Sekunden ab Ende des Titelbilds (das Titelbild davor dauert COVER s, siehe serie.html).
+// Zeiten in Sekunden ab Ende des Titelbilds (das Titelbild davor dauert coverDur s, Standard 1,3 – siehe serie.html).
 // r = gemessene Stelle aus screens/boxes.json: 'bild.name', { b: 'bild.name', dx, dy, w, h } oder
 //     eine Liste davon (= umschließendes Rechteck). Nie geschätzte Zahlen eintragen.
 // shots: was das Handy zeigt (page = Seite, modal = Fenster darüber, scroll/mscroll in Bild-Pixeln).
@@ -9,20 +9,20 @@
 //     scan (Rechnung wird gescannt), checks (Felder nacheinander erkannt), toast, chip (Hinweis-Pille).
 const FOLGEN = {
   0: {
-    nr: 0, titel: 'Die Serie', intro: true, dur: 21.5, icon: 'house',
+    nr: 0, titel: 'Die Serie', intro: true, dur: 20.7, coverDur: 2.4, icon: 'house',
     cover: { big: '', title: ['DEIN', 'BAUPROJEKT'], sub: 'Eine App. Mehr brauchst du nicht.', icon: 'logo' },
-    hook: ['Du planst ein Haus', 'oder baust schon?'], hookEnd: 2.6,
-    brand: { t0: 2.6, t1: 5.6 },
+    hook: ['Du planst ein Haus', 'oder baust schon?'], hookEnd: 1.8,
+    brand: { t0: 1.8, t1: 4.8 },
     steps: [
-      { t0: 5.6, t1: 9.6, title: ['Kosten, Termine,', 'Unterlagen.'], sub: 'Immer aktuell – am iPhone & im Web', noNum: true,
-        shots: [{ t: 5.6, page: 'dash-sichtbar', scroll: [0, 2400], st: [6.3, 9.4] }], fx: [] },
+      { t0: 4.8, t1: 8.8, title: ['Kosten, Termine,', 'Unterlagen.'], sub: 'Immer aktuell – am iPhone & im Web', noNum: true,
+        shots: [{ t: 4.8, page: 'dash-sichtbar', scroll: [0, 2400], st: [5.5, 8.6] }], fx: [] },
     ],
-    grid: { t0: 9.6, t1: 15.6, title: ['Budget, Rechnungen,', 'Zeitplan & mehr.'], sub: 'Jedes Werkzeug für dein Bauprojekt',
+    grid: { t0: 8.8, t1: 14.8, title: ['Budget, Rechnungen,', 'Zeitplan & mehr.'], sub: 'Jedes Werkzeug für dein Bauprojekt',
       items: [['01', 'Budget', 'donut'], ['02', 'Rechnung scannen', 'receipt'], ['03', 'Zeitplan', 'cal'], ['04', 'Aufgaben', 'check'],
         ['05', 'Bautagebuch', 'camera'], ['06', 'Angebote', 'compare'], ['07', 'Zahlungsplan', 'euro'], ['08', 'Pläne & Dokumente', 'doc'],
         ['09', 'Mängel', 'warn'], ['10', 'Kontakte & Helfer', 'people'], ['11', 'KI-Berater', 'spark'], ['12', 'iPhone & Web', 'devices']] },
-    start: { t0: 15.6, t1: 18.0, lines: ['Wir zeigen dir jede Funktion.', 'Kurz, klar, Schritt für Schritt.'] },
-    end: { t0: 18.0, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
+    start: { t0: 14.8, t1: 17.2, lines: ['Wir zeigen dir jede Funktion.', 'Kurz, klar, Schritt für Schritt.'] },
+    end: { t0: 17.2, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
   },
   1: {
     nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',

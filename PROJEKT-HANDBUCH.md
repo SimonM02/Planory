@@ -74,6 +74,15 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - **Meldungen** (Toasts) liegen über allen Fenstern; Fälligkeiten als ruhiges Kärtchen
   „Demnächst fällig“ (einmal pro Tag), keine Warn-Optik.
 - **Ladebildschirm:** Logo baut sich auf (Kran → Haus → Dach).
+- **Ladeanzeige (11.2026):** alles, was dauert, zeigt dieselbe kleine Karte unten: `_lade(text, gesamt)` mit Zähler
+  („Fotos werden hochgeladen – 2 von 5“) bzw. `_mitLade(text, fn)` für unbekannte Dauer. Neue Uploads immer damit.
+- **Angebote mit mehreren Anhängen (11.2026):** `a.dateien = [{name,type,url,path}]` (max. 10 Fotos/PDFs). `a.datei`
+  bleibt als ERSTER Anhang mitgeschrieben, weil die iPhone-App v1.3 nur `datei` kennt. Immer über `_angDateien(a)`
+  lesen (versteht alte Angebote und den Fall „alte App hat den Anhang ersetzt“).
+- **Kategorie-Mappe (11.2026):** „📁 Mappe“ (Ausgaben-Seite, Filterzeile, Budget → Kategorie) erzeugt ein PDF je
+  Kategorie: Deckblatt, Übersicht, jeder Beleg als Seite (PDF-Belege über pdf.js als Bild), Angebote + Anhänge,
+  Zahlungstermine, Mängel, Fotos gleichnamiger Kategorie. Code: `_mappeDaten`, `_mappePDF`, `mappeErstellen`.
+  Bleibt wie alle Exporte auch im Nur-Lesen-Modus möglich.
 
 ## 5. Datenschutz – Regeln für die Arbeit
 - **Simons Anfrage zu einem bestimmten Kunden = Support-Anlass:** direkt nachschauen und alles

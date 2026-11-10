@@ -26,6 +26,10 @@ const HTML = readFileSync(FILE, 'utf8');
 // jsPDF (sonst vom CDN) lokal ausliefern, damit PDF-Tests offline laufen
 let JSPDF = null;
 try { JSPDF = readFileSync(path.join(here, '..', 'node_modules', 'jspdf', 'dist', 'jspdf.umd.min.js'), 'utf8'); } catch { /* PDF-Test wird uebersprungen */ }
+// Tabellen-Zusatz und pdf.js (Kategorie-Mappe: Tabellen, PDF-Belege als Bild)
+const lokal = (...teile) => { try { return readFileSync(path.join(here, '..', 'node_modules', ...teile), 'utf8'); } catch { return null; } };
+const AUTOTABLE = lokal('jspdf-autotable', 'dist', 'jspdf.plugin.autotable.min.js');
+const PDFJS = lokal('pdfjs-dist', 'build', 'pdf.min.js'), PDFJS_WORKER = lokal('pdfjs-dist', 'build', 'pdf.worker.min.js');
 // Chart.js ebenso (Budget-Grafik)
 let CHART = null;
 try { CHART = readFileSync(path.join(here, '..', 'node_modules', 'chart.js', 'dist', 'chart.umd.js'), 'utf8'); } catch { /* Grafik-Test wird uebersprungen */ }
@@ -55,6 +59,9 @@ async function boot(geraet = {}) {
     if (u.startsWith('https://planory.test/index.html')) return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: HTML });
     if (u.includes('supabase-js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
     if (JSPDF && u.includes('jspdf.umd.min.js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: JSPDF });
+    if (AUTOTABLE && u.includes('jspdf.plugin.autotable')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: AUTOTABLE });
+    if (PDFJS_WORKER && u.includes('pdf.worker.min.js')) return r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: PDFJS_WORKER });
+    if (PDFJS && u.includes('pdf.min.js')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: PDFJS });
     if (CHART && u.includes('chart.umd')) return r.fulfill({ status: 200, contentType: 'application/javascript', body: CHART });
     return r.abort();
   });
@@ -2873,6 +2880,207 @@ await scenario('Startseite: Google bekommt die deutsche Fassung, englische Besuc
   if (mensch.lang !== 'en' || !/^Planory is an app/.test(mensch.faq || '')) f.push('englischer Besucher sieht: ' + JSON.stringify(mensch));
   return f.join(' · ');
 });
+
+// ── Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe ──────────────
+// Kleines Testbild (JPEG) als Datei bzw. data:-Adresse
+const TESTBILD = () => { const c = document.createElement('canvas'); c.width = 320; c.height = 240; const g = c.getContext('2d');
+  g.fillStyle = '#d97706'; g.fillRect(0, 0, 320, 240); g.fillStyle = '#fff'; g.font = '40px sans-serif'; g.fillText('Beleg', 90, 130); return c.toDataURL('image/jpeg', 0.8); };
+const bildDatei = (name) => ({ name, mimeType: 'image/jpeg', buffer: Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=', 'base64') });
+
+await scenario('Ladeanzeige: mehrere Fotos zeigen einen Zähler („1 von 3“ …) und die Anzeige verschwindet wieder', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    await p.evaluate(() => {
+      window.__lade = []; const alt = window._lade;
+      window._lade = (...a) => { const l = alt(...a); const s = l.schritt; __lade.push({ text: a[0], gesamt: a[1], schritte: [] }); const e = __lade[__lade.length - 1];
+        l.schritt = k => { e.schritte.push(k); return s(k); }; return l; };
+      // Hochladen künstlich bremsen (im Test geht es sonst zu schnell für eine sichtbare Anzeige)
+      window.uploadPhotoToStorage = async (f) => { await new Promise(r => setTimeout(r, 220)); return { url: 'data:image/jpeg;base64,AAAA', path: null }; };
+    });
+    const f = [];
+    // a) Mangel mit 3 Fotos
+    await p.evaluate(() => { showPage('maengel'); openModal('modal-mangel'); document.getElementById('mg-titel').value = 'Lade-Test'; });
+    await p.setInputFiles('#mg-photo-input', [bildDatei('a.jpg'), bildDatei('b.jpg'), bildDatei('c.jpg')]);
+    await p.waitForTimeout(150);
+    const lauf = p.evaluate(() => saveMangel());
+    await p.waitForSelector('#lade-stapel .lade-karte', { timeout: 3000 });
+    const sichtbar = await p.evaluate(() => { const k = document.querySelector('#lade-stapel .lade-karte'); const r = k.getBoundingClientRect();
+      return { text: k.querySelector('.lade-text').textContent, imBild: r.width > 100 && r.bottom <= innerHeight && r.top > innerHeight / 2, z: +getComputedStyle(document.getElementById('lade-stapel')).zIndex,
+               modalZ: +getComputedStyle(document.getElementById('modal-mangel')).zIndex || 0 }; });
+    await lauf;
+    const a = await p.evaluate(() => ({ lade: __lade[__lade.length - 1], rest: document.querySelectorAll('#lade-stapel .lade-karte').length, fotos: (state.maengel.find(m => m.titel === 'Lade-Test')?.fotos || []).length }));
+    if (!/Fotos werden hochgeladen – \d von 3/.test(sichtbar.text)) f.push('Mangel: Text „' + sichtbar.text + '“');
+    if (!sichtbar.imBild) f.push('Mangel: Anzeige nicht unten im Bild');
+    if (!(sichtbar.z > sichtbar.modalZ)) f.push('Anzeige liegt nicht über dem Fenster');
+    if (a.lade.gesamt !== 3 || a.lade.schritte.join() !== '1,2,3') f.push('Mangel: Zähler ' + JSON.stringify(a.lade));
+    if (a.rest) f.push('Mangel: Anzeige bleibt stehen');
+    if (a.fotos !== 3) f.push('Mangel: ' + a.fotos + ' Fotos gespeichert');
+    // b) Leitungen & Rohre: Fotos nachträglich (vorher ganz ohne Rückmeldung)
+    const b = await p.evaluate(async () => {
+      state.dokumentation = [{ id: 4711, title: 'Leitung', typ: 'Elektro', raum: '', text: '', hinweis: '', datum: '2026-11-01', tags: [], fotos: [] }];
+      addPhotoToDokuId = 4711;
+      const dt = new DataTransfer(); ['x.jpg', 'y.jpg'].forEach(n => dt.items.add(new File([new Uint8Array([255, 216, 255])], n, { type: 'image/jpeg' })));
+      const inp = document.getElementById('doku-add-photo-input'); inp.files = dt.files;
+      const lauf = handleAddDokuPhoto(inp);
+      await new Promise(r => setTimeout(r, 120));
+      const waehrend = document.querySelector('#lade-stapel .lade-text')?.textContent || '';
+      await lauf;
+      return { waehrend, fotos: state.dokumentation[0].fotos.length, rest: document.querySelectorAll('#lade-stapel .lade-karte').length, lade: __lade[__lade.length - 1] };
+    });
+    if (!/Fotos werden hochgeladen – \d von 2/.test(b.waehrend)) f.push('Leitungen: Text „' + b.waehrend + '“');
+    if (b.fotos !== 2 || b.rest || b.lade.schritte.join() !== '1,2') f.push('Leitungen: ' + JSON.stringify(b));
+    // c) Plan-Markierung: jedes fertige Foto erscheint sofort
+    const c = await p.evaluate(async () => {
+      _grPinFotosPending = [];
+      const dt = new DataTransfer(); ['1.jpg', '2.jpg', '3.jpg'].forEach(n => dt.items.add(new File([new Uint8Array([255, 216, 255])], n, { type: 'image/jpeg' })));
+      const inp = document.getElementById('gr-pin-foto-input'); inp.files = dt.files;
+      const lauf = addGrPinFotos(inp);
+      await new Promise(r => setTimeout(r, 330));
+      const mitten = { n: _grPinFotosPending.length, text: document.querySelector('#lade-stapel .lade-text')?.textContent || '' };
+      await lauf;
+      return { mitten, ende: _grPinFotosPending.length, rest: document.querySelectorAll('#lade-stapel .lade-karte').length };
+    });
+    if (!/von 3/.test(c.mitten.text) || c.mitten.n < 1 || c.mitten.n > 2) f.push('Plan-Markierung mittendrin: ' + JSON.stringify(c.mitten));
+    if (c.ende !== 3 || c.rest) f.push('Plan-Markierung Ende: ' + JSON.stringify(c));
+    // d) kurze Vorgänge flackern nicht; Englisch
+    const e = await p.evaluate(async () => {
+      const l = _lade('Beleg wird vorbereitet'); await new Promise(r => setTimeout(r, 60)); const kurz = document.querySelectorAll('#lade-stapel .lade-karte').length; l.ende();
+      setLang('en'); const l2 = _lade('Fotos werden hochgeladen', 4, { verzoegert: 0 }); l2.schritt(1); await new Promise(r => setTimeout(r, 30));
+      const en = document.querySelector('#lade-stapel .lade-text')?.textContent || ''; l2.ende(); setLang('de');
+      return { kurz, en };
+    });
+    if (e.kurz) f.push('kurzer Vorgang zeigt sofort eine Anzeige (Flackern)');
+    if (e.en !== 'Uploading photos – 2 of 4') f.push('Englisch: „' + e.en + '“');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('Angebot: mehrere Fotos/PDFs anhängen, einzeln entfernen (Ablage wird aufgeräumt), alte Angebote funktionieren weiter', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    await p.evaluate(() => {
+      window.__geloescht = []; window.deletePhotoFromStorage = pfad => { __geloescht.push(pfad); };
+      window.__hoch = 0; window.uploadFileToStorage = async (f, ordner) => { __hoch++; await new Promise(r => setTimeout(r, 40)); return { url: 'https://ablage.test/' + ordner + '/' + f.name, path: 'u/' + ordner + '/' + f.name }; };
+      state.angebote = [];
+      showPage('angebote'); openNeuesAngebot();
+      document.getElementById('ang-beschr').value = 'Küche komplett'; document.getElementById('ang-betrag').value = '18400';
+    });
+    const f = [];
+    await p.setInputFiles('#ang-datei-input', [bildDatei('skizze.jpg'), bildDatei('muster.jpg')]);
+    await p.setInputFiles('#ang-datei-input', [{ name: 'angebot.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') }, { name: 'liste.xlsx', mimeType: 'application/vnd.ms-excel', buffer: Buffer.from('x') }]);
+    await p.waitForTimeout(150);
+    const vor = await p.evaluate(() => ({ zeilen: [...document.querySelectorAll('#ang-datei-info .ang-anhang')].map(z => z.textContent.replace(/\s+/g, ' ').trim()), mehrfach: document.getElementById('ang-datei-input').multiple,
+      breit: [...document.querySelectorAll('#ang-datei-info .ang-anhang')].some(z => z.getBoundingClientRect().right > innerWidth + 1) }));
+    if (!vor.mehrfach) f.push('Auswahl erlaubt nur eine Datei');
+    if (vor.zeilen.length !== 3 || !/skizze\.jpg/.test(vor.zeilen[0]) || !/angebot\.pdf/.test(vor.zeilen[2])) f.push('Liste vor dem Speichern: ' + JSON.stringify(vor.zeilen));
+    if (vor.breit) f.push('Anhang-Zeile ragt am Handy über den Rand');
+    await p.evaluate(() => saveAngebot());
+    await p.waitForFunction(() => !document.getElementById('modal-angebot').classList.contains('open') || document.getElementById('modal-angebot').classList.contains('closing'), null, { timeout: 5000 });
+    const a1 = await p.evaluate(() => { const a = state.angebote[0]; return { n: a.dateien.length, namen: a.dateien.map(x => x.name), erster: a.datei && a.datei.path === a.dateien[0].path, hoch: __hoch, id: a.id,
+      klammer: document.querySelector('#angebot-table .ang-klammer')?.textContent.replace(/\s+/g, '') || '' }; });
+    if (a1.n !== 3 || a1.hoch !== 3 || !a1.erster) f.push('nach dem Speichern: ' + JSON.stringify(a1));
+    if (a1.klammer !== '📎3') f.push('Büroklammer zeigt „' + a1.klammer + '“');
+    // Fenster „Anhänge"
+    const fen = await p.evaluate(id => { openAngebotDatei(id); const o = document.getElementById('modal-ang-anhaenge'); const r = { offen: o.classList.contains('open'), kacheln: o.querySelectorAll('#ang-anh-liste button').length }; closeModal('modal-ang-anhaenge'); return r; }, a1.id);
+    if (!fen.offen || fen.kacheln !== 3) f.push('Fenster Anhänge: ' + JSON.stringify(fen));
+    // Bearbeiten: mittleren Anhang entfernen, einen neuen dazu
+    await p.evaluate(id => { editAngebot(id); document.querySelectorAll('#ang-datei-info .ang-anhang button')[1].click(); }, a1.id);
+    await p.setInputFiles('#ang-datei-input', [bildDatei('neu.jpg')]);
+    await p.evaluate(() => saveAngebot());
+    await p.waitForFunction(() => window.__hoch === 4, null, { timeout: 5000 });
+    await p.waitForTimeout(250);
+    const a2 = await p.evaluate(id => { const a = state.angebote.find(x => x.id === id); return { namen: a.dateien.map(x => x.name), geloescht: __geloescht.slice(), datei: a.datei.name }; }, a1.id);
+    if (a2.namen.join() !== 'skizze.jpg,angebot.pdf,neu.jpg') f.push('nach dem Bearbeiten: ' + a2.namen.join());
+    if (a2.geloescht.join() !== 'u/angebote/muster.jpg') f.push('Ablage aufgeräumt: ' + JSON.stringify(a2.geloescht));
+    if (a2.datei !== 'skizze.jpg') f.push('erster Anhang (für die alte App) ist ' + a2.datei);
+    // Alte Formate + höchstens 10 + Löschen räumt alles weg
+    const alt = await p.evaluate(async () => {
+      const D = n => ({ name: n, type: 'image/jpeg', url: 'https://ablage.test/' + n, path: 'u/' + n });
+      const nurDatei = { id: 91, beschr: 'alt', betrag: 1, status: 'Ausstehend', datei: D('alt.jpg') };
+      const ersetzt = { id: 92, beschr: 'von alter App geändert', betrag: 1, status: 'Ausstehend', datei: D('neu.jpg'), dateien: [D('weg.jpg'), D('zwei.jpg')] };
+      const dazu = { id: 93, beschr: 'alte App hat angehängt', betrag: 1, status: 'Ausstehend', datei: D('erst.jpg'), dateien: [] };
+      state.angebote.push(nurDatei, ersetzt, dazu); renderAngebote();
+      editAngebot(91); const zeilen = document.querySelectorAll('#ang-datei-info .ang-anhang').length; closeModal('modal-angebot'); resetAngModal();
+      // 10er-Grenze
+      openNeuesAngebot(); const dt = new DataTransfer(); for (let i = 0; i < 13; i++) dt.items.add(new File(['x'], 'f' + i + '.jpg', { type: 'image/jpeg' }));
+      const inp = document.getElementById('ang-datei-input'); inp.files = dt.files; onAngDateiPick(); const grenze = _angNeu.length; closeModal('modal-angebot'); resetAngModal();
+      __geloescht.length = 0; window.showConfirm = async () => true; await deleteAngebot(92);
+      return { nurDatei: _angDateien(nurDatei).map(x => x.name), ersetzt: ['neu.jpg', 'zwei.jpg'].join() === _angDateien(ersetzt).map(x => x.name).join(), dazu: _angDateien(dazu).map(x => x.name), zeilen, grenze, weg: __geloescht.slice().sort() };
+    });
+    if (alt.nurDatei.join() !== 'alt.jpg' || alt.zeilen !== 1) f.push('altes Angebot (nur datei): ' + JSON.stringify(alt));
+    if (!alt.ersetzt) f.push('„alte App ersetzt den Anhang“ wird nicht erkannt');
+    if (alt.dazu.join() !== 'erst.jpg') f.push('Anhang der alten App fehlt: ' + alt.dazu.join());
+    if (alt.grenze !== 10) f.push('Grenze: ' + alt.grenze + ' statt 10 Anhänge');
+    if (alt.weg.join() !== 'u/neu.jpg,u/zwei.jpg') f.push('Löschen räumt nicht alle Dateien weg: ' + JSON.stringify(alt.weg));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('Kategorie-Mappe (PDF): Übersicht mit Summen, Bild- und PDF-Beleg als Seiten, fehlender Beleg markiert, kaputter Beleg bricht nichts ab', async () => {
+  if (!JSPDF || !AUTOTABLE || !PDFJS) return '';
+  const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+  try {
+    const p = d.page;
+    await p.waitForFunction(() => window.jspdf && window.pdfjsLib && window.jspdf.jsPDF.API.autoTable, null, { timeout: 15000 });
+    const r = await p.evaluate(async (bildFn) => {
+      const bild = (new Function('return (' + bildFn + ')()'))();
+      const pdf2 = new window.jspdf.jsPDF(); pdf2.text('Rechnung Seite 1', 20, 20); pdf2.addPage(); pdf2.text('Rechnung Seite 2', 20, 20);
+      const pdfBeleg = pdf2.output('datauristring');
+      state.settings.name = 'Testhaus'; state.settings.address = 'Testweg 1';
+      state.budgetKat.push({ id: 5551, name: 'Küche', budget: 30000, color: '#333' });
+      const K = (id, beschr, betrag, extra = {}) => ({ id, datum: '2026-10-0' + (id % 9 + 1), beschr, kat: 'Küche', mwst: 20, netto: Math.round(betrag / 1.2 * 100) / 100, betrag, status: 'Bezahlt', anbieter: 'Küchenstudio Muster', bezahltVon: 'Kredit', ...extra });
+      state.kosten.push(K(61, 'Anzahlung Küche', 6000, { scanData: bild }), K(62, 'Geräte', 4800, { scanUrl: pdfBeleg }), K(63, 'Arbeitsplatte', 2400),
+        K(64, 'Montage', 1200, { scanUrl: 'https://planory.test/gibt-es-nicht.jpg' }), K(65, 'Eigenleistung Abbau', 300, { imBudget: false, mwst: 0, netto: 300 }), K(66, 'Storno', 999, { status: 'Storniert' }));
+      (state.gescannteRechnungen = state.gescannteRechnungen || []).push({ id: 71, kostenId: 63, scanUrl: null, scanData: null });
+      state.angebote = [{ id: 81, datum: '2026-09-01', beschr: 'Küche Angebot A', anbieter: 'Küchenstudio Muster', kat: 'Küche', betrag: 15000, status: 'Angenommen', dateien: [{ name: 'a.jpg', type: 'image/jpeg', url: bild }], datei: { name: 'a.jpg', type: 'image/jpeg', url: bild } },
+                        { id: 82, datum: '2026-09-02', beschr: 'Küche Angebot B', anbieter: 'Andere Firma', kat: 'Küche', betrag: 17000, status: 'Abgelehnt' }];
+      state.zahlungen = [{ id: 91, beschr: 'Restzahlung Küche', kat: 'Küche', anbieter: 'Küchenstudio Muster', faellig: '2026-12-01', betrag: 9000, status: 'Offen' }];
+      state.fotos.push({ id: 95, albumId: 1, data: bild, title: 'Küche fertig', kat: 'Küche', datum: '2026-10-20' });
+      // Fenster: Vorschau-Zeile + Knöpfe
+      showPage('kosten');
+      const knopfSeite = !!document.querySelector('#page-kosten button[onclick^="openMappe"]');
+      const sel = document.getElementById('kosten-filter-kat'); renderKosten(); sel.value = 'Küche'; renderKosten();
+      const knopfFilter = !!document.querySelector('#kosten-filter-info button[onclick^="openMappe"]');
+      openMappe('Küche');
+      const info = document.getElementById('mp-info').textContent, gewaehlt = document.getElementById('mp-kat').value;
+      // PDF abfangen statt speichern
+      let aus = null; window._pdfAusgeben = async (doc, name) => { aus = { name, seiten: doc.getNumberOfPages(), daten: doc.output('arraybuffer') }; return true; };
+      const meldungen = []; const altToast = showToast; window.showToast = (m, t) => { meldungen.push([m, t]); };
+      const status = []; const st = document.getElementById('mp-status');
+      const mo = new MutationObserver(() => { if (st.textContent) status.push(st.textContent); }); mo.observe(st, { childList: true, characterData: true, subtree: true });
+      await mappeErstellen(); mo.disconnect(); window.showToast = altToast;
+      const daten = _mappeDaten('Küche', {});
+      // Text der Übersichts-Seite über pdf.js lesen
+      let text = '';
+      if (aus) { const dok = await pdfjsLib.getDocument({ data: new Uint8Array(aus.daten) }).promise; const s2 = await (await dok.getPage(2)).getTextContent(); text = s2.items.map(i => i.str).join(' '); }
+      return { knopfSeite, knopfFilter, info, gewaehlt, seiten: aus && aus.seiten, name: aus && aus.name, meldungen, status: [...new Set(status)], summe: daten.summe, anzahl: daten.anzahl, text,
+               zu: !document.getElementById('modal-mappe').classList.contains('open') || document.getElementById('modal-mappe').classList.contains('closing') };
+    }, TESTBILD.toString());
+    const f = [];
+    if (!r.knopfSeite || !r.knopfFilter) f.push('Knopf „Mappe“ fehlt (Seite: ' + r.knopfSeite + ', Filterzeile: ' + r.knopfFilter + ')');
+    if (r.gewaehlt !== 'Küche') f.push('Kategorie nicht vorausgewählt: ' + r.gewaehlt);
+    if (!/6 Ausgaben · 3 Belege · 2 Angebote · 1 Zahlungstermin · 1 Foto · 3 ohne Beleg/.test(r.info)) f.push('Vorschau: ' + r.info);
+    // Summen: im Budget 6000+4800+2400+1200 = 14400; Eigenleistung getrennt; Storno zählt nicht
+    if (r.summe.brutto !== 14400 || r.summe.nichtBudget !== 300) f.push('Summen: ' + JSON.stringify(r.summe));
+    if (r.anzahl.belege !== 3 || r.anzahl.ohneBeleg !== 3 || r.anzahl.bilder !== 5) f.push('Anzahl: ' + JSON.stringify(r.anzahl));
+    // Seiten: Deckblatt + Übersicht + Bild-Beleg (1) + PDF-Beleg (2) + kaputter Beleg (1 Hinweisseite) + Angebots-Anhang (1) + Fotos (1) = 8
+    if (r.seiten !== 8) f.push('Seitenzahl ' + r.seiten + ' statt 8');
+    if (!/^Mappe_K.che_Testhaus_\d{4}-\d\d-\d\d\.pdf$/.test(r.name || '')) f.push('Dateiname: ' + r.name);
+    for (const s of ['B1', 'B2', 'B3', 'Anzahlung', '14 400,00', 'Summe im Budget', 'nicht im Budget', 'kein Beleg hinterlegt (3 von 6', 'Angebote', 'Zahlungstermine', '9 000,00'])
+      if (!r.text.replace(/[  ]/g, ' ').includes(s)) f.push('Übersicht ohne „' + s + '“');
+    if (!r.status.some(s => /wird eingefügt – \d von 5/.test(s))) f.push('kein Fortschritt im Fenster: ' + JSON.stringify(r.status.slice(0, 3)));
+    const m = r.meldungen[r.meldungen.length - 1] || [];
+    if (!/Mappe erstellt \(1 Datei\(en\) nicht ladbar\)/.test(m[0] || '') || m[1] !== 'warning') f.push('Meldung: ' + JSON.stringify(m));
+    if (!r.zu) f.push('Fenster bleibt offen');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
