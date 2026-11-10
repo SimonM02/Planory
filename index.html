@@ -769,6 +769,16 @@
   .progress-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.78rem; color: var(--text2); font-weight: 500; }
   .progress-bar { height: 6px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+  /* Ladeanzeige (_lade): kleine Karte unten, liegt ueber allen Fenstern, blockiert nichts */
+  #lade-stapel { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 10090;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: min(340px, calc(100vw - 32px)); }
+  .lade-karte { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-lg);
+    padding: 12px 14px; font-size: 0.85rem; font-weight: 600; line-height: 1.35; }
+  .lade-bahn { height: 6px; border-radius: 99px; background: var(--surface3); overflow: hidden; margin-top: 8px; }
+  .lade-fuell { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 0.25s ease; }
+  .lade-fuell.unbestimmt { width: 35%; transition: none; animation: ladeLauf 1.1s ease-in-out infinite; }
+  @keyframes ladeLauf { 0% { transform: translateX(-110%); } 100% { transform: translateX(310%); } }
+  @media (prefers-reduced-motion: reduce) { .lade-fuell.unbestimmt { animation-duration: 2.4s; } }
 
   /* ── TABLES ──────────────────────────── */
   .table-wrap {
@@ -3299,6 +3309,7 @@
       <div><h2 data-i18n="ph_kosten_t">Rechnungen &amp; Ausgaben</h2><p data-i18n="ph_kosten_s">Ausgaben erfassen oder Rechnungen scannen</p></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="exportKostenPDF()" title="Als PDF exportieren">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="openMappe(document.getElementById('kosten-filter-kat').value)" title="Alle Rechnungen einer Kategorie mit Belegen als PDF">📁 Mappe</button>
         <button class="btn btn-ghost" onclick="showPage('rechnungen')" title="Nur die eingescannten Rechnungen (Belege) anzeigen">🗂️ Gescannte Rechnungen</button>
         <button class="btn btn-ghost" onclick="openModal('modal-rechnung-scan')" style="border-color:#6d28d9;color:#6d28d9"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> Rechnung scannen</button>
         <button class="btn btn-primary" onclick="openModal('modal-kosten')">+ Ausgabe erfassen</button>
@@ -4272,6 +4283,7 @@
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost" onclick="closeModal('modal-budget-drilldown')">Schließen</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-budget-drilldown');openMappe(_pendingKostenKat)">📁 Mappe als PDF</button>
       <button class="btn btn-primary" onclick="closeModal('modal-budget-drilldown');openModal('modal-kosten')">+ Ausgabe hinzufügen</button>
     </div>
   </div>
@@ -4517,15 +4529,26 @@
     </div>
     <div class="form-row"><label>Notiz</label><textarea id="ang-notiz" placeholder="Details, Konditionen..."></textarea></div>
     <div class="form-row">
-      <label>PDF / Scan anhängen (optional)</label>
-      <input type="file" id="ang-datei-input" accept=".pdf,.jpg,.jpeg,.png" onchange="onAngDateiPick()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px;font-size:0.82rem;color:var(--text);width:100%">
-      <div style="font-size:0.72rem;color:var(--text3);margin-top:5px">PDF oder Bild hierher ziehen oder oben auswählen</div>
-      <div id="ang-datei-info" style="display:none;align-items:center;gap:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px"></div>
+      <label>Fotos / PDF anhängen (optional)</label>
+      <input type="file" id="ang-datei-input" accept="image/*,.pdf,application/pdf" multiple onchange="onAngDateiPick()" style="display:none">
+      <button type="button" class="btn btn-ghost" onclick="document.getElementById('ang-datei-input').click()">＋ Fotos / PDF hinzufügen</button>
+      <div style="font-size:0.72rem;color:var(--text3);margin-top:5px">Mehrere Fotos oder PDFs möglich – auch einfach hierher ziehen</div>
+      <div id="ang-datei-info" style="display:none;flex-direction:column;gap:6px;margin-top:8px"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-angebot');resetAngModal()">Abbrechen</button>
       <button class="btn btn-ghost" id="ang-to-rechnung-btn" style="display:none" onclick="angebotZuRechnung()">→ Zu Rechnung umwandeln</button>
-      <button class="btn btn-primary" onclick="saveAngebot()">Speichern</button>
+      <button class="btn btn-primary" id="ang-save-btn" onclick="saveAngebot()">Speichern</button>
+    </div>
+  </div>
+</div>
+<!-- Anhänge eines Angebots (bei mehreren) -->
+<div class="modal-overlay" id="modal-ang-anhaenge">
+  <div class="modal" style="width:540px">
+    <h3 id="ang-anh-titel">Anhänge</h3>
+    <div id="ang-anh-liste" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-bottom:6px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ang-anhaenge')">Schließen</button>
     </div>
   </div>
 </div>
@@ -4844,6 +4867,28 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-baubuch')">Abbrechen</button>
       <button class="btn btn-primary" id="bb-start" onclick="baubuchErstellen()">📖 Buch erstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Kategorie-Mappe als PDF -->
+<div class="modal-overlay" id="modal-mappe">
+  <div class="modal" style="width:520px">
+    <h3>📁 Mappe als PDF</h3>
+    <p style="font-size:0.84rem;color:var(--text2);margin:-4px 0 14px;line-height:1.55">Alles zu einer Kategorie in einem PDF: Übersicht der Ausgaben und jeder Beleg als eigene Seite – zum Ausdrucken und Ablegen.</p>
+    <div class="form-row"><label>Kategorie</label><select id="mp-kat" data-noi18n onchange="mappeVorschau()"></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:12px;font-size:0.86rem">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="mp-belege" checked onchange="mappeVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Belege</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="mp-angebote" checked onchange="mappeVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Angebote</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="mp-zahlungen" checked onchange="mappeVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Zahlungstermine</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="mp-fotos" checked onchange="mappeVorschau()" style="width:18px;height:18px;accent-color:var(--accent)">Fotos &amp; Mängel</label>
+    </div>
+    <div id="mp-info" style="font-size:0.8rem;color:var(--text2);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.55;margin-bottom:6px"></div>
+    <div style="font-size:0.76rem;color:var(--text3);line-height:1.5">Fotos und Mängel kommen dazu, wenn ihre Kategorie gleich heißt (z. B. „Dach“).</div>
+    <div id="mp-status" style="font-size:0.84rem;font-weight:700;color:var(--accent);margin-top:10px;min-height:1.2em"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-mappe')">Abbrechen</button>
+      <button class="btn btn-primary" id="mp-start" onclick="mappeErstellen()">📁 PDF erstellen</button>
     </div>
   </div>
 </div>
@@ -6682,6 +6727,38 @@ const TEXTE = {
   "— Kategorie wählen —": { en: "— Choose category —" },
   "Bitte eine Kategorie wählen": { en: "Please choose a category" },
   "Filter aufheben": { en: "Clear filter" },
+  "Mappe als PDF": { en: "Folder as PDF" },
+  "Belege": { en: "Receipts" },
+  "Angebote": { en: "Quotes" },
+  "Angebot": { en: "Quote" },
+  "📁 Mappe als PDF": { en: "📁 Folder as PDF" },
+  "📁 Mappe": { en: "📁 Folder" },
+  "📁 PDF erstellen": { en: "📁 Create PDF" },
+  "Alle Rechnungen einer Kategorie mit Belegen als PDF": { en: "All invoices of a category with receipts as a PDF" },
+  "Alles zu einer Kategorie in einem PDF: Übersicht der Ausgaben und jeder Beleg als eigene Seite – zum Ausdrucken und Ablegen.": { en: "Everything about one category in a single PDF: an overview of the expenses and every receipt on its own page – to print and file." },
+  "Fotos & Mängel": { en: "Photos & defects" },
+  "Fotos und Mängel kommen dazu, wenn ihre Kategorie gleich heißt (z. B. „Dach“).": { en: "Photos and defects are added when their category has the same name (e.g. “Roof”)." },
+  "Lege zuerst eine Kategorie oder Ausgabe an": { en: "Create a category or an expense first" },
+  "In dieser Kategorie gibt es noch nichts zum Ablegen": { en: "There is nothing to file in this category yet" },
+  "Fotos / PDF anhängen (optional)": { en: "Attach photos / PDF (optional)" },
+  "＋ Fotos / PDF hinzufügen": { en: "＋ Add photos / PDF" },
+  "Mehrere Fotos oder PDFs möglich – auch einfach hierher ziehen": { en: "Several photos or PDFs possible – or simply drag them here" },
+  "Anhang": { en: "Attachment" },
+  "Anhänge": { en: "attachments" },
+  "bereits angehängt": { en: "already attached" },
+  "⚠️ Nur Fotos und PDFs können angehängt werden": { en: "⚠️ Only photos and PDFs can be attached" },
+  "⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne diesen Anhang gespeichert": { en: "⚠️ File too large for the attachment (max ~1 MB) – quote saved without this attachment" },
+  "⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne diesen Anhang gespeichert": { en: "⚠️ Attachment could not be processed – quote saved without this attachment" },
+  "Fotos werden hochgeladen": { en: "Uploading photos" },
+  "Foto wird hochgeladen": { en: "Uploading photo" },
+  "Fotos werden vorbereitet": { en: "Preparing photos" },
+  "Fotos werden übernommen": { en: "Adding photos" },
+  "Anhänge werden hochgeladen": { en: "Uploading attachments" },
+  "Anhang wird hochgeladen": { en: "Uploading attachment" },
+  "Beleg wird vorbereitet": { en: "Preparing receipt" },
+  "Plan wird gespeichert": { en: "Saving plan" },
+  "Datei wird geladen": { en: "Loading file" },
+  "Datei wird vorbereitet": { en: "Preparing file" },
   "Ausgabe": { en: "expense" },
   "+ Abschnitt": { en: "+ Section" },
   "Buchung": { en: "booking" },
@@ -7335,6 +7412,7 @@ const _FORM_MODALS = {
   'modal-gantt':         () => { try { resetGanttModal(); } catch(e) {} },
   'modal-helfer-person': null,
   'modal-todoist-task':  () => { try { _tdResetModal(); } catch(e) {} },
+  'modal-mappe':         () => { _mpLauf++; const st = document.getElementById('mp-status'); if (st) st.textContent = ''; const b = document.getElementById('mp-start'); if (b) b.disabled = false; },
   'modal-baubuch':       () => { _bbLauf++; const st = document.getElementById('bb-status'); if (st) st.textContent = ''; const b = document.getElementById('bb-start'); if (b) b.disabled = false; },
 };
 // Sofort beim Schliessen: alle Bearbeiten-Kennungen (versteckte Felder + JS-Merker) leeren
@@ -8749,13 +8827,14 @@ function clearKostenBeleg() { _kBeleg = null; _kBelegChanged = true; _showKBeleg
 async function onKostenBelegPick(input) {
   const file = input.files[0]; input.value = '';
   if (!file) return;
+  const lade = _lade('Beleg wird vorbereitet');
   try {
     const { dataUrl } = await compressImage(file, 1280, 0.72);
     _kBeleg = dataUrl; _kBelegChanged = true;
     _showKBelegPreview(dataUrl);
   } catch (e) {
     showToast('⚠️ Bild konnte nicht verarbeitet werden', 'error');
-  }
+  } finally { lade.ende(); }
 }
 // Laedt ein Belegbild (base64) in den Supabase-Storage; gibt {scanUrl,scanPath} oder null.
 async function _uploadBeleg(base64) {
@@ -9129,7 +9208,8 @@ function renderKosten() {
     if (gefiltert) {
       const summe = items.filter(k => k.status !== 'Storniert').reduce((s2, k) => s2 + (parseFloat(k.betrag) || 0), 0);
       fInfo.innerHTML = `${items.length} ${tt(items.length === 1 ? 'Ausgabe' : 'Ausgaben')} · <strong data-private>${fmt(summe)}</strong>` +
-        (filterKat ? ` <button type="button" onclick="document.getElementById('kosten-filter-kat').value='';renderKosten()">✕ ${esc(tt('Filter aufheben'))}</button>` : '');
+        (filterKat ? ` <button type="button" onclick="openMappe(document.getElementById('kosten-filter-kat').value)">📁 ${esc(tt('Mappe als PDF'))}</button>` +
+                     ` <button type="button" onclick="document.getElementById('kosten-filter-kat').value='';renderKosten()">✕ ${esc(tt('Filter aufheben'))}</button>` : '');
     }
   }
 
@@ -11719,17 +11799,19 @@ async function addDiary() {
     const alt = btn ? btn.textContent : '';
     if (btn) btn.disabled = true;
     _tbHochladen = true; renderDiaryPhotoPreviews();
+    const lade = _lade(dateien.length > 1 ? 'Fotos werden hochgeladen' : 'Foto wird hochgeladen', dateien.length, { verzoegert: 0 });
     try {
       for (let i = 0; i < dateien.length; i++) {
         if (lauf !== _tbLauf) break;   // abgebrochen
         if (btn) btn.textContent = (_lang === 'en' ? 'Uploading photos ' : 'Fotos werden hochgeladen ') + (i + 1) + '/' + dateien.length + '…';
+        lade.schritt(i);
         try {
           const f = dateien[i];
           const { url, path } = await uploadPhotoToStorage(f, 'tagebuch');
           neu.push({ url, path: path || null, name: f.name || '' });
         } catch (e) { showToast('⚠️ ' + (e?.message || e), 'error'); }
       }
-    } finally { _tbHochladen = false; if (btn) { btn.disabled = false; btn.textContent = alt; } }
+    } finally { lade.ende(); _tbHochladen = false; if (btn) { btn.disabled = false; btn.textContent = alt; } }
     const m = document.getElementById('modal-tagebuch');
     if (lauf !== _tbLauf || !m || !m.classList.contains('open') || m.classList.contains('closing')) {
       // Waehrend des Hochladens abgebrochen: nichts speichern, Hochgeladenes wieder entfernen
@@ -12306,7 +12388,7 @@ async function _getDokumentUrl(d) {
 async function downloadDokument(id) {
   const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (!d) return;
-  const url = await _getDokumentUrl(d);
+  const url = await _mitLade('Datei wird geladen', () => _getDokumentUrl(d));
   if (!url) return;
   const a = document.createElement('a');
   a.href = url; a.download = d.name; a.target = '_blank'; a.click();
@@ -12315,7 +12397,7 @@ async function downloadDokument(id) {
 async function openDokument(id) {
   const d = (state.dateien||[]).find(d => String(d.id) === String(id));
   if (!d) return;
-  const url = await _getDokumentUrl(d);
+  const url = await _mitLade('Datei wird geladen', () => _getDokumentUrl(d));
   if (!url) { showToast('Datei konnte nicht geladen werden', 'error'); return; }
   const viewable = d.type === 'application/pdf' || d.type?.startsWith('image/');
   if (isNativeApp() && (!viewable || !/^https?:/i.test(String(url)))) { _dateiTeilen(url, d.name, d.name); return; }
@@ -13009,9 +13091,15 @@ function openBatchPhotoModal(files, targetAlbumId) {
   btn.textContent = `📸 ${files.length} Foto${files.length !== 1 ? 's' : ''} hochladen`;
   const thumbs = document.getElementById('foto-batch-thumbs');
   thumbs.innerHTML = '';
+  // Vorschaubilder brauchen bei vielen/grossen Fotos einen Moment -> sichtbar machen
+  const ladeV = _lade('Fotos werden vorbereitet', files.length, { verzoegert: 300 });
+  let vFertig = 0;
+  const vEins = () => { ladeV.schritt(++vFertig); if (vFertig >= files.length) ladeV.ende(); };
   files.forEach(file => {
     const r = new FileReader();
+    r.onerror = vEins;
     r.onload = e => {
+      vEins();
       const div = document.createElement('div');
       div.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--border)';
       div.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">
@@ -13211,6 +13299,7 @@ async function confirmPhoto() {
   if (!pendingPhoto || !pendingPhotoFile) return;
   const btn = document.querySelector('#modal-foto-info .btn-primary');
   if (btn) { btn.textContent = 'Wird hochgeladen…'; btn.disabled = true; }
+  const lade = _lade('Foto wird hochgeladen', 0, { verzoegert: 0 });
   try {
     const { url, path } = await uploadPhotoToStorage(pendingPhotoFile, 'galerie');
     const newId   = Date.now();
@@ -13233,7 +13322,7 @@ async function confirmPhoto() {
     renderFotos();
   } catch(e) {
     showToast('⚠️ Upload fehlgeschlagen: ' + e.message, 'error');
-  }
+  } finally { lade.ende(); }
   if (btn) { btn.textContent = 'Speichern'; btn.disabled = false; }
 }
 
@@ -13319,6 +13408,8 @@ async function addDoku() {
 
   // Upload new pending photos to storage
   const uploadedFotos = [];
+  const lade = dokuPendingFiles.length ? _lade(dokuPendingFiles.length > 1 ? 'Fotos werden hochgeladen' : 'Foto wird hochgeladen', dokuPendingFiles.length, { verzoegert: 0 }) : null;
+  let ladeNr = 0;
   for (const file of dokuPendingFiles) {
     try {
       const { url, path } = await uploadPhotoToStorage(file, 'dokumentation');
@@ -13326,7 +13417,9 @@ async function addDoku() {
     } catch(e) {
       showToast('⚠️ Foto-Upload fehlgeschlagen: ' + e.message, 'error');
     }
+    lade.schritt(++ladeNr);
   }
+  if (lade) lade.ende();
 
   const data = {
     title:   document.getElementById('dk-title').value   || 'Eintrag',
@@ -13373,16 +13466,22 @@ async function handleAddDokuPhoto(input) {
   const d = (state.dokumentation||[]).find(x => x.id === addPhotoToDokuId);
   if (!d) return;
   d.fotos = d.fotos || [];
-  for (const file of Array.from(input.files)) {
+  const files = Array.from(input.files);
+  input.value = '';
+  if (!files.length) return;
+  const lade = _lade(files.length > 1 ? 'Fotos werden hochgeladen' : 'Foto wird hochgeladen', files.length, { verzoegert: 0 });
+  let fertig = 0;
+  for (const file of files) {
     try {
       const { url, path } = await uploadPhotoToStorage(file, 'dokumentation');
       d.fotos.push({ url, path, name: file.name });
     } catch(e) {
       showToast('⚠️ ' + e.message, 'error');
     }
+    lade.schritt(++fertig);
   }
+  lade.ende();
   save(); renderDoku();
-  input.value = '';
 }
 
 function openDokuLightbox(dokuId, photoIdx) {
@@ -13441,6 +13540,8 @@ async function saveMangel() {
   if (btn && mgPendingFiles.length > 0) { btn.textContent = 'Wird hochgeladen…'; btn.disabled = true; }
 
   const uploadedFotos = [];
+  const lade = mgPendingFiles.length ? _lade(mgPendingFiles.length > 1 ? 'Fotos werden hochgeladen' : 'Foto wird hochgeladen', mgPendingFiles.length, { verzoegert: 0 }) : null;
+  let ladeNr = 0;
   for (const file of mgPendingFiles) {
     try {
       const { url, path } = await uploadPhotoToStorage(file, 'maengel');
@@ -13448,7 +13549,9 @@ async function saveMangel() {
     } catch(e) {
       showToast('⚠️ ' + e.message, 'error');
     }
+    lade.schritt(++ladeNr);
   }
+  if (lade) lade.ende();
 
   const item = {
     id:           editId || Date.now(),
@@ -14124,7 +14227,7 @@ async function saveGrundrissModal() {
   // Neuen Plan (grosses Base64) in Storage auslagern -> nur URL speichern.
   let newBild = newBildRaw, newBildPath = null;
   if (newBildRaw && newBildRaw.startsWith('data:')) {
-    const up = await uploadDataUrlToStorage(newBildRaw, 'grundrisse', name + '.jpg');
+    const up = await _mitLade('Plan wird gespeichert', () => uploadDataUrlToStorage(newBildRaw, 'grundrisse', name + '.jpg'));
     newBild = up.url; newBildPath = up.path;
   }
 
@@ -14208,12 +14311,18 @@ function openEditPin(grundrissId, pinId) {
 async function addGrPinFotos(input) {
   const files = Array.from(input.files);
   input.value = '';
+  if (!files.length) return;
+  const lade = _lade(files.length > 1 ? 'Fotos werden hochgeladen' : 'Foto wird hochgeladen', files.length, { verzoegert: 0 });
+  let fertig = 0;
   for (const file of files) {
     try {
       const { url } = await uploadPhotoToStorage(file);
       _grPinFotosPending.push(url);
     } catch(e) { showToast('⚠️ ' + e.message, 'error'); }
+    lade.schritt(++fertig);
+    renderGrPinFotosPreview();   // jedes fertige Foto sofort zeigen
   }
+  lade.ende();
   renderGrPinFotosPreview();
 }
 
@@ -15105,6 +15214,62 @@ function showToast(msg, type='success', duration=3200) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
 }
+
+// ──────────────── LADEANZEIGE ────────────────
+// Einheitliche Rueckmeldung fuer alles, was dauert (Fotos hochladen, Belege vorbereiten …):
+//   const l = _lade('Fotos werden hochgeladen', files.length);   // mit Zaehler "2 von 5"
+//   l.schritt(i);  l.text('…');  l.ende();
+// Ohne `gesamt` (oder gesamt <= 1) laeuft ein Balken hin und her; diese Anzeige erscheint erst
+// nach kurzer Verzoegerung, damit schnelle Vorgaenge nicht flackern. Sie blockiert keine Bedienung
+// und verschwindet spaetestens nach `maxMs` von selbst (Sicherheitsnetz, falls ende() ausbleibt).
+function _lade(text, gesamt, opt = {}) {
+  const n = gesamt > 1 ? gesamt : 0;
+  const verz = opt.verzoegert != null ? opt.verzoegert : (n ? 0 : 350);
+  let stapel = document.getElementById('lade-stapel');
+  if (!stapel) { stapel = document.createElement('div'); stapel.id = 'lade-stapel'; stapel.setAttribute('aria-live', 'polite'); document.body.appendChild(stapel); }
+  const karte = document.createElement('div');
+  karte.className = 'lade-karte'; karte.setAttribute('role', 'status');
+  karte.innerHTML = '<div class="lade-text"></div><div class="lade-bahn"><div class="lade-fuell' + (n ? '' : ' unbestimmt') + '"></div></div>';
+  const tEl = karte.firstChild, fEl = karte.querySelector('.lade-fuell');
+  let basis = tt(text), i = 0, weg = false;
+  const zeichne = () => {
+    tEl.textContent = n ? `${basis} – ${Math.min(i + 1, n)} ${_lang === 'en' ? 'of' : 'von'} ${n}` : basis + '…';
+    if (n) fEl.style.width = Math.round(i / n * 100) + '%';
+  };
+  zeichne();
+  const zeig = setTimeout(() => { if (!weg) stapel.appendChild(karte); }, verz);
+  const ende = () => { if (weg) return; weg = true; clearTimeout(zeig); clearTimeout(netz); karte.remove(); };
+  const netz = setTimeout(ende, opt.maxMs || 180000);
+  return {
+    schritt(k) { i = k; if (!weg) zeichne(); },            // k = Anzahl fertiger Teile (0 … gesamt)
+    text(t) { basis = tt(t); if (!weg) zeichne(); },
+    ende
+  };
+}
+// Umschliesst einen Vorgang unbekannter Dauer mit der Ladeanzeige
+async function _mitLade(text, fn) { const l = _lade(text); try { return await fn(); } finally { l.ende(); } }
+// Handy: zwischen „Hinzufuegen" in der Foto-Auswahl und dem change-Ereignis braucht das Geraet bei vielen
+// Fotos einige Sekunden (Umwandeln/Kopieren) – ohne Rueckmeldung. Sobald die Seite nach der Auswahl wieder
+// im Vordergrund ist, zeigen wir „Fotos werden übernommen…" bis change/cancel kommt. Nur wo der Browser
+// das Abbrechen meldet (cancel-Ereignis) – sonst bliebe die Anzeige nach „Abbrechen" stehen.
+(function _ladeBeiAuswahl() {
+  let lauf = null, poll = null, warWeg = false, wirdGezeigt = false;
+  const fertig = () => { clearInterval(poll); poll = null; warWeg = false; wirdGezeigt = false; if (lauf) { lauf.ende(); lauf = null; } };
+  const zeig = () => { if (wirdGezeigt || !poll) return; wirdGezeigt = true; lauf = _lade('Fotos werden übernommen', 0, { verzoegert: 250, maxMs: 60000 }); };
+  document.addEventListener('click', e => {
+    const inp = e.target && e.target.closest && e.target.closest('input[type="file"]');
+    if (!inp || !inp.multiple || !('oncancel' in inp)) return;
+    if (!(window.matchMedia && matchMedia('(pointer: coarse)').matches)) return;
+    fertig();
+    poll = setInterval(() => {                         // Auswahl offen = Seite ohne Fokus; wieder da = Auswahl zu
+      if (!document.hasFocus()) warWeg = true; else if (warWeg) zeig();
+    }, 250);
+    setTimeout(() => { if (poll && !wirdGezeigt) fertig(); }, 600000);
+  }, true);
+  window.addEventListener('focus', () => { if (poll && warWeg) zeig(); });
+  document.addEventListener('change', e => { if (e.target && e.target.type === 'file') fertig(); }, true);
+  document.addEventListener('cancel', e => { if (e.target && e.target.type === 'file') fertig(); }, true);
+})();
 
 // ──────────────── KI-BAUBERATER ────────────────
 function buildProjectSnapshot() {
@@ -16467,14 +16632,16 @@ async function _migrateEmbeddedFiles() {
     for (const proj of ziele) {
       // 1) Angebots-Anhaenge (haeufig grosse PDFs)
       for (const a of (proj.angebote || [])) {
-        const d = a.datei;
-        const src = d && (d.url || d.data);
-        if (!_isEmbeddedFile(src)) continue;
-        const up = await uploadDataUrlToStorage(src, 'angebote', d.name || 'angebot');
-        if (up.path) {
-          a.datei = { name: d.name, type: d.type, url: up.url, path: up.path };
-          a._updatedAt = Date.now(); moved++;
+        const liste = _angDateien(a);
+        let geaendert = false;
+        for (let i = 0; i < liste.length; i++) {
+          const d = liste[i];
+          const src = d && (d.url || d.data);
+          if (!_isEmbeddedFile(src)) continue;
+          const up = await uploadDataUrlToStorage(src, 'angebote', d.name || 'angebot');
+          if (up.path) { liste[i] = { name: d.name, type: d.type, url: up.url, path: up.path }; geaendert = true; moved++; }
         }
+        if (geaendert) { a.dateien = liste; a.datei = liste[0]; a._updatedAt = Date.now(); }
       }
       // 2) Grundriss-Plaene (aus PDF gerendert, oft > 1 MB)
       for (const g of (proj.grundrisse || [])) {
@@ -17367,7 +17534,7 @@ function resetAngModal() {
   document.getElementById('ang-modal-title').textContent = 'Angebot erfassen';
   document.getElementById('ang-to-rechnung-btn').style.display = 'none';
   const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
-  _angExistingDateiName = '';
+  _angNeu = []; _angBleiben = []; _angStart = [];
   _renderAngDatei();
 }
 
@@ -17380,32 +17547,55 @@ function openNeuesAngebot() {
   openModal('modal-angebot');
 }
 
-// Sichtbare Rueckmeldung fuer den Angebots-Anhang (Drag&Drop UND Auswahl).
-var _angExistingDateiName = '';
+// ── Anhänge eines Angebots: mehrere Fotos/PDFs ──
+// Neu: a.dateien = [{name,type,url,path}] (max. ANG_MAX). a.datei bleibt als ERSTER Anhang mitgeschrieben,
+// damit die iPhone-App v1.3 (kennt nur a.datei) weiter etwas anzeigt. Ersetzt jene den Anhang, zeigt
+// a.datei auf eine neue Datei – die gilt dann als erster Anhang (der alte wurde dort schon geloescht).
+const ANG_MAX = 10;
+const _angSchl = d => d && (d.path || d.url || d.data);
+function _angDateien(a) {
+  if (!a) return [];
+  const liste = Array.isArray(a.dateien) ? a.dateien.filter(Boolean) : [];
+  const d = a.datei;
+  if (!d) return liste;
+  if (!liste.length) return [d];
+  if (liste.some(x => _angSchl(x) === _angSchl(d))) return liste;
+  return [d, ...liste.slice(1)];
+}
+function _angIstBild(d) { return (d.type || '').startsWith('image/') || /\.(jpe?g|png|gif|webp|heic)(?:[?#]|$)/i.test(d.name || ''); }
+let _angNeu = [];       // neu gewaehlte Dateien (File), noch nicht hochgeladen
+let _angBleiben = [];   // schon gespeicherte Anhaenge, die bleiben sollen
+let _angStart = [];     // Anhaenge beim Oeffnen (zum Aufraeumen entfernter Dateien)
+let _angSpeichert = false;
 function _renderAngDatei() {
-  const inp  = document.getElementById('ang-datei-input');
   const info = document.getElementById('ang-datei-info');
   if (!info) return;
-  const f = inp && inp.files && inp.files[0];
-  if (f) {
-    const isImg = (f.type || '').startsWith('image/');
-    const thumb = isImg
-      ? `<img src="${URL.createObjectURL(f)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0">`
-      : `<span style="font-size:1.4rem;flex-shrink:0">📄</span>`;
-    info.style.display = 'flex';
-    info.innerHTML = `${thumb}<span style="flex:1;font-size:0.82rem;color:var(--text);word-break:break-all">${esc(f.name)}</span>`
-      + `<button type="button" class="action-btn del" onclick="clearAngDatei()" title="Entfernen" style="flex-shrink:0">✕</button>`;
-  } else if (_angExistingDateiName) {
-    info.style.display = 'flex';
-    info.innerHTML = `<span style="font-size:1.4rem;flex-shrink:0">📎</span>`
-      + `<span style="flex:1;font-size:0.82rem;color:var(--text2);word-break:break-all">${esc(_angExistingDateiName)} <span style="color:var(--text3)">· bereits angehängt</span></span>`;
-  } else {
-    info.style.display = 'none';
-    info.innerHTML = '';
-  }
+  const zeile = (thumb, name, zusatz, onx) => `<div class="ang-anhang" style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px">
+      ${thumb}<span style="flex:1;min-width:0;font-size:0.82rem;color:var(--text);word-break:break-all">${esc(name)}${zusatz}</span>
+      ${_angSpeichert ? '' : `<button type="button" class="action-btn del" onclick="${onx}" title="${esc(tt('Entfernen'))}" style="flex-shrink:0">✕</button>`}</div>`;
+  const bild = src => `<img src="${esc(src)}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;background:var(--surface3)">`;
+  const pdf = `<span style="font-size:1.4rem;flex-shrink:0;width:36px;text-align:center">📄</span>`;
+  const html = _angBleiben.map((d, i) => zeile(_angIstBild(d) ? bild(d.url || d.data || '') : pdf, d.name || tt('Anhang'),
+      ` <span style="color:var(--text3)">· ${esc(tt('bereits angehängt'))}</span>`, `_angBleiben.splice(${i},1);_angGeaendert()`)).join('')
+    + _angNeu.map((f, i) => zeile((f.type || '').startsWith('image/') ? bild(f._vorschau || (f._vorschau = URL.createObjectURL(f))) : pdf, f.name, '',
+      `_angNeu.splice(${i},1);_angGeaendert()`)).join('');
+  info.style.display = html ? 'flex' : 'none';
+  info.innerHTML = html;
 }
-function onAngDateiPick() { _renderAngDatei(); }
-function clearAngDatei() { const inp = document.getElementById('ang-datei-input'); if (inp) inp.value = ''; _renderAngDatei(); }
+function _angGeaendert() { const ov = document.getElementById('modal-angebot'); if (ov) ov._dirty = true; _renderAngDatei(); }
+function onAngDateiPick() {
+  const inp = document.getElementById('ang-datei-input');
+  const files = Array.from((inp && inp.files) || []);
+  if (inp) inp.value = '';
+  if (!files.length || _angSpeichert) return;
+  const frei = ANG_MAX - _angBleiben.length - _angNeu.length;
+  const ok = files.filter(f => (f.type || '').startsWith('image/') || f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''));
+  if (ok.length < files.length) showToast('⚠️ Nur Fotos und PDFs können angehängt werden', 'warning', 4000);
+  if (ok.length > frei) showToast(_lang === 'en' ? `⚠️ At most ${ANG_MAX} attachments per quote` : `⚠️ Höchstens ${ANG_MAX} Anhänge pro Angebot`, 'warning', 4000);
+  _angNeu.push(...ok.slice(0, Math.max(0, frei)));
+  _angGeaendert();
+}
+function clearAngDatei() { _angNeu = []; _angBleiben = []; _angGeaendert(); }
 
 // Ein Feld sichtbar machen und fokussieren (z.B. nach dem Scannen direkt zur Kategorie).
 function _focusField(id) {
@@ -17438,35 +17628,35 @@ async function saveAngebot() {
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
-  // Dateianhang – WICHTIG: grosse Roh-Base64-Blobs sprengen den lokalen
-  // Speicher, wodurch das ganze Angebot nicht mehr gespeichert wird und
-  // verschwindet. Daher: Bilder komprimieren, kleine PDFs inline behalten,
-  // zu grosse Dateien verwerfen – aber das Angebot IMMER speichern.
-  const fileInput = document.getElementById('ang-datei-input');
-  if (fileInput?.files?.[0]) {
-    const f = fileInput.files[0];
+  // Anhaenge: neue Dateien hochladen (Bilder werden komprimiert). Faellt der Speicher aus, bleiben nur
+  // kleine Dateien eingebettet – grosse wuerden den lokalen Speicher sprengen. Das Angebot wird IMMER gespeichert.
+  const neueDateien = _angNeu.slice(), bleiben = _angBleiben.slice(), start = _angStart.slice();
+  const hochgeladen = [];
+  if (neueDateien.length) {
+    const btn = document.getElementById('ang-save-btn');
+    _angSpeichert = true; if (btn) btn.disabled = true; _renderAngDatei();
+    const lade = _lade(neueDateien.length > 1 ? 'Anhänge werden hochgeladen' : 'Anhang wird hochgeladen', neueDateien.length, { verzoegert: 0 });
+    let zuGross = 0, fehler = 0;
     try {
-      const up = await uploadFileToStorage(f, 'angebote');
-      if (up.path) {
-        // Neue Datei ersetzt die alte -> altes Storage-Objekt aufraeumen
-        if (existingAng?.datei?.path) deletePhotoFromStorage(existingAng.datei.path);
-        item.datei = { name: f.name, type: f.type, url: up.url, path: up.path };
-      } else {
-        // Base64-Fallback (Bucket noch nicht aktiv): nur kleine Dateien inline,
-        // sonst wuerde der Blob den lokalen Speicher sprengen.
-        const approxBytes = (up.url?.length || 0) * 0.75;
-        if (approxBytes <= 1200 * 1024) {
-          if (existingAng?.datei?.path) deletePhotoFromStorage(existingAng.datei.path);
-          item.datei = { name: f.name, type: f.type, url: up.url };
-        } else {
-          showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne Anhang gespeichert', 'warning', 6000);
-        }
+      for (let i = 0; i < neueDateien.length; i++) {
+        const f = neueDateien[i];
+        lade.schritt(i);
+        try {
+          const up = await uploadFileToStorage(f, 'angebote');
+          if (up.path) hochgeladen.push({ name: f.name, type: f.type, url: up.url, path: up.path });
+          else if ((up.url?.length || 0) * 0.75 <= 1200 * 1024) hochgeladen.push({ name: f.name, type: f.type, url: up.url });
+          else zuGross++;
+        } catch (e) { fehler++; }
       }
-    } catch (e) {
-      showToast('⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne Anhang gespeichert', 'warning', 5000);
-    }
-    fileInput.value = '';
+    } finally { lade.ende(); _angSpeichert = false; if (btn) btn.disabled = false; }
+    if (zuGross) showToast('⚠️ Datei zu groß für den Anhang (max ~1 MB) – Angebot wurde ohne diesen Anhang gespeichert', 'warning', 6000);
+    if (fehler) showToast('⚠️ Anhang konnte nicht verarbeitet werden – Angebot ohne diesen Anhang gespeichert', 'warning', 5000);
   }
+  const dateien = [...bleiben, ...hochgeladen].slice(0, ANG_MAX);
+  // bewusst entfernte Anhaenge (waren beim Oeffnen da) aus der Ablage loeschen
+  start.filter(d => d.path && !dateien.some(x => _angSchl(x) === _angSchl(d))).forEach(d => deletePhotoFromStorage(d.path));
+  item.dateien = dateien;
+  if (dateien.length) item.datei = dateien[0]; else delete item.datei;
   if (editId) {
     const idx = state.angebote.findIndex(a => String(a.id) === String(editId));
     if (idx > -1) state.angebote[idx] = item;
@@ -17496,7 +17686,7 @@ function editAngebot(id) {
   document.getElementById('ang-modal-title').textContent = 'Angebot bearbeiten';
   document.getElementById('ang-to-rechnung-btn').style.display = a.status === 'Angenommen' ? '' : 'none';
   const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
-  _angExistingDateiName = a.datei?.name || '';
+  _angNeu = []; _angBleiben = _angDateien(a).slice(); _angStart = _angBleiben.slice();
   _renderAngDatei();
   openModal('modal-angebot');
 }
@@ -17505,7 +17695,7 @@ async function deleteAngebot(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Angebot löschen?'))) return;
   const _a = (state.angebote||[]).find(a => String(a.id) === String(id));
-  if (_a?.datei?.path) deletePhotoFromStorage(_a.datei.path);
+  _angDateien(_a).forEach(d => d.path && deletePhotoFromStorage(d.path));
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
   save(); renderAngebote();
@@ -17590,7 +17780,7 @@ function renderAngVergleich() {
               <span class="badge ${statusColor[a.status]||'badge-gray'}">${a.status}</span>
               <div style="display:flex;gap:4px">
                 <button class="action-btn ic" onclick="editAngebot(${a.id})" title="Bearbeiten">${_icStift()}</button>
-                ${a.datei ? `<button class="action-btn" onclick="openAngebotDatei(${a.id})" title="${a.datei.name}">📎</button>` : ''}
+                ${_angKlammer(a)}
                 <button class="action-btn ic del" onclick="deleteAngebot(${a.id})" title="Löschen">${_icMuell()}</button>
               </div>
             </div>
@@ -17601,20 +17791,44 @@ function renderAngVergleich() {
   }).join('');
 }
 
-function openAngebotDatei(id) {
+// Büroklammer in Liste/Vergleich (mit Anzahl, wenn es mehrere Anhänge sind)
+function _angKlammer(a) {
+  const n = _angDateien(a).length;
+  if (!n) return '';
+  const titel = n === 1 ? (_angDateien(a)[0].name || tt('Anhang')) : `${n} ${tt('Anhänge')}`;
+  return `<button class="action-btn ang-klammer" onclick="openAngebotDatei(${a.id})" title="${esc(titel)}">📎${n > 1 ? `<span style="font-size:0.7rem;font-weight:700;margin-left:1px">${n}</span>` : ''}</button>`;
+}
+// Ein Anhang: direkt oeffnen. Mehrere: Fenster „Anhänge" mit Vorschaubildern (idx = bestimmter Anhang).
+function openAngebotDatei(id, idx) {
   const a = (state.angebote||[]).find(a => String(a.id) === String(id));
-  if (!a?.datei) return;
-  const src = a.datei.url || a.datei.data; // neu: Storage-URL, alt: Base64
+  const liste = _angDateien(a);
+  if (!liste.length) return;
+  if (idx == null && liste.length > 1) {
+    document.getElementById('ang-anh-titel').textContent = `📎 ${a.beschr || tt('Angebot')} – ${liste.length} ${tt('Anhänge')}`;
+    document.getElementById('ang-anh-liste').innerHTML = liste.map((d, i) => `
+      <button type="button" onclick="openAngebotDatei(${a.id}, ${i})" title="${esc(d.name || '')}"
+        style="display:flex;flex-direction:column;gap:6px;align-items:stretch;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit">
+        ${_angIstBild(d)
+          ? `<img src="${esc(d.url || d.data || '')}" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;background:var(--surface3)">`
+          : `<span style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.2rem;background:var(--surface3);border-radius:7px">📄</span>`}
+        <span style="font-size:0.7rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name || '')}</span>
+      </button>`).join('');
+    openModal('modal-ang-anhaenge');
+    return;
+  }
+  const d = liste[idx == null ? 0 : idx];
+  if (!d) return;
+  const src = d.url || d.data; // neu: Storage-URL, alt: Base64
   const viewable = ['application/pdf','image/jpeg','image/jpg','image/png','image/gif'];
-  if (isNativeApp()) { _dateiTeilen(src, a.datei.name, a.datei.name); return; }   // window.open('') gibt es im App-WebView nicht
-  if (viewable.includes(a.datei.type) || a.datei.type?.startsWith('image/')) {
+  if (isNativeApp()) { _dateiTeilen(src, d.name, d.name); return; }   // window.open('') gibt es im App-WebView nicht
+  if (viewable.includes(d.type) || d.type?.startsWith('image/')) {
     const win = window.open('', '_blank');
     if (win) {
-      win.document.write(`<html><head><title>${a.datei.name}</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}iframe{width:100vw;height:100vh;border:none}</style></head><body>${a.datei.type==='application/pdf'?`<iframe src="${src}"></iframe>`:`<img src="${src}">`}</body></html>`);
+      win.document.write(`<html><head><title>${esc(d.name || '')}</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}iframe{width:100vw;height:100vh;border:none}</style></head><body>${d.type==='application/pdf'?`<iframe src="${esc(src)}"></iframe>`:`<img src="${esc(src)}">`}</body></html>`);
       win.document.close();
     }
   } else {
-    const el = document.createElement('a'); el.href = src; el.download = a.datei.name; el.click();
+    const el = document.createElement('a'); el.href = src; el.download = d.name; el.click();
   }
 }
 
@@ -17752,7 +17966,7 @@ function confirmAngKI() {
   document.getElementById('ang-notiz').value    = document.getElementById('ang-ki-notiz').value;
   document.getElementById('ang-edit-id').value  = '';
   const _fi = document.getElementById('ang-datei-input'); if (_fi) _fi.value = '';
-  _angExistingDateiName = ''; _renderAngDatei();
+  _angNeu = []; _angBleiben = []; _angStart = []; _renderAngDatei();
   closeModal('modal-angebot-ki'); resetAngKI();
   openModal('modal-angebot');
   // Direkt zum Kategorie-Feld, das die KI nicht setzt.
@@ -17804,6 +18018,7 @@ function renderAngebote() {
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.73rem;color:${isExpired?'var(--danger)':'var(--text3)'}">${a.gueltig?fmtDate(a.gueltig):'–'}</td>
       <td style="display:flex;gap:4px">
         <button class="action-btn ic" onclick="editAngebot(${a.id})" title="Bearbeiten">${_icStift()}</button>
+        ${_angKlammer(a)}
         <button class="action-btn" onclick="document.getElementById('ang-edit-id').value=${a.id};angebotZuRechnung()" title="Zu Rechnung umwandeln">→💶</button>
         <button class="action-btn ic del" onclick="deleteAngebot(${a.id})">${_icMuell()}</button>
       </td>
@@ -19434,6 +19649,7 @@ async function _dateiTeilen(src, name, titel) {
   const P = window.Capacitor?.Plugins, FS = P?.Filesystem, SH = P?.Share;
   const extern = /^https?:/i.test(String(src));
   if (!FS || !SH) { if (extern) window.open(src, '_blank'); return false; }
+  const lade = _lade('Datei wird vorbereitet');
   try {
     let b64;
     if (/^data:/i.test(src)) b64 = String(src).split(',')[1] || '';
@@ -19446,9 +19662,11 @@ async function _dateiTeilen(src, name, titel) {
     let res = await FS.writeFile({ path: pfad, data: b64.slice(0, STK), directory: 'CACHE' });
     for (let i = STK; i < b64.length; i += STK) await FS.appendFile({ path: pfad, data: b64.slice(i, i + STK), directory: 'CACHE' });
     if (!res || !res.uri) res = await FS.getUri({ path: pfad, directory: 'CACHE' });
+    lade.ende();
     await SH.share({ title: titel || pfad, url: res.uri, dialogTitle: titel || pfad });
     return true;
   } catch (e) {
+    lade.ende();
     if (/cancel/i.test(e?.message || '')) return false;
     if (extern) { window.open(src, '_blank'); return false; }
     showToast((_lang === 'en' ? '⚠️ Could not open file: ' : '⚠️ Datei konnte nicht geöffnet werden: ') + (e?.message || e), 'error', 5000);
@@ -19904,6 +20122,364 @@ async function baubuchErstellen() {
     if (lauf === _bbLauf && !/abgebrochen/.test(e?.message || '')) showToast('⚠️ Buch konnte nicht erstellt werden: ' + (e?.message || e), 'error', 5000);
   } finally {
     if (lauf === _bbLauf) { btn.disabled = false; if (st) st.textContent = ''; }
+  }
+}
+
+// ── KATEGORIE-MAPPE (PDF) ───────────────────────────────────────────────────
+// Eine Kategorie (z.B. „Küche") als komplettes PDF zum Ablegen: Deckblatt, Übersicht aller Ausgaben,
+// jeder Beleg als eigene Seite (Fotos direkt, PDF-Belege Seite für Seite über pdf.js), dazu Angebote
+// mit Anhängen, Zahlungstermine sowie Fotos/Mängel mit gleichnamiger Kategorie.
+let _mpLauf = 0;   // zaehlt Erstell-Vorgaenge; Abbrechen beendet einen laufenden
+const _MP_OHNE = '__ohne';   // Ausgaben ohne Kategorie (wie im Filter der Ausgaben-Seite)
+function _mappeOptionen() {
+  const an = id => !!document.getElementById(id)?.checked;
+  return { kat: document.getElementById('mp-kat')?.value || '', belege: an('mp-belege'), angebote: an('mp-angebote'), zahlungen: an('mp-zahlungen'), fotos: an('mp-fotos') };
+}
+// Sammelt alles, was zur Kategorie gehoert (reine Daten, noch keine Bilder geladen)
+function _mappeDaten(kat, opts = {}) {
+  const ohne = kat === _MP_OHNE;
+  const passt = v => ohne ? !v : v === kat;
+  const nachDatum = (a, b) => String(a.datum || a.faellig || '').localeCompare(String(b.datum || b.faellig || ''));
+  const scans = state.gescannteRechnungen || [];
+  let nr = 0;
+  const kosten = (state.kosten || []).filter(k => passt(k.kat)).slice().sort(nachDatum).map(k => {
+    const sc = scans.find(r => String(r.kostenId) === String(k.id));
+    const beleg = k.scanUrl || k.scanData || (sc && (sc.scanUrl || sc.scanData)) || '';
+    return { k, beleg, nr: beleg ? ++nr : 0 };
+  });
+  const imB = kosten.filter(x => _imBudget(x.k));
+  const nichtB = kosten.filter(x => x.k.status !== 'Storniert' && !_imBudget(x.k));
+  const sum = (l, f) => l.reduce((s, x) => s + (parseFloat(f(x.k)) || 0), 0);
+  const bk = ohne ? null : (state.budgetKat || []).find(b => b.name === kat);
+  const angebote = opts.angebote === false ? [] : (state.angebote || []).filter(a => passt(a.kat)).slice().sort(nachDatum);
+  const zahlungen = opts.zahlungen === false ? [] : (state.zahlungen || []).filter(z => passt(z.kat)).slice().sort(nachDatum);
+  const fotos = (opts.fotos === false || ohne) ? [] : (state.fotos || []).filter(f => f.kat === kat && (f.url || f.data)).slice().sort(nachDatum);
+  const maengel = (opts.fotos === false || ohne) ? [] : (state.maengel || []).filter(m => m.gewerk === kat).slice().sort(nachDatum);
+  const belege = opts.belege === false ? [] : kosten.filter(x => x.beleg);
+  const anhaenge = angebote.reduce((n, a) => n + _angDateien(a).length, 0);
+  const maengelFotos = maengel.reduce((n, m) => n + (m.fotos || []).filter(f => f.url || f.data).length, 0);
+  return {
+    kat, ohne, name: ohne ? (_lang === 'en' ? 'No category' : 'Ohne Kategorie') : _katName(kat),
+    projekt: state.settings?.name || '', adresse: state.settings?.address || '',
+    budget: bk ? (parseFloat(bk.budget) || 0) : null,
+    kosten, belege, angebote, zahlungen, fotos, maengel,
+    summe: { brutto: sum(imB, k => k.betrag), netto: sum(imB, k => k.netto ?? k.betrag), nichtBudget: sum(nichtB, k => k.betrag) },
+    anzahl: { kosten: kosten.length, belege: belege.length, ohneBeleg: kosten.filter(x => !x.beleg).length, angebote: angebote.length, anhaenge,
+              zahlungen: zahlungen.length, fotos: fotos.length, maengel: maengel.length,
+              bilder: belege.length + anhaenge + fotos.length + maengelFotos }
+  };
+}
+// PDF-Datei (Adresse oder data:) Seite für Seite als Bilder – für PDF-Belege und PDF-Anhänge
+async function _pdfSeitenAlsBilder(src, maxPx, maxSeiten = 15) {
+  if (!window.pdfjsLib) throw new Error('PDF-Bibliothek fehlt');
+  let data;
+  if (/^data:/i.test(src)) { const b = atob(String(src).split(',')[1] || ''); data = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) data[i] = b.charCodeAt(i); }
+  else { const r = await fetch(src, { mode: 'cors' }); if (!r.ok) throw new Error('HTTP ' + r.status); data = new Uint8Array(await r.arrayBuffer()); }
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const seiten = [], gesamt = pdf.numPages;
+  try {
+    for (let p = 1; p <= Math.min(gesamt, maxSeiten); p++) {
+      const page = await pdf.getPage(p);
+      const v1 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: Math.min(3, maxPx / Math.max(v1.width, v1.height)) });
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(vp.width)); c.height = Math.max(1, Math.round(vp.height));
+      const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: g, viewport: vp }).promise;
+      seiten.push({ dataUrl: c.toDataURL('image/jpeg', 0.85), w: c.width, h: c.height });
+      c.width = c.height = 0;
+    }
+  } finally { try { pdf.destroy(); } catch (_) {} }
+  return { seiten, gesamt };
+}
+async function _mappePDF(d, opts = {}, fortschritt = () => {}, abbruch = () => false) {
+  const { jsPDF } = window.jspdf;
+  const en = typeof _lang !== 'undefined' && _lang === 'en';
+  const W = 210, H = 297, R = 16, CW = W - 2 * R, UNTEN = H - 18;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  const DUNKEL = [22, 25, 31], AKZENT = [201, 111, 0], GRAU = [110, 116, 128], LINIE = [214, 208, 194], HELL = [246, 243, 236];
+  const T = x => _pdfText(x);
+  const L = (de, e) => en ? e : de;
+  const maxPx = d.anzahl.bilder > 60 ? 1400 : 1800;
+  let geladen = 0, fehler = 0;
+  const zaehl = was => { geladen++; fortschritt(Math.min(geladen, d.anzahl.bilder), d.anzahl.bilder, was); };
+  // Datei -> Liste von Bildern (Foto: 1 Bild; PDF: je Seite ein Bild). Nicht ladbar -> [] und fehler++.
+  const bilder = async (src, was, alsPdf) => {
+    if (abbruch()) throw new Error('abgebrochen');
+    try {
+      if (!src) throw new Error('leer');
+      if (alsPdf || _istPdfSrc(src)) return (await _pdfSeitenAlsBilder(src, maxPx)).seiten;
+      try { return [await _baubuchBild(src, null, maxPx)]; }
+      catch (e) { return (await _pdfSeitenAlsBilder(src, maxPx)).seiten; }   // alte PDFs, die als .jpg abgelegt wurden
+    } catch (e) { fehler++; return []; }
+    finally { zaehl(was); if (abbruch()) throw new Error('abgebrochen'); }
+  };
+  const ueberschrift = (txt, y, klein) => {
+    doc.setTextColor(...DUNKEL); doc.setFont('helvetica', 'bold'); doc.setFontSize(klein ? 13 : 18);
+    doc.text(T(txt), R, y);
+    doc.setFillColor(...AKZENT); doc.rect(R, y + 2.4, klein ? 10 : 14, 1, 'F');
+    return y + (klein ? 9 : 12);
+  };
+  const tabelle = (startY, head, body, spalten, extra = {}) => {
+    doc.autoTable({ startY, margin: { left: R, right: R, top: R + 6, bottom: 20 }, head: [head.map(T)], body: body.map(z => z.map(T)),
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.2, textColor: DUNKEL, lineColor: LINIE, lineWidth: 0.1, overflow: 'linebreak' },
+      headStyles: { fillColor: DUNKEL, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: HELL }, footStyles: { fillColor: [233, 228, 215], textColor: DUNKEL, fontStyle: 'bold', fontSize: 8 },
+      columnStyles: spalten,
+      // Kopf- und Summenzeile wie die Spalte ausrichten (Betraege rechts)
+      didParseCell: c => { if (c.section !== 'body' && spalten[c.column.index]?.halign) c.cell.styles.halign = spalten[c.column.index].halign; },
+      ...extra });
+    return doc.lastAutoTable.finalY;
+  };
+  // Ein Bild so gross wie moeglich in den Bereich (x, y, w, h) setzen, Seitenverhaeltnis bleibt
+  const setzeBild = (b, x, y, w, h) => {
+    const f = Math.min(w / b.w, h / b.h), bw = b.w * f, bh = b.h * f;
+    doc.addImage(b.dataUrl, 'JPEG', x + (w - bw) / 2, y, bw, bh, undefined, 'FAST');
+    doc.setDrawColor(...LINIE); doc.setLineWidth(0.2); doc.rect(x + (w - bw) / 2, y, bw, bh);
+    return bh;
+  };
+  // Kopf einer Beleg-/Anhang-Seite: links Kennung + Titel, rechts Betrag, darunter eine Zeile mit Details
+  const belegKopf = (kennung, titel, betrag, details, seitenTxt) => {
+    let y = R + 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...AKZENT);
+    doc.text(T(kennung).toUpperCase(), R, y);
+    if (seitenTxt) { doc.setTextColor(...GRAU); doc.setFont('helvetica', 'normal'); doc.text(T(seitenTxt), W - R, y, { align: 'right' }); }
+    y += 6.5;
+    doc.setTextColor(...DUNKEL); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    const platz = CW - (betrag ? 42 : 0);
+    const zeilen = doc.splitTextToSize(T(titel) || '–', platz).slice(0, 2);
+    doc.text(zeilen, R, y);
+    if (betrag) doc.text(T(betrag), W - R, y, { align: 'right' });
+    y += zeilen.length * 5.6;
+    if (details) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...GRAU); doc.text(doc.splitTextToSize(T(details), CW).slice(0, 2), R, y); y += 5; }
+    doc.setDrawColor(...LINIE); doc.setLineWidth(0.3); doc.line(R, y, W - R, y);
+    return y + 5;
+  };
+  const stat = s => ({ 'Bezahlt': L('Bezahlt', 'Paid'), 'Ausstehend': L('Ausstehend', 'Pending'), 'Storniert': L('Storniert', 'Cancelled'), 'Offen': L('Offen', 'Open'),
+    'Angenommen': L('Angenommen', 'Accepted'), 'Abgelehnt': L('Abgelehnt', 'Rejected'), 'In Verhandlung': L('In Verhandlung', 'Negotiating'), 'Umgewandelt': L('Umgewandelt', 'Converted'),
+    'In Bearbeitung': L('In Bearbeitung', 'In progress'), 'Behoben': L('Behoben', 'Fixed') }[s] || s || '–');
+  const euro = v => fmt(parseFloat(v) || 0).replace(/[\u202F\u2009]/g, '\u00A0');   // schmale Leerzeichen kennt die PDF-Schrift nicht
+
+  // ── Deckblatt ──
+  doc.setFillColor(...HELL); doc.rect(0, 0, W, H, 'F');
+  doc.setFillColor(...AKZENT); doc.rect(R, 62, 18, 1.6, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...GRAU);
+  doc.text(L('PLANORY · MAPPE', 'PLANORY · FOLDER'), R, 54);
+  doc.setTextColor(...DUNKEL); doc.setFontSize(34);
+  const titelZ = doc.splitTextToSize(T(d.name) || '–', CW).slice(0, 3);
+  doc.text(titelZ, R, 80);
+  let y = 80 + titelZ.length * 13;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(13); doc.setTextColor(...DUNKEL);
+  if (d.projekt) { doc.text(doc.splitTextToSize(T(d.projekt), CW).slice(0, 2), R, y); y += 7; }
+  doc.setFontSize(10); doc.setTextColor(...GRAU);
+  if (d.adresse) { doc.text(doc.splitTextToSize(T(d.adresse), CW).slice(0, 2), R, y); y += 6; }
+  doc.text(L('Stand: ', 'As of: ') + new Date().toLocaleDateString(en ? 'en-GB' : 'de-AT', { day: 'numeric', month: 'long', year: 'numeric' }), R, y + 1);
+  // Kennzahlen
+  const kz = [];
+  if (d.budget != null) kz.push([L('Budget', 'Budget'), euro(d.budget)]);
+  kz.push([L('Ausgegeben', 'Spent'), euro(d.summe.brutto)]);
+  if (d.budget != null) kz.push([L('Rest', 'Remaining'), euro(d.budget - d.summe.brutto)]);
+  kz.push([L('Rechnungen', 'Invoices'), String(d.anzahl.kosten)]);
+  let ky = 168; const kw = CW / kz.length;
+  doc.setDrawColor(...DUNKEL); doc.setLineWidth(0.5); doc.line(R, ky, W - R, ky);
+  kz.forEach(([lab, wert], i) => {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(kz.length > 3 ? 14 : 17); doc.setTextColor(...DUNKEL); doc.text(T(wert), R + i * kw, ky + 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...GRAU); doc.text(T(lab), R + i * kw, ky + 16.5);
+  });
+  // Inhalt
+  const inhalt = [[L('Übersicht der Ausgaben', 'Overview of expenses'), d.anzahl.kosten]];
+  if (d.belege.length) inhalt.push([L('Belege', 'Receipts'), d.belege.length]);
+  if (d.angebote.length) inhalt.push([L('Angebote', 'Quotes'), d.angebote.length]);
+  if (d.zahlungen.length) inhalt.push([L('Zahlungstermine', 'Payment dates'), d.zahlungen.length]);
+  if (d.fotos.length) inhalt.push([L('Fotos', 'Photos'), d.fotos.length]);
+  if (d.maengel.length) inhalt.push([L('Mängel', 'Defects'), d.maengel.length]);
+  ky = 206;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...GRAU); doc.text(L('INHALT', 'CONTENTS'), R, ky); ky += 3;
+  inhalt.forEach(([lab, n], i) => {
+    ky += 7.5;
+    doc.setDrawColor(...LINIE); doc.setLineWidth(0.2); doc.line(R, ky + 2.5, W - R, ky + 2.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...AKZENT); doc.text(String(i + 1).padStart(2, '0'), R, ky);
+    doc.setFontSize(11); doc.setTextColor(...DUNKEL); doc.text(T(lab), R + 12, ky);
+    doc.setTextColor(...GRAU); doc.setFontSize(9.5); doc.text(String(n), W - R, ky, { align: 'right' });
+  });
+
+  // ── Übersicht ──
+  doc.addPage();
+  y = ueberschrift(L('Übersicht der Ausgaben', 'Overview of expenses'), R + 8);
+  if (!d.kosten.length) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...GRAU);
+    doc.text(L('In dieser Kategorie gibt es noch keine Ausgaben.', 'There are no expenses in this category yet.'), R, y + 4); y += 12;
+  } else {
+    const zeigtVon = d.kosten.some(x => x.k.bezahltVon);
+    const head = [L('Beleg', 'Receipt'), L('Datum', 'Date'), L('Beschreibung', 'Description'), L('Firma', 'Company'), L('Netto', 'Net'), L('MwSt', 'VAT'), L('Brutto', 'Gross'), 'Status'];
+    if (zeigtVon) head.push(L('Bezahlt von', 'Paid by'));
+    const body = d.kosten.map(x => {
+      const k = x.k, z = [x.nr && opts.belege !== false ? 'B' + x.nr : '–', fmtDate(k.datum), (k.beschr || '–') + (k.imBudget === false ? L(' (nicht im Budget)', ' (not in budget)') : ''),
+        k.anbieter || '–', euro(k.netto ?? k.betrag), (parseFloat(k.mwst) || 0) + ' %', euro(k.betrag), stat(k.status)];
+      if (zeigtVon) z.push(k.bezahltVon || '–');
+      return z;
+    });
+    const foot = ['', '', '', d.summe.nichtBudget ? L('Summe im Budget', 'Total in budget') : L('Summe', 'Total'), euro(d.summe.netto), '', euro(d.summe.brutto), ''];
+    if (zeigtVon) foot.push('');
+    y = tabelle(y, head, body,
+      { 0: { cellWidth: 11 }, 1: { cellWidth: 20 }, 3: { cellWidth: zeigtVon ? 25 : 34 }, 4: { cellWidth: 19.5, halign: 'right' }, 5: { cellWidth: 10, halign: 'right' }, 6: { cellWidth: 20.5, halign: 'right' }, 7: { cellWidth: 17 }, ...(zeigtVon ? { 8: { cellWidth: 28 } } : {}) },
+      { foot: [foot.map(T)], showFoot: 'lastPage', styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 2, textColor: DUNKEL, lineColor: LINIE, lineWidth: 0.1, overflow: 'linebreak' } }) + 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GRAU);
+    const hin = [];
+    if (d.summe.nichtBudget) hin.push(L('Nicht im Budget (z. B. Eigenleistung): ', 'Not in budget (e.g. own work): ') + euro(d.summe.nichtBudget));
+    if (opts.belege !== false && d.anzahl.ohneBeleg) hin.push(L(`„–“ = kein Beleg hinterlegt (${d.anzahl.ohneBeleg} von ${d.anzahl.kosten} Ausgaben).`, `“–” = no receipt stored (${d.anzahl.ohneBeleg} of ${d.anzahl.kosten} expenses).`));
+    if (opts.belege !== false && d.belege.length) hin.push(L('Die Belege B1, B2 … folgen auf den nächsten Seiten.', 'Receipts B1, B2 … follow on the next pages.'));
+    hin.forEach(h => { if (y > UNTEN) { doc.addPage(); y = R + 8; } doc.text(T(h), R, y); y += 4.6; });
+  }
+  // weitere Tabellen: unter der vorigen weiter, wenn noch Platz ist
+  const abschnitt = (titel) => { if (y > H - 70) { doc.addPage(); y = R + 8; } else y += 8; y = ueberschrift(titel, y, true); };
+  if (d.angebote.length) {
+    abschnitt(L('Angebote', 'Quotes'));
+    let an = 0;
+    y = tabelle(y, [L('Anhang', 'Attachm.'), L('Datum', 'Date'), L('Beschreibung', 'Description'), L('Firma', 'Company'), L('Betrag', 'Amount'), 'Status', L('Gültig bis', 'Valid until')],
+      d.angebote.map(a => [_angDateien(a).length ? 'A' + (++an) : '–', fmtDate(a.datum), a.beschr || '–', a.anbieter || '–', euro(a.betrag), stat(a.status), a.gueltig ? fmtDate(a.gueltig) : '–']),
+      { 0: { cellWidth: 15 }, 1: { cellWidth: 20 }, 3: { cellWidth: 34 }, 4: { cellWidth: 24, halign: 'right' }, 5: { cellWidth: 24 }, 6: { cellWidth: 21 } }) + 2;
+  }
+  if (d.zahlungen.length) {
+    abschnitt(L('Zahlungstermine', 'Payment dates'));
+    const offen = d.zahlungen.filter(z => z.status !== 'Bezahlt').reduce((s, z) => s + (parseFloat(z.betrag) || 0), 0);
+    y = tabelle(y, [L('Fällig', 'Due'), L('Beschreibung', 'Description'), L('Firma', 'Company'), L('Betrag', 'Amount'), 'Status', L('Bezahlt am', 'Paid on')],
+      d.zahlungen.map(z => [z.faellig ? fmtDate(z.faellig) : '–', z.beschr || '–', z.anbieter || '–', euro(z.betrag), stat(z.status), z.bezahltDatum ? fmtDate(z.bezahltDatum) : '–']),
+      { 0: { cellWidth: 21 }, 2: { cellWidth: 38 }, 3: { cellWidth: 24, halign: 'right' }, 4: { cellWidth: 22 }, 5: { cellWidth: 22 } },
+      { foot: [['', '', L('Noch offen', 'Still open'), euro(offen), '', ''].map(T)], showFoot: 'lastPage' }) + 2;
+  }
+  if (d.maengel.length) {
+    abschnitt(L('Mängel', 'Defects'));
+    y = tabelle(y, [L('Datum', 'Date'), L('Mangel', 'Defect'), L('Raum', 'Room'), L('Priorität', 'Priority'), 'Status', L('Zuständig', 'Responsible')],
+      d.maengel.map(m => [fmtDate(m.datum), (m.titel || '–') + (m.beschr ? '\n' + m.beschr : ''), m.raum || '–', m.prio || '–', stat(m.status), m.zustaendig || '–']),
+      { 0: { cellWidth: 20 }, 2: { cellWidth: 30 }, 3: { cellWidth: 18 }, 4: { cellWidth: 24 }, 5: { cellWidth: 32 } }) + 2;
+  }
+
+  // ── Belege: je Rechnung eigene Seite(n) ──
+  for (const x of d.belege) {
+    const k = x.k;
+    const seiten = await bilder(x.beleg, L('Beleg', 'Receipt') + ' ' + x.nr);
+    const details = [fmtDate(k.datum), k.anbieter, stat(k.status), k.bezahltVon ? L('bezahlt von ', 'paid by ') + k.bezahltVon : ''].filter(Boolean).join(' · ');
+    if (!seiten.length) {
+      doc.addPage(); const yy = belegKopf(L('Beleg', 'Receipt') + ' B' + x.nr, k.beschr, euro(k.betrag), details);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...GRAU);
+      doc.text(L('Dieser Beleg konnte nicht geladen werden.', 'This receipt could not be loaded.'), R, yy + 6);
+      continue;
+    }
+    seiten.forEach((b, i) => {
+      doc.addPage();
+      const yy = belegKopf(L('Beleg', 'Receipt') + ' B' + x.nr, k.beschr, euro(k.betrag), details, seiten.length > 1 ? L(`Blatt ${i + 1} von ${seiten.length}`, `Sheet ${i + 1} of ${seiten.length}`) : '');
+      setzeBild(b, R, yy, CW, UNTEN - yy);
+    });
+  }
+  // ── Angebots-Anhänge ──
+  let aNr = 0;
+  for (const a of d.angebote) {
+    const liste = _angDateien(a);
+    if (!liste.length) continue;
+    aNr++;
+    const details = [fmtDate(a.datum), a.anbieter, stat(a.status), a.gueltig ? L('gültig bis ', 'valid until ') + fmtDate(a.gueltig) : ''].filter(Boolean).join(' · ');
+    const alle = [];
+    for (const f of liste) alle.push(...await bilder(f.url || f.data, L('Angebot', 'Quote') + ' ' + aNr, f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '')));
+    alle.forEach((b, i) => {
+      doc.addPage();
+      const yy = belegKopf(L('Angebot', 'Quote') + ' A' + aNr, a.beschr, euro(a.betrag), details, alle.length > 1 ? L(`Blatt ${i + 1} von ${alle.length}`, `Sheet ${i + 1} of ${alle.length}`) : '');
+      setzeBild(b, R, yy, CW, UNTEN - yy);
+    });
+  }
+  // ── Fotos (Galerie + Mängel): 2 Spalten × 3 Reihen ──
+  const galerie = d.fotos.map(f => ({ src: f.url || f.data, text: [f.title, f.datum ? fmtDate(f.datum) : ''].filter(Boolean).join(' · ') }));
+  d.maengel.forEach(m => (m.fotos || []).forEach(f => { if (f.url || f.data) galerie.push({ src: f.url || f.data, text: L('Mangel: ', 'Defect: ') + (m.titel || '') }); }));
+  if (galerie.length) {
+    const SP = 2, LUECKE = 6, zw = (CW - LUECKE) / SP, zh = 68;
+    let i = 0, top = 0;
+    for (const g of galerie) {
+      const b = (await bilder(g.src, L('Foto', 'Photo') + ' ' + (i + 1)))[0];
+      if (!b) continue;
+      const pos = i % (SP * 3);
+      if (pos === 0) { doc.addPage(); top = ueberschrift(L('Fotos', 'Photos'), R + 8) + 2; }
+      const cx = R + (pos % SP) * (zw + LUECKE), cy = top + Math.floor(pos / SP) * (zh + 12);
+      const bh = setzeBild(b, cx, cy, zw, zh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GRAU);
+      doc.text(doc.splitTextToSize(T(g.text), zw).slice(0, 1), cx, cy + bh + 4);
+      i++;
+    }
+  }
+  // ── Fusszeile auf allen Seiten ausser dem Deckblatt ──
+  const n = doc.getNumberOfPages();
+  for (let p = 2; p <= n; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(...LINIE); doc.setLineWidth(0.2); doc.line(R, H - 13, W - R, H - 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GRAU);
+    doc.text(T([d.projekt, d.name].filter(Boolean).join(' · ')), R, H - 9);
+    doc.text(L(`Seite ${p} von ${n}`, `Page ${p} of ${n}`), W - R, H - 9, { align: 'right' });
+  }
+  return { doc, fehler, seiten: n };
+}
+// Fenster „Mappe als PDF" öffnen; kat = Name der Kategorie (leer = erste mit Ausgaben)
+function openMappe(kat) {
+  const sel = document.getElementById('mp-kat');
+  if (!sel) return;
+  const namen = [...new Set([...(state.budgetKat || []).map(b => b.name), ...(state.kosten || []).map(k => k.kat)].filter(Boolean))];
+  const ohne = (state.kosten || []).some(k => !k.kat);
+  sel.innerHTML = namen.map(n => `<option value="${esc(n)}">${esc(_katName(n))}</option>`).join('')
+    + (ohne ? `<option value="${_MP_OHNE}">${_lang === 'en' ? 'No category' : 'Ohne Kategorie'}</option>` : '');
+  if (!sel.options.length) { showToast('Lege zuerst eine Kategorie oder Ausgabe an', 'error'); return; }
+  const wunsch = kat && [...sel.options].some(o => o.value === kat) ? kat
+    : (namen.find(n => (state.kosten || []).some(k => k.kat === n)) || sel.options[0].value);
+  sel.value = wunsch;
+  ['mp-belege', 'mp-angebote', 'mp-zahlungen', 'mp-fotos'].forEach(id => { const c = document.getElementById(id); if (c) c.checked = true; });
+  const st = document.getElementById('mp-status'); if (st) st.textContent = '';
+  const b = document.getElementById('mp-start'); if (b) b.disabled = false;
+  mappeVorschau();
+  openModal('modal-mappe');
+}
+function mappeVorschau() {
+  const el = document.getElementById('mp-info');
+  if (!el) return;
+  try {
+    const o = _mappeOptionen(), d = _mappeDaten(o.kat, o), a = d.anzahl, en = _lang === 'en';
+    const teile = [en ? `${a.kosten} expense${a.kosten === 1 ? '' : 's'}` : `${a.kosten} Ausgabe${a.kosten === 1 ? '' : 'n'}`];
+    if (o.belege) teile.push(en ? `${a.belege} receipt${a.belege === 1 ? '' : 's'}` : `${a.belege} Beleg${a.belege === 1 ? '' : 'e'}`);
+    if (o.angebote && a.angebote) teile.push(en ? `${a.angebote} quote${a.angebote === 1 ? '' : 's'}` : `${a.angebote} Angebot${a.angebote === 1 ? '' : 'e'}`);
+    if (o.zahlungen && a.zahlungen) teile.push(en ? `${a.zahlungen} payment date${a.zahlungen === 1 ? '' : 's'}` : `${a.zahlungen} Zahlungstermin${a.zahlungen === 1 ? '' : 'e'}`);
+    if (o.fotos && a.fotos) teile.push(en ? `${a.fotos} photo${a.fotos === 1 ? '' : 's'}` : `${a.fotos} Foto${a.fotos === 1 ? '' : 's'}`);
+    if (o.fotos && a.maengel) teile.push(en ? `${a.maengel} defect${a.maengel === 1 ? '' : 's'}` : `${a.maengel} ${a.maengel === 1 ? 'Mangel' : 'Mängel'}`);
+    el.textContent = teile.join(' · ') + (o.belege && a.ohneBeleg ? (en ? ` · ${a.ohneBeleg} without receipt` : ` · ${a.ohneBeleg} ohne Beleg`) : '');
+  } catch (e) { el.textContent = ''; }
+}
+async function mappeErstellen() {
+  const btn = document.getElementById('mp-start'), st = document.getElementById('mp-status');
+  if (!btn || btn.disabled) return;
+  if (!window.jspdf) { showToast('PDF-Bibliothek lädt noch…', 'error'); return; }
+  const en = _lang === 'en';
+  const opts = _mappeOptionen();
+  const daten = _mappeDaten(opts.kat, opts);
+  if (!daten.kosten.length && !daten.angebote.length && !daten.zahlungen.length && !daten.fotos.length) {
+    showToast('In dieser Kategorie gibt es noch nichts zum Ablegen', 'error'); return;
+  }
+  if (daten.anzahl.bilder > 150 && !(await showConfirm(
+      en ? `The folder contains ${daten.anzahl.bilder} images. On a phone this can take a while and use a lot of memory.`
+         : `Die Mappe enthält ${daten.anzahl.bilder} Bilder. Am Handy kann das dauern und viel Speicher brauchen.`,
+      { title: en ? 'Large folder' : 'Große Mappe', okText: en ? 'Create anyway' : 'Trotzdem erstellen', danger: false }))) return;
+  const lauf = ++_mpLauf;
+  btn.disabled = true;
+  if (st) st.textContent = en ? 'Creating folder…' : 'Mappe wird erstellt…';
+  try {
+    const erg = await _mappePDF(daten, opts, (i, n, was) => {
+      if (st && lauf === _mpLauf) st.textContent = en ? `Adding ${was} – ${i} of ${n}` : `${was} wird eingefügt – ${i} von ${n}`;
+    }, () => lauf !== _mpLauf);
+    if (lauf !== _mpLauf) return;   // inzwischen abgebrochen
+    if (st) st.textContent = en ? 'Saving…' : 'Wird gespeichert…';
+    const ok = await _pdfAusgeben(erg.doc, _pdfDateiname(`Mappe_${daten.name}_${daten.projekt || 'Planory'}`), (en ? 'Folder ' : 'Mappe ') + daten.name);
+    if (ok) {
+      showToast(erg.fehler ? (en ? `📁 Folder created (${erg.fehler} file(s) could not be loaded)` : `📁 Mappe erstellt (${erg.fehler} Datei(en) nicht ladbar)`)
+                           : (en ? '📁 Folder created' : '📁 Mappe erstellt'), erg.fehler ? 'warning' : 'success', 4500);
+      if (lauf === _mpLauf) closeModal('modal-mappe');
+    }
+  } catch (e) {
+    if (lauf === _mpLauf && !/abgebrochen/.test(e?.message || '')) showToast((en ? '⚠️ Folder could not be created: ' : '⚠️ Mappe konnte nicht erstellt werden: ') + (e?.message || e), 'error', 5000);
+  } finally {
+    if (lauf === _mpLauf) { btn.disabled = false; if (st) st.textContent = ''; }
   }
 }
 
