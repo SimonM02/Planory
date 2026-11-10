@@ -20321,7 +20321,7 @@ async function _mappePDF(d, opts = {}, fortschritt = () => {}, abbruch = () => f
     const foot = ['', '', '', d.summe.nichtBudget ? L('Summe im Budget', 'Total in budget') : L('Summe', 'Total'), euro(d.summe.netto), '', euro(d.summe.brutto), ''];
     if (zeigtVon) foot.push('');
     y = tabelle(y, head, body,
-      { 0: { cellWidth: 11 }, 1: { cellWidth: 20 }, 3: { cellWidth: zeigtVon ? 25 : 34 }, 4: { cellWidth: 19.5, halign: 'right' }, 5: { cellWidth: 10, halign: 'right' }, 6: { cellWidth: 20.5, halign: 'right' }, 7: { cellWidth: 17 }, ...(zeigtVon ? { 8: { cellWidth: 28 } } : {}) },
+      { 0: { cellWidth: 11 }, 1: { cellWidth: 20 }, 3: { cellWidth: zeigtVon ? 25 : 34 }, 4: { cellWidth: 19.5, halign: 'right' }, 5: { cellWidth: 11.5, halign: 'right' }, 6: { cellWidth: 20.5, halign: 'right' }, 7: { cellWidth: 17 }, ...(zeigtVon ? { 8: { cellWidth: 27.5 } } : {}) },
       { foot: [foot.map(T)], showFoot: 'lastPage', styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 2, textColor: DUNKEL, lineColor: LINIE, lineWidth: 0.1, overflow: 'linebreak' } }) + 6;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GRAU);
     const hin = [];

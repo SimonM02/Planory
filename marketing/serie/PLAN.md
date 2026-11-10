@@ -4,14 +4,13 @@ Jedes Video stellt **eine** Funktion ausführlich vor und heißt nach dieser Fun
 Folgen-Nummern**. Ca. 25–30 s, 1080×1920, dezente Soundeffekte; Musik wird eingebaut (Auswahl offen)
 oder in Instagram dazugelegt.
 
-**Musik Intro (09.11.2026):** `planory-erklaert-intro_piano.mp4` mit „Piano Reflections“ (Ahjay Stelino,
-Mixkit, ID 22) – neutral, ruhig. Alternativen gemischt (nur Scratchpad): „Infinity“ (Arulo, ID 440),
-„PlaceIt World 01“ (Lily J, ID 724). Alle „Mixkit Stock Music Free License“ (Social Media + Werbung erlaubt),
-Lizenz am 09.11.2026 im Seitenquelltext von mixkit.co geprüft. Musikdateien liegen in `musik/` (nicht im Repo).
-Mischung: Musik −17 LUFS, Effekte −26 LUFS, +2,5 dB, Limiter 0,72, 2 s Ausblenden → gesamt ca. −14,6 LUFS.
-
-**Rhythmus:** 2 Videos pro Woche, **Dienstag und Freitag um ca. 19:00**. Um diese Zeit sind
-Bauherren nach der Arbeit am Handy.
+**Intro, Stand 10.11.2026:** 23,1 s – Titelbild 2,4 s (länger, `coverDur` in `folgen.js`), Einstiegsfrage 1,8 s (kürzer).
+Dateien: `planory-erklaert-intro_close-up.mp4` (Musik „Close Up“, Michael Ramir C., Mixkit ID 1167 – flotter als das
+Klavier davor) und `…_ohne-musik.mp4`. Alternativen gemischt (nur Scratchpad): „Pop Track 03“ (Lily J, ID 729),
+„PlaceIt World 01“ (Lily J, ID 724). Frühere Wahl: „Piano Reflections“ (ID 22, Simon: zu ruhig), „Lo-Fi 04“ (ID 766).
+Alle „Mixkit Stock Music Free License“ (Social Media + Werbung erlaubt), Lizenz im Seitenquelltext von mixkit.co
+geprüft (09./10.11.2026). Musikdateien liegen in `musik/` (nicht im Repo).
+Mischung: Musik −17 LUFS, Effekte −26 LUFS, +2,5 dB, Limiter 0,72, 2 s Ausblenden → gesamt ca. −15 LUFS.
 
 ## Plan
 
