@@ -4,6 +4,11 @@ Jedes Video stellt **eine** Funktion ausführlich vor und heißt nach dieser Fun
 Folgen-Nummern**. Ca. 25–30 s, 1080×1920, dezente Soundeffekte; Musik wird eingebaut (Auswahl offen)
 oder in Instagram dazugelegt.
 
+**Helle Fassung (11.11.2026, Simons Wunsch – der zweifarbige Schriftzug wirkte „nach KI“):** `serie.html?…&hell=1`
+schaltet auf Papierton, Tinte und Schrift Archivo um (wie die Website); Schriftzug „Planory“ einfarbig, keine
+Leucht-Effekte/Staub. Die Schrift liegt in `/site/fonts`, darum mit Server im Projekt-Ordner rendern:
+`REEL_PORT=8767 REEL_PAGE="marketing/serie/serie.html?ep=0&hell=1" …`. Gilt für alle Videos der Serie.
+
 **Intro, Stand 10.11.2026:** 23,1 s – Titelbild 2,4 s (länger, `coverDur` in `folgen.js`), Einstiegsfrage 1,8 s (kürzer).
 Dateien: `planory-erklaert-intro_close-up.mp4` (Musik „Close Up“, Michael Ramir C., Mixkit ID 1167 – flotter als das
 Klavier davor) und `…_ohne-musik.mp4`. Alternativen gemischt (nur Scratchpad): „Pop Track 03“ (Lily J, ID 729),

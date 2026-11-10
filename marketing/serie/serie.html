@@ -77,6 +77,39 @@ em{font-style:normal;color:#ff9f1c}
 #grain{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.14;pointer-events:none}
 #vig{position:absolute;inset:0;background:radial-gradient(ellipse 85% 70% at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%);pointer-events:none}
 .scene{position:absolute;inset:0;visibility:hidden}
+/* ── Helle Fassung (?hell=1): Papierton, Tinte, Orange nur als Akzent, Schrift Archivo – wie die Website.
+      Braucht den Server im Projekt-Ordner (Schrift liegt in /site/fonts): REEL_PAGE="marketing/serie/serie.html?ep=0&hell=1" ── */
+@font-face{font-family:'PL Archivo';src:url(../../site/fonts/archivo.woff2) format('woff2');font-weight:100 900;font-stretch:62% 125%}
+:root{--dot-aus:rgba(255,255,255,.18)}
+html.hell{--dot-aus:rgba(22,25,31,.16)}
+html.hell,html.hell body,html.hell #stage{background:#f3f0e8}
+html.hell body{color:#16191f;font-family:'PL Archivo','Inter Display',sans-serif}
+html.hell .bg{background:radial-gradient(120% 80% at 50% 36%,#faf8f3 0%,#f3f0e8 62%,#ebe6da 100%)}
+html.hell .grid{background-image:linear-gradient(rgba(22,25,31,.07) 2px,transparent 2px),linear-gradient(90deg,rgba(22,25,31,.07) 2px,transparent 2px),linear-gradient(rgba(22,25,31,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(22,25,31,.03) 1px,transparent 1px);-webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent 100%)}
+html.hell .glow,html.hell #dustL,html.hell #vig{display:none}
+html.hell #grain{mix-blend-mode:multiply;opacity:.045}
+html.hell .line{font-family:'PL Archivo'!important;font-weight:800;font-stretch:82%;letter-spacing:-.012em;word-spacing:.05em;line-height:1.08}
+html.hell em{color:#c96f00}
+html.hell .sub{color:#565c68;font-family:'PL Archivo';font-weight:500}
+html.hell #badge .t1{color:#c96f00;font-family:'PL Archivo';font-weight:700}
+html.hell #badge .t2{font-family:'PL Archivo';font-weight:800;letter-spacing:-.01em}
+html.hell #badgeIcon{box-shadow:0 8px 20px rgba(22,25,31,.18)}
+html.hell #num{background:#16191f;color:#fff;box-shadow:none;font-family:'PL Archivo';font-weight:800}
+html.hell #cv .kick{color:#c96f00;font-family:'PL Archivo';font-weight:700}
+html.hell #cvBig{-webkit-text-stroke-color:#c96f00;font-family:'PL Archivo'}
+html.hell #cvIcon svg,html.hell #hIcon{stroke:#c96f00!important}
+html.hell .phone{box-shadow:inset 0 0 0 2px rgba(255,255,255,.14),inset 0 0 0 5px rgba(0,0,0,.55),0 60px 110px -30px rgba(22,25,31,.4),0 24px 44px rgba(22,25,31,.16)}
+html.hell #lens{box-shadow:0 0 0 6px #fff,0 0 0 10px #ff9f1c,0 44px 90px -14px rgba(22,25,31,.38)}
+html.hell .chip{background:rgba(255,255,255,.94);color:#16191f;box-shadow:inset 0 0 0 1.5px rgba(22,25,31,.12),0 18px 40px rgba(22,25,31,.16);font-family:'PL Archivo'}
+html.hell .rc{filter:drop-shadow(0 34px 44px rgba(22,25,31,.28))}
+html.hell .tile{background:#faf8f3;box-shadow:inset 0 0 0 1.5px #d8d1c1;border-radius:18px}
+html.hell .tile svg{stroke:#c96f00}
+html.hell .tile b{font:700 26px 'PL Archivo';color:#16191f}
+html.hell .tile i{color:rgba(22,25,31,.4)}
+html.hell .cta{background:#16191f;color:#fff;box-shadow:none;border-radius:16px;font-family:'PL Archivo';font-weight:700}
+html.hell #nextPill{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(22,25,31,.2);border-radius:14px;color:#16191f;font-family:'PL Archivo';font-weight:600}
+html.hell #bW,html.hell #eW{font-stretch:100%;letter-spacing:-.03em}
+html.hell #eW{margin-top:-20px}
 </style></head><body>
 <div id="stage"><div id="cam">
   <div class="bg"></div><div class="grid" id="grid"></div>
@@ -146,6 +179,8 @@ em{font-style:normal;color:#ff9f1c}
 <script src="folgen.js"></script>
 <script>
 const EP = FOLGEN[+(new URLSearchParams(location.search).get('ep') || 1)];
+const HELL = new URLSearchParams(location.search).get('hell') === '1';   // helle Fassung (siehe CSS „html.hell“)
+if (HELL) document.documentElement.classList.add('hell');
 const COVER = EP.coverDur || 1.3;   // Titelbild am Anfang (auch Vorschau im Feed); je Video einstellbar
 const ICONS = {
   donut: `<circle cx="50" cy="50" r="34" pathLength="1" style="opacity:.35"/><path pathLength="1" d="M50 16 A34 34 0 0 1 82.3 39.5"/>`,
@@ -284,13 +319,13 @@ function setup() {
   // Intro: Marke + Kacheln + Start
   if (EP.intro) {
     $('bLogo').innerHTML = logoSVG();
-    $('bWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
+    $('bWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 && !HELL ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
     $('g1').firstElementChild.textContent = EP.grid.title[0]; $('g2').querySelector('em').textContent = EP.grid.title[1]; $('gsub').textContent = EP.grid.sub;
     $('tiles').innerHTML = EP.grid.items.map(([nr, name, ic], i) => { const c = i % 3, r = Math.floor(i / 3);
       return `<div class="tile" id="tl${i}" style="left:${70 + c * 320}px;top:${660 + r * 212}px"><svg class="ico" viewBox="0 0 100 100" stroke-width="7">${ICONS[ic]}</svg><b>${name}</b></div>`; }).join('');
     $('r1').firstElementChild.textContent = EP.start.lines[0]; $('r2').querySelector('em').textContent = EP.start.lines[1]; fitLine($('r1'), 960, 96); fitLine($('r2'), 960, 62);
   }
-  $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
+  $('eWs').innerHTML = 'Planory'.split('').map((c, i) => `<span style="display:inline-block;${i >= 4 && !HELL ? 'color:#ff9f1c' : ''}">${c}</span>`).join('');
   $('eT').firstElementChild.innerHTML = `${EP.end.tagline[0]}<em>${EP.end.tagline[1]}</em>`; fitLine($('eT'), 960, 56);
   // optionale zweite Zeile am Ende – darunter liegende Elemente rücken nach unten
   const t2 = EP.end.tagline2 || ''; vis($('eT2'), !!t2);
@@ -374,7 +409,7 @@ function steps(t) { const on = t >= PH_IN - .05 && t < STEPS_END + .3; vis($('sS
   reveal($('st1'), t, s.t0 + .05, .55, s.t1 - .28); reveal($('st2'), t, s.t0 + .13, .55, s.t1 - .24);
   const sq = p(t, s.t0 + .3, s.t0 + .6), so = p(t, s.t1 - .25, s.t1 - .05); $('ssub').style.opacity = sq * (1 - so); $('ssub').style.transform = `translateY(${(1 - E.outCubic(sq)) * 18}px)`;
   const nq = spring(t - s.t0, 1.6, 7); $('num').style.transform = `scale(${.4 + .6 * nq}) rotate(${(1 - nq) * -90}deg)`; $('num').style.opacity = 1 - so;
-  $('dots').querySelectorAll('i').forEach((d, k) => { d.style.background = k < si ? 'rgba(255,159,28,.55)' : k === si ? '#ff9f1c' : 'rgba(255,255,255,.18)'; d.style.height = (k === si ? 36 : 22) + 'px'; });
+  $('dots').querySelectorAll('i').forEach((d, k) => { d.style.background = k < si ? 'rgba(255,159,28,.55)' : k === si ? '#ff9f1c' : 'var(--dot-aus)'; d.style.height = (k === si ? 36 : 22) + 'px'; });
   const pin = E.outExpo(p(t, PH_IN, PH_IN + .7));
   placePhone('ph', { x: PX, y: PY0 + (1 - pin) * 1300 + Math.sin(t * 1.5) * 4 });
   phoneScreen(t);
@@ -414,6 +449,7 @@ function render(T) {   // T = Gesamtzeit inkl. Titelbild
 window.render = render;
 (async () => {
   await document.fonts.load('900 100px "Inter Display"'); await document.fonts.load('700 30px Inter'); await document.fonts.load('800 30px Inter');
+  if (HELL) { await document.fonts.load('800 100px "PL Archivo"'); await document.fonts.load('500 30px "PL Archivo"'); await document.fonts.ready; }
   BOX = await (await fetch('screens/boxes.json')).json();
   const names = [...new Set(shotsAll().flatMap(s => [s.page, s.modal].filter(Boolean)))];
   await Promise.all(names.map(n => new Promise(res => { const im = new Image(); im.onload = () => { IMG[n] = { src: im.src, w: im.naturalWidth, h: im.naturalHeight }; res(); }; im.onerror = res; im.src = `screens/${n}.png`; })));
