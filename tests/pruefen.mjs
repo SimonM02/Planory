@@ -98,6 +98,21 @@ check('Website: Startseiten-Stile wirken nur unter .pl-site (keine Wirkung auf d
   return sel.length ? 'ohne .pl-site: ' + sel.slice(0, 5).join(' | ') : true;
 });
 
+check('Website: strukturierte Daten für Google gültig (WebSite, Organization, Brotkrumen auf Unterseiten)', () => {
+  const ld = f => [...read(f).matchAll(/<script type="application\/ld\+json">\n?([\s\S]*?)\n?<\/script>/g)].map(m => JSON.parse(m[1]));
+  const start = ld(WEB).map(x => x['@type']);
+  for (const typ of ['WebSite', 'Organization', 'SoftwareApplication', 'FAQPage']) if (!start.includes(typ)) return 'Startseite ohne ' + typ;
+  for (const f of ['funktionen/index.html', 'preise/index.html', 'ueber/index.html', 'hilfe/index.html', 'impressum.html'])
+    if (!ld(f).some(x => x['@type'] === 'BreadcrumbList')) return f + ': keine Brotkrumen';
+});
+check('Website: keine private E-Mail/Adresse außerhalb von Impressum, Datenschutz, AGB', () => {
+  const block = read(WEB).slice(read(WEB).indexOf('<!-- WEBSITE:START -->'), read(WEB).indexOf('<!-- WEBSITE:END -->'));
+  const dateien = { 'Startseite': block };
+  for (const f of ['funktionen/index.html', 'preise/index.html', 'ueber/index.html', 'hilfe/index.html', 'support.html']) dateien[f] = read(f);
+  const treffer = Object.entries(dateien).filter(([, t]) => /moser\.simon5211|Sportplatzstra|Munderfing/.test(t)).map(([f]) => f);
+  return treffer.length ? 'gefunden in: ' + treffer.join(', ') : true;
+});
+
 // Staerkste Pruefung zuerst: die App-Datei ist eine exakte Kopie der Web-Datei.
 // Jede Abweichung heisst: eine Aenderung wurde nur in einer Datei gemacht.
 check('Gleichstand: Web- und App-Datei sind Byte für Byte identisch', () => {

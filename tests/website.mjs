@@ -154,17 +154,19 @@ for (const [ziel, form] of [['register', 'auth-form-register'], ['login', 'auth-
   });
 }
 
-await scenario('Startseite: Stile geladen, Menü-Knöpfe öffnen Anmelden/Registrieren ohne Seitenwechsel', async () => {
+await scenario('Startseite: Stile geladen, alle Bilder sofort geladen, Menü-Knöpfe öffnen Anmelden/Registrieren ohne Seitenwechsel', async () => {
   const c = await neu({ breite: 1440 });
   try {
     const p = await c.newPage();
     await p.goto(BASIS + '/');
     await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
+    const lazy = await p.evaluate(() => document.querySelectorAll('#landing-overlay img[loading="lazy"]').length);
     const vorher = await p.evaluate(() => ({ css: !!document.getElementById('pl-site-css'), schrift: getComputedStyle(document.querySelector('#landing-overlay h1')).fontFamily, bg: getComputedStyle(document.getElementById('landing-overlay')).backgroundColor }));
     await p.click('#landing-overlay .s-rechts [data-start="register"]');
     const r = await p.evaluate(() => ({ url: location.pathname + location.search, landing: getComputedStyle(document.getElementById('landing-overlay')).display, reg: getComputedStyle(document.getElementById('auth-form-register')).display }));
     const f = [];
     if (!vorher.css || !/PL Archivo/.test(vorher.schrift)) f.push('Website-Stil nicht geladen: ' + JSON.stringify(vorher));
+    if (lazy) f.push(lazy + ' Bilder mit loading=lazy (Safari lädt sie im Startseiten-Bereich nicht)');
     if (r.url !== '/' || r.landing !== 'none' || r.reg === 'none') f.push(JSON.stringify(r));
     return f.join(' · ');
   } finally { await c.close(); }

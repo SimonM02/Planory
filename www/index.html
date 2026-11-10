@@ -25,6 +25,12 @@
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Planory","applicationCategory":"BusinessApplication","operatingSystem":"iOS, Web","inLanguage":"de","description":"Digitaler Bauassistent für Budget, Baukosten, Rechnungen, Bautagebuch, Wartungsplan und KI-Bauberatung – für alle, die bauen, sanieren oder umbauen.","url":"https://planory.at/","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR","description":"Einen Monat kostenlos testen"}}
 </script>
 <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Planory","alternateName":"Planory – die App für dein Bauprojekt","url":"https://planory.at/","inLanguage":"de"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Planory","url":"https://planory.at/","logo":"https://planory.at/favicon-192.png"}
+</script>
+<script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Was ist Planory?","acceptedAnswer":{"@type":"Answer","text":"Planory ist eine App und Web-Anwendung für private Bauprojekte: Sie verwaltet Budget, Baukosten, Rechnungen, Angebote, Zeitplan, Aufgaben, Bautagebuch und Wartung – mit KI-Unterstützung."}},{"@type":"Question","name":"Läuft Planory auf Handy und Computer?","acceptedAnswer":{"@type":"Answer","text":"Ja. Planory gibt es als iPhone-/iPad-App und im Web – deine Daten sind auf allen Geräten synchron."}},{"@type":"Question","name":"Was passiert nach den 30 Gratistagen?","acceptedAnswer":{"@type":"Answer","text":"Dein Abo läuft automatisch mit dem gewählten Tarif weiter. Kündigst du vor Ende der Gratiszeit, zahlst du nichts."}},{"@type":"Question","name":"Wo liegen meine Daten?","acceptedAnswer":{"@type":"Answer","text":"Deine Projektdaten liegen auf Servern in der EU und werden verschlüsselt übertragen. Kein Tracking, keine Werbung. Für die KI-Funktionen werden nur die dafür nötigen Inhalte übermittelt."}}]}
 </script>
 <!-- Echte Bilddateien (Google zeigt in der Suche nur Favicons mit fester Adresse, keine data:-Grafik) -->
@@ -2635,7 +2641,7 @@
       <div class="s-zahlen"><div><b>€ 580.000</b><span data-en="planned">geplant</span></div><div><b>€ 286.575</b><span data-en="spent">ausgegeben</span></div><div><b>49 %</b><span data-en="used">verbraucht</span></div></div>
       <p class="s-fussnote" data-en="Example values from the demo project “Musterhaus Graz”.">Beispielwerte aus dem Demo-Projekt „Musterhaus Graz“.</p>
     </div>
-    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/budget-de.webp" data-en-src="/site/img/geraet/budget-en.webp" alt="Budget-Ansicht mit verbrauchtem Anteil" data-en-alt="Budget view with share used" width="714" height="1429" loading="lazy"></div>
+    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/budget-de.webp" data-en-src="/site/img/geraet/budget-en.webp" alt="Budget-Ansicht mit verbrauchtem Anteil" data-en-alt="Budget view with share used" width="714" height="1429"></div>
   </div>
 </section>
 
@@ -2651,7 +2657,7 @@
         <li data-en="Cash-discount deadlines with a reminder">Skonto-Fristen mit Erinnerung</li>
       </ul>
     </div>
-    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/scan-de.webp" data-en-src="/site/img/geraet/scan-en.webp" alt="Gescannte Rechnung mit erkannten Werten" data-en-alt="Scanned invoice with detected values" width="714" height="1429" loading="lazy"></div>
+    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/scan-de.webp" data-en-src="/site/img/geraet/scan-en.webp" alt="Gescannte Rechnung mit erkannten Werten" data-en-alt="Scanned invoice with detected values" width="714" height="1429"></div>
   </div>
 </section>
 
@@ -2667,7 +2673,7 @@
         <li data-en="Schedule suggested by AI if you like">Zeitplan auf Wunsch von der KI vorgeschlagen</li>
       </ul>
     </div>
-    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/zeitplan-de.webp" data-en-src="/site/img/geraet/zeitplan-en.webp" alt="Zeitplan mit Bauabschnitten und Meilensteinen" data-en-alt="Schedule with phases and milestones" width="714" height="1429" loading="lazy"></div>
+    <div class="s-blatt s-bild"><img class="s-geraet" src="/site/img/geraet/zeitplan-de.webp" data-en-src="/site/img/geraet/zeitplan-en.webp" alt="Zeitplan mit Bauabschnitten und Meilensteinen" data-en-alt="Schedule with phases and milestones" width="714" height="1429"></div>
   </div>
 </section>
 
@@ -15600,6 +15606,8 @@ async function showLanding() {
   document.getElementById('auth-splash')?.remove();
   document.getElementById('auth-overlay').style.display = 'none';
   lp.style.display = 'block';
+  // Safari laedt verzoegerte Bilder (loading=lazy) in diesem eigenen Scroll-Bereich oft nicht nach
+  lp.querySelectorAll('img[loading="lazy"]').forEach(i => { i.loading = 'eager'; });
   _lpKlicks(lp);
   try { lpApplyLang(); } catch(e) {}
   try { _lpAppStore(); } catch(e) {}

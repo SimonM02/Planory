@@ -21,16 +21,16 @@ const FUSS = readFileSync(join(HERE, 'teile/fuss.html'), 'utf8').trim();
 const BASIS = 'https://planory.at';
 
 const SEITEN = [
-  { name: 'funktionen', datei: 'funktionen/index.html', pfad: '/funktionen/',
+  { name: 'funktionen', kurz: 'Funktionen', datei: 'funktionen/index.html', pfad: '/funktionen/',
     titel: 'Funktionen – Planory, die App für dein Bauprojekt', titelEn: 'Features – Planory, the app for your building project',
     beschreibung: 'Budget, Rechnungen scannen, Angebote, Zahlungsplan, Zeitplan, Aufgaben, Bautagebuch, Pläne, Mängel, Helfer, Wartung und KI-Berater – alle Funktionen von Planory mit echten App-Bildern.' },
-  { name: 'preise', datei: 'preise/index.html', pfad: '/preise/',
+  { name: 'preise', kurz: 'Preise', datei: 'preise/index.html', pfad: '/preise/',
     titel: 'Preise – Planory: 30 Tage gratis, danach 3,99 € im Monat', titelEn: 'Pricing – Planory: 30 days free, then €3.99 a month',
     beschreibung: 'Ein Preis, alle Funktionen: 30 Tage gratis testen, danach 3,99 € im Monat oder 28,99 € im Jahr. Jederzeit kündbar.' },
-  { name: 'ueber', datei: 'ueber/index.html', pfad: '/ueber/',
+  { name: 'ueber', kurz: 'Über Planory', datei: 'ueber/index.html', pfad: '/ueber/',
     titel: 'Über Planory – entstanden aus einem eigenen Bauprojekt', titelEn: 'About Planory – born out of a building project of our own',
     beschreibung: 'Planory ist aus einem eigenen Bauprojekt entstanden und wird in Oberösterreich entwickelt. Projektdaten in der EU, keine Werbung.' },
-  { name: 'hilfe', datei: 'hilfe/index.html', pfad: '/hilfe/',
+  { name: 'hilfe', kurz: 'Hilfe & Kontakt', datei: 'hilfe/index.html', pfad: '/hilfe/',
     titel: 'Hilfe & Kontakt – Planory', titelEn: 'Help & contact – Planory',
     beschreibung: 'Antworten auf häufige Fragen zu Planory: Projekt anlegen, Abo, Kündigung, Daten und Konto löschen – und der direkte Kontakt.' },
 ];
@@ -40,7 +40,10 @@ const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, 
 // Kopf mit markiertem Menüpunkt der aktuellen Seite
 const kopf = aktiv => KOPF.replace(new RegExp(`data-seite="${aktiv}"`, 'g'), `data-seite="${aktiv}" aria-current="page"`);
 
-function kopfbereich({ titel, titelEn, beschreibung, url, robots = 'index,follow' }) {
+// Brotkrumen für Google (Planory › Seite) – hilft, Unterseiten in der Suche unter „Planory“ zu zeigen
+const brotkrumen = (kurz, url) => kurz ? `<script type="application/ld+json">\n${JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Planory', item: BASIS + '/' }, { '@type': 'ListItem', position: 2, name: kurz, item: url }] })}\n</script>\n` : '';
+function kopfbereich({ titel, titelEn, beschreibung, url, kurz, robots = 'index,follow' }) {
   return `<!doctype html>
 <html lang="de"${titelEn ? ` data-en-title="${esc(titelEn)}"` : ''}>
 <head>
@@ -63,7 +66,7 @@ ${beschreibung ? `<meta property="og:description" content="${esc(beschreibung)}"
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/site/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site/site.css">
-</head>`;
+${brotkrumen(kurz, url)}</head>`;
 }
 const seite = (meta, aktiv, inhalt) => `${kopfbereich(meta)}
 <body class="pl-site">
@@ -100,7 +103,7 @@ for (const datei of RECHT) {
   const titel = (alt.match(/<title>([^<]*)<\/title>/) || [])[1] || 'Planory';
   const besch = (alt.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
   const url = (alt.match(/<link rel="canonical" href="([^"]*)"/) || [])[1] || `${BASIS}/${datei}`;
-  const kopfHtml = kopfbereich({ titel: titel.replace(/&amp;/g, '&'), beschreibung: besch.replace(/&amp;/g, '&').replace(/&quot;/g, '"'), url });
+  const kopfHtml = kopfbereich({ titel: titel.replace(/&amp;/g, '&'), beschreibung: besch.replace(/&amp;/g, '&').replace(/&quot;/g, '"'), url, kurz: titel.split(' – ')[0].replace(/&amp;/g, '&') });
   ausgabe.set(datei, `${kopfHtml}
 <body class="pl-site">
 ${kopf('')}
@@ -133,7 +136,7 @@ ausgabe.set('support.html', `<!doctype html>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
 <body>
-<p>Weiter zu <a href="/hilfe/">Hilfe &amp; Kontakt</a> · Support: <a href="mailto:moser.simon5211@gmail.com">moser.simon5211@gmail.com</a></p>
+<p>Weiter zu <a href="/hilfe/">Hilfe &amp; Kontakt</a></p>
 <script>location.replace('/hilfe/' + location.hash);</script>
 </body>
 </html>

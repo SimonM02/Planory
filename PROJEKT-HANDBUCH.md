@@ -60,6 +60,13 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   „Über Planory“ neutral: nur Vorname „Simon“, eigenes Bauprojekt als Anlass, kein Foto.
   Schriften (Archivo, IBM Plex Mono) liegen auf dem eigenen Server (DSGVO), nicht bei Google.
   „die einzige App“ wird bewusst nicht behauptet (Werberecht) – stattdessen „Eine App. Mehr brauchst du nicht.“
+  **Kontaktdaten (10.11.2026):** Simon bekommt eine neue E-Mail und eine neue Adresse. Bis dahin stehen Mail/Adresse
+  NUR im Impressum, in der Datenschutzerklärung und in den AGB (dort gesetzlich Pflicht); Website-Seiten verweisen
+  aufs Impressum (`tests/pruefen.mjs` prüft das). Sobald die neuen Daten da sind: überall tauschen (Rechtstexte,
+  `MAIL-VORLAGEN.md`, App/Einstellungen, App Store Connect).
+  **Google:** Startseite hat WebSite- und Organization-Daten, Unterseiten Brotkrumen (BreadcrumbList). Die
+  Unterseiten-Links unter „Planory“ in der Google-Suche (Sitelinks) wählt Google selbst – Sitemap in der Search
+  Console einreichen und je Unterseite „Indexierung beantragen“.
 - **Google:** Search Console bestätigt (Meta-Tag in `index.html` – nicht entfernen);
   Suchmaschinen bekommen immer die deutsche Startseite; Favicon als echte Dateien.
 - **Supabase-Schlüssel** nur einmal im Code (`SUPA_KEY`) – ein alter, fest eingetragener
