@@ -60,6 +60,9 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   „Über Planory“ neutral: nur Vorname „Simon“, eigenes Bauprojekt als Anlass, kein Foto.
   Schriften (Archivo, IBM Plex Mono) liegen auf dem eigenen Server (DSGVO), nicht bei Google.
   „die einzige App“ wird bewusst nicht behauptet (Werberecht) – stattdessen „Eine App. Mehr brauchst du nicht.“
+  **Clean (11.11.2026, Simons Wunsch):** kein Planraster, kein Plankopf, keine gezeichneten Handy-Rahmen mehr. App-Bilder
+  sind echte Bildschirme als ruhige Karten (`.s-schirm`, oben angeschnitten). Überschriften: Zeilenabstand mind. 1,14,
+  kein negativer Buchstabenabstand (Buchstaben standen sonst fast übereinander) – `tests/website.mjs` prüft das.
   **Kontaktdaten (10.11.2026):** Simon bekommt eine neue E-Mail und eine neue Adresse. Bis dahin stehen Mail/Adresse
   NUR im Impressum, in der Datenschutzerklärung und in den AGB (dort gesetzlich Pflicht); Website-Seiten verweisen
   aufs Impressum (`tests/pruefen.mjs` prüft das). Sobald die neuen Daten da sind: überall tauschen (Rechtstexte,

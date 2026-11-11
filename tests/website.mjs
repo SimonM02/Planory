@@ -172,6 +172,39 @@ await scenario('Startseite: Stile geladen, alle Bilder sofort geladen, Menü-Kn�
   } finally { await c.close(); }
 });
 
+// Überschriften müssen lesbar bleiben: genug Zeilenabstand (Umlaute/Unterlängen stoßen sonst an die Zeile
+// darüber), kein zusammengeschobener Buchstabenabstand, nichts ragt aus seinem Kasten.
+for (const breite of [320, 390, 1440]) {
+  await scenario(`Überschriften lesbar auf allen Seiten (${breite} px): Zeilenabstand, Buchstabenabstand, kein Überlauf`, async () => {
+    const c = await neu({ breite });
+    const f = [];
+    try {
+      for (const seite of ['/', ...UNTERSEITEN]) {
+        const p = await c.newPage();
+        await p.goto(BASIS + seite, { waitUntil: 'load' });
+        if (seite === '/') await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none', null, { timeout: 15000 });
+        await p.evaluate(() => document.fonts.ready);
+        const r = await p.evaluate(() => {
+          const wurzel = document.querySelector('.pl-site');
+          return [...wurzel.querySelectorAll('h1,h2,h3,.s-zitat,.s-preis,.s-zahlen b,.s-schritte .s-n,.s-toc .s-t,summary')].filter(e => e.offsetParent).map(e => {
+            const s = getComputedStyle(e), fs = parseFloat(s.fontSize), lh = parseFloat(s.lineHeight), ls = parseFloat(s.letterSpacing) || 0;
+            const zeilen = Math.round(e.getBoundingClientRect().height / (lh || fs));
+            const m = [];
+            if (lh && lh / fs < 1.1) m.push('Zeilenabstand ' + (lh / fs).toFixed(2));
+            if (ls < 0) m.push('Buchstabenabstand ' + ls);
+            if (e.scrollWidth > e.clientWidth + 1) m.push('zu breit');
+            if (/^H[12]$/.test(e.tagName) && zeilen > 5) m.push(zeilen + ' Zeilen');
+            return m.length ? (e.textContent.trim().slice(0, 24) + ': ' + m.join(', ')) : '';
+          }).filter(Boolean).slice(0, 3);
+        });
+        if (r.length) f.push(seite + ' → ' + r.join(' | '));
+        await p.close();
+      }
+      return f.join(' · ');
+    } finally { await c.close(); }
+  });
+}
+
 await scenario('Startseite im dunklen Modus des Handys: Überschriften bleiben lesbar (dunkel auf hell)', async () => {
   const c = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', serviceWorkers: 'block' });
   await c.addInitScript(SUPA);
