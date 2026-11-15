@@ -48,9 +48,15 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - Abhaken von Aufgaben/Wartungen bleibt immer frei (`toggleTask` ohne `requireSub`).
 - **Supabase (15.11.2026):** Pro-Abo 25 $/Monat, darin 10 $ Guthaben für EINEN Server. Jedes weitere Projekt
   kostet extra (~10 $) – deshalb kein zweites Projekt mehr anlegen (Testprojekt „buildora-staging“ gelöscht).
-- **Wo sieht man Abos?** Web-Abos (Stripe) stehen in der Supabase-Tabelle `subscriptions`. **Apple-Abos
-  (iPhone-App) stehen NICHT dort, sondern nur in RevenueCat** – die „App User ID“ dort ist die Supabase-User-ID.
-  Ein Konto ohne Zeile in `subscriptions` kann also trotzdem ein laufendes Probeabo haben.
+- **Wo sieht man Abos?** Alle zusammen in der Supabase-Ansicht **`abo_uebersicht`** (Table Editor): Web-Abos aus
+  `subscriptions` (Stripe) und iPhone-Abos aus `apple_subscriptions` (seit 15.11.2026 aus RevenueCat gespiegelt).
+  - Spiegeln macht `api/abo-status.js?hook=revenuecat` (RevenueCat-Webhook, Code in Vercel `RC_WEBHOOK_AUTH`; ohne
+    Code gesperrt). Jedes Ereignis löst nur einen Abgleich aus – der Stand kommt direkt von RevenueCat. Ereignis
+    `TEST` („Send test event“) gleicht alle Konten ab (Nachtragen). Die Web-Prüfung spiegelt nebenbei mit.
+  - **Über den Zugang entscheidet weiter RevenueCat/Stripe direkt** – `apple_subscriptions` ist nur die Übersicht.
+  - Die „App User ID“ in RevenueCat ist die Supabase-User-ID. Solange Simon den Webhook nicht eingerichtet hat
+    (siehe `OFFENE-PUNKTE.md`), stehen Apple-Abos nur in RevenueCat.
+  - Keine neue Datei im Ordner `api/`: dort liegen 12 Funktionen (Grenze im kleinsten Vercel-Paket).
 - **Entscheidungen:** Testzeitraum bleibt 30 Tage (Neubewertung nach 2–3 Monaten mit echten
   Zahlen) · keine eigene Erinnerungs-Mail der App (Stripe-Mail optional).
 

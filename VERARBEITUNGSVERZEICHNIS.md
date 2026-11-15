@@ -9,7 +9,7 @@
 | 2 | Projektdaten speichern & abgleichen | App-Funktion – Vertrag | Nutzer; Dritte in Projektdaten (Handwerker-Kontakte, Namen auf Rechnungen) | Supabase (EU, Datenbank + Dateien) | – | bei Kontolöschung |
 | 3 | KI-Auswertung (Rechnungs-/Angebots-Scan, Bauberater, KI-Zeitplan) | nur auf Auslösung durch den Nutzer – Vertrag; Hinweis vor erster Nutzung | Rechnungsbild/PDF, Projekt-Zusammenfassung | Vercel (Schnittstelle), Anthropic PBC | USA – SCC im DPA (ggf. DPF) | Anthropic: kurze Aufbewahrung, kein Training; bei uns nur das Ergebnis im Projekt |
 | 4 | Web-Abo & Zahlung | Abrechnung – Vertrag, gesetzl. Aufbewahrung (BAO) | E-Mail, Zahlungsdaten (bei Stripe), Abo-Status | Stripe | USA/IE – DPF/SCC | Abo-Daten bis Kontolöschung, Rechnungen 7 Jahre |
-| 5 | iPhone-Abo | Abo-Verwaltung – Vertrag | Nutzer-ID, Abo-Status (Zahlung nur bei Apple) | Apple, RevenueCat Inc. | USA – DPF/SCC | bis Kontolöschung |
+| 5 | iPhone-Abo | Abo-Verwaltung – Vertrag | Nutzer-ID, Abo-Status (Zahlung nur bei Apple); der Abo-Status (Tarif, Laufzeit) wird zur Verwaltung auch in Supabase gespeichert | Apple, RevenueCat Inc., Supabase | USA – DPF/SCC | bis Kontolöschung |
 | 6 | Erinnerungen / Push | gewünschte Mitteilungen – Vertrag | Geräte-Token, Termin-Titel | Vercel, Apple (APNs) bzw. Browser-Push-Dienst, Supabase | USA – SCC | bei Abmeldung/Kontolöschung |
 | 7 | Todoist-Anbindung (optional, Web) | gewünschte Funktion – Vertrag | Todoist-Zugang (verschlüsselt), Projekt-Zuordnung | Supabase (EU), Vercel, Doist (eigener Verantwortlicher) | USA (Vercel) – SCC | bei Trennen/Kontolöschung |
 | 8 | Website ausliefern | Bereitstellung – berechtigtes Interesse (Art. 6 Abs. 1 lit. f) | IP-Adresse in Server-Logs | GitHub Pages bzw. Vercel | USA – DPF/SCC | laut Anbieter (kurz) |

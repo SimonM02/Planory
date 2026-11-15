@@ -18,6 +18,15 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
 5a. ✅ **Neu in der App – im Web live seit 15.11.2026:** Ladeanzeige bei allen Uploads, mehrere Fotos/PDFs bei
    Angeboten, „📁 Mappe als PDF“ je Kategorie, Rückfrage bei doppelter Rechnung (gleicher Betrag schon eingebucht).
    Aufs iPhone kommt es mit dem nächsten Update (v1.4) – dort bitte die Foto-Auswahl kurz testen.
+5c. **Apple-Abos in Supabase sehen (2 kurze Schritte, Simon)** – Technik ist seit 15.11.2026 fertig und live,
+   wartet nur auf den Code (denselben Code an beiden Stellen; er steht im Chat vom 15.11., sonst einfach einen
+   neuen, langen ausdenken – nie ins Repo schreiben):
+   1. **Vercel** → Projekt → Settings → Environment Variables → Name `RC_WEBHOOK_AUTH`, Wert = der Code →
+      Save → „Redeploy“.
+   2. **RevenueCat** → Projekt → Integrations → Webhooks → „Add new configuration“: URL
+      `https://bauplan-weld.vercel.app/api/abo-status?hook=revenuecat`, „Authorization header value“ = der Code →
+      speichern → **„Send test event“** (trägt alle laufenden Abos nach).
+   Danach Claude Bescheid geben → prüft die Ansicht `abo_uebersicht`.
 5b. ✅ **Supabase-Kosten:** Testprojekt „buildora-staging“ am 15.11.2026 gelöscht → ab der nächsten Rechnung
    25 $ + MwSt. statt 42 $ im Monat. Planory läuft nur auf „Bau App Project“. Optional: Planory von „Nano“ auf
    „Micro“ stellen (im Pro-Guthaben enthalten, ein paar Minuten Ausfall → abends).
