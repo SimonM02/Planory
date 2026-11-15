@@ -46,6 +46,9 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - **Abo beendet** (neues Konto, hatte schon ein Abo) → **Nur-Lesen**, Daten bleiben sichtbar.
 - **Ältere Konten (vor 21.10.):** Gratismonat ab Registrierung ohne Karte, danach Nur-Lesen.
 - Abhaken von Aufgaben/Wartungen bleibt immer frei (`toggleTask` ohne `requireSub`).
+- **Wo sieht man Abos?** Web-Abos (Stripe) stehen in der Supabase-Tabelle `subscriptions`. **Apple-Abos
+  (iPhone-App) stehen NICHT dort, sondern nur in RevenueCat** – die „App User ID“ dort ist die Supabase-User-ID.
+  Ein Konto ohne Zeile in `subscriptions` kann also trotzdem ein laufendes Probeabo haben.
 - **Entscheidungen:** Testzeitraum bleibt 30 Tage (Neubewertung nach 2–3 Monaten mit echten
   Zahlen) · keine eigene Erinnerungs-Mail der App (Stripe-Mail optional).
 
@@ -86,6 +89,14 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   Kategorie: Deckblatt, Übersicht, jeder Beleg als Seite (PDF-Belege über pdf.js als Bild), Angebote + Anhänge,
   Zahlungstermine, Mängel, Fotos gleichnamiger Kategorie. Code: `_mappeDaten`, `_mappePDF`, `mappeErstellen`.
   Bleibt wie alle Exporte auch im Nur-Lesen-Modus möglich.
+- **Doppelte Rechnung (15.11.2026):** Beim ANLEGEN einer Ausgabe (von Hand, KI-Scan, Angebot umwandeln) fragt die
+  App nach, wenn es schon eine Ausgabe mit genau demselben Bruttobetrag gibt (`_kostenDoppelt`, `_doppeltFragen`):
+  „Abbrechen“ / „Trotzdem speichern“. Beim Umwandeln eines Angebots zusätzlich „Nur Angebot abschließen“ –
+  hakt das Angebot ab, ohne die Rechnung ein zweites Mal zu buchen. Nie beim Bearbeiten. Anlass: Testkonto hatte
+  dieselbe Rechnung einmal gescannt und einmal aus dem Angebot umgewandelt. `showConfirm` kann dafür einen
+  dritten Knopf (`extraText` → Ergebnis `'extra'`).
+- **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
+  doppelter Rechnung. iPhone: mit v1.4.
 
 ## 5. Datenschutz – Regeln für die Arbeit
 - **Simons Anfrage zu einem bestimmten Kunden = Support-Anlass:** direkt nachschauen und alles

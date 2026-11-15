@@ -428,8 +428,21 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (!f) return 'confirmRechnungScan nicht gefunden';
     const i = f.indexOf('state.kosten.push');
     if (i < 0) return 'Scan bucht keine Ausgabe ein';
-    if (/\bawait\b/.test(f.slice(0, i))) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
+    // Die Rueckfrage „Gibt es diese Rechnung schon?" ist erlaubt (wartet auf den Nutzer, nicht auf einen Upload)
+    const davor = f.slice(0, i).replace(/await\s+_doppeltFragen\(/g, '_doppeltFragen(');
+    if (/\bawait\b/.test(davor)) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
     if (!f.includes('_belegVormerken(')) return 'Beleg wird nicht vorgemerkt (geht verloren, wenn die App gleich geschlossen wird)';
+  });
+  check(`${label}: Doppelte Rechnung – Rückfrage beim Scan und bei neuer Ausgabe, nicht beim Bearbeiten`, () => {
+    const sc = extractFn(src, 'confirmRechnungScan'), sk = extractFn(src, 'saveKosten');
+    if (!sc || !sk) return 'confirmRechnungScan/saveKosten nicht gefunden';
+    if (!extractFn(src, '_kostenDoppelt') || !extractFn(src, '_doppeltFragen')) return '_kostenDoppelt/_doppeltFragen fehlt';
+    const iS = sc.indexOf('_doppeltFragen('), iP = sc.indexOf('state.kosten.push');
+    if (iS < 0 || iS > iP) return 'Scan bucht ein, ohne vorher nach einer doppelten Rechnung zu fragen';
+    if (!/if \(!editId\) \{\s*const w = await _doppeltFragen\(/.test(sk)) return 'neue Ausgabe: Rückfrage fehlt oder kommt auch beim Bearbeiten';
+    if (sk.indexOf('_doppeltFragen(') > sk.indexOf('_uploadBeleg(')) return 'Rückfrage kommt erst nach dem Beleg-Upload';
+    if (!/w === 'extra'\) \{ _angebotNurAbschliessen\(\)/.test(sk)) return '„Nur Angebot abschließen" ist nicht angebunden';
+    if (!src.includes('id="ac-extra-btn"')) return 'dritter Knopf im Dialog fehlt';
   });
   check(`${label}: PDFs gehen über _pdfAusgeben (Teilen-Menü in der iPhone-App)`, () => {
     const f = extractFn(src, '_pdfAusgeben');

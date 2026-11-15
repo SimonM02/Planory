@@ -46,6 +46,15 @@ async function boot(geraet = {}) {
   page.on('pageerror', e => errors.push(String(e.message || e)));
   await page.addInitScript(() => {
     try { localStorage.setItem('planoryLang', 'de'); localStorage.setItem('dsgvoAccepted', '1'); localStorage.setItem('planory_ki_hinweis', '1'); } catch (e) {}
+    // Viele Szenarien buchen absichtlich gleiche Betraege: die Rueckfrage „Gibt es diese Rechnung schon?"
+    // dann wie ein Nutzer mit „Trotzdem speichern" beantworten. Die Szenarien DAZU schalten das ab.
+    window.__doppeltAuto = true; window.__doppeltGesehen = 0;
+    setInterval(() => {
+      const m = document.getElementById('modal-app-confirm');
+      if (!window.__doppeltAuto || !m || !m.classList.contains('open') || m.classList.contains('closing')) return;
+      if (!/Rechnung schon|invoice already/.test(document.getElementById('ac-title').textContent)) return;
+      window.__doppeltGesehen++; _acResolve(true);
+    }, 20);
     const q = () => { const o = { select(){return o}, eq(){return o}, in(){return o}, order(){return o}, maybeSingle(){return o},
       single(){return o}, insert(){return o}, update(){return o}, upsert(){return o}, delete(){return o},
       then(r){ return Promise.resolve({ data: null, error: null }).then(r); } }; return o; };
@@ -627,7 +636,24 @@ window.__neuePerson = (selId, name) => {
   if (!inp || sel.value !== '__neu__') return false;
   inp.value = name; return inp.style.display !== 'none';
 };
-window.__warte = ms => new Promise(res => setTimeout(res, ms));`;
+window.__warte = ms => new Promise(res => setTimeout(res, ms));
+// Wartet auf den App-Dialog, liest ihn aus und beantwortet ihn (true = OK, false = Abbrechen, 'extra' = dritter Knopf).
+// null = es kam kein Dialog.
+window.__dialog = async (antwort, ms = 1500) => {
+  const m = document.getElementById('modal-app-confirm'), t0 = Date.now();
+  // beim Schliessen bleibt „open" noch 190 ms stehen (Ausblenden) – das zaehlt nicht als neuer Dialog
+  while (!m.classList.contains('open') || m.classList.contains('closing')) { if (Date.now() - t0 > ms) return null; await __warte(20); }
+  await __warte(60);
+  const ex = document.getElementById('ac-extra-btn'), ok = document.getElementById('ac-ok-btn');
+  const ab = m.querySelector('[onclick="_acResolve(false)"]');
+  const sichtbar = el => el.style.display !== 'none' && el.getBoundingClientRect().width > 0;
+  const box = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+  const info = { titel: document.getElementById('ac-title').textContent, text: document.getElementById('ac-text').textContent,
+    ok: ok.textContent, extra: sichtbar(ex) ? ex.textContent : '', breite: window.innerWidth,
+    boxen: { ok: box(ok), ab: box(ab), ...(sichtbar(ex) ? { extra: box(ex) } : {}) } };
+  (antwort === 'extra' ? ex : antwort ? ok : ab).click();
+  return info;
+};`;
 await page.evaluate(SCAN_FORM);
 
 await scenario('Scan: neue Person bei „Bezahlt von" eintragen → wird überall wie die anderen geführt', async () => {
@@ -749,6 +775,130 @@ await scenario('Scan einbuchen: Rechnungen-Liste und Startseite zeigen den Betra
   if (!r.liste) p.push('Rechnungen-Liste zeigt die neue Rechnung erst nach Seitenwechsel');
   if (r.vorher === r.nachher) p.push(`Startseite „Ausgegeben" bleibt bei ${r.vorher}`);
   if (!r.neueste) p.push('Startseite „Letzte Ausgaben" ohne die neue Rechnung');
+  return p.join(' · ');
+});
+// ── Doppelte Rechnung: gleicher Betrag schon eingebucht → Rueckfrage (nur beim Anlegen) ──
+await scenario('Doppelte Rechnung (Scan): Rückfrage zeigt den vorhandenen Eintrag · Abbrechen bucht nichts · „Trotzdem speichern" bucht', async () => {
+  const r = await page.evaluate(async () => {
+    const altConfirm = window.showConfirm;
+    __doppeltAuto = false; window.showConfirm = window.__echtesConfirm;   // echte Rueckfrage, nicht automatisch beantworten
+    try {
+      state.kosten.push({ id: 9830001, datum: '2026-10-15', beschr: 'Tragwerksplanung Neubau', kat: state.budgetKat[0].name, mwst: 20,
+        netto: 22734.23, betrag: 27281.08, status: 'Bezahlt', anbieter: 'CES Statik', _updatedAt: Date.now() });
+      const n0 = state.kosten.length;
+      __scanForm('Tragwerk nochmal gescannt', 27281.08);
+      let lauf = confirmRechnungScan();
+      const d1 = await __dialog(false); await lauf; await __warte(150);
+      const nachAbbruch = state.kosten.length - n0;
+      const offen = document.getElementById('modal-rechnung-scan').classList.contains('open');
+      const wert = document.getElementById('scan-brutto').value;
+      lauf = confirmRechnungScan();
+      const d2 = await __dialog(true); await lauf; await __warte(200);
+      const nachOk = state.kosten.length - n0;
+      __scanForm('Anderer Betrag', 27281.09);                // ein Cent mehr: keine Rueckfrage
+      lauf = confirmRechnungScan();
+      const d3 = await __dialog(true, 400); await lauf; await __warte(150);
+      return { d1, d2: !!d2, d3: !!d3, nachAbbruch, offen, wert, nachOk, anders: state.kosten.some(k => k.beschr === 'Anderer Betrag') };
+    } finally { __doppeltAuto = true; window.showConfirm = altConfirm; closeModal('modal-app-confirm'); }
+  });
+  const p = [];
+  if (!r.d1) return 'keine Rückfrage, obwohl es den Betrag schon gibt';
+  if (!r.d1.titel.includes('Rechnung schon')) p.push(`Titel „${r.d1.titel}"`);
+  if (!r.d1.text.replace(/[^\d,]/g, '').includes('27281,08')) p.push('Rückfrage nennt den Betrag nicht');
+  for (const t of ['CES Statik', 'Tragwerksplanung Neubau', '15.10.2026'])
+    if (!r.d1.text.includes(t)) p.push(`Rückfrage nennt „${t}" nicht`);
+  if (r.d1.ok !== 'Trotzdem speichern') p.push(`Knopf heißt „${r.d1.ok}"`);
+  if (r.d1.extra) p.push(`dritter Knopf „${r.d1.extra}" außerhalb der Angebote sichtbar`);
+  if (r.nachAbbruch !== 0) p.push(`Abbrechen hat ${r.nachAbbruch} Ausgabe(n) gebucht`);
+  if (!r.offen || r.wert !== '27281.08') p.push('nach Abbrechen ist das Scan-Fenster zu oder geleert');
+  if (!r.d2 || r.nachOk !== 1) p.push(`„Trotzdem speichern" ergab ${r.nachOk} neue Ausgabe(n)`);
+  if (r.d3 || !r.anders) p.push('anderer Betrag: Rückfrage erschien bzw. nicht gebucht');
+  return p.join(' · ');
+});
+await scenario('Doppelte Rechnung (Ausgabe von Hand): Rückfrage beim Anlegen, nicht beim Bearbeiten', async () => {
+  const r = await page.evaluate(async () => {
+    const altConfirm = window.showConfirm;
+    __doppeltAuto = false; window.showConfirm = window.__echtesConfirm;   // echte Rueckfrage, nicht automatisch beantworten
+    try {
+      const n0 = state.kosten.length;
+      openModal('modal-kosten');
+      document.getElementById('k-beschr').value = 'Statiker von Hand';
+      document.getElementById('k-betrag').value = '27281.08';
+      let lauf = saveKosten();
+      const d1 = await __dialog(false); await lauf; await __warte(150);
+      const nachAbbruch = state.kosten.length - n0;
+      const offen = document.getElementById('modal-kosten').classList.contains('open');
+      const beschr = document.getElementById('k-beschr').value;
+      closeModal('modal-kosten');
+      // Bearbeiten einer Ausgabe, deren Betrag es mehrfach gibt: keine Rueckfrage
+      editKosten(9830001);
+      lauf = saveKosten();
+      const d2 = await __dialog(true, 400); await lauf; await __warte(200);
+      return { d1: !!d1, extra: d1 && d1.extra, nachAbbruch, offen, beschr, d2: !!d2, nachEdit: state.kosten.length - n0,
+               zu: !document.getElementById('modal-kosten').classList.contains('open') };
+    } finally { __doppeltAuto = true; window.showConfirm = altConfirm; closeModal('modal-app-confirm'); closeModal('modal-kosten'); }
+  });
+  const p = [];
+  if (!r.d1) p.push('keine Rückfrage beim Anlegen');
+  if (r.extra) p.push('Angebots-Knopf bei normaler Ausgabe sichtbar');
+  if (r.nachAbbruch !== 0) p.push(`Abbrechen hat ${r.nachAbbruch} Ausgabe(n) gebucht`);
+  if (!r.offen || r.beschr !== 'Statiker von Hand') p.push('nach Abbrechen sind die Eingaben weg');
+  if (r.d2) p.push('Rückfrage beim Bearbeiten');
+  if (r.nachEdit !== 0 || !r.zu) p.push('Bearbeiten wurde nicht normal gespeichert');
+  return p.join(' · ');
+});
+await scenario('Angebot umwandeln, Rechnung schon da: „Nur Angebot abschließen" hakt ab ohne doppelt zu buchen · „Trotzdem speichern" bucht', async () => {
+  const r = await page.evaluate(async () => {
+    const altConfirm = window.showConfirm;
+    __doppeltAuto = false; window.showConfirm = window.__echtesConfirm;   // echte Rueckfrage, nicht automatisch beantworten
+    try {
+      const ang = (id, beschr) => ({ id, _updatedAt: 1, beschr, anbieter: 'Dr. Statik', kat: state.budgetKat[0].name,
+        datum: '2026-06-13', gueltig: '', betrag: 27281.08, status: 'Ausstehend', notiz: '' });
+      showPage('angebote');
+      state.angebote = (state.angebote || []).concat(ang(9830010, 'Angebot Tragwerk A'), ang(9830011, 'Angebot Tragwerk B'));
+      renderAngebote();
+      const n0 = state.kosten.length, summe0 = state.kosten.reduce((s, k) => s + (k.betrag || 0), 0);
+      const umwandeln = async (id, antwort) => {
+        editAngebot(id);
+        document.getElementById('ang-to-rechnung-btn').click(); await __warte(80);
+        const lauf = saveKosten();
+        const d = await __dialog(antwort); await lauf; await __warte(250);
+        return d;
+      };
+      // 1) Abbrechen: nichts passiert, Angebot bleibt offen
+      const dAb = await umwandeln(9830010, false);
+      const nachAb = { neu: state.kosten.length - n0, status: state.angebote.find(a => a.id === 9830010).status,
+                       offen: document.getElementById('modal-kosten').classList.contains('open') };
+      closeModal('modal-kosten');
+      // 2) Nur Angebot abschliessen
+      const dEx = await umwandeln(9830010, 'extra');
+      const a1 = state.angebote.find(a => a.id === 9830010);
+      const nachEx = { neu: state.kosten.length - n0, status: a1.status, konv: a1.konvertiert === true, pend: _pendingAngebotId,
+                       zu: !document.getElementById('modal-kosten').classList.contains('open'),
+                       leer: document.getElementById('k-betrag').value === '',
+                       summe: Math.abs(state.kosten.reduce((s, k) => s + (k.betrag || 0), 0) - summe0) < 0.001,
+                       liste: document.getElementById('angebot-table').textContent.includes('Umgewandelt') };
+      // 3) Trotzdem speichern
+      const dOk = await umwandeln(9830011, true);
+      const a2 = state.angebote.find(a => a.id === 9830011);
+      const nachOk = { neu: state.kosten.length - n0, status: a2.status, da: state.kosten.some(k => k.beschr === 'Angebot Tragwerk B') };
+      return { dAb, dEx, dOk: !!dOk, nachAb, nachEx, nachOk };
+    } finally { __doppeltAuto = true; window.showConfirm = altConfirm; closeModal('modal-app-confirm'); closeModal('modal-kosten'); }
+  });
+  const p = [];
+  if (!r.dEx) return 'keine Rückfrage beim Umwandeln, obwohl die Rechnung schon eingebucht ist';
+  if (r.dEx.extra !== 'Nur Angebot abschließen') p.push(`dritter Knopf: „${r.dEx.extra}"`);
+  // Handy 390 px: alle drei Knoepfe im Bild, der dritte steht ueber den beiden anderen
+  const b = r.dEx.boxen;
+  if (!b.extra || [b.extra, b.ok, b.ab].some(x => x.l < 0 || x.r > r.dEx.breite + 0.5)) p.push('Knöpfe ragen aus dem Bild');
+  else if (b.extra.b > Math.min(b.ok.t, b.ab.t) + 0.5) p.push('dritter Knopf überlappt die anderen');
+  if (r.nachAb.neu !== 0 || r.nachAb.status !== 'Ausstehend' || !r.nachAb.offen) p.push(`Abbrechen: ${JSON.stringify(r.nachAb)}`);
+  const e = r.nachEx;
+  if (e.neu !== 0 || !e.summe) p.push(`„Nur Angebot abschließen" hat ${e.neu} Ausgabe(n) gebucht`);
+  if (e.status !== 'Umgewandelt' || !e.konv) p.push(`Angebot danach „${e.status}"`);
+  if (e.pend || !e.zu || !e.leer) p.push('Ausgabe-Fenster nicht sauber geschlossen/geleert');
+  if (!e.liste) p.push('Angebots-Liste zeigt „Umgewandelt" nicht');
+  if (!r.dOk || r.nachOk.neu !== 1 || r.nachOk.status !== 'Umgewandelt' || !r.nachOk.da) p.push(`„Trotzdem speichern": ${JSON.stringify(r.nachOk)}`);
   return p.join(' · ');
 });
 await scenario('PDF-Beleg: wird nicht als kaputtes Bild gezeigt und öffnet als PDF', async () => {

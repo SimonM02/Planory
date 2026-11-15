@@ -181,6 +181,15 @@ async function boot(browser, cfg = {}, { cache = false, seed = [] } = {}) {
     return route.abort();
   });
   await page.addInitScript(fakeSupabase, { uid: UID, pid: PID, cfg, seedItems: [...SEED, ...seed] });
+  // Die Testdaten haben oft gleiche Betraege (120 €): die Rueckfrage „Gibt es diese Rechnung schon?"
+  // wie ein Nutzer mit „Trotzdem speichern" beantworten (eigene Szenarien dazu: tests/mobile-e2e.mjs).
+  await page.addInitScript(() => {
+    setInterval(() => {
+      const m = document.getElementById('modal-app-confirm');
+      if (!m || !m.classList.contains('open') || m.classList.contains('closing')) return;
+      if (/Rechnung schon|invoice already/.test(document.getElementById('ac-title').textContent)) _acResolve(true);
+    }, 20);
+  });
   if (cache) {
     // Wiederkehrender Nutzer: lokaler Stand vorhanden -> App zeigt ihn sofort, laedt Cloud im Hintergrund
     await page.addInitScript(([uid, pid, seed]) => {

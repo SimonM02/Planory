@@ -15,9 +15,12 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    Instagram-Namen an Claude (für „@…“ in den Texten).
 
 **🟠 Bald (1–2 Wochen):**
-5a. **Neu in der App (Dev-Zweig, noch nicht live):** Ladeanzeige bei allen Uploads, mehrere Fotos/PDFs bei
-   Angeboten, „📁 Mappe als PDF“ je Kategorie. → Simon: Beispiel-Mappe ansehen, OK geben → Claude stellt fürs Web
-   live; aufs iPhone kommt es mit dem nächsten Update (v1.4). Am iPhone bitte die Foto-Auswahl kurz testen.
+5a. ✅ **Neu in der App – im Web live seit 15.11.2026:** Ladeanzeige bei allen Uploads, mehrere Fotos/PDFs bei
+   Angeboten, „📁 Mappe als PDF“ je Kategorie, Rückfrage bei doppelter Rechnung (gleicher Betrag schon eingebucht).
+   Aufs iPhone kommt es mit dem nächsten Update (v1.4) – dort bitte die Foto-Auswahl kurz testen.
+5b. **Supabase-Kosten:** Testprojekt „buildora-staging“ löschen (Simon, im Supabase-Dashboard) → danach 25 $ + MwSt.
+   statt 42 $ im Monat. Planory selbst läuft nur auf „Bau App Project“. Danach optional Planory von „Nano“ auf
+   „Micro“ stellen (im Pro-Guthaben enthalten, ein paar Minuten Ausfall → abends).
 6. ✅ **Neue Website (5 Seiten, Stil „Bauplan“)** – live seit 09.11.2026 (planory.at, /funktionen/,
    /preise/, /ueber/, /hilfe/). Tipp: in der Instagram-Bio direkt auf eine Seite verlinken.
 7. **Rechtlich prüfen lassen (ein Termin, WKO/Anwalt):** AGB, Datenschutzerklärung,

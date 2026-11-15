@@ -7569,16 +7569,52 @@ function _acResolve(ok) {
   const isPrompt = document.getElementById('ac-input-row').style.display !== 'none';
   r(isPrompt ? (ok ? document.getElementById('ac-input').value : null) : ok);
 }
+// opts.extraText: zusaetzlicher (empfohlener) Knopf ueber den beiden anderen – liefert 'extra'.
+function _acExtra(text) {
+  const b = document.getElementById('ac-extra-btn');
+  if (!b) return;
+  b.textContent = text || '';
+  b.style.display = text ? '' : 'none';
+}
 function showConfirm(message, opts = {}) {
   return new Promise(resolve => {
     _acResolveFn = resolve;
     document.getElementById('ac-title').textContent = opts.title || 'Bist du sicher?';
     document.getElementById('ac-text').textContent  = message;
     document.getElementById('ac-input-row').style.display = 'none';
+    _acExtra(opts.extraText);
     const ok = document.getElementById('ac-ok-btn');
     ok.textContent = opts.okText || 'Ja';
-    ok.className   = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
+    ok.className   = 'btn ' + (opts.extraText ? 'btn-ghost' : opts.danger === false ? 'btn-primary' : 'btn-danger');
     openModal('modal-app-confirm');
+  });
+}
+// ── Doppelte Rechnung erkennen: gibt es schon eine Ausgabe mit genau diesem Bruttobetrag?
+// (Rechnung zweimal gescannt, oder Angebot umgewandelt, obwohl die Rechnung schon eingebucht ist –
+// das Budget zeigte dann den Betrag doppelt.) Nur beim ANLEGEN, nie beim Bearbeiten.
+function _kostenDoppelt(betrag) {
+  const cent = Math.round((parseFloat(betrag) || 0) * 100);
+  if (cent <= 0) return [];
+  return (state.kosten || []).filter(k => Math.round((parseFloat(k.betrag) || 0) * 100) === cent)
+    .sort((a, b) => (b._updatedAt || 0) - (a._updatedAt || 0));
+}
+// true = speichern, false = abbrechen (Formular bleibt offen), 'extra' = nur das Angebot abschliessen.
+async function _doppeltFragen(betrag, ausAngebot) {
+  const treffer = _kostenDoppelt(betrag);
+  if (!treffer.length) return true;
+  const en = _lang === 'en', k = treffer[0];
+  const zeile = [fmt(k.betrag), k.anbieter, k.beschr, fmtDate(k.datum), k.kat].map(x => String(x || '').trim()).filter(Boolean).join(' · ');
+  const mehr = treffer.length > 1
+    ? '\n' + (en ? `+ ${treffer.length - 1} more with the same amount` : `+ ${treffer.length - 1} weitere mit gleichem Betrag`) : '';
+  const frage = ausAngebot
+    ? (en ? 'Is that the invoice for this quote? Then just complete the quote – nothing is booked twice.'
+          : 'Ist das die Rechnung zu diesem Angebot? Dann schließe nur das Angebot ab – so wird nichts doppelt gebucht.')
+    : (en ? 'If it is the same invoice, it would be counted twice.' : 'Ist es dieselbe Rechnung, würde sie doppelt gezählt.');
+  return showConfirm((en ? 'There is already an expense with exactly this amount:' : 'Es gibt schon eine Ausgabe mit genau diesem Betrag:')
+      + '\n\n' + zeile + mehr + '\n\n' + frage, {
+    title: en ? 'Is this invoice already there?' : 'Gibt es diese Rechnung schon?',
+    okText: en ? 'Save anyway' : 'Trotzdem speichern', danger: false,
+    extraText: ausAngebot ? (en ? 'Just complete the quote' : 'Nur Angebot abschließen') : ''
   });
 }
 function showPrompt(message, defaultValue = '', opts = {}) {
@@ -7587,6 +7623,7 @@ function showPrompt(message, defaultValue = '', opts = {}) {
     document.getElementById('ac-title').textContent = opts.title || 'Eingabe';
     document.getElementById('ac-text').textContent  = message;
     document.getElementById('ac-input-row').style.display = '';
+    _acExtra('');
     const inp = document.getElementById('ac-input');
     inp.value = defaultValue || '';
     const ok = document.getElementById('ac-ok-btn');
@@ -8981,6 +9018,12 @@ async function saveKosten() {
   const bv = _readBezahltVon('k-bezahlt-von');
   if (bv.fehlt) { _bvFehltHinweis('k-bezahlt-von'); return; }
   const kOld = editId ? state.kosten.find(k => String(k.id) === String(editId)) : null;
+  // Neue Ausgabe mit einem Betrag, den es schon gibt? Erst nachfragen (siehe _kostenDoppelt).
+  if (!editId) {
+    const w = await _doppeltFragen(brutto, !!_pendingAngebotId);
+    if (w === false) return;
+    if (w === 'extra') { _angebotNurAbschliessen(); return; }
+  }
 
   // Belegbild: bestehendes uebernehmen (Bug-Fix: ging beim Bearbeiten verloren),
   // oder – falls im Modal geaendert – neues hochladen bzw. direkt ablegen.
@@ -9037,14 +9080,30 @@ async function saveKosten() {
   }
   save();
   scheduleAllReminders();
+  _kostenFormZu();
+  _renderKostenAnsichten();
+  showToast(editId ? '✏️ Ausgabe aktualisiert' : '✅ Ausgabe eingebucht', 'success');
+}
+// Ausgabe-Fenster schliessen und fuer die naechste Ausgabe leeren
+function _kostenFormZu() {
   closeModal('modal-kosten');
   document.getElementById('k-edit-id').value = '';
   document.getElementById('k-modal-title').textContent = 'Ausgabe erfassen';
   ['k-datum','k-beschr','k-betrag','k-netto-input','k-anbieter','k-skonto-proz','k-skonto-bis'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('k-mwst-preview').textContent = (_lang === 'en') ? 'VAT amount: € 0.00' : 'MwSt-Betrag: € 0,00';
   document.getElementById('k-skonto-preview').style.display = 'none';
+}
+// Die Rechnung zum Angebot ist schon eingebucht: Angebot als umgewandelt abhaken, KEINE zweite Ausgabe.
+function _angebotNurAbschliessen() {
+  const ang = (state.angebote || []).find(a => String(a.id) === String(_pendingAngebotId));
+  _pendingAngebotId = null;
+  if (ang) { ang.konvertiert = true; ang.status = 'Umgewandelt'; ang._updatedAt = Date.now(); }
+  _kBeleg = null; _kBelegChanged = false; _showKBelegPreview(null);
+  save();
+  _kostenFormZu();
   _renderKostenAnsichten();
-  showToast(editId ? '✏️ Ausgabe aktualisiert' : '✅ Ausgabe eingebucht', 'success');
+  try { renderAngebote(); } catch (e) {}
+  showToast(_lang === 'en' ? '✅ Quote completed – nothing booked twice' : '✅ Angebot abgeschlossen – nichts doppelt gebucht', 'success');
 }
 
 function editKosten(id) {
@@ -10256,6 +10315,8 @@ async function confirmRechnungScan() {
   }
   const bv = _readBezahltVon('scan-bezahlt-von');
   if (bv.fehlt) { _bvFehltHinweis('scan-bezahlt-von'); return; }
+  // Diese Rechnung schon eingebucht (zweimal gescannt)? Erst nachfragen (siehe _kostenDoppelt).
+  if (!(await _doppeltFragen(brutto, false))) return;
 
   // Beleg merken, BEVOR das Fenster zurueckgesetzt wird
   const b64  = scanImageBase64;
@@ -20724,6 +20785,7 @@ function exportRechnungenPDF() {
     <div class="form-row" id="ac-input-row" style="display:none;margin-bottom:18px">
       <input type="text" id="ac-input" onkeydown="if(event.key==='Enter')_acResolve(true)">
     </div>
+    <button class="btn btn-primary" id="ac-extra-btn" style="display:none;width:100%;justify-content:center" onclick="_acResolve('extra')"></button>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="_acResolve(false)">Abbrechen</button>
       <button class="btn btn-danger" id="ac-ok-btn" onclick="_acResolve(true)">Ja</button>
