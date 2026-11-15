@@ -46,6 +46,8 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - **Abo beendet** (neues Konto, hatte schon ein Abo) → **Nur-Lesen**, Daten bleiben sichtbar.
 - **Ältere Konten (vor 21.10.):** Gratismonat ab Registrierung ohne Karte, danach Nur-Lesen.
 - Abhaken von Aufgaben/Wartungen bleibt immer frei (`toggleTask` ohne `requireSub`).
+- **Supabase (15.11.2026):** Pro-Abo 25 $/Monat, darin 10 $ Guthaben für EINEN Server. Jedes weitere Projekt
+  kostet extra (~10 $) – deshalb kein zweites Projekt mehr anlegen (Testprojekt „buildora-staging“ gelöscht).
 - **Wo sieht man Abos?** Web-Abos (Stripe) stehen in der Supabase-Tabelle `subscriptions`. **Apple-Abos
   (iPhone-App) stehen NICHT dort, sondern nur in RevenueCat** – die „App User ID“ dort ist die Supabase-User-ID.
   Ein Konto ohne Zeile in `subscriptions` kann also trotzdem ein laufendes Probeabo haben.
