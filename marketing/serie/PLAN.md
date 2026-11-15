@@ -56,9 +56,11 @@ Planory ist die eine App für dein ganzes Bauprojekt: Budget, Rechnungen, Zeitpl
 Eine App. Mehr brauchst du nicht.
 In „Planory erklärt“ zeigen wir dir jede Funktion – kurz, klar, Schritt für Schritt.
 Als Nächstes: Budget 💶
-👉 Folge uns, damit du nichts verpasst · planory.at
-#hausbau #häuslbauer #eigenheim #hausbauen #bauherren #neubau #bauplanung #hausbau2026 #österreich
+👉 Jetzt 30 Tage gratis testen: planory.at
+#hausbau #häuslbauer #eigenheim #hausbauen #bauherrin #bauherren #neubau #bauplanung #hausbau2026 #österreich
 ```
+- 15.11.2026 (Simon): im Video gegendert („Die App für Bauherr:innen.“) und Knopf am Ende „Jetzt Planory testen“
+  statt „Planory folgen“; Text entsprechend („gratis testen“ statt „Folge uns“).
 - Bewusst „die eine App“ statt „die einzige App“: „einzige“ wäre eine Alleinstellungs-Behauptung (Werberecht).
 
 **Budget**

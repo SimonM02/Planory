@@ -22,7 +22,7 @@ const FOLGEN = {
         ['05', 'Bautagebuch', 'camera'], ['06', 'Angebote', 'compare'], ['07', 'Zahlungsplan', 'euro'], ['08', 'Pläne & Dokumente', 'doc'],
         ['09', 'Mängel', 'warn'], ['10', 'Kontakte & Helfer', 'people'], ['11', 'KI-Berater', 'spark'], ['12', 'iPhone & Web', 'devices']] },
     start: { t0: 14.8, t1: 17.2, lines: ['Wir zeigen dir jede Funktion.', 'Kurz, klar, Schritt für Schritt.'] },
-    end: { t0: 17.2, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Planory folgen' },
+    end: { t0: 17.2, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Jetzt Planory testen' },
   },
   1: {
     nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',
