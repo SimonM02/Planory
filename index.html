@@ -4533,6 +4533,19 @@
       <div style="font-size:0.72rem;color:var(--text3);margin-top:5px">Mehrere Fotos oder PDFs möglich – auch einfach hierher ziehen</div>
       <div id="ang-datei-info" style="display:none;flex-direction:column;gap:6px;margin-top:8px"></div>
     </div>
+    <div class="form-row" id="ang-aenderung-row" style="display:none">
+      <label>Was hat sich geändert?</label>
+      <textarea id="ang-aenderung" rows="2" placeholder="z.B. Sockelleisten gestrichen, 3 % Nachlass"></textarea>
+    </div>
+    <div class="form-row" id="ang-version-box" style="display:none">
+      <label>Versionen</label>
+      <div id="ang-version-hinweis" style="display:none;font-size:0.8rem;line-height:1.5;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:8px"></div>
+      <div id="ang-version-liste" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="ang-version-knoepfe" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button type="button" class="btn btn-ghost" id="ang-version-neu-btn" onclick="angNeueVersion()">＋ Neue Version (nachverhandelt)</button>
+        <button type="button" class="btn btn-ghost" id="ang-version-ki-btn" style="display:none" onclick="angVersionenKI()">✨ Versionen mit KI vergleichen</button>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-angebot');resetAngModal()">Abbrechen</button>
       <button class="btn btn-ghost" id="ang-to-rechnung-btn" style="display:none" onclick="angebotZuRechnung()">→ Zu Rechnung umwandeln</button>
@@ -4547,6 +4560,19 @@
     <div id="ang-anh-liste" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-bottom:6px"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-ang-anhaenge')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- KI-Vergleich zweier Versionen eines Angebots -->
+<div class="modal-overlay" id="modal-ang-ki-vergleich">
+  <div class="modal" style="width:600px">
+    <h3 id="ang-kiv-titel">Versionen im Vergleich</h3>
+    <div id="ang-kiv-inhalt"></div>
+    <p style="font-size:0.72rem;color:var(--text3);margin-top:14px">Die KI kann sich irren – bitte mit den beiden Angeboten gegenprüfen.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="ang-kiv-neu">↻ Neu vergleichen</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ang-ki-vergleich')">Schließen</button>
     </div>
   </div>
 </div>
@@ -6395,6 +6421,15 @@ const TEXTE = {
   "Kontakt hinzufügen": { en: "Add contact" },
   "Mangel erfassen": { en: "Add defect" },
   "Angebot erfassen": { en: "Add quote" },
+  "Was hat sich geändert?": { en: "What has changed?" },
+  "z.B. Sockelleisten gestrichen, 3 % Nachlass": { en: "e.g. skirting boards removed, 3 % discount" },
+  "Versionen": { en: "Versions" },
+  "＋ Neue Version (nachverhandelt)": { en: "＋ New version (renegotiated)" },
+  "✨ Versionen mit KI vergleichen": { en: "✨ Compare versions with AI" },
+  "Versionen im Vergleich": { en: "Versions compared" },
+  "Die KI kann sich irren – bitte mit den beiden Angeboten gegenprüfen.": { en: "The AI can make mistakes – please check against both quotes." },
+  "↻ Neu vergleichen": { en: "↻ Compare again" },
+  "KI vergleicht die beiden Versionen": { en: "AI is comparing the two versions" },
   "Zahlung / Fälligkeit": { en: "Payment / due date" },
   "Neues Projekt": { en: "New project" },
   "Tagebucheintrag": { en: "Diary entry" },
@@ -17595,6 +17630,9 @@ function resetAngModal() {
   const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
   _angNeu = []; _angBleiben = []; _angStart = [];
   _renderAngDatei();
+  _angVersionModus = false;
+  { const ae = document.getElementById('ang-aenderung'); if (ae) ae.value = ''; }
+  _renderAngVersionen(null);
 }
 
 // Neues Angebot: Felder leeren, damit keine Reste vom letzten Bearbeiten stehen bleiben.
@@ -17674,6 +17712,7 @@ async function saveAngebot() {
   // Frueher ging "konvertiert" verloren -> ein bereits umgewandeltes Angebot liess sich
   // nach "Bearbeiten → Speichern" ein zweites Mal umwandeln (Budget doppelt belastet).
   const existingAng = editId ? state.angebote.find(a => String(a.id) === String(editId)) : null;
+  const neueVersion = _angVersionModus && !!existingAng;   // vor dem Hochladen merken
   const item = {
     ...(existingAng || {}),
     id:       editId || Date.now(),
@@ -17687,6 +17726,15 @@ async function saveAngebot() {
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
+  // Versionen: beim Nachverhandeln wandert der bisherige Stand (mit SEINEN Anhaengen) in den Verlauf.
+  if (existingAng && (neueVersion || (existingAng.versionen || []).length)) item.aenderung = (document.getElementById('ang-aenderung')?.value || '').trim();
+  if (neueVersion) {
+    const alt = Array.isArray(existingAng.versionen) ? existingAng.versionen : [];
+    item.versionen = [...alt, { nr: alt.length + 1, datum: existingAng.datum || '', gueltig: existingAng.gueltig || '', betrag: parseFloat(existingAng.betrag) || 0,
+      notiz: existingAng.notiz || '', aenderung: existingAng.aenderung || '', dateien: _angDateien(existingAng).slice(),
+      ...(existingAng.kiVergleich ? { ki: existingAng.kiVergleich } : {}), _at: Date.now() }];
+    delete item.kiVergleich;   // gehoerte zum bisherigen Stand
+  }
   // Anhaenge: neue Dateien hochladen (Bilder werden komprimiert). Faellt der Speicher aus, bleiben nur
   // kleine Dateien eingebettet – grosse wuerden den lokalen Speicher sprengen. Das Angebot wird IMMER gespeichert.
   const neueDateien = _angNeu.slice(), bleiben = _angBleiben.slice(), start = _angStart.slice();
@@ -17747,14 +17795,108 @@ function editAngebot(id) {
   const fi = document.getElementById('ang-datei-input'); if (fi) fi.value = '';
   _angNeu = []; _angBleiben = _angDateien(a).slice(); _angStart = _angBleiben.slice();
   _renderAngDatei();
+  _angVersionModus = false;
+  document.getElementById('ang-aenderung').value = a.aenderung || '';
+  _renderAngVersionen(a);
   openModal('modal-angebot');
+}
+
+// ── Versionen eines Angebots (nachverhandelt) ──
+// Der aktuelle Stand steht wie bisher direkt am Angebot (Betrag, Datum, Anhaenge …) – so rechnen Liste,
+// Vergleich, „Zu Rechnung“ und die iPhone-App v1.3 automatisch mit der neuesten Version.
+// Fruehere Staende: a.versionen = [{nr, datum, gueltig, betrag, notiz, aenderung, dateien, ki?}] (aufsteigend).
+// a.aenderung = was sich beim aktuellen Stand gegenueber dem vorigen geaendert hat.
+// a.kiVergleich = letzter KI-Vergleich (aktuelle gegen vorige Version) – gespeichert, damit er nichts nochmal kostet.
+let _angVersionModus = false;   // true = das Fenster traegt gerade eine NEUE Version ein
+function _angVersionen(a) { return (a && Array.isArray(a.versionen)) ? a.versionen : []; }
+function _angDiffHtml(d) {
+  if (Math.abs(d) < 0.005) return '';
+  return `<span style="font-weight:700;color:${d < 0 ? 'var(--success)' : 'var(--danger)'};white-space:nowrap">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</span>`;
+}
+// Kennzeichen in Liste/Vergleich: „V2“ + was das Verhandeln gegenueber dem ersten Angebot gebracht hat
+function _angVInfo(a) {
+  const alt = _angVersionen(a);
+  if (!alt.length) return '';
+  const en = _lang === 'en', d = (parseFloat(a.betrag) || 0) - (parseFloat(alt[0].betrag) || 0);
+  const txt = Math.abs(d) < 0.005 ? '' : d < 0 ? (en ? `${fmt(-d)} cheaper than V1` : `${fmt(-d)} günstiger als V1`) : (en ? `${fmt(d)} more than V1` : `${fmt(d)} teurer als V1`);
+  return `<span class="badge badge-blue ang-vbadge" style="margin-left:6px;font-size:0.62rem;vertical-align:middle" title="${esc(en ? `Version ${alt.length + 1} of this quote` : `Version ${alt.length + 1} dieses Angebots`)}">V${alt.length + 1}</span>`
+    + (txt ? `<br><span class="ang-vdiff" style="font-size:0.73rem;font-weight:600;color:${d < 0 ? 'var(--success)' : 'var(--danger)'}">${d < 0 ? '↓' : '↑'} ${esc(txt)}</span>` : '');
+}
+function _renderAngVersionen(a) {
+  const box = document.getElementById('ang-version-box'), row = document.getElementById('ang-aenderung-row');
+  if (!box || !row) return;
+  const alt = _angVersionen(a);
+  box.style.display = a ? '' : 'none';
+  row.style.display = (a && (alt.length || _angVersionModus)) ? '' : 'none';
+  if (!a) return;
+  const en = _lang === 'en', nr = alt.length + 1;
+  const hin = document.getElementById('ang-version-hinweis'), liste = document.getElementById('ang-version-liste');
+  document.getElementById('ang-version-knoepfe').style.display = _angVersionModus ? 'none' : 'flex';
+  document.getElementById('ang-version-ki-btn').style.display = alt.length ? '' : 'none';
+  hin.style.display = (_angVersionModus || !alt.length) ? '' : 'none';
+  hin.textContent = _angVersionModus
+    ? (en ? `You are entering version ${nr + 1}. The previous version stays in the history below – enter the new amount above and attach the new quote.`
+          : `Du trägst gerade Version ${nr + 1} ein. Der bisherige Stand bleibt unten im Verlauf erhalten – trage oben den neuen Betrag ein und hänge das neue Angebot an.`)
+    : (en ? 'Renegotiated? Create a new version – the old one stays in the history.' : 'Nachverhandelt? Lege eine neue Version an – die alte bleibt im Verlauf erhalten.');
+  if (!alt.length && !_angVersionModus) { liste.innerHTML = ''; return; }
+  // alle Staende, neuester zuerst; der Stand am Angebot ist „aktuell“ (bzw. „bisher“, solange die neue Version offen ist)
+  const staende = [...alt, { nr, datum: a.datum, betrag: a.betrag, aenderung: a.aenderung, dateien: _angDateien(a), jetzt: true }];
+  liste.innerHTML = staende.map((v, i) => {
+    const d = i > 0 ? (parseFloat(v.betrag) || 0) - (parseFloat(staende[i - 1].betrag) || 0) : 0;
+    const n = (v.dateien || []).length;
+    const marke = v.jetzt ? `<span class="badge ${_angVersionModus ? 'badge-gray' : 'badge-green'}" style="font-size:0.6rem;margin-left:6px">${_angVersionModus ? (en ? 'so far' : 'bisher') : (en ? 'current' : 'aktuell')}</span>` : '';
+    return `<div class="ang-version" data-nr="${v.nr}" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px">
+      <div style="flex:1;min-width:0;font-size:0.82rem;color:var(--text);line-height:1.45">
+        <strong>V${v.nr}</strong>${marke} <span style="color:var(--text3)">· ${fmtDate(v.datum)}</span> · <span style="font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">${fmt(v.betrag)}</span> ${i > 0 ? _angDiffHtml(d) : ''}
+        ${v.aenderung ? `<div style="font-size:0.75rem;color:var(--text2);word-break:break-word">${esc(v.aenderung)}</div>` : ''}
+      </div>
+      ${n ? `<button type="button" class="action-btn ang-klammer" onclick="openAngebotDatei(${a.id}, null${v.jetzt ? '' : ', ' + v.nr})" title="${esc(n + ' ' + tt('Anhänge'))}" style="flex-shrink:0">📎${n > 1 ? `<span style="font-size:0.7rem;font-weight:700;margin-left:1px">${n}</span>` : ''}</button>` : ''}
+      ${(!v.jetzt && !_angVersionModus) ? `<button type="button" class="action-btn del" onclick="angVersionLoeschen(${a.id}, ${v.nr})" title="${esc(tt('Entfernen'))}" style="flex-shrink:0">✕</button>` : ''}
+    </div>`;
+  }).reverse().join('');
+}
+// „Neue Version“: Fenster auf den neuen Stand umstellen. Gespeichert wird erst mit „Speichern“ (saveAngebot).
+function angNeueVersion() {
+  const a = (state.angebote || []).find(x => String(x.id) === String(document.getElementById('ang-edit-id').value));
+  if (!a || !requireSub()) return;
+  if (_angSpeichert) return;
+  _angVersionModus = true;
+  document.getElementById('ang-modal-title').textContent = (_lang === 'en' ? 'New version' : 'Neue Version') + ' (V' + (_angVersionen(a).length + 2) + ')';
+  document.getElementById('ang-to-rechnung-btn').style.display = 'none';
+  document.getElementById('ang-datum').value = today();
+  document.getElementById('ang-gueltig').value = '';
+  document.getElementById('ang-aenderung').value = '';
+  // Die neue Version beginnt OHNE Anhaenge. Die bisherigen gehoeren zum alten Stand und bleiben in der Ablage
+  // (_angStart leer -> beim Speichern wird nichts geloescht).
+  _angNeu = []; _angBleiben = []; _angStart = [];
+  _angGeaendert();
+  _renderAngVersionen(a);
+  _focusField('ang-betrag');
+}
+async function angVersionLoeschen(id, nr) {
+  if (!requireSub()) return;
+  const a = (state.angebote || []).find(x => String(x.id) === String(id));
+  const v = _angVersionen(a).find(x => x.nr === nr);
+  if (!v) return;
+  const en = _lang === 'en';
+  if (!(await showConfirm(en ? `Delete version ${nr} from the history? Its attachments are deleted too.` : `Version ${nr} aus dem Verlauf löschen? Ihre Anhänge werden mit gelöscht.`,
+        { okText: en ? 'Delete' : 'Löschen' }))) return;
+  const rest = a.versionen.filter(x => x !== v);
+  const behalten = new Set([..._angDateien(a), ..._angBleiben, ...rest.flatMap(x => x.dateien || [])].map(_angSchl));
+  (v.dateien || []).forEach(d => d.path && !behalten.has(_angSchl(d)) && deletePhotoFromStorage(d.path));
+  a.versionen = rest.map((x, i) => ({ ...x, nr: i + 1 }));
+  delete a.kiVergleich;   // bezog sich auf die alte Nummerierung
+  a._updatedAt = Date.now();
+  save(); renderAngebote();
+  if (String(document.getElementById('ang-edit-id').value) === String(id)) _renderAngVersionen(a);
+  showToast(en ? '🗑 Version deleted' : '🗑 Version gelöscht', 'success');
 }
 
 async function deleteAngebot(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Angebot löschen?'))) return;
   const _a = (state.angebote||[]).find(a => String(a.id) === String(id));
-  _angDateien(_a).forEach(d => d.path && deletePhotoFromStorage(d.path));
+  [..._angDateien(_a), ..._angVersionen(_a).flatMap(v => v.dateien || [])].forEach(d => d.path && deletePhotoFromStorage(d.path));
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
   save(); renderAngebote();
@@ -17828,7 +17970,7 @@ function renderAngVergleich() {
           return `<div style="background:var(--surface);border:2px solid ${isCheapest?'var(--success)':'var(--border)'};border-radius:14px;padding:16px;position:relative;display:flex;flex-direction:column;gap:6px">
             ${isCheapest ? `<div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--success);color:white;font-size:0.64rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">✓ Günstigstes Angebot</div>` : ''}
             <div style="font-weight:700;font-size:0.92rem;color:var(--text)">${a.anbieter||'–'}</div>
-            <div style="font-size:0.75rem;color:var(--text3)">${a.beschr}</div>
+            <div style="font-size:0.75rem;color:var(--text3)">${a.beschr}${_angVInfo(a)}</div>
             <div style="font-size:1.4rem;font-weight:800;color:${isCheapest?'var(--success)':'var(--text)'};font-family:'JetBrains Mono',monospace;margin:4px 0">${fmt(a.betrag)}</div>
             <div style="font-size:0.73rem;color:var(--text3);display:flex;flex-direction:column;gap:2px">
               ${a.datum ? `<span>📅 ${fmtDate(a.datum)}</span>` : ''}
@@ -17858,14 +18000,14 @@ function _angKlammer(a) {
   return `<button class="action-btn ang-klammer" onclick="openAngebotDatei(${a.id})" title="${esc(titel)}">📎${n > 1 ? `<span style="font-size:0.7rem;font-weight:700;margin-left:1px">${n}</span>` : ''}</button>`;
 }
 // Ein Anhang: direkt oeffnen. Mehrere: Fenster „Anhänge" mit Vorschaubildern (idx = bestimmter Anhang).
-function openAngebotDatei(id, idx) {
+function openAngebotDatei(id, idx, vNr) {   // vNr = Anhaenge einer frueheren Version
   const a = (state.angebote||[]).find(a => String(a.id) === String(id));
-  const liste = _angDateien(a);
+  const liste = vNr ? ((_angVersionen(a).find(v => v.nr === vNr) || {}).dateien || []) : _angDateien(a);
   if (!liste.length) return;
   if (idx == null && liste.length > 1) {
-    document.getElementById('ang-anh-titel').textContent = `📎 ${a.beschr || tt('Angebot')} – ${liste.length} ${tt('Anhänge')}`;
+    document.getElementById('ang-anh-titel').textContent = `📎 ${a.beschr || tt('Angebot')}${vNr ? ' (V' + vNr + ')' : ''} – ${liste.length} ${tt('Anhänge')}`;
     document.getElementById('ang-anh-liste').innerHTML = liste.map((d, i) => `
-      <button type="button" onclick="openAngebotDatei(${a.id}, ${i})" title="${esc(d.name || '')}"
+      <button type="button" onclick="openAngebotDatei(${a.id}, ${i}${vNr ? ', ' + vNr : ''})" title="${esc(d.name || '')}"
         style="display:flex;flex-direction:column;gap:6px;align-items:stretch;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit">
         ${_angIstBild(d)
           ? `<img src="${esc(d.url || d.data || '')}" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;background:var(--surface3)">`
@@ -18026,11 +18168,154 @@ function confirmAngKI() {
   document.getElementById('ang-edit-id').value  = '';
   const _fi = document.getElementById('ang-datei-input'); if (_fi) _fi.value = '';
   _angNeu = []; _angBleiben = []; _angStart = []; _renderAngDatei();
+  _angVersionModus = false; _renderAngVersionen(null);
   closeModal('modal-angebot-ki'); resetAngKI();
   openModal('modal-angebot');
   // Direkt zum Kategorie-Feld, das die KI nicht setzt.
   _focusField('ang-kat');
   showToast('✅ Daten übernommen – bitte Kategorie und Status noch setzen', 'success');
+}
+
+// ── KI-Vergleich: aktuelle gegen vorige Version (was ist weggefallen, dazugekommen, wo aenderte sich der Preis) ──
+// Anhaenge fuer die KI vorbereiten. klein = sparsam (PDF-Seiten als Bilder, staerker verkleinert) – der Server
+// nimmt hoechstens ca. 4,5 MB je Anfrage an.
+async function _angKiTeile(dateien, klein) {
+  const teile = [];
+  for (const d of (dateien || []).slice(0, 4)) {
+    const src = d.url || d.data;
+    if (!src) continue;
+    const lokal = /^data:/i.test(src);
+    const istPdf = d.type === 'application/pdf' || /\.pdf(?:[?#]|$)/i.test(d.name || '') || /^data:application\/pdf/i.test(src);
+    if (istPdf && klein) {
+      const { seiten } = await _pdfSeitenAlsBilder(src, 1300, 6);
+      seiten.forEach(s => teile.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: s.dataUrl.split(',')[1] } }));
+    } else if (istPdf) {
+      let b64 = lokal ? (src.split(',')[1] || '') : '';
+      if (!lokal) { const r = await fetch(src, { mode: 'cors' }); if (!r.ok) throw new Error('HTTP ' + r.status); b64 = (await _blobToDataUrl(await r.blob())).split(',')[1] || ''; }
+      teile.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } });
+    } else {
+      const r = await fetch(src, lokal ? undefined : { mode: 'cors' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const { dataUrl, mediaType } = await compressImage(await r.blob(), klein ? 1100 : 1568, klein ? 0.6 : 0.75);
+      teile.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: dataUrl.split(',')[1] } });
+    }
+  }
+  return teile;
+}
+// Antwort der KI in eine feste, sichere Form bringen (nur erwartete Felder, begrenzte Laengen)
+function _angKiNorm(x) {
+  x = x || {};
+  const zahl = v => { if (v == null || v === '') return null; const n = typeof v === 'number' ? v : _parseBetrag(v); return isFinite(n) ? Math.round(n * 100) / 100 : null; };
+  const txt = (v, max = 300) => String(v == null ? '' : v).trim().slice(0, max);
+  const liste = (l, f) => (Array.isArray(l) ? l : []).slice(0, 60).map(p => f(p || {})).filter(p => p.position);
+  return {
+    zusammenfassung: txt(x.zusammenfassung, 600),
+    preisart: /netto|net\b/i.test(String(x.preisart || '')) ? 'netto' : /brutto|gross/i.test(String(x.preisart || '')) ? 'brutto' : '',
+    summe_alt: zahl(x.summe_alt), summe_neu: zahl(x.summe_neu),
+    entfallen: liste(x.entfallen, p => ({ position: txt(p.position), betrag: zahl(p.betrag) })),
+    neu: liste(x.neu, p => ({ position: txt(p.position), betrag: zahl(p.betrag) })),
+    geaendert: liste(x.geaendert, p => ({ position: txt(p.position), alt: zahl(p.alt), neu: zahl(p.neu), hinweis: txt(p.hinweis) })),
+    hinweise: (Array.isArray(x.hinweise) ? x.hinweise : []).slice(0, 12).map(h => txt(h)).filter(Boolean)
+  };
+}
+let _angKiLaeuft = false;
+async function angVersionenKI(id, neu) {
+  id = id || document.getElementById('ang-edit-id').value;
+  const a = (state.angebote || []).find(x => String(x.id) === String(id));
+  const alt = _angVersionen(a).slice(-1)[0];
+  if (!a || !alt) return;
+  if (a.kiVergleich && a.kiVergleich.e && !neu) { _angKiZeigen(a); return; }   // schon verglichen: nur anzeigen
+  if (!requireSub()) return;
+  const en = _lang === 'en';
+  if (_angNeu.length && String(document.getElementById('ang-edit-id').value) === String(a.id)) {
+    showToast(en ? '⚠️ Please save the quote first – then compare.' : '⚠️ Bitte das Angebot zuerst speichern – dann vergleichen.', 'warning', 5000); return;
+  }
+  if (!_angDateien(a).length || !(alt.dateien || []).length) {
+    showToast(en ? '⚠️ For the AI comparison each of the two versions needs the quote as a photo or PDF.'
+                 : '⚠️ Für den KI-Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.', 'warning', 6500); return;
+  }
+  if (_angKiLaeuft) return;
+  if (!(await _kiHinweis())) return;
+  _angKiLaeuft = true;
+  const lade = _lade('KI vergleicht die beiden Versionen', 0, { verzoegert: 0, maxMs: 150000 });
+  try {
+    const LIMIT = 3800000, gr = t => t.reduce((n, x) => n + x.source.data.length, 0);
+    let tA = await _angKiTeile(alt.dateien, false), tN = await _angKiTeile(_angDateien(a), false);
+    if (gr(tA) + gr(tN) > LIMIT) { tA = await _angKiTeile(alt.dateien, true); tN = await _angKiTeile(_angDateien(a), true); }
+    if (gr(tA) + gr(tN) > LIMIT) throw Object.assign(new Error('zu gross'), { meldung: en
+      ? 'The attachments are too large for the AI comparison – please attach smaller photos or PDFs.'
+      : 'Die Anhänge sind zusammen zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
+    if (!tA.length || !tN.length) throw new Error('keine lesbaren Anhaenge');
+    const nr = a.versionen.length + 1;
+    const prompt = `Du vergleichst zwei Versionen desselben Angebots (Bau/Handwerk). Oben stehen zuerst die Unterlagen der ALTEN Version, danach die der NEUEN Version.
+Finde heraus, was sich geändert hat, und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):
+{"zusammenfassung":"1-2 kurze Sätze: was hat sich im Wesentlichen geändert",
+"preisart":"brutto oder netto (welche Beträge du unten angibst)",
+"summe_alt":12345.67,"summe_neu":12000.00,
+"entfallen":[{"position":"kurze Bezeichnung","betrag":123.45}],
+"neu":[{"position":"kurze Bezeichnung","betrag":123.45}],
+"geaendert":[{"position":"kurze Bezeichnung","alt":100.00,"neu":90.00,"hinweis":"z.B. Menge 20 → 18 m², Einzelpreis gesenkt"}],
+"hinweise":["weitere Änderungen, z.B. Nachlass/Rabatt, Skonto, Zahlungsbedingungen, Lieferzeit, Gültigkeit"]}
+Regeln: "entfallen" = Positionen, die es nur in der alten Version gibt. "neu" = Positionen, die es nur in der neuen Version gibt. "geaendert" = gleiche Position mit anderem Preis oder anderer Menge. Unveränderte Positionen NICHT auflisten. Beträge als Zahl mit Punkt, ohne Währungszeichen; unbekannt = null. Nimm nur auf, was wirklich in den Unterlagen steht – nichts erfinden. Ist etwas nicht lesbar, schreibe das in "hinweise". Leere Listen als []. Sprache der Texte: ${en ? 'Englisch' : 'Deutsch'}.`;
+    const messages = [{ role: 'user', content: [
+      { type: 'text', text: `ALTE VERSION (V${alt.nr}${alt.datum ? ', ' + alt.datum : ''}):` }, ...tA,
+      { type: 'text', text: `NEUE VERSION (V${nr}${a.datum ? ', ' + a.datum : ''}):` }, ...tN,
+      { type: 'text', text: prompt } ] }];
+    const resp = await fetch(API_BASE + '/api/ki', { method: 'POST', headers: await _kiHeaders(), body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages }) });
+    const roh = await resp.text();
+    let data = null; try { data = JSON.parse(roh); } catch (_) {}
+    if (!resp.ok || !data) {
+      // Anmeldung / zu viele Anfragen / Dienst nicht erreichbar: dieselben Meldungen wie beim Rechnungs-Scan
+      const bekannt = [401, 403, 429].includes(resp.status) || resp.status >= 500;
+      throw Object.assign(new Error('KI ' + resp.status), { meldung: resp.status === 413
+        ? (en ? 'The attachments are too large for the AI comparison.' : 'Die Anhänge sind zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.')
+        : (bekannt ? tt(_kiFehlertext(resp.status, data)) : '') });
+    }
+    const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Keine auswertbare Antwort');
+    a.kiVergleich = { von: alt.nr, nach: nr, am: new Date().toISOString(), e: _angKiNorm(JSON.parse(m[0])) };
+    a._updatedAt = Date.now();
+    save();
+    _angKiZeigen(a);
+  } catch (err) {
+    console.warn('[KI-Vergleich]', err?.message);
+    showToast('⚠️ ' + (err.meldung || (en ? 'The AI comparison did not work – please try again later.' : 'Der KI-Vergleich hat nicht geklappt – bitte später nochmal versuchen.')), 'error', 7000);
+  } finally { lade.ende(); _angKiLaeuft = false; }
+}
+function _angKiZeigen(a) {
+  const k = a.kiVergleich, e = k && k.e;
+  if (!e) return;
+  const en = _lang === 'en';
+  const geld = v => (v == null ? '–' : fmt(v));
+  const alt = _angVersionen(a).find(v => v.nr === k.von) || {};
+  const sA = e.summe_alt != null ? e.summe_alt : (parseFloat(alt.betrag) || null);
+  const sN = e.summe_neu != null ? e.summe_neu : (parseFloat(a.betrag) || null);
+  const mono = "font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap";
+  const zeile = (links, rechts, unten) => `<div class="ang-kiv-zeile" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:2px 12px;padding:7px 0;border-top:1px solid var(--border);font-size:0.83rem;line-height:1.45">
+      <span style="flex:1 1 190px;min-width:0;word-break:break-word">${esc(links)}${unten ? `<br><span style="font-size:0.74rem;color:var(--text3)">${esc(unten)}</span>` : ''}</span>
+      <span style="${mono};text-align:right;margin-left:auto">${rechts}</span></div>`;
+  const block = (klasse, farbe, titel, zeilen) => zeilen.length ? `<div class="ang-kiv-block ${klasse}" style="margin-top:16px">
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${farbe};flex-shrink:0"></span>${esc(titel)} (${zeilen.length})</div>${zeilen.join('')}</div>` : '';
+  const diffPos = p => (p.alt != null && p.neu != null) ? ' ' + _angDiffHtml(p.neu - p.alt) : '';
+  const leer = !e.entfallen.length && !e.neu.length && !e.geaendert.length && !e.hinweise.length;
+  document.getElementById('ang-kiv-titel').textContent = `✨ V${k.von} → V${k.nach}: ${a.beschr || tt('Angebot')}`;
+  document.getElementById('ang-kiv-inhalt').innerHTML = `
+    <div class="ang-kiv-summe" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:0.9rem">
+      <span>V${k.von} <span style="${mono}">${geld(sA)}</span></span><span style="color:var(--text3)">→</span>
+      <span>V${k.nach} <span style="${mono}">${geld(sN)}</span></span>
+      ${(sA != null && sN != null) ? _angDiffHtml(sN - sA) : ''}
+      ${e.preisart ? `<span style="font-size:0.72rem;color:var(--text3)">(${e.preisart === 'netto' ? (en ? 'net' : 'netto') : (en ? 'gross' : 'brutto')})</span>` : ''}
+    </div>
+    ${e.zusammenfassung ? `<p style="font-size:0.85rem;line-height:1.55;color:var(--text2);margin:12px 0 0">${esc(e.zusammenfassung)}</p>` : ''}
+    ${block('weg', 'var(--danger)', en ? 'Removed' : 'Weggefallen', e.entfallen.map(p => zeile(p.position, geld(p.betrag))))}
+    ${block('dazu', 'var(--success)', en ? 'Added' : 'Neu dazugekommen', e.neu.map(p => zeile(p.position, geld(p.betrag))))}
+    ${block('preis', 'var(--accent)', en ? 'Price changed' : 'Preis geändert', e.geaendert.map(p => zeile(p.position, `${geld(p.alt)} → ${geld(p.neu)}${diffPos(p)}`, p.hinweis)))}
+    ${e.hinweise.length ? `<div class="ang-kiv-block hinweise" style="margin-top:16px"><div style="font-weight:700;font-size:0.85rem;margin-bottom:4px">${en ? 'Other changes' : 'Sonstige Änderungen'}</div>
+      <ul style="margin:0;padding-left:18px;font-size:0.83rem;line-height:1.55;color:var(--text2)">${e.hinweise.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
+    ${leer ? `<p style="font-size:0.85rem;color:var(--text2);margin:14px 0 0">${en ? 'The AI found no differences between the two versions.' : 'Die KI hat keine Unterschiede zwischen den beiden Versionen gefunden.'}</p>` : ''}
+    <div style="font-size:0.72rem;color:var(--text3);margin-top:14px">${en ? 'Compared on' : 'Verglichen am'} ${fmtDate(k.am)}</div>`;
+  document.getElementById('ang-kiv-neu').onclick = () => angVersionenKI(a.id, true);
+  openModal('modal-ang-ki-vergleich');
 }
 
 function resetAngKI() {
@@ -18070,7 +18355,7 @@ function renderAngebote() {
     const isExpired = gueltigD && gueltigD < now && a.status === 'Ausstehend';
     return `<tr>
       <td class="hide-mobile" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${fmtDate(a.datum)}</td>
-      <td data-title><strong>${esc(a.beschr)}</strong>${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(a.notiz)}</span>`:''}</td>
+      <td data-title><strong>${esc(a.beschr)}</strong>${_angVInfo(a)}${a.notiz?`<br><span style="font-size:0.73rem;color:var(--text3)">${esc(a.notiz)}</span>`:''}</td>
       <td class="hide-mobile" style="font-size:0.82rem">${a.anbieter||'–'}</td>
       <td data-label="${tt('Betrag')}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(a.betrag)}</td>
       <td data-label="${tt('Status')}"><span class="badge ${statusBadge[a.status]||'badge-gray'}">${a.status}</span>${isExpired?'<span class="badge badge-red" style="margin-left:4px;font-size:0.62rem">Abgelaufen</span>':''}</td>
@@ -20395,7 +20680,11 @@ async function _mappePDF(d, opts = {}, fortschritt = () => {}, abbruch = () => f
     abschnitt(L('Angebote', 'Quotes'));
     let an = 0;
     y = tabelle(y, [L('Anhang', 'Attachm.'), L('Datum', 'Date'), L('Beschreibung', 'Description'), L('Firma', 'Company'), L('Betrag', 'Amount'), 'Status', L('Gültig bis', 'Valid until')],
-      d.angebote.map(a => [_angDateien(a).length ? 'A' + (++an) : '–', fmtDate(a.datum), a.beschr || '–', a.anbieter || '–', euro(a.betrag), stat(a.status), a.gueltig ? fmtDate(a.gueltig) : '–']),
+      d.angebote.flatMap(a => {
+        const vs = _angVersionen(a);
+        return [[_angDateien(a).length ? 'A' + (++an) : '–', fmtDate(a.datum), (a.beschr || '–') + (vs.length ? ` (V${vs.length + 1})` : ''), a.anbieter || '–', euro(a.betrag), stat(a.status), a.gueltig ? fmtDate(a.gueltig) : '–'],
+          ...vs.slice().reverse().map(v => ['–', fmtDate(v.datum), `   V${v.nr} – ${L('frühere Version', 'earlier version')}`, a.anbieter || '–', euro(v.betrag), L('ersetzt', 'replaced'), v.gueltig ? fmtDate(v.gueltig) : '–'])];
+      }),
       { 0: { cellWidth: 15 }, 1: { cellWidth: 20 }, 3: { cellWidth: 34 }, 4: { cellWidth: 24, halign: 'right' }, 5: { cellWidth: 24 }, 6: { cellWidth: 21 } }) + 2;
   }
   if (d.zahlungen.length) {

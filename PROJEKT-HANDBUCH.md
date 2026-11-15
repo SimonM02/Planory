@@ -103,6 +103,16 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   hakt das Angebot ab, ohne die Rechnung ein zweites Mal zu buchen. Nie beim Bearbeiten. Anlass: Testkonto hatte
   dieselbe Rechnung einmal gescannt und einmal aus dem Angebot umgewandelt. `showConfirm` kann dafür einen
   dritten Knopf (`extraText` → Ergebnis `'extra'`).
+- **Angebots-Versionen (11.2026, Dev – noch nicht live):** nachverhandelt → „＋ Neue Version“ im Angebot. Der aktuelle
+  Stand steht wie bisher direkt am Angebot (Liste, Vergleich, „Zu Rechnung“, iPhone v1.3 rechnen automatisch mit der
+  neuesten Version); frühere Stände in `a.versionen = [{nr, datum, gueltig, betrag, notiz, aenderung, dateien, ki?}]`,
+  `a.aenderung` = „Was hat sich geändert?“. Jede Version behält ihre eigenen Anhänge (beim Anlegen einer neuen
+  Version wird nichts aus der Ablage gelöscht). Liste zeigt „V2“ + Ersparnis gegenüber V1.
+- **KI-Vergleich der Versionen:** `angVersionenKI` schickt die Anhänge der vorigen und der aktuellen Version an die KI
+  (`claude-sonnet-4-6`, höchstens 4 Dateien je Version, zusammen ca. 3,8 MB – sonst PDF-Seiten als Bilder) und zeigt
+  „Weggefallen / Neu dazugekommen / Preis geändert / Sonstiges“. Ergebnis wird am Angebot gespeichert
+  (`a.kiVergleich`) – nochmal ansehen kostet nichts, „Neu vergleichen“ fragt neu. Text der KI nie als HTML einsetzen.
+  `api/ki.js` hat dafür `maxDuration: 60`.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 

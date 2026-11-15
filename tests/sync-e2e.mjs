@@ -806,6 +806,42 @@ await scenario('E18: Gelöschter Plan, Foto und Album bleiben nach dem Neustart 
   } finally { await ctx.close(); }
 });
 
+// E19) Versionen eines Angebots (nachverhandelt) samt KI-Vergleich liegen als Teil des Angebots in der Cloud
+await scenario('E19: Angebot mit Versionen und KI-Vergleich überlebt den Neustart (Verlauf, Anhänge je Version)', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true });
+  try {
+    await waitFor(page, BEREIT);
+    await page.evaluate(() => {
+      window.uploadFileToStorage = async (f, ordner) => ({ url: 'https://ablage.test/' + ordner + '/' + f.name, path: 'u/' + ordner + '/' + f.name });
+      const D = n => ({ name: n, type: 'image/jpeg', url: 'https://ablage.test/' + n, path: 'u/' + n });
+      state.angebote = (state.angebote || []).concat({ id: 1900001, _updatedAt: Date.now(), beschr: 'Fliesen E19', anbieter: 'Fliesen GmbH', kat: '', datum: '2026-03-12', gueltig: '',
+        betrag: 18400, status: 'In Verhandlung', notiz: '', dateien: [D('e19-v1.jpg')], datei: D('e19-v1.jpg') });
+      showPage('angebote'); renderAngebote();
+      editAngebot(1900001); angNeueVersion();
+      document.getElementById('ang-betrag').value = '16900'; document.getElementById('ang-aenderung').value = 'Nachlass E19';
+    });
+    await page.evaluate(() => saveAngebot());
+    await page.evaluate(() => { const a = state.angebote.find(x => x.id === 1900001);
+      a.kiVergleich = { von: 1, nach: 2, am: '2026-03-28T10:00:00.000Z', e: { zusammenfassung: 'E19 Vergleich', preisart: '', summe_alt: 18400, summe_neu: 16900, entfallen: [{ position: 'Sockel', betrag: 620 }], neu: [], geaendert: [], hinweise: [] } };
+      a._updatedAt = Date.now(); save(); });
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'angebote' && String(r.payload.id) === '1900001' && (r.payload.versionen || []).length === 1 && r.payload.kiVergleich), null, 10000);
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('E19 Vergleich'), null, 5000);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 2500);
+    const n = await page.evaluate(() => { const a = (state.angebote || []).find(x => String(x.id) === '1900001') || {}; const v = (a.versionen || [])[0] || {};
+      showPage('angebote'); renderAngebote();
+      return { betrag: a.betrag, aend: a.aenderung, v: v.nr + '/' + v.betrag + '/' + ((v.dateien || [])[0] || {}).name, ki: a.kiVergleich && a.kiVergleich.e.entfallen[0].position,
+        badge: [...document.querySelectorAll('#angebot-table .ang-vbadge')].map(b => b.textContent).join() }; });
+    const p = [];
+    if (n.betrag !== 16900 || n.aend !== 'Nachlass E19') p.push('aktueller Stand: ' + JSON.stringify(n));
+    if (n.v !== '1/18400/e19-v1.jpg') p.push('Verlauf nach Neustart: ' + n.v);
+    if (n.ki !== 'Sockel') p.push('KI-Vergleich nach Neustart weg');
+    if (n.badge !== 'V2') p.push('Liste zeigt „V2“ nicht: ' + n.badge);
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 await browser.close();
 
 // ── Ergebnis ──

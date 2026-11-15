@@ -3170,6 +3170,180 @@ await scenario('Angebot: mehrere Fotos/PDFs anhängen, einzeln entfernen (Ablage
   } finally { await d.ctx.close(); }
 });
 
+// ── Angebote: Versionen (nachverhandelt) und KI-Vergleich der Versionen ──
+await scenario('Angebot nachverhandelt: neue Version – der alte Stand bleibt mit seinen Anhängen im Verlauf, Liste zeigt „V2“ und die Ersparnis', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    const zu = () => p.waitForFunction(() => { const m = document.getElementById('modal-angebot'); return !m.classList.contains('open') || m.classList.contains('closing'); }, null, { timeout: 5000 });
+    await p.evaluate(() => {
+      window.__geloescht = []; window.deletePhotoFromStorage = pfad => { __geloescht.push(pfad); };
+      window.uploadFileToStorage = async (f, ordner) => ({ url: 'https://ablage.test/' + ordner + '/' + f.name, path: 'u/' + ordner + '/' + f.name });
+      const D = n => ({ name: n, type: 'image/jpeg', url: 'https://ablage.test/' + n, path: 'u/' + n });
+      state.angebote = [{ id: 501, _updatedAt: 1, beschr: 'Fliesen Bad', anbieter: 'Fliesen GmbH', kat: state.budgetKat[0].name, datum: '2026-03-12', gueltig: '2026-04-12',
+        betrag: 18400, status: 'In Verhandlung', notiz: 'erstes Angebot', dateien: [D('v1-a.jpg'), D('v1-b.jpg')], datei: D('v1-a.jpg') }];
+      showPage('angebote'); renderAngebote(); editAngebot(501);
+    });
+    const f = [];
+    const sichtbar = id => p.evaluate(i => getComputedStyle(document.getElementById(i)).display !== 'none', id);
+    // Angebot ohne Versionen: Knopf ist da, aber noch kein Verlauf und kein KI-Vergleich
+    const vor = { box: await sichtbar('ang-version-box'), aend: await sichtbar('ang-aenderung-row'), ki: await sichtbar('ang-version-ki-btn'),
+      zeilen: await p.evaluate(() => document.querySelectorAll('#ang-version-liste .ang-version').length) };
+    if (!vor.box || vor.aend || vor.ki || vor.zeilen) f.push('ohne Versionen: ' + JSON.stringify(vor));
+    await p.click('#ang-version-neu-btn');
+    const modus = await p.evaluate(() => ({ titel: document.getElementById('ang-modal-title').textContent, heute: document.getElementById('ang-datum').value === today(),
+      gueltig: document.getElementById('ang-gueltig').value, anh: document.querySelectorAll('#ang-datei-info .ang-anhang').length,
+      aend: getComputedStyle(document.getElementById('ang-aenderung-row')).display !== 'none', knoepfe: getComputedStyle(document.getElementById('ang-version-knoepfe')).display,
+      verlauf: [...document.querySelectorAll('#ang-version-liste .ang-version')].map(z => z.textContent.replace(/\s+/g, ' ').trim()),
+      breit: [...document.querySelectorAll('#ang-version-box *, #ang-aenderung-row *')].some(z => z.getBoundingClientRect().right > innerWidth + 1) }));
+    if (!/Neue Version \(V2\)/.test(modus.titel) || !modus.heute || modus.gueltig || modus.anh || !modus.aend || modus.knoepfe !== 'none') f.push('Fenster „Neue Version“: ' + JSON.stringify(modus));
+    if (modus.verlauf.length !== 1 || !/V1.*bisher.*12\.3\.2026/.test(modus.verlauf[0])) f.push('Verlauf beim Eintragen: ' + JSON.stringify(modus.verlauf));
+    if (modus.breit) f.push('Versions-Bereich ragt am Handy über den Rand');
+    await p.fill('#ang-betrag', '16900'); await p.fill('#ang-aenderung', 'Sockelleisten gestrichen, 3 % Nachlass');
+    await p.setInputFiles('#ang-datei-input', [{ name: 'v2.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') }]);
+    await p.waitForTimeout(120);
+    await p.evaluate(() => saveAngebot());
+    await p.waitForFunction(() => (state.angebote[0].versionen || []).length === 1, null, { timeout: 5000 });
+    await zu(); await p.waitForTimeout(250);
+    const a = await p.evaluate(() => { const a = state.angebote[0], v = a.versionen[0]; return { betrag: a.betrag, aend: a.aenderung, dateien: a.dateien.map(x => x.name), datei: a.datei && a.datei.name,
+      v: { nr: v.nr, betrag: v.betrag, datum: v.datum, gueltig: v.gueltig, notiz: v.notiz, dateien: v.dateien.map(x => x.name).join() }, geloescht: __geloescht.slice(),
+      badge: document.querySelector('#angebot-table .ang-vbadge')?.textContent || '', diff: (document.querySelector('#angebot-table .ang-vdiff')?.textContent || '').replace(/[^\dA-Za-zäöü,↓↑ ]/g, ''),
+      zelle: document.querySelector('#angebot-table td[data-label="Betrag"]').textContent.replace(/[^\d,]/g, ''),
+      ragt: [...document.querySelectorAll('#angebot-table .ang-vdiff, #angebot-table .ang-vbadge')].some(z => z.getBoundingClientRect().right > innerWidth + 1) }; });
+    if (a.betrag !== 16900 || a.aend !== 'Sockelleisten gestrichen, 3 % Nachlass' || a.dateien.join() !== 'v2.pdf') f.push('neuer Stand: ' + JSON.stringify(a));
+    if (a.datei !== 'v2.pdf') f.push('erster Anhang (für die iPhone-App v1.3) ist ' + a.datei);
+    if (a.v.nr !== 1 || a.v.betrag !== 18400 || a.v.datum !== '2026-03-12' || a.v.gueltig !== '2026-04-12' || a.v.notiz !== 'erstes Angebot' || a.v.dateien !== 'v1-a.jpg,v1-b.jpg') f.push('alter Stand im Verlauf: ' + JSON.stringify(a.v));
+    if (a.geloescht.length) f.push('Anhänge der alten Version wurden aus der Ablage gelöscht: ' + a.geloescht.join());
+    if (a.badge !== 'V2' || !/↓.*1\s?500,00 günstiger als V1/.test(a.diff) || a.zelle !== '16900,00' || a.ragt) f.push('Liste: ' + JSON.stringify({ badge: a.badge, diff: a.diff, zelle: a.zelle, ragt: a.ragt }));
+    // Vergleich und „Zu Rechnung“ rechnen mit der neuesten Version
+    const nutzung = await p.evaluate(async () => {
+      setAngView('vergleich', document.getElementById('ang-tab-vergleich'));
+      const karte = document.getElementById('ang-vergleich-view').textContent.replace(/[^\dA-Za-z,]/g, '');
+      setAngView('liste', document.getElementById('ang-tab-liste'));
+      state.angebote[0].status = 'Angenommen'; document.getElementById('ang-edit-id').value = 501; angebotZuRechnung();
+      const k = document.getElementById('k-betrag').value; closeModal('modal-kosten'); _pendingAngebotId = null; state.angebote[0].status = 'In Verhandlung';
+      return { karte: karte.includes('16900,00') && karte.includes('V2'), k };
+    });
+    if (!nutzung.karte || nutzung.k !== '16900') f.push('Vergleich/Zu Rechnung nutzen nicht die neueste Version: ' + JSON.stringify(nutzung));
+    await p.waitForTimeout(250);
+    // Bearbeiten ohne neue Version: Verlauf sichtbar, „Was hat sich geändert?“ änderbar, nichts wird archiviert
+    await p.evaluate(() => editAngebot(501));
+    const bearb = await p.evaluate(() => ({ verlauf: [...document.querySelectorAll('#ang-version-liste .ang-version')].map(z => z.textContent.replace(/\s+/g, ' ').trim()),
+      aend: document.getElementById('ang-aenderung').value, ki: getComputedStyle(document.getElementById('ang-version-ki-btn')).display !== 'none',
+      anh: document.querySelectorAll('#ang-datei-info .ang-anhang').length }));
+    if (bearb.verlauf.length !== 2 || !/^V2.*aktuell/.test(bearb.verlauf[0]) || !/Sockelleisten/.test(bearb.verlauf[0]) || !/^V1/.test(bearb.verlauf[1])) f.push('Verlauf: ' + JSON.stringify(bearb.verlauf));
+    if (!/−.*1\s?500,00/.test(bearb.verlauf[0].replace(/[^\d,−+ ]/g, ''))) f.push('Verlauf zeigt die Änderung zum Vorgänger nicht: ' + bearb.verlauf[0]);
+    if (bearb.aend !== 'Sockelleisten gestrichen, 3 % Nachlass' || !bearb.ki || bearb.anh !== 1) f.push('Bearbeiten: ' + JSON.stringify(bearb));
+    await p.fill('#ang-aenderung', 'Sockelleisten gestrichen');
+    await p.evaluate(() => saveAngebot()); await zu(); await p.waitForTimeout(250);
+    const still = await p.evaluate(() => ({ n: state.angebote[0].versionen.length, aend: state.angebote[0].aenderung, dateien: state.angebote[0].dateien.length }));
+    if (still.n !== 1 || still.aend !== 'Sockelleisten gestrichen' || still.dateien !== 1) f.push('normales Speichern: ' + JSON.stringify(still));
+    // Dritte Version (teurer), Anhänge der alten Versionen öffnen, eine Version löschen, Angebot löschen
+    await p.evaluate(() => { editAngebot(501); angNeueVersion(); document.getElementById('ang-betrag').value = '19000'; });
+    await p.setInputFiles('#ang-datei-input', [bildDatei('v3.jpg')]);
+    await p.waitForTimeout(120);
+    await p.evaluate(() => saveAngebot());
+    await p.waitForFunction(() => (state.angebote[0].versionen || []).length === 2, null, { timeout: 5000 });
+    await zu(); await p.waitForTimeout(250);
+    const drei = await p.evaluate(async () => {
+      const a = state.angebote[0];
+      const r = { nrn: a.versionen.map(v => v.nr).join(), v2: a.versionen[1].betrag + '/' + a.versionen[1].aenderung + '/' + a.versionen[1].dateien.map(x => x.name).join(),
+        badge: document.querySelector('#angebot-table .ang-vbadge').textContent, diff: document.querySelector('#angebot-table .ang-vdiff').textContent, weg0: __geloescht.length };
+      openAngebotDatei(501, null, 1); const o = document.getElementById('modal-ang-anhaenge');
+      r.v1Fenster = o.classList.contains('open') && o.querySelectorAll('#ang-anh-liste button').length === 2 && /\(V1\)/.test(document.getElementById('ang-anh-titel').textContent);
+      closeModal('modal-ang-anhaenge');
+      window.showConfirm = async () => true;
+      await angVersionLoeschen(501, 1);
+      r.nachLoeschen = a.versionen.map(v => v.nr + ':' + v.betrag).join(); r.weg1 = __geloescht.slice().sort().join();
+      __geloescht.length = 0; await deleteAngebot(501); r.weg2 = __geloescht.slice().sort().join();
+      return r;
+    });
+    if (drei.nrn !== '1,2' || drei.v2 !== '16900/Sockelleisten gestrichen/v2.pdf' || drei.badge !== 'V3' || !/↑.*teurer als V1/.test(drei.diff) || drei.weg0) f.push('dritte Version: ' + JSON.stringify(drei));
+    if (!drei.v1Fenster) f.push('Anhänge der Version 1 lassen sich nicht öffnen');
+    if (drei.nachLoeschen !== '1:16900' || drei.weg1 !== 'u/v1-a.jpg,u/v1-b.jpg') f.push('Version löschen: ' + JSON.stringify([drei.nachLoeschen, drei.weg1]));
+    if (drei.weg2 !== 'u/angebote/v2.pdf,u/angebote/v3.jpg') f.push('Angebot löschen räumt nicht alle Versionen weg: ' + drei.weg2);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an die KI, Ergebnis wird sicher angezeigt und gespeichert (nochmal ansehen kostet nichts)', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    const r = await p.evaluate(async (bildFn) => {
+      const bild = (new Function('return (' + bildFn + ')()'))();
+      const pdf = 'data:application/pdf;base64,JVBERi0xLjQK';
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      const ergebnis = { zusammenfassung: 'Sockelleisten entfallen, Wandfliesen günstiger.', preisart: 'brutto', summe_alt: 18400, summe_neu: '16.900,00',
+        entfallen: [{ position: 'Sockelleisten <b>Eiche</b>', betrag: 620 }], neu: [{ position: 'Silikonfugen', betrag: '120,50' }, { betrag: 5 }],
+        geaendert: [{ position: 'Wandfliesen 60x60', alt: 9800, neu: 8900, hinweis: 'Einzelpreis gesenkt' }], hinweise: ['3 % Nachlass', '<img src=x onerror="window.__xss=1">'], fremd: 'x' };
+      window.__ki = []; window.__kiStatus = 200; const echt = window.fetch;
+      window.fetch = async (url, opt) => {
+        if (!String(url).includes('/api/ki')) return echt(url, opt);
+        __ki.push(JSON.parse(opt.body));
+        return new Response(JSON.stringify(__kiStatus === 200 ? { content: [{ type: 'text', text: 'Hier das Ergebnis:\n' + JSON.stringify(ergebnis) }] } : { error: 'kaputt' }), { status: __kiStatus });
+      };
+      const D = (n, src, type) => ({ name: n, type, url: src });
+      state.angebote = [
+        { id: 601, _updatedAt: 1, beschr: 'Fliesen Bad', anbieter: 'Fliesen GmbH', kat: state.budgetKat[0].name, datum: '2026-03-28', betrag: 16900, status: 'In Verhandlung', notiz: '', aenderung: 'Nachlass',
+          dateien: [D('v2.pdf', pdf, 'application/pdf')], datei: D('v2.pdf', pdf, 'application/pdf'), versionen: [{ nr: 1, datum: '2026-03-12', betrag: 18400, dateien: [D('v1.jpg', bild, 'image/jpeg')] }] },
+        { id: 602, beschr: 'ohne Anhang', betrag: 5, status: 'Ausstehend', dateien: [], versionen: [{ nr: 1, datum: '2026-01-01', betrag: 6, dateien: [] }] }];
+      showPage('angebote'); renderAngebote();
+      const aus = {};
+      await angVersionenKI(602); aus.ohneAnhang = __ki.length;                       // ohne Unterlagen: Hinweis statt KI
+      editAngebot(601);
+      await angVersionenKI();                                                         // Knopf im Fenster (ohne ID)
+      await w(350);
+      const m = document.getElementById('modal-ang-ki-vergleich'), inhalt = document.getElementById('ang-kiv-inhalt');
+      const c = (__ki[0] || {}).messages?.[0]?.content || [];
+      aus.aufrufe = __ki.length; aus.modell = (__ki[0] || {}).model; aus.tokens = (__ki[0] || {}).max_tokens;
+      aus.reihenfolge = c.map(x => x.type === 'text' ? (x.text.match(/^(ALTE|NEUE) VERSION \(V\d/) || ['prompt'])[0] : x.type + ':' + x.source.media_type).join(' | ');
+      aus.offen = m.classList.contains('open');
+      aus.titel = document.getElementById('ang-kiv-titel').textContent;
+      aus.summe = inhalt.querySelector('.ang-kiv-summe').textContent.replace(/[^\dV,→−+]/g, '');
+      aus.bloecke = ['weg', 'dazu', 'preis'].map(k => inhalt.querySelectorAll('.ang-kiv-block.' + k + ' .ang-kiv-zeile').length).join();
+      aus.text = inhalt.textContent.replace(/\s+/g, ' ');
+      aus.html = !!inhalt.querySelector('b, img') || !!window.__xss;                  // Text der KI darf nie als HTML landen
+      aus.ragt = [...inhalt.querySelectorAll('*')].some(z => z.getBoundingClientRect().right > innerWidth + 1);
+      const k = state.angebote[0].kiVergleich || {};
+      aus.gespeichert = { von: k.von, nach: k.nach, neu: k.e && k.e.neu.length, betrag: k.e && k.e.neu[0].betrag, sNeu: k.e && k.e.summe_neu, fremd: k.e && 'fremd' in k.e, am: !!k.am };
+      closeModal('modal-ang-ki-vergleich'); await w(250);
+      await angVersionenKI(601); await w(100);                                        // nochmal ansehen: kein neuer KI-Aufruf
+      aus.nochmal = __ki.length + '/' + m.classList.contains('open');
+      document.getElementById('ang-kiv-neu').click(); await w(400);                   // „Neu vergleichen“ fragt die KI neu
+      aus.neuVergleichen = __ki.length;
+      __kiStatus = 500; document.getElementById('ang-kiv-neu').click(); await w(400); // Störung: altes Ergebnis bleibt
+      aus.stoerung = { aufrufe: __ki.length, bleibt: !!state.angebote[0].kiVergleich.e.zusammenfassung, lade: document.querySelectorAll('#lade-stapel .lade-karte').length };
+      closeModal('modal-ang-ki-vergleich'); await w(250);
+      // Neue Version: der alte Vergleich wandert mit in den Verlauf (gehört zum alten Stand)
+      editAngebot(601); angNeueVersion(); document.getElementById('ang-betrag').value = '16500'; await saveAngebot(); await w(250);
+      const a = state.angebote[0];
+      aus.archiv = { n: a.versionen.length, ki: !!(a.versionen[1].ki && a.versionen[1].ki.e), aktuell: 'kiVergleich' in a };
+      return aus;
+    }, TESTBILD.toString());
+    const f = [];
+    if (r.ohneAnhang !== 0) f.push('KI wurde ohne Unterlagen aufgerufen');
+    if (r.aufrufe !== 1 || r.modell !== 'claude-sonnet-4-6' || !(r.tokens >= 2000)) f.push('Aufruf: ' + JSON.stringify([r.aufrufe, r.modell, r.tokens]));
+    if (r.reihenfolge !== 'ALTE VERSION (V1 | image:image/jpeg | NEUE VERSION (V2 | document:application/pdf | prompt') f.push('Unterlagen an die KI: ' + r.reihenfolge);
+    if (!r.offen || !/V1 → V2: Fliesen Bad/.test(r.titel)) f.push('Ergebnis-Fenster: ' + r.titel);
+    if (!/V118400,00→V216900,00−1500,00/.test(r.summe)) f.push('Summenzeile: ' + r.summe);
+    if (r.bloecke !== '1,1,1') f.push('Blöcke (weg, dazu, Preis): ' + r.bloecke);
+    for (const t of ['Sockelleisten <b>Eiche</b>', 'Silikonfugen', 'Wandfliesen 60x60', 'Einzelpreis gesenkt', '3 % Nachlass', 'Sockelleisten entfallen'])
+      if (!r.text.includes(t)) f.push(`Ergebnis nennt „${t}“ nicht`);
+    if (r.html) f.push('Text der KI wurde als HTML eingefügt');
+    if (r.ragt) f.push('Ergebnis ragt am Handy über den Rand');
+    const g = r.gespeichert;
+    if (g.von !== 1 || g.nach !== 2 || g.neu !== 1 || g.betrag !== 120.5 || g.sNeu !== 16900 || g.fremd || !g.am) f.push('gespeichert: ' + JSON.stringify(g));
+    if (r.nochmal !== '1/true') f.push('nochmal ansehen: ' + r.nochmal);
+    if (r.neuVergleichen !== 2) f.push('„Neu vergleichen“ ruft die KI nicht auf');
+    if (r.stoerung.aufrufe !== 3 || !r.stoerung.bleibt || r.stoerung.lade) f.push('KI-Störung: ' + JSON.stringify(r.stoerung));
+    if (r.archiv.n !== 2 || !r.archiv.ki || r.archiv.aktuell) f.push('neue Version nach einem Vergleich: ' + JSON.stringify(r.archiv));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
 await scenario('Kategorie-Mappe (PDF): Übersicht mit Summen, Bild- und PDF-Beleg als Seiten, fehlender Beleg markiert, kaputter Beleg bricht nichts ab', async () => {
   if (!JSPDF || !AUTOTABLE || !PDFJS) return '';
   const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });

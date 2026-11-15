@@ -18,6 +18,9 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
 5a. ✅ **Neu in der App – im Web live seit 15.11.2026:** Ladeanzeige bei allen Uploads, mehrere Fotos/PDFs bei
    Angeboten, „📁 Mappe als PDF“ je Kategorie, Rückfrage bei doppelter Rechnung (gleicher Betrag schon eingebucht).
    Aufs iPhone kommt es mit dem nächsten Update (v1.4) – dort bitte die Foto-Auswahl kurz testen.
+5d. **Angebote: Versionen + KI-Vergleich (Dev-Zweig, noch nicht live):** nachverhandelte Angebote als „V2, V3 …“ mit
+   Verlauf; die KI zeigt, was weggefallen/dazugekommen ist und wo sich Preise geändert haben. → Simon: Vorschau ansehen,
+   OK geben → Claude stellt fürs Web live (dabei auch `api/ki.js`); iPhone mit v1.4.
 5c. **Apple-Abos in Supabase sehen (2 kurze Schritte, Simon)** – Technik ist seit 15.11.2026 fertig und live,
    wartet nur auf den Code (denselben Code an beiden Stellen; er steht im Chat vom 15.11., sonst einfach einen
    neuen, langen ausdenken – nie ins Repo schreiben):
