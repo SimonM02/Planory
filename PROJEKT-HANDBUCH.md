@@ -103,7 +103,7 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   hakt das Angebot ab, ohne die Rechnung ein zweites Mal zu buchen. Nie beim Bearbeiten. Anlass: Testkonto hatte
   dieselbe Rechnung einmal gescannt und einmal aus dem Angebot umgewandelt. `showConfirm` kann dafür einen
   dritten Knopf (`extraText` → Ergebnis `'extra'`).
-- **Angebots-Versionen (im Web live seit 16.11.2026, iPhone mit v1.4):** nachverhandelt → „＋ Neue Version“ im Angebot. Der aktuelle
+- **Angebots-Versionen (im Web live seit 15.11.2026, iPhone mit v1.4):** nachverhandelt → „＋ Neue Version“ im Angebot. Der aktuelle
   Stand steht wie bisher direkt am Angebot (Liste, Vergleich, „Zu Rechnung“, iPhone v1.3 rechnen automatisch mit der
   neuesten Version); frühere Stände in `a.versionen = [{nr, datum, gueltig, betrag, notiz, aenderung, dateien, ki?}]`,
   `a.aenderung` = „Was hat sich geändert?“. Jede Version behält ihre eigenen Anhänge (beim Anlegen einer neuen
