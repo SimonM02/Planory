@@ -8,6 +8,8 @@
 //    Modell-/Token-Deckel schuetzen trotzdem vor teurem Missbrauch. Sobald
 //    v1.2 (schickt den Token) verbreitet ist: REQUIRE_AUTH = true -> harte
 //    Login-Pflicht, der Proxy ist dann komplett dicht.
+// Laengere Auswertungen (z. B. KI-Vergleich zweier Angebots-Versionen) brauchen mehr als die Standardzeit.
+export const config = { maxDuration: 60 };
 const ALLOWED_MODELS = new Set([
   'claude-sonnet-4-6',
   'claude-haiku-4-5-20251001',
