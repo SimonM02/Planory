@@ -3320,6 +3320,19 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
       editAngebot(601); angNeueVersion(); document.getElementById('ang-betrag').value = '16500'; await saveAngebot(); await w(250);
       const a = state.angebote[0];
       aus.archiv = { n: a.versionen.length, ki: !!(a.versionen[1].ki && a.versionen[1].ki.e), aktuell: 'kiVergleich' in a };
+      // Abfotografierte Angebote: 6 Seiten gehen alle an die KI; bei 10 Seiten die ersten 8 – mit Hinweis im Ergebnis
+      const fotos = n => Array.from({ length: n }, (_, i) => D('seite' + (i + 1) + '.jpg', bild, 'image/jpeg'));
+      const bilder = nr => { const c = __ki[__ki.length - 1].messages[0].content, i = c.findIndex(x => x.type === 'text' && x.text.startsWith('NEUE VERSION'));
+        return (nr === 'alt' ? c.slice(0, i) : c.slice(i)).filter(x => x.type === 'image').length; };
+      __kiStatus = 200;
+      state.angebote.push({ id: 603, beschr: 'Sechs Fotos', betrag: 9, status: 'Ausstehend', dateien: fotos(6), versionen: [{ nr: 1, datum: '2026-01-01', betrag: 10, dateien: fotos(2) }] },
+                          { id: 604, beschr: 'Zehn Fotos', betrag: 9, status: 'Ausstehend', dateien: fotos(10), versionen: [{ nr: 1, datum: '2026-01-01', betrag: 10, dateien: fotos(3) }] });
+      await angVersionenKI(603); await w(300);
+      aus.sechs = bilder('alt') + '/' + bilder('neu') + '/' + !!document.querySelector('#ang-kiv-inhalt .ang-kiv-gekuerzt') + '/' + ('gekuerzt' in state.angebote.find(x => x.id === 603).kiVergleich);
+      closeModal('modal-ang-ki-vergleich'); await w(250);
+      await angVersionenKI(604); await w(300);
+      aus.zehn = bilder('alt') + '/' + bilder('neu') + '/' + (document.querySelector('#ang-kiv-inhalt .ang-kiv-gekuerzt')?.textContent || '').includes('ersten 8');
+      aus.zehnGroesse = JSON.stringify(__ki[__ki.length - 1]).length < 4300000;
       return aus;
     }, TESTBILD.toString());
     const f = [];
@@ -3339,6 +3352,8 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
     if (r.neuVergleichen !== 2) f.push('„Neu vergleichen“ ruft die KI nicht auf');
     if (r.stoerung.aufrufe !== 3 || !r.stoerung.bleibt || r.stoerung.lade) f.push('KI-Störung: ' + JSON.stringify(r.stoerung));
     if (r.archiv.n !== 2 || !r.archiv.ki || r.archiv.aktuell) f.push('neue Version nach einem Vergleich: ' + JSON.stringify(r.archiv));
+    if (r.sechs !== '2/6/false/false') f.push('6 fotografierte Seiten (alt/neu/Hinweis/gemerkt): ' + r.sechs);
+    if (r.zehn !== '3/8/true' || !r.zehnGroesse) f.push('10 fotografierte Seiten (alt/neu/Hinweis): ' + r.zehn + ' Größe ok: ' + r.zehnGroesse);
     if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
     return f.join(' · ');
   } finally { await d.ctx.close(); }

@@ -18179,9 +18179,10 @@ function confirmAngKI() {
 // ── KI-Vergleich: aktuelle gegen vorige Version (was ist weggefallen, dazugekommen, wo aenderte sich der Preis) ──
 // Anhaenge fuer die KI vorbereiten. klein = sparsam (PDF-Seiten als Bilder, staerker verkleinert) – der Server
 // nimmt hoechstens ca. 4,5 MB je Anfrage an.
+const ANG_KI_MAX = 8;   // so viele Anhaenge je Version liest die KI (z. B. 8 fotografierte Seiten)
 async function _angKiTeile(dateien, klein) {
   const teile = [];
-  for (const d of (dateien || []).slice(0, 4)) {
+  for (const d of (dateien || []).slice(0, ANG_KI_MAX)) {
     const src = d.url || d.data;
     if (!src) continue;
     const lokal = /^data:/i.test(src);
@@ -18240,14 +18241,17 @@ async function angVersionenKI(id, neu) {
   const lade = _lade('KI vergleicht die beiden Versionen', 0, { verzoegert: 0, maxMs: 150000 });
   try {
     const LIMIT = 3800000, gr = t => t.reduce((n, x) => n + x.source.data.length, 0);
-    let tA = await _angKiTeile(alt.dateien, false), tN = await _angKiTeile(_angDateien(a), false);
-    if (gr(tA) + gr(tN) > LIMIT) { tA = await _angKiTeile(alt.dateien, true); tN = await _angKiTeile(_angDateien(a), true); }
+    // Viele fotografierte Seiten: gleich sparsam (kleinere Bilder), damit alle Seiten in eine Anfrage passen
+    const viele = Math.max(alt.dateien.length, _angDateien(a).length) > 4;
+    const gekuerzt = Math.max(alt.dateien.length, _angDateien(a).length) > ANG_KI_MAX;
+    let tA = await _angKiTeile(alt.dateien, viele), tN = await _angKiTeile(_angDateien(a), viele);
+    if (!viele && gr(tA) + gr(tN) > LIMIT) { tA = await _angKiTeile(alt.dateien, true); tN = await _angKiTeile(_angDateien(a), true); }
     if (gr(tA) + gr(tN) > LIMIT) throw Object.assign(new Error('zu gross'), { meldung: en
       ? 'The attachments are too large for the AI comparison – please attach smaller photos or PDFs.'
       : 'Die Anhänge sind zusammen zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
     if (!tA.length || !tN.length) throw new Error('keine lesbaren Anhaenge');
     const nr = a.versionen.length + 1;
-    const prompt = `Du vergleichst zwei Versionen desselben Angebots (Bau/Handwerk). Oben stehen zuerst die Unterlagen der ALTEN Version, danach die der NEUEN Version.
+    const prompt = `Du vergleichst zwei Versionen desselben Angebots (Bau/Handwerk). Oben stehen zuerst die Unterlagen der ALTEN Version, danach die der NEUEN Version. Mehrere Bilder oder Dateien einer Version sind die Seiten desselben Angebots in ihrer Reihenfolge (oft abfotografiert).
 Finde heraus, was sich geändert hat, und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):
 {"zusammenfassung":"1-2 kurze Sätze: was hat sich im Wesentlichen geändert",
 "preisart":"brutto oder netto (welche Beträge du unten angibst)",
@@ -18273,7 +18277,7 @@ Regeln: "entfallen" = Positionen, die es nur in der alten Version gibt. "neu" = 
     }
     const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
     if (!m) throw new Error('Keine auswertbare Antwort');
-    a.kiVergleich = { von: alt.nr, nach: nr, am: new Date().toISOString(), e: _angKiNorm(JSON.parse(m[0])) };
+    a.kiVergleich = { von: alt.nr, nach: nr, am: new Date().toISOString(), e: _angKiNorm(JSON.parse(m[0])), ...(gekuerzt ? { gekuerzt: true } : {}) };
     a._updatedAt = Date.now();
     save();
     _angKiZeigen(a);
@@ -18312,6 +18316,7 @@ function _angKiZeigen(a) {
     ${block('preis', 'var(--accent)', en ? 'Price changed' : 'Preis geändert', e.geaendert.map(p => zeile(p.position, `${geld(p.alt)} → ${geld(p.neu)}${diffPos(p)}`, p.hinweis)))}
     ${e.hinweise.length ? `<div class="ang-kiv-block hinweise" style="margin-top:16px"><div style="font-weight:700;font-size:0.85rem;margin-bottom:4px">${en ? 'Other changes' : 'Sonstige Änderungen'}</div>
       <ul style="margin:0;padding-left:18px;font-size:0.83rem;line-height:1.55;color:var(--text2)">${e.hinweise.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
+    ${k.gekuerzt ? `<p class="ang-kiv-gekuerzt" style="font-size:0.8rem;line-height:1.5;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:14px 0 0">⚠️ ${en ? `Only the first ${ANG_KI_MAX} attachments of each version were compared.` : `Nur die ersten ${ANG_KI_MAX} Anhänge je Version wurden verglichen.`}</p>` : ''}
     ${leer ? `<p style="font-size:0.85rem;color:var(--text2);margin:14px 0 0">${en ? 'The AI found no differences between the two versions.' : 'Die KI hat keine Unterschiede zwischen den beiden Versionen gefunden.'}</p>` : ''}
     <div style="font-size:0.72rem;color:var(--text3);margin-top:14px">${en ? 'Compared on' : 'Verglichen am'} ${fmtDate(k.am)}</div>`;
   document.getElementById('ang-kiv-neu').onclick = () => angVersionenKI(a.id, true);
