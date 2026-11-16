@@ -39,6 +39,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#11151F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -5259,7 +5260,7 @@ function saveAll() {
   }
 }
 
-function save() { saveAll(); }
+function save() { saveAll(); try { _widgetPlanen(); } catch (e) {} }
 
 function setSyncStatus(status) {
   const el = document.getElementById('sync-status');
@@ -8644,6 +8645,7 @@ async function doLogout() {
   // Konto mit anderen teilt, hätte sonst alle anderen Geräte mit abgemeldet.
   await supa.auth.signOut({ scope: 'local' });
   currentUser = null;
+  try { _widgetAktualisieren(true); } catch (e) {}   // iPhone-Widgets leeren (keine Daten des alten Kontos)
   try { _probeaboSchliessen(); } catch (e) {}
   ['_userPlan', '_hatteAbo', '_aboProbe', '_probeGratis'].forEach(k => { window[k] = undefined; });   // nichts ins naechste Konto mitnehmen
   projects = [];
@@ -8780,6 +8782,118 @@ function saveQuickAccessEdit() {
   showToast('✅ Schnellzugriff angepasst', 'success');
 }
 
+// ── iPhone-Widgets (WidgetKit, Code in ios-widget/, Anleitung WIDGETS-EINRICHTEN.md) ──
+// Die App legt einen kleinen Datensatz in die gemeinsame App Group; die Widgets lesen ihn und zeigen
+// den Schnellzugriff (erste 4 Aktionen vom Dashboard) und die naechsten Termine & Aufgaben.
+// Bewusst OHNE Betraege (Home-Bildschirm sieht jeder). Nur in der App mit Plugin – im Web passiert nichts.
+// Ein Tippen im Widget oeffnet planory://aktion/<key> bzw. planory://seite/<seite> (siehe _widgetLink).
+const WIDGET_GRUPPE = 'group.com.planory.bauassistent', WIDGET_KEY = 'planoryWidget';
+const _lokalTag = (n = 0) => { const d = new Date(); d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function _widgetDaten() {
+  const en = _lang === 'en', heute = _lokalTag(0), bis14 = _lokalTag(14), bis30 = _lokalTag(30), vor30 = _lokalTag(-30);
+  const qa = (_qaEnabled().length ? _qaEnabled() : QA_DEFAULT).map(k => QUICK_ACTIONS.find(a => a.key === k)).filter(Boolean).slice(0, 4);
+  const eintr = [], dazu = (art, artText, titel, datum, zeit) => {
+    if (!datum || !titel) return;
+    eintr.push({ art, artText, titel: String(titel).slice(0, 80), datum: String(datum).slice(0, 10), zeit: zeit ? String(zeit).slice(0, 5) : '' });
+  };
+  for (const t of (state.aufgaben || [])) {
+    if (t.status === 'Erledigt' || !t.datum || t.datum > bis14 || t.datum < vor30) continue;
+    dazu('aufgabe', en ? 'Task' : 'Aufgabe', t.name, t.datum, t.time);
+  }
+  for (const m of (state.meilensteine || [])) {
+    if (m.done || String(m.status || '').toLowerCase() === 'erledigt' || !m.datum || m.datum < heute || m.datum > bis30) continue;
+    dazu('termin', en ? 'Schedule' : 'Zeitplan', m.name || m.title || m.titel, m.datum);
+  }
+  for (const z of (state.zahlungen || [])) {
+    if (z.status === 'Bezahlt' || !z.faellig || z.faellig < vor30 || z.faellig > bis30) continue;
+    dazu('zahlung', en ? 'Payment' : 'Zahlung', z.beschr || z.empfaenger || (en ? 'Payment' : 'Zahlung'), z.faellig);
+  }
+  for (const k of (state.kosten || [])) {
+    if (!(k.skontoProz > 0) || !k.skontoBis || k.status !== 'Ausstehend' || k.skontoBis < heute || k.skontoBis > bis30) continue;
+    dazu('skonto', en ? 'Cash discount until' : 'Skonto bis', k.anbieter || k.beschr || (en ? 'Invoice' : 'Rechnung'), k.skontoBis);
+  }
+  for (const w of (state.wartungen || [])) {
+    if (w.erledigt) continue;
+    const d = _wartungNextDate(w);
+    if (!d || isNaN(d)) continue;
+    const ds = d.toISOString().slice(0, 10);
+    if (ds < vor30 || ds > bis30) continue;
+    dazu('wartung', en ? 'Maintenance' : 'Wartung', w.name || (en ? 'Maintenance' : 'Wartung'), ds);
+  }
+  for (const e of (state.helfereinsaetze || [])) {
+    if (!e.datum || e.datum < heute || e.datum > bis30) continue;
+    const offen = (parseInt(e.bedarf, 10) || 0) - (e.zugewiesen || []).filter(Boolean).length;
+    dazu('helfer', en ? 'Helpers' : 'Helfer', (en ? 'Helper day' : 'Helfer-Tag') + (offen > 0 ? (en ? ` – ${offen} still open` : ` – noch ${offen} offen`) : ''), e.datum);
+  }
+  eintr.sort((a, b) => (a.datum + (a.zeit || '99')).localeCompare(b.datum + (b.zeit || '99')));
+  return { v: 1, sprache: en ? 'en' : 'de', projekt: String(state.settings?.name || 'Planory').slice(0, 60), stand: new Date().toISOString(),
+    schnell: qa.map(a => ({ key: a.key, titel: (en && a.en) ? a.en : a.label })), eintraege: eintr.slice(0, 30) };
+}
+let _widgetT = null, _widgetLetzter = '';
+function _widgetPlanen() {
+  if (!isNativeApp() || !window.Capacitor?.Plugins?.WidgetBridgePlugin) return;
+  clearTimeout(_widgetT);
+  _widgetT = setTimeout(() => { _widgetAktualisieren(); }, 2000);
+}
+async function _widgetAktualisieren(leer) {
+  const P = isNativeApp() ? window.Capacitor?.Plugins?.WidgetBridgePlugin : null;
+  if (!P) return;
+  try {
+    // ohne Anmeldung oder im Demo-Modus: leere Widgets (keine fremden/Demo-Daten am Home-Bildschirm)
+    const daten = (leer || !currentUser || _demoMode) ? { v: 1, sprache: _lang === 'en' ? 'en' : 'de', leer: true, stand: new Date().toISOString() } : _widgetDaten();
+    const json = JSON.stringify({ ...daten, stand: '' });
+    if (json === _widgetLetzter) return;   // nichts geaendert -> Widgets nicht unnoetig neu laden
+    await P.setItem({ key: WIDGET_KEY, group: WIDGET_GRUPPE, value: JSON.stringify(daten) });
+    await P.reloadAllTimelines();
+    _widgetLetzter = json;
+  } catch (e) { console.warn('[Widget]', e?.message || e); }
+}
+// planory://aktion/scan · planory://seite/aufgaben – nur bekannte Ziele, Sperren (Abo, Login) gelten wie immer
+let _widgetOffen = null;
+const _WIDGET_SEITEN = ['aufgaben', 'planung', 'dashboard', 'kosten', 'tagebuch', 'zahlungsplan', 'wartung', 'helfer'];
+function _widgetLink(url) {
+  const m = String(url || '').match(/^planory:\/\/(aktion|seite)\/([a-z]+)\/?(?:[?#][\w=&%-]*)?$/i);
+  if (!m) return false;
+  const art = m[1].toLowerCase(), ziel = m[2].toLowerCase();
+  const aktion = art === 'aktion' ? QUICK_ACTIONS.find(a => a.key === ziel) : null;
+  if (art === 'aktion' && !aktion) return false;
+  if (art === 'seite' && !_WIDGET_SEITEN.includes(ziel)) return false;
+  // App noch nicht bereit (Anmeldung/erstes Laden)? Merken und ausfuehren, sobald sie es ist.
+  if (!currentUser || _initialCloudLoad) { _widgetOffen = { art, ziel }; _widgetWarte(); return true; }
+  _widgetAusfuehren(art, ziel, aktion);
+  return true;
+}
+function _widgetAusfuehren(art, ziel, aktion) {
+  try {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => { if (m.id !== 'modal-app-confirm') closeModal(m.id); });
+    if (art === 'seite') { showPage(ziel); return; }
+    if (aktion.key !== 'budget') showPage('dashboard');
+    (new Function(aktion.run))();   // dieselbe Aktion wie die Kachel im Schnellzugriff (feste Liste, kein Fremdtext)
+  } catch (e) { console.warn('[Widget-Link]', e?.message || e); }
+}
+let _widgetWarteT = null;
+function _widgetWarte(n = 0) {
+  clearTimeout(_widgetWarteT);
+  if (!_widgetOffen) return;
+  const ob = document.getElementById('onboarding-overlay'), auth = document.getElementById('auth-overlay');
+  const zu = el => el && getComputedStyle(el).display !== 'none';
+  if (currentUser && !_initialCloudLoad && !zu(ob) && !zu(auth)) {
+    const o = _widgetOffen; _widgetOffen = null;
+    setTimeout(() => _widgetAusfuehren(o.art, o.ziel, QUICK_ACTIONS.find(a => a.key === o.ziel)), 400);
+    return;
+  }
+  if (n < 120) _widgetWarteT = setTimeout(() => _widgetWarte(n + 1), 500);   // hoechstens 1 Minute warten
+  else _widgetOffen = null;
+}
+(function _widgetStart() {
+  if (!isNativeApp()) return;
+  const App = window.Capacitor?.Plugins?.App;
+  try { App?.addListener?.('appUrlOpen', ev => { _widgetLink(ev && ev.url); }); } catch (e) {}
+  try { App?.getLaunchUrl?.().then(r => { if (r && r.url) _widgetLink(r.url); }).catch(() => {}); } catch (e) {}
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') _widgetPlanen(); });
+})();
+
 // "Demnächst fällig" – nächste Wartung, Zahlung, Meilenstein auf dem Dashboard
 function renderDashReminders() {
   const el = document.getElementById('dash-reminders');
@@ -8815,6 +8929,7 @@ function renderDashReminders() {
 
 function renderDashboard() {
   try { _wendeAnsichtAn(); } catch (e) {}
+  try { _widgetPlanen(); } catch (e) {}
   renderQuickAccess();
   renderDashReminders();
   // Persoenliche Begruessung nach Tageszeit (+ Name, falls in Einstellungen gesetzt) + Datum
