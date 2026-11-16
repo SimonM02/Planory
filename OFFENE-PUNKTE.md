@@ -74,6 +74,14 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    (Musik ist eingebaut und für Werbung erlaubt).
 
 **🟡 Wenn Zeit ist:**
+10a. **Belege/Fotos privat speichern (geplant 16.11.2026, Simon: „einplanen“):** Heute liegen Rechnungsbelege,
+    Angebots-Anhänge und Fotos im öffentlichen Supabase-Speicher `uploads` – wer einen Link hat, kann die Datei ohne
+    Anmeldung öffnen (Liste aller Dateien gibt es nicht, Links praktisch nicht zu erraten). Dokumente sind schon privat
+    (`dokumente`). Ziel: `uploads` privat, die App holt beim Anzeigen kurzlebige Links (`createSignedUrl`) – auch für
+    die Kategorie-Mappe (PDF) und die KI-Vergleiche. Reihenfolge: ① App liest Pfad statt fester Adresse (alte Einträge
+    haben `scanUrl`/`url`) → ② erst wenn iPhone v1.4+ verbreitet ist (v1.3 kennt nur öffentliche Links) den Speicher
+    privat schalten. Support danach: Claude erzeugt kurzlebige Links per Admin-Zugang; Simon sieht alles im
+    Supabase-Dashboard unter Storage.
 11. **GitHub privat machen:** Domain-Anbieter von planory.at nennen → Website zu Vercel, dann Projekt
     auf „Privat“. **Vorher:** App Store Connect → App-Informationen → Datenschutz-URL auf
     `https://planory.at/datenschutz.html`.

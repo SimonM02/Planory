@@ -144,6 +144,8 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   doppelter Rechnung. iPhone: mit v1.4.
 
 ## 5. Datenschutz – Regeln für die Arbeit
+- **Speicher `uploads` ist öffentlich** (Belege, Angebots-Anhänge, Fotos: Link öffnet ohne Anmeldung). Umbau auf privat
+  ist geplant (`OFFENE-PUNKTE.md` Punkt 10a). Links aus Kundendaten nur Simon im Chat zeigen, nie in Dateien/Commits.
 - **Simons Anfrage zu einem bestimmten Kunden = Support-Anlass:** direkt nachschauen und alles
   zeigen, was er zum Kontrollieren braucht – ohne Rückfrage. Ohne Anlass nicht in Kundendaten
   stöbern, sonst nur Gesamtzahlen.
