@@ -51,6 +51,15 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    Gratismonat, Kennzeichnung von KI-Personen in Werbung (Reel 3). Danach baut Claude ein, was nötig ist.
 8. **Folgen 3–4** (Zeitplan, Aufgaben) – Claude baut mit derselben Vorlage, Simon prüft.
 9. **Android-App (Google Play)** – bald starten:
+   - ✅ **Ab sofort (16.11.2026):** planory.at lässt sich am Android-Handy in Chrome wie eine App installieren
+     (Menü ⋮ → „App installieren“ bzw. „Zum Startbildschirm“) – eigenes Symbol, ohne Browserleiste, Abo über Stripe.
+     Technik: `manifest.webmanifest` + `icon-512.png`. Das ist die Brücke, bis die Play-Store-App da ist.
+   - **Weg ohne 12 Tester (Stand 16.11.):** Das Apple-Developer-Konto zählt für Google nicht. ① Nachsehen, ob es als
+     **Organisation** angelegt ist (developer.apple.com → Account → Membership → „Entity Type“) – dann gibt es schon
+     eine D-U-N-S-Nummer. ② Sonst: Mit Gewerbeanmeldung kostenlos eine D-U-N-S beantragen (Tage bis Wochen) → Google-
+     Konto als **Organisation** → kein Testerzwang. Ob für den Abo-Verkauf ein Gewerbe nötig ist: beim WKO-Termin
+     (Punkt 7) mitklären. ③ Plan B privates Konto: 12 Tester × 14 Tage (Familie, Bekannte, Instagram-Follower mit
+     Android, Tester-Tauschgruppen); bezahlte „Tester-Dienste“ meiden – Google prüft echte Nutzung.
    - **Simon:** Google-Play-Entwicklerkonto anlegen (einmalig ca. 25 $, Identitätsprüfung dauert ein
      paar Tage). Wichtig: Bei einem **privaten** Konto verlangt Google vor der Veröffentlichung einen
      geschlossenen Test mit **mindestens 12 Testern über 14 Tage** – bei einem **Firmenkonto**
@@ -146,9 +155,10 @@ abo-api 10/10).
   Ladebildschirm mit Logo, das sich aufbaut (Kran → Haus → Dach); ruhiges Erinnerungs-Kärtchen
   „Demnächst fällig“ statt oranger Warn-Meldungen.
   Abmelden meldet nur noch das eigene Gerät ab (vorher alle Geräte des Kontos).
-- [ ] v1.4 – iPhone-Widgets (WidgetKit, braucht am Mac: Widget Extension + App Group):
-      „Heute zu tun“ (Aufgaben), „Nächster Termin“ (Meilenstein/Zahlung), „Fällige Zahlungen &
-      Skonto“ (nächste Zahlungstermine, Skonto-Frist mit Ersparnis – rot wenn heute/morgen).
+- [ ] v1.4 – iPhone-Widgets: **Code fertig (16.11.2026)** – „Planory – Schnellzugriff“ (erste 4 Dashboard-
+      Schnellzugriffe, Tippen springt direkt hin) und „Planory – Termine & Aufgaben“ (Aufgaben, Zeitplan, Zahlungen,
+      Skonto, Wartung, Helfer; ohne Beträge). **Simon am Mac:** `WIDGETS-EINRICHTEN.md` Schritt für Schritt
+      (Widget Extension anlegen, App Group, URL-Schema `planory`). Xcode-Fehler als Screenshot an Claude.
 - [ ] Am iPhone (neues Testkonto, nach dem Einführungsangebot) prüfen: nach dem Onboarding erscheint
       „Starte deinen Gratismonat“ mit „1 Monat gratis, danach 28,99 € / Jahr“ · Kauf mit Sandbox-Konto
       → Glückwunsch „Dein Gratismonat läuft“ · „Käufe wiederherstellen“ · „Erst die Demo ansehen“ →

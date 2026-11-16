@@ -1,0 +1,16 @@
+{
+  "name": "Planory – Bauassistent",
+  "short_name": "Planory",
+  "description": "Budget, Rechnungen, Angebote, Zeitplan und Bautagebuch für dein Bauprojekt – auf Handy und im Web.",
+  "lang": "de",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#11151F",
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

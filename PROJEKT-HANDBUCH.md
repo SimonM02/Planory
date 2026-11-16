@@ -131,6 +131,13 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   Erster Start: Willkommens-Kacheln (Onboarding-Schritt 0) und Kurzbeschreibung je Modul (`MODULES[].desc`, auch in
   den Einstellungen) ebenfalls aktuell halten. Seit 16.11.2026 haben alle Seiten ein Info-Feld (neu: Zeitplan,
   Helfer, Fotos, Grundrisse; korrigiert: Kostenaufteilung = wer hat wie viel bezahlt, Notizen bis 50 MB, Einstellungen).
+- **iPhone-Widgets (16.11.2026, kommt mit v1.4):** App schreibt per Plugin `capacitor-widget-bridge` einen JSON-Datensatz
+  (`_widgetDaten`: Schnellzugriff + Termine/Aufgaben, KEINE Beträge) in die App Group `group.com.planory.bauassistent`
+  (Schlüssel `planoryWidget`), gebündelt 2 s nach `save()`, beim Dashboard und beim Zurückkehren; abgemeldet/Demo → leer.
+  Widget-Code: `ios-widget/PlanoryWidgets.swift` (liegt NICHT im iOS-Projekt – Simon fügt ihn in Xcode ein, siehe
+  `WIDGETS-EINRICHTEN.md`). Tippen → `planory://aktion/<key>` / `planory://seite/<seite>` → `_widgetLink` (nur feste
+  Ziele, Sperren gelten). Neue Schnellzugriff-Aktion → im Swift-Code `symbolFuerAktion` ergänzen (pruefen prüft das).
+- **Android ohne Play Store (16.11.2026):** `manifest.webmanifest` + `icon-512.png` → planory.at in Chrome installierbar.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 

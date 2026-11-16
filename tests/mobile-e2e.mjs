@@ -3576,6 +3576,90 @@ await scenario('Info-Felder: geänderte Hinweise (Angebote, Ausgaben, Budget) er
   } finally { await d.ctx.close(); }
 });
 
+await scenario('iPhone-Widgets: Datensatz (Schnellzugriff, Termine & Aufgaben, ohne Beträge), nur in der App, Sprung aus dem Widget nur zu bekannten Zielen', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      const tag = n => _lokalTag(n), aus = {};
+      // 1) im Web: nichts passiert, Speichern läuft normal
+      aus.web = !isNativeApp() && (() => { try { save(); _widgetPlanen(); return true; } catch (e) { return false; } })();
+      // nachgebaute App mit Widget-Plugin
+      const aufrufe = [], echtCap = window.Capacitor;
+      window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {
+        WidgetBridgePlugin: { setItem: async o => { aufrufe.push(['set', o]); return { results: true }; }, reloadAllTimelines: async () => { aufrufe.push(['reload']); return { results: true }; } } } };
+      const altUser = currentUser, altDemo = _demoMode, altLang = _lang;
+      try {
+        currentUser = { id: '00000000-0000-4000-8000-000000000001' }; _demoMode = false;
+        localStorage.setItem('quickAccess', JSON.stringify(['diary', 'scan', 'task', 'photo', 'budget']));
+        state.settings.name = 'Haus Test';
+        state.aufgaben = [
+          { id: 1, name: 'Heute fällig', datum: tag(0), time: '17:00', status: 'Offen' },
+          { id: 2, name: 'Überfällig', datum: tag(-2), status: 'Offen' },
+          { id: 3, name: 'Zu weit weg', datum: tag(20), status: 'Offen' },
+          { id: 4, name: 'Schon erledigt', datum: tag(1), status: 'Erledigt' },
+          { id: 5, name: 'Ohne Datum', status: 'Offen' }];
+        state.meilensteine = [{ id: 11, name: 'Dachgleiche', datum: tag(3) }, { id: 12, name: 'Vorbei', datum: tag(-3) }];
+        state.zahlungen = [{ id: 21, beschr: 'Baumeister 3. Rate', betrag: 48250.5, faellig: tag(5), status: 'Offen' }];
+        state.kosten = (state.kosten || []).concat({ id: 31, beschr: 'Fenster', anbieter: 'Fenster GmbH', betrag: 12345.67, skontoProz: 3, skontoBis: tag(2), status: 'Ausstehend', datum: tag(-1) });
+        state.helfereinsaetze = [{ id: 41, datum: tag(1), bedarf: 3, zugewiesen: ['Max'] }];
+        const dd = _widgetDaten();
+        aus.schnell = dd.schnell.map(x => x.key + ':' + x.titel).join(',');
+        aus.reihe = dd.eintraege.map(x => x.art + ':' + x.titel).join(' | ');
+        const json = JSON.stringify(dd);
+        aus.betraege = /48250|48\.250|12345|12\.345|€/.test(json);
+        aus.projekt = dd.projekt + '/' + dd.sprache;
+        setLang('en'); aus.en = _widgetDaten().schnell[0].titel + '/' + _widgetDaten().eintraege.find(x => x.art === 'helfer').titel; setLang('de');
+        // 2) Aktualisieren schreibt in die App Group und lädt die Widgets neu – ohne Änderung nicht nochmal
+        _widgetLetzter = '';
+        await _widgetAktualisieren(); await _widgetAktualisieren();
+        const sets = aufrufe.filter(a => a[0] === 'set');
+        aus.geschrieben = sets.length + '/' + aufrufe.filter(a => a[0] === 'reload').length + '/' + (sets[0] && sets[0][1].group) + '/' + (sets[0] && sets[0][1].key)
+          + '/' + (sets[0] && JSON.parse(sets[0][1].value).eintraege.length);
+        // nach dem Speichern (gebündelt, 2 s später)
+        state.aufgaben.push({ id: 6, name: 'Neu dazu', datum: tag(1), status: 'Offen' }); save();
+        await w(2300);
+        aus.nachSpeichern = aufrufe.filter(a => a[0] === 'set').length;
+        // abgemeldet → leer
+        currentUser = null; await _widgetAktualisieren();
+        const letzt = aufrufe.filter(a => a[0] === 'set').pop();
+        aus.leer = JSON.parse(letzt[1].value).leer === true && !JSON.parse(letzt[1].value).eintraege;
+        // 3) Sprung aus dem Widget
+        currentUser = { id: '00000000-0000-4000-8000-000000000001' };
+        document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+        aus.scan = _widgetLink('planory://aktion/scan') && document.getElementById('modal-rechnung-scan').classList.contains('open');
+        closeModal('modal-rechnung-scan'); await w(250);
+        aus.seite = _widgetLink('planory://seite/aufgaben') && document.getElementById('page-aufgaben').classList.contains('active');
+        aus.fremd = [_widgetLink('planory://aktion/evil'), _widgetLink('planory://seite/settings'), _widgetLink('https://planory.at/aktion/scan'), _widgetLink('planory://aktion/scan";alert(1)//')].map(Boolean).join();
+        // noch nicht angemeldet: merken, nach dem Anmelden ausführen
+        currentUser = null; document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+        _widgetLink('planory://aktion/diary');
+        await w(700); const vorher = document.getElementById('modal-tagebuch').classList.contains('open');
+        currentUser = { id: '00000000-0000-4000-8000-000000000001' };
+        await w(1300); aus.spaeter = !vorher && document.getElementById('modal-tagebuch').classList.contains('open');
+        closeModal('modal-tagebuch');
+      } finally { window.Capacitor = echtCap; currentUser = altUser; _demoMode = altDemo; if (_lang !== altLang) setLang(altLang); localStorage.removeItem('quickAccess'); }
+      return aus;
+    });
+    const f = [];
+    if (!r.web) f.push('im Web gibt es einen Fehler beim Speichern');
+    if (r.schnell !== 'diary:Bautagebuch-Eintrag,scan:Rechnung scannen,task:Aufgabe,photo:Foto hinzufügen') f.push('Schnellzugriff: ' + r.schnell);
+    if (r.reihe !== 'aufgabe:Überfällig | aufgabe:Heute fällig | helfer:Helfer-Tag – noch 2 offen | skonto:Fenster GmbH | termin:Dachgleiche | zahlung:Baumeister 3. Rate') f.push('Termine & Aufgaben: ' + r.reihe);
+    if (r.betraege) f.push('Beträge im Widget-Datensatz');
+    if (r.projekt !== 'Haus Test/de') f.push('Projekt/Sprache: ' + r.projekt);
+    if (r.en !== 'Site diary entry/Helper day – 2 still open') f.push('Englisch: ' + r.en);
+    if (r.geschrieben !== '1/1/group.com.planory.bauassistent/planoryWidget/6') f.push('Schreiben in die App Group: ' + r.geschrieben);
+    if (r.nachSpeichern !== 2) f.push('nach dem Speichern nicht aktualisiert: ' + r.nachSpeichern);
+    if (!r.leer) f.push('abgemeldet: Widget nicht geleert');
+    if (!r.scan) f.push('planory://aktion/scan öffnet das Scan-Fenster nicht');
+    if (!r.seite) f.push('planory://seite/aufgaben öffnet die Aufgaben nicht');
+    if (r.fremd !== 'false,false,false,false') f.push('unbekannte Ziele werden ausgeführt: ' + r.fremd);
+    if (!r.spaeter) f.push('Sprung vor dem Anmelden wird danach nicht ausgeführt');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
 await scenario('Kategorie-Mappe (PDF): Übersicht mit Summen, Bild- und PDF-Beleg als Seiten, fehlender Beleg markiert, kaputter Beleg bricht nichts ab', async () => {
   if (!JSPDF || !AUTOTABLE || !PDFJS) return '';
   const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });

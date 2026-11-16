@@ -666,12 +666,28 @@ check('Alle in der App genutzten iPhone-Plugins stehen in package.json (sonst en
   const deps = { ...(pkg.dependencies || {}) };
   const PAKET = { Camera: '@capacitor/camera', Purchases: '@revenuecat/purchases-capacitor', Share: '@capacitor/share',
     Filesystem: '@capacitor/filesystem', LocalNotifications: '@capacitor/local-notifications',
-    PushNotifications: '@capacitor/push-notifications', StatusBar: '@capacitor/status-bar', App: '@capacitor/app' };
+    PushNotifications: '@capacitor/push-notifications', StatusBar: '@capacitor/status-bar', App: '@capacitor/app',
+    WidgetBridgePlugin: 'capacitor-widget-bridge' };
   const genutzt = new Set([...web.matchAll(/Plugins\??\.([A-Z][A-Za-z]+)|registerPlugin\??\.?\('([A-Za-z]+)'\)|P\?\.([A-Z][A-Za-z]+)/g)].map(m => m[1] || m[2] || m[3]));
   const fehlt = [...genutzt].filter(n => PAKET[n] && !deps[PAKET[n]]).map(n => PAKET[n]);
   const unbekannt = [...genutzt].filter(n => !PAKET[n]);
   if (fehlt.length) return 'fehlt in package.json: ' + fehlt.join(', ');
   if (unbekannt.length) return 'Plugin ohne Zuordnung (Liste ergänzen): ' + unbekannt.join(', ');
+});
+check('Android/Web: App-Manifest gültig und eingebunden (planory.at als App installierbar)', () => {
+  let m; try { m = JSON.parse(read('manifest.webmanifest')); } catch (e) { return 'manifest.webmanifest fehlt oder ist kein gültiges JSON'; }
+  if (!m.name || !m.short_name || m.display !== 'standalone' || !m.start_url) return 'Pflichtangaben fehlen (name, short_name, display, start_url)';
+  const groessen = (m.icons || []).map(i => i.sizes);
+  if (!groessen.includes('192x192') || !groessen.includes('512x512')) return 'Icons 192 und 512 nötig';
+  for (const i of m.icons) { try { read(i.src.replace(/^\//, '')); } catch (e) { return 'Icon fehlt: ' + i.src; } }
+  if (!/<link rel="manifest" href="\/manifest\.webmanifest">/.test(web)) return 'index.html bindet das Manifest nicht ein';
+});
+check('iPhone-Widgets: Swift-Code und Anleitung vorhanden, gleiche App Group wie die App', () => {
+  let sw; try { sw = read('ios-widget/PlanoryWidgets.swift'); } catch (e) { return 'ios-widget/PlanoryWidgets.swift fehlt'; }
+  try { read('WIDGETS-EINRICHTEN.md'); } catch (e) { return 'WIDGETS-EINRICHTEN.md fehlt'; }
+  const gruppe = (web.match(/WIDGET_GRUPPE = '([^']+)'/) || [])[1], key = (web.match(/WIDGET_KEY = '([^']+)'/) || [])[1];
+  if (!gruppe || !sw.includes('"' + gruppe + '"') || !sw.includes('"' + key + '"')) return 'App Group / Schlüssel in App und Widget verschieden';
+  for (const k of [...web.matchAll(/\{ key:'([a-z]+)'/g)].map(x => x[1])) if (!sw.includes('case "' + k + '"')) return 'Widget kennt die Schnellzugriff-Aktion „' + k + '“ nicht';
 });
 check('Datenschutz nennt die Todoist-Anbindung', () => {
   const d = read('datenschutz.html');
