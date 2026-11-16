@@ -22,6 +22,8 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    als „V2, V3 …“ mit Verlauf; die KI zeigt, was weggefallen/dazugekommen ist und wo sich Preise geändert haben
    (Fotos oder PDF, bis 8 Seiten je Version). → Simon: mit einem echten Angebot ausprobieren und Rückmeldung geben
    (bisher nur mit nachgestellten KI-Antworten getestet).
+   Seit 16.11.2026 außerdem: Versionen frei wählen (z. B. V1 mit V3) und zwei Angebote verschiedener Firmen mit KI
+   vergleichen („✨ Angebote vergleichen“).
 5c. **Apple-Abos in Supabase sehen (2 kurze Schritte, Simon)** – Technik ist seit 15.11.2026 fertig und live,
    wartet nur auf den Code (denselben Code an beiden Stellen; er steht im Chat vom 15.11., sonst einfach einen
    neuen, langen ausdenken – nie ins Repo schreiben):

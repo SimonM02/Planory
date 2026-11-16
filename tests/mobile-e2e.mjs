@@ -3306,7 +3306,7 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
       aus.text = inhalt.textContent.replace(/\s+/g, ' ');
       aus.html = !!inhalt.querySelector('b, img') || !!window.__xss;                  // Text der KI darf nie als HTML landen
       aus.ragt = [...inhalt.querySelectorAll('*')].some(z => z.getBoundingClientRect().right > innerWidth + 1);
-      const k = state.angebote[0].kiVergleich || {};
+      const k = (state.angebote[0].kiVergleiche || {})['1-2'] || {};
       aus.gespeichert = { von: k.von, nach: k.nach, neu: k.e && k.e.neu.length, betrag: k.e && k.e.neu[0].betrag, sNeu: k.e && k.e.summe_neu, fremd: k.e && 'fremd' in k.e, am: !!k.am };
       closeModal('modal-ang-ki-vergleich'); await w(250);
       await angVersionenKI(601); await w(100);                                        // nochmal ansehen: kein neuer KI-Aufruf
@@ -3314,12 +3314,12 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
       document.getElementById('ang-kiv-neu').click(); await w(400);                   // „Neu vergleichen“ fragt die KI neu
       aus.neuVergleichen = __ki.length;
       __kiStatus = 500; document.getElementById('ang-kiv-neu').click(); await w(400); // Störung: altes Ergebnis bleibt
-      aus.stoerung = { aufrufe: __ki.length, bleibt: !!state.angebote[0].kiVergleich.e.zusammenfassung, lade: document.querySelectorAll('#lade-stapel .lade-karte').length };
+      aus.stoerung = { aufrufe: __ki.length, bleibt: !!state.angebote[0].kiVergleiche['1-2'].e.zusammenfassung, lade: document.querySelectorAll('#lade-stapel .lade-karte').length };
       closeModal('modal-ang-ki-vergleich'); await w(250);
       // Neue Version: der alte Vergleich wandert mit in den Verlauf (gehört zum alten Stand)
       editAngebot(601); angNeueVersion(); document.getElementById('ang-betrag').value = '16500'; await saveAngebot(); await w(250);
       const a = state.angebote[0];
-      aus.archiv = { n: a.versionen.length, ki: !!(a.versionen[1].ki && a.versionen[1].ki.e), aktuell: 'kiVergleich' in a };
+      aus.archiv = { n: a.versionen.length, ki: !!(a.kiVergleiche && a.kiVergleiche['1-2'] && a.kiVergleiche['1-2'].e), aktuell: 'kiVergleich' in a };
       // Abfotografierte Angebote: 6 Seiten gehen alle an die KI; bei 10 Seiten die ersten 8 – mit Hinweis im Ergebnis
       const fotos = n => Array.from({ length: n }, (_, i) => D('seite' + (i + 1) + '.jpg', bild, 'image/jpeg'));
       const bilder = nr => { const c = __ki[__ki.length - 1].messages[0].content, i = c.findIndex(x => x.type === 'text' && x.text.startsWith('NEUE VERSION'));
@@ -3328,7 +3328,7 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
       state.angebote.push({ id: 603, beschr: 'Sechs Fotos', betrag: 9, status: 'Ausstehend', dateien: fotos(6), versionen: [{ nr: 1, datum: '2026-01-01', betrag: 10, dateien: fotos(2) }] },
                           { id: 604, beschr: 'Zehn Fotos', betrag: 9, status: 'Ausstehend', dateien: fotos(10), versionen: [{ nr: 1, datum: '2026-01-01', betrag: 10, dateien: fotos(3) }] });
       await angVersionenKI(603); await w(300);
-      aus.sechs = bilder('alt') + '/' + bilder('neu') + '/' + !!document.querySelector('#ang-kiv-inhalt .ang-kiv-gekuerzt') + '/' + ('gekuerzt' in state.angebote.find(x => x.id === 603).kiVergleich);
+      aus.sechs = bilder('alt') + '/' + bilder('neu') + '/' + !!document.querySelector('#ang-kiv-inhalt .ang-kiv-gekuerzt') + '/' + ('gekuerzt' in state.angebote.find(x => x.id === 603).kiVergleiche['1-2']);
       closeModal('modal-ang-ki-vergleich'); await w(250);
       await angVersionenKI(604); await w(300);
       aus.zehn = bilder('alt') + '/' + bilder('neu') + '/' + (document.querySelector('#ang-kiv-inhalt .ang-kiv-gekuerzt')?.textContent || '').includes('ersten 8');
@@ -3354,6 +3354,164 @@ await scenario('Angebots-Versionen mit KI vergleichen: beide Versionen gehen an 
     if (r.archiv.n !== 2 || !r.archiv.ki || r.archiv.aktuell) f.push('neue Version nach einem Vergleich: ' + JSON.stringify(r.archiv));
     if (r.sechs !== '2/6/false/false') f.push('6 fotografierte Seiten (alt/neu/Hinweis/gemerkt): ' + r.sechs);
     if (r.zehn !== '3/8/true' || !r.zehnGroesse) f.push('10 fotografierte Seiten (alt/neu/Hinweis): ' + r.zehn + ' Größe ok: ' + r.zehnGroesse);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('KI-Vergleich: Versionen frei wählen (V1 mit V3) – richtige Unterlagen, Ergebnis je Paar, nichts kostet ohne Klick, altes Ergebnis bleibt lesbar', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    const r = await p.evaluate(async (bildFn) => {
+      const bild = (new Function('return (' + bildFn + ')()'))();
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      window.__ki = []; const echt = window.fetch;
+      window.fetch = async (url, opt) => {
+        if (!String(url).includes('/api/ki')) return echt(url, opt);
+        __ki.push(JSON.parse(opt.body));
+        return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ zusammenfassung: 'V1 gegen V3', summe_alt: 18400, summe_neu: 16500,
+          entfallen: [{ position: 'Sockel', betrag: 620 }], neu: [], geaendert: [], hinweise: [] }) }] }), { status: 200 });
+      };
+      const D = n => ({ name: n, type: 'image/jpeg', url: bild });
+      state.angebote = [{ id: 701, _updatedAt: 1, beschr: 'Fliesen Bad', anbieter: 'Huber', kat: state.budgetKat[0].name, datum: '2026-04-02', betrag: 16500, status: 'In Verhandlung',
+        dateien: [D('v3.jpg')], datei: D('v3.jpg'),
+        versionen: [{ nr: 1, datum: '2026-03-12', betrag: 18400, dateien: [D('v1a.jpg'), D('v1b.jpg')] }, { nr: 2, datum: '2026-03-28', betrag: 16900, dateien: [D('v2.jpg')] }],
+        kiVergleich: { von: 2, nach: 3, am: '2026-04-02T10:00:00Z', e: { zusammenfassung: 'Altes Ergebnis V2 V3', preisart: '', summe_alt: 16900, summe_neu: 16500, entfallen: [], neu: [], geaendert: [], hinweise: ['alt'] } } }];
+      showPage('angebote'); renderAngebote(); editAngebot(701);
+      const aus = {};
+      await angVersionenKI(); await w(200);                        // Standard V2 → V3: altes Ergebnis wird gezeigt, keine KI
+      const inhalt = () => document.getElementById('ang-kiv-inhalt');
+      aus.standard = __ki.length + '/' + inhalt().textContent.includes('Altes Ergebnis V2 V3') + '/' + document.getElementById('ang-kiv-titel').textContent;
+      aus.wahl = [...document.querySelectorAll('#ang-kiv-von option')].map(o => o.textContent).join(',') + ' | ' + document.getElementById('ang-kiv-von').value + '-' + document.getElementById('ang-kiv-nach').value;
+      // Paar V1 → V3 wählen: noch nicht verglichen → Knopf, KEIN automatischer KI-Aufruf
+      document.getElementById('ang-kiv-von').value = '1'; document.getElementById('ang-kiv-von').dispatchEvent(new Event('change')); await w(150);
+      aus.offen = __ki.length + '/' + !!document.getElementById('ang-kiv-jetzt') + '/' + (getComputedStyle(document.getElementById('ang-kiv-neu')).display === 'none');
+      // gleiche Version gewählt → Hinweis, kein Knopf
+      document.getElementById('ang-kiv-nach').value = '1'; document.getElementById('ang-kiv-nach').dispatchEvent(new Event('change')); await w(150);
+      aus.gleich = !document.getElementById('ang-kiv-jetzt') && /zwei verschiedene Versionen/.test(inhalt().textContent);
+      document.getElementById('ang-kiv-nach').value = '3'; document.getElementById('ang-kiv-nach').dispatchEvent(new Event('change')); await w(150);
+      document.getElementById('ang-kiv-jetzt').click(); await w(500);
+      const c = (__ki[0] || {}).messages?.[0]?.content || [];
+      aus.unterlagen = c.map(x => x.type === 'text' ? (x.text.match(/^(ALTE|NEUE) VERSION \(V\d/) || ['prompt'])[0] : 'bild').join(' | ');
+      const a = state.angebote[0];
+      aus.gespeichert = Object.keys(a.kiVergleiche || {}).sort().join() + '/' + (a.kiVergleiche['1-3'] || {}).von + '-' + (a.kiVergleiche['1-3'] || {}).nach;
+      aus.anzeige = document.getElementById('ang-kiv-titel').textContent + ' | ' + inhalt().textContent.includes('V1 gegen V3');
+      aus.ragt = [...document.querySelectorAll('#modal-ang-ki-vergleich *')].some(z => z.getBoundingClientRect().right > innerWidth + 1);
+      // zurück auf V2 → V3: altes Ergebnis, kein neuer Aufruf; nochmal V1 → V3: gespeichert, kein neuer Aufruf
+      document.getElementById('ang-kiv-von').value = '2'; document.getElementById('ang-kiv-von').dispatchEvent(new Event('change')); await w(120);
+      const zurueck = inhalt().textContent.includes('Altes Ergebnis V2 V3');
+      await angVersionenKI(701, false, 1, 3); await w(120);
+      aus.wieder = zurueck + '/' + inhalt().textContent.includes('V1 gegen V3') + '/' + __ki.length;
+      // Version löschen: Nummern verschieben sich → alle gespeicherten Versions-Vergleiche weg
+      closeModal('modal-ang-ki-vergleich'); window.showConfirm = async () => true; await angVersionLoeschen(701, 1);
+      aus.geloescht = JSON.stringify([a.kiVergleiche, a.kiVergleich, a.versionen.map(v => v.ki)]);
+      return aus;
+    }, TESTBILD.toString());
+    const f = [];
+    if (r.standard !== '0/true/✨ V2 → V3: Fliesen Bad') f.push('Standard-Paar mit altem Ergebnis: ' + r.standard);
+    if (r.wahl !== 'V1,V2,V3 (aktuell) | 2-3') f.push('Auswahl: ' + r.wahl);
+    if (r.offen !== '0/true/true') f.push('nicht verglichenes Paar (KI-Aufrufe/Knopf/„Neu“ versteckt): ' + r.offen);
+    if (!r.gleich) f.push('gleiche Version: kein Hinweis');
+    if (r.unterlagen !== 'ALTE VERSION (V1 | bild | bild | NEUE VERSION (V3 | bild | prompt') f.push('Unterlagen V1 → V3: ' + r.unterlagen);
+    if (r.gespeichert !== '1-3/1-3') f.push('gespeichert: ' + r.gespeichert);
+    if (r.anzeige !== '✨ V1 → V3: Fliesen Bad | true') f.push('Anzeige: ' + r.anzeige);
+    if (r.ragt) f.push('Fenster ragt am Handy über den Rand');
+    if (r.wieder !== 'true/true/1') f.push('gespeicherte Paare erneut ansehen (V2→V3 / V1→V3 / Aufrufe): ' + r.wieder);
+    if (r.geloescht !== '[null,null,[null]]') f.push('nach dem Löschen einer Version: ' + r.geloescht);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('KI-Vergleich zweier Firmen: genau zwei Angebote mit Anhang wählen, beide gehen an die KI, Ergebnis sicher angezeigt und gespeichert', async () => {
+  const d = await boot();
+  try {
+    const p = d.page;
+    const r = await p.evaluate(async (bildFn) => {
+      const bild = (new Function('return (' + bildFn + ')()'))();
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      window.__ki = []; const echt = window.fetch;
+      window.fetch = async (url, opt) => {
+        if (!String(url).includes('/api/ki')) return echt(url, opt);
+        __ki.push(JSON.parse(opt.body));
+        return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ zusammenfassung: 'Huber hat die Abdichtung dabei.', preisart: 'brutto', summe_a: 16900, summe_b: '15.400,00',
+          nur_a: [{ position: 'Abdichtung Dusche', betrag: 240 }], nur_b: [{ position: 'Entsorgung <i>Altfliesen</i>', betrag: 180 }],
+          beide: [{ position: 'Wandfliesen 60x60', a: 9120, b: 8400, hinweis: 'B anderes Format' }], hinweise: ['B: 5 Jahre Gewährleistung'], empfehlung: 'B nehmen' }) }] }), { status: 200 });
+      };
+      const D = n => ({ name: n, type: 'image/jpeg', url: bild });
+      const k1 = state.budgetKat[0].name, k2 = state.budgetKat[1].name;
+      state.angebote = [
+        { id: 801, beschr: 'Fliesen Bad', anbieter: 'Huber GmbH', kat: k1, datum: '2026-03-28', betrag: 16900, status: 'Ausstehend', dateien: [D('huber1.jpg'), D('huber2.jpg')] },
+        { id: 802, beschr: 'Fliesen Bad', anbieter: 'Maier Bau', kat: k1, datum: '2026-03-30', betrag: 15400, status: 'Ausstehend', dateien: [D('maier.jpg')] },
+        { id: 803, beschr: 'Fliesen Bad', anbieter: 'Ohne Anhang KG', kat: k1, betrag: 17000, status: 'Ausstehend', dateien: [] },
+        { id: 804, beschr: 'Elektro', anbieter: 'Strom AG', kat: k2, betrag: 9000, status: 'Ausstehend', dateien: [D('strom.jpg')] }];
+      showPage('angebote'); renderAngebote();
+      const aus = {};
+      // Einstieg aus dem Reiter „Vergleich“ (Kategorie vorgefiltert)
+      setAngView('vergleich', document.getElementById('ang-tab-vergleich'));
+      const knoepfe = document.querySelectorAll('#ang-vergleich-view .ang-vgl-ki');
+      aus.knoepfe = knoepfe.length;
+      knoepfe[0].click(); await w(150);
+      const zeilen = () => [...document.querySelectorAll('#ang-kiw-liste .ang-kiw-zeile')];
+      aus.liste = zeilen().map(z => z.dataset.id + (z.querySelector('input').disabled ? '-' : '+')).join() + ' | ' + document.getElementById('ang-kiw-kat').value;
+      const box = id => zeilen().find(z => z.dataset.id === String(id)).querySelector('input');
+      const klick = async id => { box(id).click(); await w(60); };
+      aus.los0 = document.getElementById('ang-kiw-los').disabled;
+      await klick(803); aus.ohneAnhang = _angKiWahl.length;           // ausgegraut: nicht wählbar
+      await klick(801); aus.los1 = document.getElementById('ang-kiw-los').disabled;
+      // alle Kategorien: drittes Angebot ersetzt das zuerst gewählte
+      document.getElementById('ang-kiw-kat').value = ''; document.getElementById('ang-kiw-kat').dispatchEvent(new Event('change')); await w(60);
+      await klick(804); await klick(802);
+      aus.wahl = _angKiWahl.join() + '/' + document.getElementById('ang-kiw-los').disabled + '/' + document.getElementById('ang-kiw-info').textContent.slice(0, 14);
+      aus.ragt = [...document.querySelectorAll('#modal-ang-ki-wahl *')].some(z => z.getBoundingClientRect().right > innerWidth + 1);
+      // 804 abwählen, 801 dazu → 802 + 801 → Vergleichen
+      await klick(804); await klick(801);
+      document.getElementById('ang-kiw-los').click(); await w(500);
+      const c = (__ki[0] || {}).messages?.[0]?.content || [];
+      aus.unterlagen = c.map(x => x.type === 'text' ? (x.text.match(/^ANGEBOT [AB] \([^,)]+/) || ['prompt'])[0] : 'bild').join(' | ');
+      aus.prompt = /KEINE Empfehlung/.test((c[c.length - 1] || {}).text || '');
+      const inhalt = document.getElementById('ang-kiv-inhalt');
+      aus.titel = document.getElementById('ang-kiv-titel').textContent;
+      aus.bloecke = ['nur-a', 'nur-b', 'beide'].map(k => inhalt.querySelectorAll('.ang-kiv-block.' + k + ' .ang-kiv-zeile').length).join();
+      aus.text = inhalt.textContent.replace(/\s+/g, ' ');
+      aus.html = !!inhalt.querySelector('i');
+      aus.wahlSichtbar = !!inhalt.querySelector('.ang-kiv-wahl');
+      aus.ragt2 = [...inhalt.querySelectorAll('*')].some(z => z.getBoundingClientRect().right > innerWidth + 1);
+      const g = (state.angebote.find(a => a.id === 801).kiFirmen || {})['802'] || {};
+      aus.gespeichert = JSON.stringify({ sb: g.e && g.e.summe_b, nb: g.e && g.e.nur_b.length, emp: g.e && ('empfehlung' in g.e), am: !!g.am, bei802: 'kiFirmen' in state.angebote.find(a => a.id === 802) });
+      // nochmal (andere Reihenfolge): gespeichert, keine KI
+      closeModal('modal-ang-ki-vergleich'); await w(250);
+      await angFirmenKI(802, 801); await w(100);
+      aus.nochmal = __ki.length + '/' + document.getElementById('modal-ang-ki-vergleich').classList.contains('open');
+      document.getElementById('ang-kiv-neu').click(); await w(400);
+      aus.neu = __ki.length;
+      // ohne Anhang: Hinweis statt KI
+      closeModal('modal-ang-ki-vergleich'); await w(250);
+      await angFirmenKI(801, 803); aus.ohne = __ki.length;
+      // Angebot löschen → Firmen-Vergleich weg
+      window.showConfirm = async () => true; await deleteAngebot(802);
+      aus.nachLoeschen = JSON.stringify(state.angebote.find(a => a.id === 801).kiFirmen);
+      return aus;
+    }, TESTBILD.toString());
+    const f = [];
+    if (r.knoepfe !== 1) f.push('Knopf im Reiter „Vergleich“: ' + r.knoepfe + ' (erwartet 1 – nur Kategorie mit mehreren Angeboten)');
+    if (!/^801\+,802\+,803- \| /.test(r.liste)) f.push('Auswahlliste (Kategorie vorgefiltert, ohne Anhang ausgegraut): ' + r.liste);
+    if (!r.los0 || r.ohneAnhang !== 0 || !r.los1) f.push(`„Vergleichen“ zu früh aktiv bzw. Angebot ohne Anhang wählbar (${r.los0}/${r.ohneAnhang}/${r.los1})`);
+    if (r.wahl !== '804,802/false/2 von 2 gewähl') f.push('höchstens zwei: ' + r.wahl);
+    if (r.ragt || r.ragt2) f.push('am Handy ragt etwas über den Rand');
+    if (r.unterlagen !== 'ANGEBOT A (Huber GmbH | bild | bild | ANGEBOT B (Maier Bau | bild | prompt' || !r.prompt) f.push('Unterlagen an die KI: ' + r.unterlagen);
+    if (r.titel !== '✨ Huber GmbH ↔ Maier Bau') f.push('Titel: ' + r.titel);
+    if (r.bloecke !== '1,1,1') f.push('Blöcke (nur A, nur B, beide): ' + r.bloecke);
+    for (const t of ['Abdichtung Dusche', 'Entsorgung <i>Altfliesen</i>', 'Wandfliesen 60x60', 'B anderes Format', '5 Jahre Gewährleistung', 'Nur bei A – Huber GmbH', 'Nur bei B – Maier Bau'])
+      if (!r.text.includes(t)) f.push(`Ergebnis nennt „${t}“ nicht`);
+    if (r.html) f.push('Text der KI als HTML eingefügt');
+    if (r.wahlSichtbar) f.push('Versions-Auswahl beim Firmenvergleich sichtbar');
+    if (r.gespeichert !== '{"sb":15400,"nb":1,"emp":false,"am":true,"bei802":false}') f.push('gespeichert: ' + r.gespeichert);
+    if (r.nochmal !== '1/true') f.push('nochmal ansehen: ' + r.nochmal);
+    if (r.neu !== 2) f.push('„Neu vergleichen“: ' + r.neu);
+    if (r.ohne !== 2) f.push('ohne Anhang wurde die KI gefragt');
+    if (r.nachLoeschen !== '{}') f.push('nach dem Löschen eines Angebots: ' + r.nachLoeschen);
     if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
     return f.join(' · ');
   } finally { await d.ctx.close(); }

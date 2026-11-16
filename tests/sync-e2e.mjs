@@ -823,20 +823,23 @@ await scenario('E19: Angebot mit Versionen und KI-Vergleich überlebt den Neusta
     await page.evaluate(() => saveAngebot());
     await page.evaluate(() => { const a = state.angebote.find(x => x.id === 1900001);
       a.kiVergleich = { von: 1, nach: 2, am: '2026-03-28T10:00:00.000Z', e: { zusammenfassung: 'E19 Vergleich', preisart: '', summe_alt: 18400, summe_neu: 16900, entfallen: [{ position: 'Sockel', betrag: 620 }], neu: [], geaendert: [], hinweise: [] } };
+      a.kiVergleiche = { '1-2': { von: 1, nach: 2, am: '2026-03-29T10:00:00.000Z', e: { zusammenfassung: 'E19 Paar', preisart: '', summe_alt: null, summe_neu: null, entfallen: [], neu: [], geaendert: [], hinweise: [] } } };
+      a.kiFirmen = { '1900002': { am: '2026-03-30T10:00:00.000Z', e: { zusammenfassung: 'E19 Firmen', preisart: '', summe_a: null, summe_b: null, nur_a: [{ position: 'Abdichtung', betrag: 240 }], nur_b: [], beide: [], hinweise: [] } } };
       a._updatedAt = Date.now(); save(); });
-    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'angebote' && String(r.payload.id) === '1900001' && (r.payload.versionen || []).length === 1 && r.payload.kiVergleich), null, 10000);
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => r.item_type === 'angebote' && String(r.payload.id) === '1900001' && (r.payload.versionen || []).length === 1 && r.payload.kiVergleich && r.payload.kiFirmen), null, 10000);
     await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('E19 Vergleich'), null, 5000);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await waitFor(page, BEREIT);
     await settle(page, 2500);
     const n = await page.evaluate(() => { const a = (state.angebote || []).find(x => String(x.id) === '1900001') || {}; const v = (a.versionen || [])[0] || {};
       showPage('angebote'); renderAngebote();
-      return { betrag: a.betrag, aend: a.aenderung, v: v.nr + '/' + v.betrag + '/' + ((v.dateien || [])[0] || {}).name, ki: a.kiVergleich && a.kiVergleich.e.entfallen[0].position,
+      return { betrag: a.betrag, aend: a.aenderung, v: v.nr + '/' + v.betrag + '/' + ((v.dateien || [])[0] || {}).name, ki: a.kiVergleich && a.kiVergleich.e.entfallen[0].position, paar: ((a.kiVergleiche || {})['1-2'] || { e: {} }).e.zusammenfassung, firmen: (((a.kiFirmen || {})['1900002'] || { e: { nur_a: [{}] } }).e.nur_a[0] || {}).position,
         badge: [...document.querySelectorAll('#angebot-table .ang-vbadge')].map(b => b.textContent).join() }; });
     const p = [];
     if (n.betrag !== 16900 || n.aend !== 'Nachlass E19') p.push('aktueller Stand: ' + JSON.stringify(n));
     if (n.v !== '1/18400/e19-v1.jpg') p.push('Verlauf nach Neustart: ' + n.v);
     if (n.ki !== 'Sockel') p.push('KI-Vergleich nach Neustart weg');
+    if (n.paar !== 'E19 Paar' || n.firmen !== 'Abdichtung') p.push('gespeicherte Vergleiche (Versions-Paar / Firmen) nach Neustart: ' + JSON.stringify([n.paar, n.firmen]));
     if (n.badge !== 'V2') p.push('Liste zeigt „V2“ nicht: ' + n.badge);
     return p.join(' · ');
   } finally { await ctx.close(); }

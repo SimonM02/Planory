@@ -708,7 +708,7 @@ check('Startseite: App-Bilder vorhanden und klein, FAQ für Google = sichtbare F
 });
 check('KI: Hinweis vor der Nutzung in allen KI-Funktionen, Datenschutz nennt Anthropic + Drittland', () => {
   const w = read(WEB);
-  const ohne = ['_processScanFile', 'generateKIMeilensteine', 'runKIAnalysis', 'askKI', 'scanAngKI', 'angVersionenKI'].filter(f => {
+  const ohne = ['_processScanFile', 'generateKIMeilensteine', 'runKIAnalysis', 'askKI', 'scanAngKI', 'angVersionenKI', 'angFirmenKI'].filter(f => {
     const i = w.indexOf('function ' + f + '('); const body = w.slice(i, w.indexOf('\nasync function ', i + 10));
     return i < 0 || !body.includes('await _kiHinweis()');
   });

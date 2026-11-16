@@ -113,6 +113,15 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   „Weggefallen / Neu dazugekommen / Preis geändert / Sonstiges“. Ergebnis wird am Angebot gespeichert
   (`a.kiVergleich`) – nochmal ansehen kostet nichts, „Neu vergleichen“ fragt neu. Text der KI nie als HTML einsetzen.
   `api/ki.js` hat dafür `maxDuration: 60`.
+- **KI-Vergleich frei wählbar (16.11.2026):**
+  - Versionen: ab 3 Versionen im Ergebnisfenster „Vergleiche [V1] mit [V3]“. Ergebnisse je Paar in
+    `a.kiVergleiche["1-3"]` (ältere Felder `a.kiVergleich` / `versionen[i].ki` werden weiter gelesen). Ein noch nicht
+    verglichenes Paar braucht einen Klick auf „Jetzt vergleichen“ (kostet sonst nichts). Version löschen → alle
+    Versions-Vergleiche des Angebots weg (Nummern verschieben sich).
+  - Firmen: „✨ Angebote vergleichen“ (Angebote-Seite) bzw. „Mit KI vergleichen“ je Kategorie im Reiter „Vergleich“ →
+    genau zwei Angebote mit Foto/PDF wählen (`angFirmenKI`). Ergebnis am Angebot mit der kleineren ID:
+    `a.kiFirmen[ID des anderen]`. Angebot gelöscht → Eintrag weg. Die KI gibt bewusst KEINE Empfehlung, nur Unterschiede.
+  - Gemeinsamer Unterbau: `_angKiAnfrage` (Größen-Grenze, Fehlermeldungen), Anzeige-Bausteine `_kivZeile/_kivBlock/_kivFuss`.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 
