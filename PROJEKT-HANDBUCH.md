@@ -122,6 +122,12 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
     genau zwei Angebote mit Foto/PDF wählen (`angFirmenKI`). Ergebnis am Angebot mit der kleineren ID:
     `a.kiFirmen[ID des anderen]`. Angebot gelöscht → Eintrag weg. Die KI gibt bewusst KEINE Empfehlung, nur Unterschiede.
   - Gemeinsamer Unterbau: `_angKiAnfrage` (Größen-Grenze, Fehlermeldungen), Anzeige-Bausteine `_kivZeile/_kivBlock/_kivFuss`.
+- **Benennung & Erklärtexte (16.11.2026, Simon):** Funktionen heißen NICHT „mit KI …“ (z. B. „Angebote vergleichen“,
+  „Versionen vergleichen“). Die KI wird nur dort genannt, wo es um Transparenz geht (Hinweis vor der ersten Nutzung,
+  „Die KI kann sich irren …“ unter dem Ergebnis, Datenschutz). Bei jeder neuen/geänderten Funktion mitziehen:
+  Info-Feld der Seite (`PAGE_HINTS` + `PAGE_HINTS_EN`, dabei `PAGE_HINT_VER` erhöhen, damit es Nutzern einmal neu
+  erscheint), Website (`site-quelle/seiten/funktionen.html`, `hilfe.html`, Preise-FAQ → `node site-quelle/bauen.mjs`)
+  und – bei neuer KI-Nutzung – die Aufzählung in `datenschutz.html`.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 

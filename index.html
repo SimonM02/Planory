@@ -4544,7 +4544,7 @@
       <div id="ang-version-liste" style="display:flex;flex-direction:column;gap:6px"></div>
       <div id="ang-version-knoepfe" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
         <button type="button" class="btn btn-ghost" id="ang-version-neu-btn" onclick="angNeueVersion()">＋ Neue Version (nachverhandelt)</button>
-        <button type="button" class="btn btn-ghost" id="ang-version-ki-btn" style="display:none" onclick="angVersionenKI()">✨ Versionen mit KI vergleichen</button>
+        <button type="button" class="btn btn-ghost" id="ang-version-ki-btn" style="display:none" onclick="angVersionenKI()">✨ Versionen vergleichen</button>
       </div>
     </div>
     <div class="modal-actions">
@@ -4568,8 +4568,8 @@
 <!-- KI-Vergleich: zwei Angebote (verschiedene Firmen) auswählen -->
 <div class="modal-overlay" id="modal-ang-ki-wahl">
   <div class="modal" style="width:560px">
-    <h3>✨ Angebote mit KI vergleichen</h3>
-    <p style="font-size:0.82rem;color:var(--text3);margin-bottom:14px;line-height:1.5">Wähle zwei Angebote für dieselbe Arbeit – die KI zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.</p>
+    <h3>✨ Angebote miteinander vergleichen</h3>
+    <p style="font-size:0.82rem;color:var(--text3);margin-bottom:14px;line-height:1.5">Wähle zwei Angebote für dieselbe Arbeit – Planory zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.</p>
     <div class="form-row"><label>Kategorie</label><select id="ang-kiw-kat" onchange="_angKiWahlListe()"></select></div>
     <div id="ang-kiw-liste" style="display:flex;flex-direction:column;gap:6px"></div>
     <div id="ang-kiw-info" style="font-size:0.78rem;color:var(--text3);margin-top:10px"></div>
@@ -5376,14 +5376,14 @@ function updateProjectHeader() {
 // ──────────────── EINMAL-HINWEISE ────────────────
 const PAGE_HINTS = {
   dashboard:      'Dein Projektüberblick – Budget, Fortschritt, offene Aufgaben und „Demnächst fällig". Ganz oben der Schnellzugriff: die wichtigsten Aktionen mit einem Tipp – über „✏️ Anpassen" stellst du ihn selbst zusammen. Der KI-Bauberater analysiert alles auf Knopfdruck.',
-  kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus.',
-  budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest.',
+  kosten:         'Erfasse Ausgaben manuell oder scanne Rechnungen per Foto – die KI liest Betrag, Datum und Anbieter automatisch heraus. Ist eine Rechnung mit gleichem Betrag schon eingebucht, fragt Planory nach. Über „📁 Mappe“ bekommst du alle Rechnungen einer Kategorie samt Belegen als PDF.',
+  budget:         'Teile dein Budget auf Gewerke auf und sieh auf einen Blick, wo du über- oder unterschreitest. Tippe auf eine Kategorie für Details und die PDF-Mappe.',
   meilensteine:   'Definiere wichtige Bauphasen mit Terminen. Überfällige Meilensteine werden automatisch rot markiert.',
   aufgaben:       'Links „Heute“, „Kommende Tage“ und deine Kategorien. Kreis antippen = erledigt (bei wiederkehrenden Aufgaben springt das Datum weiter). Unteraufgaben über „⑂+“, schnell anlegen mit der Zeile „+ Aufgabe hinzufügen“.',
   tagebuch:       'Tagesberichte mit Mannschaft und Stunden. Das aktuelle Wetter wird beim Anlegen automatisch geladen (Adresse in Einstellungen nötig).',
   dokumente:      'Notizen für schnelle Hinweise, plus Dokumentenablage für Baupläne, Genehmigungen und Verträge (max. 5 MB je Datei).',
   kontakte:       'Alle Handwerker und Ansprechpartner – mit Gewerk, Telefon, E-Mail und Status.',
-  angebote:       'Vergleiche Angebote von Handwerkern und wandle das günstigste mit einem Klick direkt in eine Rechnung um.',
+  angebote:       'Erfasse Angebote mit Fotos oder PDFs – oder lies sie per KI ein. Nachverhandelt? Lege im Angebot eine neue Version an. Mit „Angebote vergleichen“ siehst du, was bei welcher Firma dabei ist und wo sich die Preise unterscheiden. Ein angenommenes Angebot wandelst du mit einem Klick in eine Rechnung um.',
   zahlungsplan:   'Hier planst du Zahlungen, die noch kommen – z. B. Teilzahlungen an den Baumeister nach Baufortschritt. Planory erinnert dich vor der Fälligkeit. Hakst du eine Zahlung ab, wird die passende offene Rechnung auf „Bezahlt" gesetzt.',
   maengel:        'Dokumentiere Baumängel mit Fotos, Verantwortlichem und Behebungsdatum – wichtig für Gewährleistungsansprüche.',
   rechnungen:     'Hier findest du alle per KI eingescannten Rechnungen als Übersicht.',
@@ -5398,14 +5398,14 @@ const PAGE_HINTS = {
 // Englische Fassung der Seiten-Hinweise (Auswahl ueber _pageHint)
 const PAGE_HINTS_EN = {
   dashboard:      'Your project at a glance – budget, progress, open tasks and "Due soon". At the top is Quick Access: your most-used actions – build your own with "✏️ Customise". The AI construction advisor analyses everything at the touch of a button.',
-  kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically.',
-  budget:         'Split your budget across trades and see at a glance where you are over or under.',
+  kosten:         'Record expenses manually or scan invoices with a photo – the AI reads the amount, date and vendor automatically. If an invoice with the same amount is already booked, Planory asks first. With "📁 Folder" you get all invoices of a category including receipts as one PDF.',
+  budget:         'Split your budget across trades and see at a glance where you are over or under. Tap a category for details and the PDF folder.',
   meilensteine:   'Define key construction phases with dates. Overdue milestones are highlighted in red automatically.',
   aufgaben:       'On the left: “Today”, “Next days” and your categories. Tap the circle to complete (recurring tasks move to their next date). Add subtasks with “⑂+”, add tasks quickly with “+ Add task”.',
   tagebuch:       'Daily reports with crew and hours. The current weather is loaded automatically when you add an entry (address required in settings).',
   dokumente:      'Notes for quick reminders, plus document storage for plans, permits and contracts (max. 5 MB per file).',
   kontakte:       'All tradespeople and contacts – with trade, phone, email and status.',
-  angebote:       'Compare quotes from tradespeople and turn the best one into an invoice with a single click.',
+  angebote:       'Add quotes with photos or PDFs – or import them via AI. Renegotiated? Create a new version inside the quote. "Compare quotes" shows what each company includes and where the prices differ. Turn an accepted quote into an invoice with one click.',
   zahlungsplan:   'Plan upcoming payments here – e.g. part payments to the builder as construction progresses. Planory reminds you before they are due. When you tick off a payment, the matching open invoice is set to "Paid".',
   maengel:        'Document defects with photos, responsible person and fix date – important for warranty claims.',
   rechnungen:     'Here you will find all invoices scanned by the AI in one overview.',
@@ -5422,16 +5422,20 @@ function _pageHint(pageId) {
 }
 
 let _seenHints =  new Set(JSON.parse(localStorage.getItem('bauplan_seen_hints') || '[]'));
+// Geaenderte Hinweise (neue Funktionen) erscheinen einmal neu – auch wenn der alte schon weggeklickt war.
+// Bei einer inhaltlichen Aenderung eines Hinweises hier die Nummer erhoehen.
+const PAGE_HINT_VER = { angebote: 2, kosten: 2, budget: 2 };
+const _hintKey = id => (PAGE_HINT_VER[id] > 1 ? id + '@' + PAGE_HINT_VER[id] : id);
 
 function dismissHint(pageId) {
-  _seenHints.add(pageId);
+  _seenHints.add(_hintKey(pageId));
   localStorage.setItem('bauplan_seen_hints', JSON.stringify([..._seenHints]));
   const el = document.getElementById('page-hint-' + pageId);
   if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 220); }
 }
 
 function showPageHint(pageId) {
-  if (_seenHints.has(pageId) || !PAGE_HINTS[pageId]) return;
+  if (_seenHints.has(_hintKey(pageId)) || !PAGE_HINTS[pageId]) return;
   const page = document.getElementById('page-' + pageId);
   if (!page) return;
   if (document.getElementById('page-hint-' + pageId)) return;
@@ -6441,15 +6445,15 @@ const TEXTE = {
   "z.B. Sockelleisten gestrichen, 3 % Nachlass": { en: "e.g. skirting boards removed, 3 % discount" },
   "Versionen": { en: "Versions" },
   "＋ Neue Version (nachverhandelt)": { en: "＋ New version (renegotiated)" },
-  "✨ Versionen mit KI vergleichen": { en: "✨ Compare versions with AI" },
+  "✨ Versionen vergleichen": { en: "✨ Compare versions" },
   "Versionen im Vergleich": { en: "Versions compared" },
   "Die KI kann sich irren – bitte mit den beiden Angeboten gegenprüfen.": { en: "The AI can make mistakes – please check against both quotes." },
   "↻ Neu vergleichen": { en: "↻ Compare again" },
-  "KI vergleicht die beiden Versionen": { en: "AI is comparing the two versions" },
-  "KI vergleicht die beiden Angebote": { en: "AI is comparing the two quotes" },
+  "Versionen werden verglichen": { en: "Comparing the versions" },
+  "Angebote werden verglichen": { en: "Comparing the quotes" },
   "✨ Angebote vergleichen": { en: "✨ Compare quotes" },
-  "✨ Angebote mit KI vergleichen": { en: "✨ Compare quotes with AI" },
-  "Wähle zwei Angebote für dieselbe Arbeit – die KI zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.": { en: "Pick two quotes for the same work – the AI shows what each one includes and where the prices differ." },
+  "✨ Angebote miteinander vergleichen": { en: "✨ Compare quotes with each other" },
+  "Wähle zwei Angebote für dieselbe Arbeit – Planory zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.": { en: "Pick two quotes for the same work – Planory shows what each one includes and where the prices differ." },
   "✨ Vergleichen": { en: "✨ Compare" },
   "Zahlung / Fälligkeit": { en: "Payment / due date" },
   "Neues Projekt": { en: "New project" },
@@ -17862,7 +17866,8 @@ function _renderAngVersionen(a) {
   hin.textContent = _angVersionModus
     ? (en ? `You are entering version ${nr + 1}. The previous version stays in the history below – enter the new amount above and attach the new quote.`
           : `Du trägst gerade Version ${nr + 1} ein. Der bisherige Stand bleibt unten im Verlauf erhalten – trage oben den neuen Betrag ein und hänge das neue Angebot an.`)
-    : (en ? 'Renegotiated? Create a new version – the old one stays in the history.' : 'Nachverhandelt? Lege eine neue Version an – die alte bleibt im Verlauf erhalten.');
+    : (en ? 'Renegotiated? Create a new version – the old one stays in the history, and afterwards you can compare what has changed.'
+          : 'Nachverhandelt? Lege eine neue Version an – die alte bleibt im Verlauf, und du kannst danach vergleichen, was sich geändert hat.');
   if (!alt.length && !_angVersionModus) { liste.innerHTML = ''; return; }
   // alle Staende, neuester zuerst; der Stand am Angebot ist „aktuell“ (bzw. „bisher“, solange die neue Version offen ist)
   const staende = [...alt, { nr, datum: a.datum, betrag: a.betrag, aenderung: a.aenderung, dateien: _angDateien(a), jetzt: true }];
@@ -17989,7 +17994,7 @@ function renderAngVergleich() {
         <span class="badge badge-gray" style="font-size:0.78rem;padding:4px 10px">${kat}</span>
         <span style="font-size:0.78rem;color:var(--text3)">${offers.length} Angebot${offers.length!==1?'e':''}</span>
         ${offers.length > 1 ? `<span style="font-size:0.75rem;color:var(--success);font-weight:600">· Günstigstes: ${fmt(minBetrag)}</span>` : ''}
-        ${offers.length > 1 ? `<button type="button" class="btn btn-ghost ang-vgl-ki" style="margin-left:auto;padding:5px 10px;font-size:0.75rem" onclick="openAngKiWahl(_angVglKats[${gi}])">✨ ${_lang === 'en' ? 'Compare with AI' : 'Mit KI vergleichen'}</button>` : ''}
+        ${offers.length > 1 ? `<button type="button" class="btn btn-ghost ang-vgl-ki" style="margin-left:auto;padding:5px 10px;font-size:0.75rem" onclick="openAngKiWahl(_angVglKats[${gi}])">✨ ${_lang === 'en' ? 'Compare quotes' : 'Angebote vergleichen'}</button>` : ''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
         ${sorted.map((a,i) => {
@@ -18279,8 +18284,8 @@ async function _angKiAnfrage(dA, dB, titelA, titelB, prompt) {
   let tA = await _angKiTeile(dA, viele), tB = await _angKiTeile(dB, viele);
   if (!viele && gr(tA) + gr(tB) > LIMIT) { tA = await _angKiTeile(dA, true); tB = await _angKiTeile(dB, true); }
   if (gr(tA) + gr(tB) > LIMIT) throw Object.assign(new Error('zu gross'), { meldung: en
-    ? 'The attachments are too large for the AI comparison – please attach smaller photos or PDFs.'
-    : 'Die Anhänge sind zusammen zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
+    ? 'The attachments are too large for the comparison – please attach smaller photos or PDFs.'
+    : 'Die Anhänge sind zusammen zu groß für den Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
   if (!tA.length || !tB.length) throw new Error('keine lesbaren Anhaenge');
   const messages = [{ role: 'user', content: [{ type: 'text', text: titelA }, ...tA, { type: 'text', text: titelB }, ...tB, { type: 'text', text: prompt }] }];
   const resp = await fetch(API_BASE + '/api/ki', { method: 'POST', headers: await _kiHeaders(), body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages }) });
@@ -18290,7 +18295,7 @@ async function _angKiAnfrage(dA, dB, titelA, titelB, prompt) {
     // Anmeldung / zu viele Anfragen / Dienst nicht erreichbar: dieselben Meldungen wie beim Rechnungs-Scan
     const bekannt = [401, 403, 429].includes(resp.status) || resp.status >= 500;
     throw Object.assign(new Error('KI ' + resp.status), { meldung: resp.status === 413
-      ? (en ? 'The attachments are too large for the AI comparison.' : 'Die Anhänge sind zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.')
+      ? (en ? 'The attachments are too large for the comparison.' : 'Die Anhänge sind zu groß für den Vergleich – bitte kleinere Fotos oder PDFs anhängen.')
       : (bekannt ? tt(_kiFehlertext(resp.status, data)) : '') });
   }
   const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
@@ -18299,7 +18304,7 @@ async function _angKiAnfrage(dA, dB, titelA, titelB, prompt) {
 }
 const _angKiFehler = (err) => {
   console.warn('[KI-Vergleich]', err?.message);
-  showToast('⚠️ ' + (err.meldung || (_lang === 'en' ? 'The AI comparison did not work – please try again later.' : 'Der KI-Vergleich hat nicht geklappt – bitte später nochmal versuchen.')), 'error', 7000);
+  showToast('⚠️ ' + (err.meldung || (_lang === 'en' ? 'The comparison did not work – please try again later.' : 'Der Vergleich hat nicht geklappt – bitte später nochmal versuchen.')), 'error', 7000);
 };
 // Zwei Versionen eines Angebots vergleichen. Ohne von/nach: vorige gegen aktuelle Version.
 // neu = true: auch dann fragen, wenn das Paar schon verglichen wurde.
@@ -18319,13 +18324,13 @@ async function angVersionenKI(id, neu, von, nach) {
   }
   const sA = _angStand(a, von), sB = _angStand(a, nach);
   if (!sA || !sB || !sA.dateien.length || !sB.dateien.length) {
-    showToast(en ? '⚠️ For the AI comparison each of the two versions needs the quote as a photo or PDF.'
-                 : '⚠️ Für den KI-Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.', 'warning', 6500); return;
+    showToast(en ? '⚠️ For the comparison each of the two versions needs the quote as a photo or PDF.'
+                 : '⚠️ Für den Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.', 'warning', 6500); return;
   }
   if (_angKiLaeuft) return;
   if (!(await _kiHinweis())) return;
   _angKiLaeuft = true;
-  const lade = _lade('KI vergleicht die beiden Versionen', 0, { verzoegert: 0, maxMs: 150000 });
+  const lade = _lade('Versionen werden verglichen', 0, { verzoegert: 0, maxMs: 150000 });
   try {
     const prompt = `Du vergleichst zwei Versionen desselben Angebots (Bau/Handwerk). Oben stehen zuerst die Unterlagen der ALTEN Version, danach die der NEUEN Version. Mehrere Bilder oder Dateien einer Version sind die Seiten desselben Angebots in ihrer Reihenfolge (oft abfotografiert).
 Finde heraus, was sich geändert hat, und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):
@@ -18387,7 +18392,7 @@ function _angKiZeigen(a, von, nach) {
     document.getElementById('ang-kiv-titel').textContent = `✨ ${en ? 'Compare versions' : 'Versionen vergleichen'}: ${a.beschr || tt('Angebot')}`;
     document.getElementById('ang-kiv-inhalt').innerHTML = wahl + `<div class="ang-kiv-leer" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:0.85rem;line-height:1.5;color:var(--text2)">
       ${von === nach ? (en ? 'Please choose two different versions.' : 'Bitte zwei verschiedene Versionen wählen.')
-        : ohne ? (en ? 'For the AI comparison both versions need the quote as a photo or PDF.' : 'Für den KI-Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.')
+        : ohne ? (en ? 'For the comparison both versions need the quote as a photo or PDF.' : 'Für den Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.')
         : `${en ? `V${von} and V${nach} have not been compared yet.` : `V${von} und V${nach} wurden noch nicht verglichen.`}
            <div style="margin-top:10px"><button type="button" class="btn btn-primary" id="ang-kiv-jetzt" onclick="angVersionenKI(${a.id}, true, ${von}, ${nach})">✨ ${en ? 'Compare now' : 'Jetzt vergleichen'}</button></div>`}</div>`;
     openModal('modal-ang-ki-vergleich');
@@ -18489,12 +18494,12 @@ async function angFirmenKI(x, y, neu) {
   if (!requireSub()) return;
   const en = _lang === 'en';
   if (!_angHatAnhang(a) || !_angHatAnhang(b)) {
-    showToast(en ? '⚠️ For the AI comparison both quotes need a photo or PDF.' : '⚠️ Für den KI-Vergleich brauchen beide Angebote ein Foto oder PDF.', 'warning', 6500); return;
+    showToast(en ? '⚠️ For the comparison both quotes need a photo or PDF.' : '⚠️ Für den Vergleich brauchen beide Angebote ein Foto oder PDF.', 'warning', 6500); return;
   }
   if (_angKiLaeuft) return;
   if (!(await _kiHinweis())) return;
   _angKiLaeuft = true;
-  const lade = _lade('KI vergleicht die beiden Angebote', 0, { verzoegert: 0, maxMs: 150000 });
+  const lade = _lade('Angebote werden verglichen', 0, { verzoegert: 0, maxMs: 150000 });
   try {
     const prompt = `Du vergleichst zwei Angebote VERSCHIEDENER Firmen für dieselbe Arbeit (Bau/Handwerk). Oben stehen zuerst die Unterlagen von ANGEBOT A, danach die von ANGEBOT B. Mehrere Bilder oder Dateien eines Angebots sind seine Seiten in ihrer Reihenfolge (oft abfotografiert).
 Zeige die Unterschiede und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):

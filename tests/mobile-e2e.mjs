@@ -3517,6 +3517,51 @@ await scenario('KI-Vergleich zweier Firmen: genau zwei Angebote mit Anhang wähl
   } finally { await d.ctx.close(); }
 });
 
+await scenario('Info-Felder: geänderte Hinweise (Angebote, Ausgaben, Budget) erscheinen einmal neu, andere nicht · Vergleich heißt nirgends „mit KI“', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      // Nutzer hatte die alten Hinweise schon weggeklickt
+      _seenHints = new Set(['angebote', 'kosten', 'budget', 'maengel']);
+      document.querySelectorAll('[id^="page-hint-"]').forEach(h => h.remove());
+      const da = id => !!document.getElementById('page-hint-' + id);
+      showPageHint('angebote'); showPageHint('kosten'); showPageHint('budget'); showPageHint('maengel');
+      const aus = { neu: ['angebote', 'kosten', 'budget'].filter(da).join(), alt: da('maengel'),
+        text: (document.getElementById('page-hint-angebote') || {}).textContent || '', kosten: (document.getElementById('page-hint-kosten') || {}).textContent || '' };
+      dismissHint('angebote'); await w(300);
+      showPageHint('angebote');
+      aus.weg = !da('angebote');
+      aus.gemerkt = JSON.parse(localStorage.getItem('bauplan_seen_hints') || '[]').includes('angebote@2');
+      setLang('en'); showPageHint('kosten'); await w(50);
+      aus.en = (document.getElementById('page-hint-kosten') || {}).textContent || '';
+      setLang('de');
+      // Beschriftungen: nirgends „mit KI vergleichen“ (auch nicht englisch „with AI“)
+      state.angebote = [{ id: 1, beschr: 'A', kat: state.budgetKat[0].name, betrag: 1, status: 'Ausstehend', dateien: [] }, { id: 2, beschr: 'B', kat: state.budgetKat[0].name, betrag: 2, status: 'Ausstehend', dateien: [] }];
+      showPage('angebote'); renderAngebote(); setAngView('vergleich', document.getElementById('ang-tab-vergleich'));
+      // sichtbare Texte und Beschriftungen aller Fenster (ohne Programmcode und Kommentare)
+      const kopie = document.body.cloneNode(true);
+      kopie.querySelectorAll('script, style, noscript').forEach(x => x.remove());
+      const titel = [...document.querySelectorAll('[title]')].map(x => x.getAttribute('title')).join(' | ');
+      const text = kopie.textContent + ' | ' + titel + ' | ' + Object.keys(TEXTE).filter(k => /vergleich/i.test(k)).map(k => k + ' ' + TEXTE[k].en).join(' | ');
+      aus.ki = (text.match(/mit KI vergleichen|KI-Vergleich|KI vergleicht|[Cc]ompar\w* (?:\w+ ){0,3}with AI|AI is comparing|AI comparison/g) || []).join();
+      aus.knopf = (document.querySelector('#ang-vergleich-view .ang-vgl-ki') || {}).textContent || '';
+      setAngView('liste', document.getElementById('ang-tab-liste'));
+      return aus;
+    });
+    const f = [];
+    if (r.neu !== 'angebote,kosten,budget' || r.alt) f.push('Hinweise neu angezeigt: ' + r.neu + ' / unveränderter wieder da: ' + r.alt);
+    if (!/neue Version/.test(r.text) || !/Angebote vergleichen/.test(r.text)) f.push('Angebote-Hinweis: ' + r.text);
+    if (!/fragt Planory nach/.test(r.kosten) || !/Mappe/.test(r.kosten)) f.push('Ausgaben-Hinweis: ' + r.kosten);
+    if (!r.weg || !r.gemerkt) f.push('weggeklickter neuer Hinweis kommt wieder bzw. wird nicht gemerkt');
+    if (!/Planory asks first/.test(r.en)) f.push('Englischer Hinweis: ' + r.en);
+    if (r.ki) f.push('noch „mit KI“ in der Beschriftung: ' + r.ki);
+    if (r.knopf.trim() !== '✨ Angebote vergleichen') f.push('Knopf im Reiter „Vergleich“: ' + r.knopf);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
 await scenario('Kategorie-Mappe (PDF): Übersicht mit Summen, Bild- und PDF-Beleg als Seiten, fehlender Beleg markiert, kaputter Beleg bricht nichts ab', async () => {
   if (!JSPDF || !AUTOTABLE || !PDFJS) return '';
   const d = await boot({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
