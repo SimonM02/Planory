@@ -226,6 +226,35 @@ await scenario('Startseite im dunklen Modus des Handys: Überschriften bleiben l
   } finally { await c.close(); }
 });
 
+await scenario('Als App installiert (Android/Home-Bildschirm): startet direkt mit der Anmeldung statt der Website', async () => {
+  const start = async (pfad, installiert) => {
+    const c = await neu({ breite: 390 });
+    try {
+      if (installiert) await c.addInitScript(() => {
+        const echt = window.matchMedia.bind(window);
+        window.matchMedia = q => /display-mode:\s*standalone/.test(q) ? { matches: true, media: q, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } : echt(q);
+      });
+      const p = await c.newPage();
+      const fehler = []; p.on('pageerror', e => fehler.push(e.message));
+      await p.goto(BASIS + pfad, { waitUntil: 'load' });
+      await p.waitForFunction(() => getComputedStyle(document.getElementById('landing-overlay')).display !== 'none'
+        || getComputedStyle(document.getElementById('auth-overlay')).display !== 'none', null, { timeout: 15000 });
+      await p.waitForTimeout(300);
+      const r = await p.evaluate(() => ({ website: getComputedStyle(document.getElementById('landing-overlay')).display !== 'none',
+        login: getComputedStyle(document.getElementById('auth-overlay')).display !== 'none',
+        splash: !!document.getElementById('auth-splash') }));
+      return { ...r, fehler: fehler[0] || '' };
+    } finally { await c.close(); }
+  };
+  const f = [];
+  const inst = await start('/', true), pwa = await start('/?source=pwa', false), normal = await start('/', false);
+  if (inst.website || !inst.login || inst.splash) f.push('installiert: ' + JSON.stringify(inst));
+  if (pwa.website || !pwa.login) f.push('Start-Adresse ?source=pwa: ' + JSON.stringify(pwa));
+  if (!normal.website || normal.login) f.push('normaler Browser zeigt nicht mehr zuerst die Website: ' + JSON.stringify(normal));
+  for (const x of [inst, pwa, normal]) if (x.fehler) f.push('JS-Fehler: ' + x.fehler);
+  return f.join(' · ');
+});
+
 await browser.close();
 server.close();
 console.log('\n  PLANORY – Website-Test (alle Seiten, Handy + Computer)');

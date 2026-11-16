@@ -138,6 +138,8 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   `WIDGETS-EINRICHTEN.md`). Tippen → `planory://aktion/<key>` / `planory://seite/<seite>` → `_widgetLink` (nur feste
   Ziele, Sperren gelten). Neue Schnellzugriff-Aktion → im Swift-Code `symbolFuerAktion` ergänzen (pruefen prüft das).
 - **Android ohne Play Store (16.11.2026):** `manifest.webmanifest` + `icon-512.png` → planory.at in Chrome installierbar.
+  Installiert geöffnet (`_alsAppGestartet`: display-mode standalone, iPhone-Home-Bildschirm oder `?source=pwa`) startet
+  Planory wie die iPhone-App direkt mit der Anmeldung statt der Website.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 
