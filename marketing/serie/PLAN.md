@@ -17,6 +17,13 @@ Alle „Mixkit Stock Music Free License“ (Social Media + Werbung erlaubt), Liz
 geprüft (09./10.11.2026). Musikdateien liegen in `musik/` (nicht im Repo).
 Mischung: Musik −17 LUFS, Effekte −26 LUFS, +2,5 dB, Limiter 0,72, 2 s Ausblenden → gesamt ca. −15 LUFS.
 
+**Stand 16.11.2026 – alle Videos einheitlich:** helles Design, Musik „Close Up“, Titelbild 2,4 s, Knopf am Ende
+„Jetzt Planory testen“. Dateien: `planory-erklaert-intro-hell_close-up.mp4`, `planory-erklaert-budget-hell_close-up.mp4`,
+`planory-erklaert-rechnung-scannen-hell_close-up.mp4` (+ je `…-hell-titelbild.jpg`). Die dunklen Fassungen sind veraltet.
+**Regel für neue Folgen:** genauso bauen (`serie.html?ep=N&hell=1`, `coverDur: 2.4`, `end.cta: 'Jetzt Planory testen'`,
+Musik `musik/close-up.mp3` – liegt nicht im Repo, bei Bedarf neu von Mixkit, ID 1167). Gendern („Bauherr:innen“),
+Beitragstext mit „👉 Jetzt testen: planory.at“ und #bauherrin.
+
 ## Plan
 
 | Reihenfolge | Datum | Funktion | Status |
@@ -74,9 +81,9 @@ Planory erklärt: Budget
 ③ Kostenentwicklung Monat für Monat
 ④ Eigenleistung? Ein Haken – zählt nicht zum Budget
 ⑤ Beträge verbergen, wenn jemand mitschaut
-👉 planory.at (iPhone & Web)
+👉 Jetzt testen: planory.at
 Als Nächstes: Rechnung scannen 📸
-#hausbau #häuslbauer #baubudget #eigenheim #hausbauen #bauherren #neubau #hausbau2026 #österreich
+#hausbau #häuslbauer #baubudget #eigenheim #hausbauen #bauherrin #bauherren #neubau #hausbau2026 #österreich
 ```
 
 **Rechnung scannen**
@@ -88,9 +95,9 @@ Planory erklärt: Rechnung scannen
 ③ Die KI füllt Beschreibung, Anbieter, Datum, Betrag & Kategorie aus
 ④ „Bezahlt von“ – praktisch, wenn ihr zu zweit baut
 ⑤ Alles in der Ausgabenliste – nach Kategorie filtern, mit Summe
-👉 planory.at (iPhone & Web)
+👉 Jetzt testen: planory.at
 Als Nächstes: Zeitplan 📅
-#hausbau #häuslbauer #rechnungen #eigenheim #hausbauen #bauherren #neubau #bautagebuch #österreich
+#hausbau #häuslbauer #rechnungen #eigenheim #hausbauen #bauherrin #bauherren #neubau #bautagebuch #österreich
 ```
 
 ## Technik (für neue Videos)

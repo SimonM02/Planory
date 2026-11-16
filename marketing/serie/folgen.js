@@ -25,7 +25,7 @@ const FOLGEN = {
     end: { t0: 17.2, tagline: ['Alles für dein Bauprojekt –', ''], tagline2: 'in einer einzigen App.', next: 'Als Nächstes: Budget', cta: 'Jetzt Planory testen' },
   },
   1: {
-    nr: 1, titel: 'Budget', dur: 28.4, icon: 'donut',
+    nr: 1, titel: 'Budget', dur: 28.4, coverDur: 2.4, icon: 'donut',
     cover: { big: '', title: 'BUDGET', icon: 'donut' },
     hook: ['Wie viel Budget', 'ist noch übrig?'],
     steps: [
@@ -61,10 +61,10 @@ const FOLGEN = {
              { k: 'hl', t: 22.35, t1: 24.6, r: 'dash-verborgen.toggle' },
              { k: 'lens', t: 22.7, t1: 24.6, r: ['dash-verborgen.toggle', 'dash-verborgen.karte1'], y: 1110 }] },
     ],
-    end: { t0: 24.8, tagline: ['Budget ', 'im Griff.'], next: 'Als Nächstes: Rechnung scannen' },
+    end: { t0: 24.8, tagline: ['Budget ', 'im Griff.'], next: 'Als Nächstes: Rechnung scannen', cta: 'Jetzt Planory testen' },
   },
   2: {
-    nr: 2, titel: 'Rechnung scannen', dur: 27.5, icon: 'receipt',
+    nr: 2, titel: 'Rechnung scannen', dur: 27.5, coverDur: 2.4, icon: 'receipt',
     cover: { big: '', title: ['RECHNUNG', 'SCANNEN'], icon: 'receipt' },
     hook: ['Rechnung abtippen?', 'Nie wieder.'],
     steps: [
@@ -96,7 +96,7 @@ const FOLGEN = {
         fx: [{ k: 'hl', t: 21.0, t1: 23.8, r: ['kosten-filter.filter', 'kosten-filter.info'] },
              { k: 'lens', t: 21.3, t1: 23.8, r: ['kosten-filter.filter', 'kosten-filter.info'], y: 1180 }] },
     ],
-    end: { t0: 24.0, tagline: ['Rechnungen ', 'im Griff.'], next: 'Als Nächstes: Zeitplan' },
+    end: { t0: 24.0, tagline: ['Rechnungen ', 'im Griff.'], next: 'Als Nächstes: Zeitplan', cta: 'Jetzt Planory testen' },
   },
 };
 window.FOLGEN = FOLGEN;
