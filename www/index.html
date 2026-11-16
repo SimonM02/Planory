@@ -3915,8 +3915,9 @@
   <div class="page" id="page-angebote">
     <div class="page-header">
       <div><h2 data-i18n="ph_angebote_t">Angebote</h2><p data-i18n="ph_angebote_s">Angebote erfassen, vergleichen und zu Rechnungen umwandeln</p></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost" style="border-color:#7c3aed;color:#7c3aed" onclick="openModal('modal-angebot-ki')"><svg viewBox="0 0 24 24" style="width:1em;height:1em;fill:#ff9f1c;vertical-align:-0.14em" aria-hidden="true"><path d="M12 2.5c.6 4.7 2.3 6.4 7 7-4.7.6-6.4 2.3-7 7-.6-4.7-2.3-6.4-7-7 4.7-.6 6.4-2.3 7-7Z"/><path d="M18.7 2c.24 1.8.94 2.5 2.8 2.8-1.86.24-2.56.94-2.8 2.8-.24-1.86-.94-2.56-2.8-2.8 1.86-.3 2.56-1 2.8-2.8Z"/></svg> KI einlesen</button>
+        <button class="btn btn-ghost" id="ang-ki-wahl-btn" onclick="openAngKiWahl()">✨ Angebote vergleichen</button>
         <button class="btn btn-primary" onclick="openNeuesAngebot()">+ Angebot</button>
       </div>
     </div>
@@ -4560,6 +4561,21 @@
     <div id="ang-anh-liste" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-bottom:6px"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-ang-anhaenge')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- KI-Vergleich: zwei Angebote (verschiedene Firmen) auswählen -->
+<div class="modal-overlay" id="modal-ang-ki-wahl">
+  <div class="modal" style="width:560px">
+    <h3>✨ Angebote mit KI vergleichen</h3>
+    <p style="font-size:0.82rem;color:var(--text3);margin-bottom:14px;line-height:1.5">Wähle zwei Angebote für dieselbe Arbeit – die KI zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.</p>
+    <div class="form-row"><label>Kategorie</label><select id="ang-kiw-kat" onchange="_angKiWahlListe()"></select></div>
+    <div id="ang-kiw-liste" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div id="ang-kiw-info" style="font-size:0.78rem;color:var(--text3);margin-top:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ang-ki-wahl')">Abbrechen</button>
+      <button class="btn btn-primary" id="ang-kiw-los" onclick="angKiWahlLos()" disabled>✨ Vergleichen</button>
     </div>
   </div>
 </div>
@@ -6430,6 +6446,11 @@ const TEXTE = {
   "Die KI kann sich irren – bitte mit den beiden Angeboten gegenprüfen.": { en: "The AI can make mistakes – please check against both quotes." },
   "↻ Neu vergleichen": { en: "↻ Compare again" },
   "KI vergleicht die beiden Versionen": { en: "AI is comparing the two versions" },
+  "KI vergleicht die beiden Angebote": { en: "AI is comparing the two quotes" },
+  "✨ Angebote vergleichen": { en: "✨ Compare quotes" },
+  "✨ Angebote mit KI vergleichen": { en: "✨ Compare quotes with AI" },
+  "Wähle zwei Angebote für dieselbe Arbeit – die KI zeigt, was bei wem dabei ist und wo die Preise auseinandergehen.": { en: "Pick two quotes for the same work – the AI shows what each one includes and where the prices differ." },
+  "✨ Vergleichen": { en: "✨ Compare" },
   "Zahlung / Fälligkeit": { en: "Payment / due date" },
   "Neues Projekt": { en: "New project" },
   "Tagebucheintrag": { en: "Diary entry" },
@@ -17732,8 +17753,12 @@ async function saveAngebot() {
     const alt = Array.isArray(existingAng.versionen) ? existingAng.versionen : [];
     item.versionen = [...alt, { nr: alt.length + 1, datum: existingAng.datum || '', gueltig: existingAng.gueltig || '', betrag: parseFloat(existingAng.betrag) || 0,
       notiz: existingAng.notiz || '', aenderung: existingAng.aenderung || '', dateien: _angDateien(existingAng).slice(),
-      ...(existingAng.kiVergleich ? { ki: existingAng.kiVergleich } : {}), _at: Date.now() }];
-    delete item.kiVergleich;   // gehoerte zum bisherigen Stand
+      _at: Date.now() }];
+    // KI-Vergleiche gelten je Versions-Paar und bleiben gueltig (die Nummern aendern sich nicht).
+    // Aelteres Format (ein einzelner Vergleich am Angebot) in die Sammlung uebernehmen.
+    const altK = existingAng.kiVergleich;
+    if (altK && altK.e) item.kiVergleiche = { ...(existingAng.kiVergleiche || {}), [altK.von + '-' + altK.nach]: altK };
+    delete item.kiVergleich;
   }
   // Anhaenge: neue Dateien hochladen (Bilder werden komprimiert). Faellt der Speicher aus, bleiben nur
   // kleine Dateien eingebettet – grosse wuerden den lokalen Speicher sprengen. Das Angebot wird IMMER gespeichert.
@@ -17885,7 +17910,8 @@ async function angVersionLoeschen(id, nr) {
   const behalten = new Set([..._angDateien(a), ..._angBleiben, ...rest.flatMap(x => x.dateien || [])].map(_angSchl));
   (v.dateien || []).forEach(d => d.path && !behalten.has(_angSchl(d)) && deletePhotoFromStorage(d.path));
   a.versionen = rest.map((x, i) => ({ ...x, nr: i + 1 }));
-  delete a.kiVergleich;   // bezog sich auf die alte Nummerierung
+  delete a.kiVergleich; delete a.kiVergleiche;   // bezogen sich auf die alte Nummerierung
+  a.versionen.forEach(x => { delete x.ki; });
   a._updatedAt = Date.now();
   save(); renderAngebote();
   if (String(document.getElementById('ang-edit-id').value) === String(id)) _renderAngVersionen(a);
@@ -17899,6 +17925,8 @@ async function deleteAngebot(id) {
   [..._angDateien(_a), ..._angVersionen(_a).flatMap(v => v.dateien || [])].forEach(d => d.path && deletePhotoFromStorage(d.path));
   _trackDeletion(id, 'angebote');
   state.angebote = (state.angebote||[]).filter(a => String(a.id) !== String(id));
+  // Firmen-Vergleiche mit diesem Angebot verwerfen
+  state.angebote.forEach(o => { if (o.kiFirmen && o.kiFirmen[String(id)]) { delete o.kiFirmen[String(id)]; o._updatedAt = Date.now(); } });
   save(); renderAngebote();
   showToast('🗑 Angebot gelöscht', 'success');
 }
@@ -17950,8 +17978,9 @@ function renderAngVergleich() {
   }
   const groups = {};
   angebote.forEach(a => { const k = a.kat || 'Sonstige'; if (!groups[k]) groups[k] = []; groups[k].push(a); });
+  window._angVglKats = Object.keys(groups);
   const statusColor = { Ausstehend: 'badge-yellow', Angenommen: 'badge-green', Abgelehnt: 'badge-red', 'In Verhandlung': 'badge-blue', Umgewandelt: 'badge-gray' };
-  el.innerHTML = Object.entries(groups).map(([kat, offers]) => {
+  el.innerHTML = Object.entries(groups).map(([kat, offers], gi) => {
     const betraegePos = offers.map(o => parseFloat(o.betrag)||0).filter(b => b > 0);
     const minBetrag = betraegePos.length ? Math.min(...betraegePos) : -1;
     const sorted = [...offers].sort((a,b) => (parseFloat(a.betrag)||0) - (parseFloat(b.betrag)||0));
@@ -17960,6 +17989,7 @@ function renderAngVergleich() {
         <span class="badge badge-gray" style="font-size:0.78rem;padding:4px 10px">${kat}</span>
         <span style="font-size:0.78rem;color:var(--text3)">${offers.length} Angebot${offers.length!==1?'e':''}</span>
         ${offers.length > 1 ? `<span style="font-size:0.75rem;color:var(--success);font-weight:600">· Günstigstes: ${fmt(minBetrag)}</span>` : ''}
+        ${offers.length > 1 ? `<button type="button" class="btn btn-ghost ang-vgl-ki" style="margin-left:auto;padding:5px 10px;font-size:0.75rem" onclick="openAngKiWahl(_angVglKats[${gi}])">✨ ${_lang === 'en' ? 'Compare with AI' : 'Mit KI vergleichen'}</button>` : ''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
         ${sorted.map((a,i) => {
@@ -18220,18 +18250,75 @@ function _angKiNorm(x) {
   };
 }
 let _angKiLaeuft = false;
-async function angVersionenKI(id, neu) {
+// Ein Stand eines Angebots: nr 1 … n, die hoechste Nummer ist der aktuelle Stand (direkt am Angebot)
+function _angStand(a, nr) {
+  const vs = _angVersionen(a), akt = vs.length + 1;
+  if (nr == null || nr === akt) return { nr: akt, datum: a.datum, betrag: a.betrag, dateien: _angDateien(a), jetzt: true };
+  const v = vs.find(x => x.nr === nr);
+  return v ? { nr: v.nr, datum: v.datum, betrag: v.betrag, dateien: v.dateien || [] } : null;
+}
+// Gespeicherter Vergleich eines Versions-Paars. Neu: a.kiVergleiche["1-3"]. Aeltere Formate werden weiter gelesen.
+function _angKiErgebnis(a, von, nach) {
+  const k = (a.kiVergleiche || {})[von + '-' + nach];
+  if (k && k.e) return k;
+  const passt = x => x && x.e && x.von === von && x.nach === nach;
+  if (passt(a.kiVergleich)) return a.kiVergleich;
+  const v = _angVersionen(a).find(x => passt(x.ki));
+  return v ? v.ki : null;
+}
+const _kiZahl = v => { if (v == null || v === '') return null; const n = typeof v === 'number' ? v : _parseBetrag(v); return isFinite(n) ? Math.round(n * 100) / 100 : null; };
+const _kiTxt = (v, max = 300) => String(v == null ? '' : v).trim().slice(0, max);
+const _kiListe = (l, f) => (Array.isArray(l) ? l : []).slice(0, 60).map(p => f(p || {})).filter(p => p.position);
+const _kiPreisart = v => /netto|net\b/i.test(String(v || '')) ? 'netto' : /brutto|gross/i.test(String(v || '')) ? 'brutto' : '';
+const _kiHinweise = l => (Array.isArray(l) ? l : []).slice(0, 12).map(h => _kiTxt(h)).filter(Boolean);
+// Unterlagen zweier Staende an die KI schicken (Groessen-Grenze, Fehlermeldungen, JSON aus der Antwort)
+async function _angKiAnfrage(dA, dB, titelA, titelB, prompt) {
+  const en = _lang === 'en', LIMIT = 3800000, gr = t => t.reduce((n, x) => n + x.source.data.length, 0);
+  // Viele fotografierte Seiten: gleich sparsam (kleinere Bilder), damit alle Seiten in eine Anfrage passen
+  const viele = Math.max(dA.length, dB.length) > 4, gekuerzt = Math.max(dA.length, dB.length) > ANG_KI_MAX;
+  let tA = await _angKiTeile(dA, viele), tB = await _angKiTeile(dB, viele);
+  if (!viele && gr(tA) + gr(tB) > LIMIT) { tA = await _angKiTeile(dA, true); tB = await _angKiTeile(dB, true); }
+  if (gr(tA) + gr(tB) > LIMIT) throw Object.assign(new Error('zu gross'), { meldung: en
+    ? 'The attachments are too large for the AI comparison – please attach smaller photos or PDFs.'
+    : 'Die Anhänge sind zusammen zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
+  if (!tA.length || !tB.length) throw new Error('keine lesbaren Anhaenge');
+  const messages = [{ role: 'user', content: [{ type: 'text', text: titelA }, ...tA, { type: 'text', text: titelB }, ...tB, { type: 'text', text: prompt }] }];
+  const resp = await fetch(API_BASE + '/api/ki', { method: 'POST', headers: await _kiHeaders(), body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages }) });
+  const roh = await resp.text();
+  let data = null; try { data = JSON.parse(roh); } catch (_) {}
+  if (!resp.ok || !data) {
+    // Anmeldung / zu viele Anfragen / Dienst nicht erreichbar: dieselben Meldungen wie beim Rechnungs-Scan
+    const bekannt = [401, 403, 429].includes(resp.status) || resp.status >= 500;
+    throw Object.assign(new Error('KI ' + resp.status), { meldung: resp.status === 413
+      ? (en ? 'The attachments are too large for the AI comparison.' : 'Die Anhänge sind zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.')
+      : (bekannt ? tt(_kiFehlertext(resp.status, data)) : '') });
+  }
+  const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('Keine auswertbare Antwort');
+  return { roh: JSON.parse(m[0]), gekuerzt };
+}
+const _angKiFehler = (err) => {
+  console.warn('[KI-Vergleich]', err?.message);
+  showToast('⚠️ ' + (err.meldung || (_lang === 'en' ? 'The AI comparison did not work – please try again later.' : 'Der KI-Vergleich hat nicht geklappt – bitte später nochmal versuchen.')), 'error', 7000);
+};
+// Zwei Versionen eines Angebots vergleichen. Ohne von/nach: vorige gegen aktuelle Version.
+// neu = true: auch dann fragen, wenn das Paar schon verglichen wurde.
+async function angVersionenKI(id, neu, von, nach) {
   id = id || document.getElementById('ang-edit-id').value;
   const a = (state.angebote || []).find(x => String(x.id) === String(id));
-  const alt = _angVersionen(a).slice(-1)[0];
-  if (!a || !alt) return;
-  if (a.kiVergleich && a.kiVergleich.e && !neu) { _angKiZeigen(a); return; }   // schon verglichen: nur anzeigen
+  const n = _angVersionen(a).length + 1;
+  if (!a || n < 2) return;
+  nach = +nach || n; von = +von || nach - 1;
+  if (von > nach) [von, nach] = [nach, von];
+  if (von === nach || von < 1 || nach > n) { _angKiZeigen(a, von, nach); return; }
+  if (_angKiErgebnis(a, von, nach) && !neu) { _angKiZeigen(a, von, nach); return; }   // schon verglichen: nur anzeigen
   if (!requireSub()) return;
   const en = _lang === 'en';
   if (_angNeu.length && String(document.getElementById('ang-edit-id').value) === String(a.id)) {
     showToast(en ? '⚠️ Please save the quote first – then compare.' : '⚠️ Bitte das Angebot zuerst speichern – dann vergleichen.', 'warning', 5000); return;
   }
-  if (!_angDateien(a).length || !(alt.dateien || []).length) {
+  const sA = _angStand(a, von), sB = _angStand(a, nach);
+  if (!sA || !sB || !sA.dateien.length || !sB.dateien.length) {
     showToast(en ? '⚠️ For the AI comparison each of the two versions needs the quote as a photo or PDF.'
                  : '⚠️ Für den KI-Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.', 'warning', 6500); return;
   }
@@ -18240,17 +18327,6 @@ async function angVersionenKI(id, neu) {
   _angKiLaeuft = true;
   const lade = _lade('KI vergleicht die beiden Versionen', 0, { verzoegert: 0, maxMs: 150000 });
   try {
-    const LIMIT = 3800000, gr = t => t.reduce((n, x) => n + x.source.data.length, 0);
-    // Viele fotografierte Seiten: gleich sparsam (kleinere Bilder), damit alle Seiten in eine Anfrage passen
-    const viele = Math.max(alt.dateien.length, _angDateien(a).length) > 4;
-    const gekuerzt = Math.max(alt.dateien.length, _angDateien(a).length) > ANG_KI_MAX;
-    let tA = await _angKiTeile(alt.dateien, viele), tN = await _angKiTeile(_angDateien(a), viele);
-    if (!viele && gr(tA) + gr(tN) > LIMIT) { tA = await _angKiTeile(alt.dateien, true); tN = await _angKiTeile(_angDateien(a), true); }
-    if (gr(tA) + gr(tN) > LIMIT) throw Object.assign(new Error('zu gross'), { meldung: en
-      ? 'The attachments are too large for the AI comparison – please attach smaller photos or PDFs.'
-      : 'Die Anhänge sind zusammen zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.' });
-    if (!tA.length || !tN.length) throw new Error('keine lesbaren Anhaenge');
-    const nr = a.versionen.length + 1;
     const prompt = `Du vergleichst zwei Versionen desselben Angebots (Bau/Handwerk). Oben stehen zuerst die Unterlagen der ALTEN Version, danach die der NEUEN Version. Mehrere Bilder oder Dateien einer Version sind die Seiten desselben Angebots in ihrer Reihenfolge (oft abfotografiert).
 Finde heraus, was sich geändert hat, und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):
 {"zusammenfassung":"1-2 kurze Sätze: was hat sich im Wesentlichen geändert",
@@ -18261,65 +18337,207 @@ Finde heraus, was sich geändert hat, und antworte NUR mit einem JSON-Objekt (ke
 "geaendert":[{"position":"kurze Bezeichnung","alt":100.00,"neu":90.00,"hinweis":"z.B. Menge 20 → 18 m², Einzelpreis gesenkt"}],
 "hinweise":["weitere Änderungen, z.B. Nachlass/Rabatt, Skonto, Zahlungsbedingungen, Lieferzeit, Gültigkeit"]}
 Regeln: "entfallen" = Positionen, die es nur in der alten Version gibt. "neu" = Positionen, die es nur in der neuen Version gibt. "geaendert" = gleiche Position mit anderem Preis oder anderer Menge. Unveränderte Positionen NICHT auflisten. Beträge als Zahl mit Punkt, ohne Währungszeichen; unbekannt = null. Nimm nur auf, was wirklich in den Unterlagen steht – nichts erfinden. Ist etwas nicht lesbar, schreibe das in "hinweise". Leere Listen als []. Sprache der Texte: ${en ? 'Englisch' : 'Deutsch'}.`;
-    const messages = [{ role: 'user', content: [
-      { type: 'text', text: `ALTE VERSION (V${alt.nr}${alt.datum ? ', ' + alt.datum : ''}):` }, ...tA,
-      { type: 'text', text: `NEUE VERSION (V${nr}${a.datum ? ', ' + a.datum : ''}):` }, ...tN,
-      { type: 'text', text: prompt } ] }];
-    const resp = await fetch(API_BASE + '/api/ki', { method: 'POST', headers: await _kiHeaders(), body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages }) });
-    const roh = await resp.text();
-    let data = null; try { data = JSON.parse(roh); } catch (_) {}
-    if (!resp.ok || !data) {
-      // Anmeldung / zu viele Anfragen / Dienst nicht erreichbar: dieselben Meldungen wie beim Rechnungs-Scan
-      const bekannt = [401, 403, 429].includes(resp.status) || resp.status >= 500;
-      throw Object.assign(new Error('KI ' + resp.status), { meldung: resp.status === 413
-        ? (en ? 'The attachments are too large for the AI comparison.' : 'Die Anhänge sind zu groß für den KI-Vergleich – bitte kleinere Fotos oder PDFs anhängen.')
-        : (bekannt ? tt(_kiFehlertext(resp.status, data)) : '') });
-    }
-    const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('Keine auswertbare Antwort');
-    a.kiVergleich = { von: alt.nr, nach: nr, am: new Date().toISOString(), e: _angKiNorm(JSON.parse(m[0])), ...(gekuerzt ? { gekuerzt: true } : {}) };
+    const { roh, gekuerzt } = await _angKiAnfrage(sA.dateien, sB.dateien,
+      `ALTE VERSION (V${von}${sA.datum ? ', ' + sA.datum : ''}):`, `NEUE VERSION (V${nach}${sB.datum ? ', ' + sB.datum : ''}):`, prompt);
+    a.kiVergleiche = { ...(a.kiVergleiche || {}), [von + '-' + nach]: { von, nach, am: new Date().toISOString(), e: _angKiNorm(roh), ...(gekuerzt ? { gekuerzt: true } : {}) } };
     a._updatedAt = Date.now();
     save();
-    _angKiZeigen(a);
-  } catch (err) {
-    console.warn('[KI-Vergleich]', err?.message);
-    showToast('⚠️ ' + (err.meldung || (en ? 'The AI comparison did not work – please try again later.' : 'Der KI-Vergleich hat nicht geklappt – bitte später nochmal versuchen.')), 'error', 7000);
-  } finally { lade.ende(); _angKiLaeuft = false; }
+    _angKiZeigen(a, von, nach);
+  } catch (err) { _angKiFehler(err); }
+  finally { lade.ende(); _angKiLaeuft = false; }
 }
-function _angKiZeigen(a) {
-  const k = a.kiVergleich, e = k && k.e;
-  if (!e) return;
-  const en = _lang === 'en';
-  const geld = v => (v == null ? '–' : fmt(v));
-  const alt = _angVersionen(a).find(v => v.nr === k.von) || {};
-  const sA = e.summe_alt != null ? e.summe_alt : (parseFloat(alt.betrag) || null);
-  const sN = e.summe_neu != null ? e.summe_neu : (parseFloat(a.betrag) || null);
-  const mono = "font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap";
-  const zeile = (links, rechts, unten) => `<div class="ang-kiv-zeile" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:2px 12px;padding:7px 0;border-top:1px solid var(--border);font-size:0.83rem;line-height:1.45">
+// Gemeinsame Bausteine fuer die Ergebnis-Anzeige (Versionen und Firmen)
+const _kivMono = "font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap";
+const _kivGeld = v => (v == null ? '–' : fmt(v));
+function _kivZeile(links, rechts, unten) {
+  return `<div class="ang-kiv-zeile" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:2px 12px;padding:7px 0;border-top:1px solid var(--border);font-size:0.83rem;line-height:1.45">
       <span style="flex:1 1 190px;min-width:0;word-break:break-word">${esc(links)}${unten ? `<br><span style="font-size:0.74rem;color:var(--text3)">${esc(unten)}</span>` : ''}</span>
-      <span style="${mono};text-align:right;margin-left:auto">${rechts}</span></div>`;
-  const block = (klasse, farbe, titel, zeilen) => zeilen.length ? `<div class="ang-kiv-block ${klasse}" style="margin-top:16px">
-      <div style="font-weight:700;font-size:0.85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${farbe};flex-shrink:0"></span>${esc(titel)} (${zeilen.length})</div>${zeilen.join('')}</div>` : '';
+      <span style="${_kivMono};text-align:right;margin-left:auto">${rechts}</span></div>`;
+}
+function _kivBlock(klasse, farbe, titel, zeilen) {
+  return zeilen.length ? `<div class="ang-kiv-block ${klasse}" style="margin-top:16px">
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${farbe};flex-shrink:0"></span><span style="min-width:0;word-break:break-word">${esc(titel)} (${zeilen.length})</span></div>${zeilen.join('')}</div>` : '';
+}
+function _kivFuss(k, e, leerText) {
+  const en = _lang === 'en';
+  const leer = Object.keys(e).filter(x => Array.isArray(e[x])).every(x => !e[x].length);
+  return `${e.hinweise.length ? `<div class="ang-kiv-block hinweise" style="margin-top:16px"><div style="font-weight:700;font-size:0.85rem;margin-bottom:4px">${en ? 'Other differences' : 'Sonstiges'}</div>
+      <ul style="margin:0;padding-left:18px;font-size:0.83rem;line-height:1.55;color:var(--text2)">${e.hinweise.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
+    ${k.gekuerzt ? `<p class="ang-kiv-gekuerzt" style="font-size:0.8rem;line-height:1.5;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:14px 0 0">⚠️ ${en ? `Only the first ${ANG_KI_MAX} attachments of each quote were compared.` : `Nur die ersten ${ANG_KI_MAX} Anhänge je Angebot wurden verglichen.`}</p>` : ''}
+    ${leer ? `<p style="font-size:0.85rem;color:var(--text2);margin:14px 0 0">${esc(leerText)}</p>` : ''}
+    <div style="font-size:0.72rem;color:var(--text3);margin-top:14px">${en ? 'Compared on' : 'Verglichen am'} ${fmtDate(k.am)}</div>`;
+}
+// Ergebnis (oder Auswahl) fuer ein Versions-Paar anzeigen. Ab 3 Versionen: Paar oben frei waehlbar.
+function _angKiZeigen(a, von, nach) {
+  const en = _lang === 'en', n = _angVersionen(a).length + 1;
+  if (nach == null) { nach = n; von = n - 1; }
+  const k = (von !== nach) ? _angKiErgebnis(a, von, nach) : null, e = k && k.e;
+  const opt = sel => Array.from({ length: n }, (_, i) => i + 1).map(nr => `<option value="${nr}"${nr === sel ? ' selected' : ''}>V${nr}${nr === n ? (en ? ' (current)' : ' (aktuell)') : ''}</option>`).join('');
+  const wahl = n >= 3 ? `<div class="ang-kiv-wahl" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;font-size:0.85rem">
+      <span>${en ? 'Compare' : 'Vergleiche'}</span>
+      <select id="ang-kiv-von" onchange="_angKiPaar(${a.id})" style="width:auto;min-width:0;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;font-family:inherit">${opt(von)}</select>
+      <span>${en ? 'with' : 'mit'}</span>
+      <select id="ang-kiv-nach" onchange="_angKiPaar(${a.id})" style="width:auto;min-width:0;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;font-family:inherit">${opt(nach)}</select></div>` : '';
+  const neuBtn = document.getElementById('ang-kiv-neu');
+  neuBtn.style.display = e ? '' : 'none';
+  neuBtn.onclick = () => angVersionenKI(a.id, true, von, nach);
+  if (!e) {
+    const sA = _angStand(a, von), sB = _angStand(a, nach);
+    const ohne = sA && sB && (!sA.dateien.length || !sB.dateien.length);
+    document.getElementById('ang-kiv-titel').textContent = `✨ ${en ? 'Compare versions' : 'Versionen vergleichen'}: ${a.beschr || tt('Angebot')}`;
+    document.getElementById('ang-kiv-inhalt').innerHTML = wahl + `<div class="ang-kiv-leer" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:0.85rem;line-height:1.5;color:var(--text2)">
+      ${von === nach ? (en ? 'Please choose two different versions.' : 'Bitte zwei verschiedene Versionen wählen.')
+        : ohne ? (en ? 'For the AI comparison both versions need the quote as a photo or PDF.' : 'Für den KI-Vergleich braucht jede der beiden Versionen das Angebot als Foto oder PDF.')
+        : `${en ? `V${von} and V${nach} have not been compared yet.` : `V${von} und V${nach} wurden noch nicht verglichen.`}
+           <div style="margin-top:10px"><button type="button" class="btn btn-primary" id="ang-kiv-jetzt" onclick="angVersionenKI(${a.id}, true, ${von}, ${nach})">✨ ${en ? 'Compare now' : 'Jetzt vergleichen'}</button></div>`}</div>`;
+    openModal('modal-ang-ki-vergleich');
+    return;
+  }
+  const sA = e.summe_alt != null ? e.summe_alt : (parseFloat((_angStand(a, von) || {}).betrag) || null);
+  const sN = e.summe_neu != null ? e.summe_neu : (parseFloat((_angStand(a, nach) || {}).betrag) || null);
   const diffPos = p => (p.alt != null && p.neu != null) ? ' ' + _angDiffHtml(p.neu - p.alt) : '';
-  const leer = !e.entfallen.length && !e.neu.length && !e.geaendert.length && !e.hinweise.length;
-  document.getElementById('ang-kiv-titel').textContent = `✨ V${k.von} → V${k.nach}: ${a.beschr || tt('Angebot')}`;
-  document.getElementById('ang-kiv-inhalt').innerHTML = `
+  document.getElementById('ang-kiv-titel').textContent = `✨ V${von} → V${nach}: ${a.beschr || tt('Angebot')}`;
+  document.getElementById('ang-kiv-inhalt').innerHTML = wahl + `
     <div class="ang-kiv-summe" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:0.9rem">
-      <span>V${k.von} <span style="${mono}">${geld(sA)}</span></span><span style="color:var(--text3)">→</span>
-      <span>V${k.nach} <span style="${mono}">${geld(sN)}</span></span>
+      <span>V${von} <span style="${_kivMono}">${_kivGeld(sA)}</span></span><span style="color:var(--text3)">→</span>
+      <span>V${nach} <span style="${_kivMono}">${_kivGeld(sN)}</span></span>
       ${(sA != null && sN != null) ? _angDiffHtml(sN - sA) : ''}
       ${e.preisart ? `<span style="font-size:0.72rem;color:var(--text3)">(${e.preisart === 'netto' ? (en ? 'net' : 'netto') : (en ? 'gross' : 'brutto')})</span>` : ''}
     </div>
     ${e.zusammenfassung ? `<p style="font-size:0.85rem;line-height:1.55;color:var(--text2);margin:12px 0 0">${esc(e.zusammenfassung)}</p>` : ''}
-    ${block('weg', 'var(--danger)', en ? 'Removed' : 'Weggefallen', e.entfallen.map(p => zeile(p.position, geld(p.betrag))))}
-    ${block('dazu', 'var(--success)', en ? 'Added' : 'Neu dazugekommen', e.neu.map(p => zeile(p.position, geld(p.betrag))))}
-    ${block('preis', 'var(--accent)', en ? 'Price changed' : 'Preis geändert', e.geaendert.map(p => zeile(p.position, `${geld(p.alt)} → ${geld(p.neu)}${diffPos(p)}`, p.hinweis)))}
-    ${e.hinweise.length ? `<div class="ang-kiv-block hinweise" style="margin-top:16px"><div style="font-weight:700;font-size:0.85rem;margin-bottom:4px">${en ? 'Other changes' : 'Sonstige Änderungen'}</div>
-      <ul style="margin:0;padding-left:18px;font-size:0.83rem;line-height:1.55;color:var(--text2)">${e.hinweise.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
-    ${k.gekuerzt ? `<p class="ang-kiv-gekuerzt" style="font-size:0.8rem;line-height:1.5;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:14px 0 0">⚠️ ${en ? `Only the first ${ANG_KI_MAX} attachments of each version were compared.` : `Nur die ersten ${ANG_KI_MAX} Anhänge je Version wurden verglichen.`}</p>` : ''}
-    ${leer ? `<p style="font-size:0.85rem;color:var(--text2);margin:14px 0 0">${en ? 'The AI found no differences between the two versions.' : 'Die KI hat keine Unterschiede zwischen den beiden Versionen gefunden.'}</p>` : ''}
-    <div style="font-size:0.72rem;color:var(--text3);margin-top:14px">${en ? 'Compared on' : 'Verglichen am'} ${fmtDate(k.am)}</div>`;
-  document.getElementById('ang-kiv-neu').onclick = () => angVersionenKI(a.id, true);
+    ${_kivBlock('weg', 'var(--danger)', en ? 'Removed' : 'Weggefallen', e.entfallen.map(p => _kivZeile(p.position, _kivGeld(p.betrag))))}
+    ${_kivBlock('dazu', 'var(--success)', en ? 'Added' : 'Neu dazugekommen', e.neu.map(p => _kivZeile(p.position, _kivGeld(p.betrag))))}
+    ${_kivBlock('preis', 'var(--accent)', en ? 'Price changed' : 'Preis geändert', e.geaendert.map(p => _kivZeile(p.position, `${_kivGeld(p.alt)} → ${_kivGeld(p.neu)}${diffPos(p)}`, p.hinweis)))}
+    ${_kivFuss(k, e, en ? 'The AI found no differences between the two versions.' : 'Die KI hat keine Unterschiede zwischen den beiden Versionen gefunden.')}`;
+  openModal('modal-ang-ki-vergleich');
+}
+function _angKiPaar(id) {
+  const a = (state.angebote || []).find(x => String(x.id) === String(id));
+  if (!a) return;
+  let von = +document.getElementById('ang-kiv-von').value, nach = +document.getElementById('ang-kiv-nach').value;
+  if (von > nach) [von, nach] = [nach, von];
+  _angKiZeigen(a, von, nach);
+}
+
+// ── KI-Vergleich zweier Angebote verschiedener Firmen ──
+let _angKiWahl = [];   // gewaehlte Angebots-IDs (hoechstens 2)
+function _angHatAnhang(a) { return _angDateien(a).length > 0; }
+function openAngKiWahl(kat) {
+  if (!requireSub()) return;
+  const en = _lang === 'en', angebote = state.angebote || [];
+  const kats = [...new Set(angebote.map(a => a.kat || 'Sonstige'))];
+  const sel = document.getElementById('ang-kiw-kat');
+  sel.innerHTML = `<option value="">${en ? 'All categories' : 'Alle Kategorien'}</option>` + kats.map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  sel.value = kat && kats.includes(kat) ? kat : '';
+  _angKiWahl = [];
+  _angKiWahlListe();
+  openModal('modal-ang-ki-wahl');
+}
+function _angKiWahlListe() {
+  const en = _lang === 'en', kat = document.getElementById('ang-kiw-kat').value;
+  const liste = (state.angebote || []).filter(a => !kat || (a.kat || 'Sonstige') === kat);
+  _angKiWahl = _angKiWahl.filter(id => liste.some(a => String(a.id) === String(id)));
+  const el = document.getElementById('ang-kiw-liste');
+  el.innerHTML = liste.length ? liste.map(a => {
+    const ok = _angHatAnhang(a), an = _angKiWahl.some(id => String(id) === String(a.id)), n = _angDateien(a).length;
+    return `<label class="ang-kiw-zeile" data-id="${a.id}" style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid ${an ? 'var(--accent)' : 'var(--border)'};border-radius:9px;padding:9px 11px;cursor:${ok ? 'pointer' : 'default'};opacity:${ok ? 1 : 0.55}">
+      <input type="checkbox" ${an ? 'checked' : ''} ${ok ? '' : 'disabled'} onchange="_angKiWahlKlick(${a.id}, this.checked)" style="width:18px;height:18px;flex-shrink:0;margin:0">
+      <span style="flex:1;min-width:0;font-size:0.83rem;line-height:1.4;color:var(--text);word-break:break-word">
+        <strong>${esc(a.anbieter || a.beschr || tt('Angebot'))}</strong>${a.anbieter && a.beschr ? ` <span style="color:var(--text3)">· ${esc(a.beschr)}</span>` : ''}${_angVersionen(a).length ? ` <span class="badge badge-blue" style="font-size:0.6rem">V${_angVersionen(a).length + 1}</span>` : ''}
+        <br><span style="font-size:0.74rem;color:var(--text3)">${esc(a.kat || '')}${a.kat ? ' · ' : ''}${ok ? `📎 ${n}` : (en ? 'photo or PDF missing' : 'Foto oder PDF fehlt')}</span></span>
+      <span style="${_kivMono};font-size:0.82rem">${fmt(a.betrag)}</span></label>`;
+  }).join('') : `<div style="font-size:0.85rem;color:var(--text3);padding:10px 0">${en ? 'No quotes in this category.' : 'Keine Angebote in dieser Kategorie.'}</div>`;
+  const ohne = liste.filter(a => !_angHatAnhang(a)).length;
+  document.getElementById('ang-kiw-info').textContent = `${_angKiWahl.length} ${en ? 'of 2 selected' : 'von 2 gewählt'}`
+    + (ohne ? (en ? ` · quotes without a photo or PDF cannot be compared` : ` · Angebote ohne Foto oder PDF lassen sich nicht vergleichen`) : '');
+  document.getElementById('ang-kiw-los').disabled = _angKiWahl.length !== 2;
+}
+function _angKiWahlKlick(id, an) {
+  _angKiWahl = _angKiWahl.filter(x => String(x) !== String(id));
+  if (an) { _angKiWahl.push(id); if (_angKiWahl.length > 2) _angKiWahl.shift(); }   // ein drittes ersetzt das zuerst gewaehlte
+  _angKiWahlListe();
+}
+function angKiWahlLos() {
+  if (_angKiWahl.length !== 2) return;
+  const [x, y] = _angKiWahl;
+  closeModal('modal-ang-ki-wahl');
+  angFirmenKI(x, y);
+}
+function _angKiFirmenNorm(x) {
+  x = x || {};
+  return {
+    zusammenfassung: _kiTxt(x.zusammenfassung, 600), preisart: _kiPreisart(x.preisart),
+    summe_a: _kiZahl(x.summe_a), summe_b: _kiZahl(x.summe_b),
+    nur_a: _kiListe(x.nur_a, p => ({ position: _kiTxt(p.position), betrag: _kiZahl(p.betrag) })),
+    nur_b: _kiListe(x.nur_b, p => ({ position: _kiTxt(p.position), betrag: _kiZahl(p.betrag) })),
+    beide: _kiListe(x.beide, p => ({ position: _kiTxt(p.position), a: _kiZahl(p.a), b: _kiZahl(p.b), hinweis: _kiTxt(p.hinweis) })),
+    hinweise: _kiHinweise(x.hinweise)
+  };
+}
+// Gespeichert am Angebot mit der kleineren ID: a.kiFirmen[ID des anderen] = {am, e, gekuerzt?}
+function _angFirmenPaar(x, y) {
+  let a = (state.angebote || []).find(o => String(o.id) === String(x)), b = (state.angebote || []).find(o => String(o.id) === String(y));
+  if (a && b && Number(a.id) > Number(b.id)) [a, b] = [b, a];
+  return [a, b];
+}
+const _angFirmaName = a => a.anbieter || a.beschr || tt('Angebot');
+async function angFirmenKI(x, y, neu) {
+  const [a, b] = _angFirmenPaar(x, y);
+  if (!a || !b || a === b) return;
+  const fertig = (a.kiFirmen || {})[String(b.id)];
+  if (fertig && fertig.e && !neu) { _angFirmenZeigen(a, b); return; }   // schon verglichen: nur anzeigen
+  if (!requireSub()) return;
+  const en = _lang === 'en';
+  if (!_angHatAnhang(a) || !_angHatAnhang(b)) {
+    showToast(en ? '⚠️ For the AI comparison both quotes need a photo or PDF.' : '⚠️ Für den KI-Vergleich brauchen beide Angebote ein Foto oder PDF.', 'warning', 6500); return;
+  }
+  if (_angKiLaeuft) return;
+  if (!(await _kiHinweis())) return;
+  _angKiLaeuft = true;
+  const lade = _lade('KI vergleicht die beiden Angebote', 0, { verzoegert: 0, maxMs: 150000 });
+  try {
+    const prompt = `Du vergleichst zwei Angebote VERSCHIEDENER Firmen für dieselbe Arbeit (Bau/Handwerk). Oben stehen zuerst die Unterlagen von ANGEBOT A, danach die von ANGEBOT B. Mehrere Bilder oder Dateien eines Angebots sind seine Seiten in ihrer Reihenfolge (oft abfotografiert).
+Zeige die Unterschiede und antworte NUR mit einem JSON-Objekt (kein Text davor oder danach):
+{"zusammenfassung":"1-2 kurze, neutrale Sätze zu den wichtigsten Unterschieden",
+"preisart":"brutto oder netto (welche Beträge du unten angibst)",
+"summe_a":12345.67,"summe_b":12000.00,
+"nur_a":[{"position":"kurze Bezeichnung","betrag":123.45}],
+"nur_b":[{"position":"kurze Bezeichnung","betrag":123.45}],
+"beide":[{"position":"kurze Bezeichnung","a":100.00,"b":90.00,"hinweis":"z.B. A 20 m², B 18 m²; anderes Material"}],
+"hinweise":["weitere Unterschiede, z.B. Zahlungsbedingungen, Skonto, Gewährleistung, Lieferzeit, Gültigkeit, was bei einem Angebot fehlt"]}
+Regeln: "nur_a" = Leistungen, die nur in Angebot A enthalten sind; "nur_b" = nur in Angebot B. "beide" = Leistungen, die in beiden vorkommen, aber mit unterschiedlichem Preis, Menge oder Material; gleiche Positionen mit gleichem Preis NICHT auflisten. Gib KEINE Empfehlung, welches Angebot besser ist – nur die Unterschiede. Beträge als Zahl mit Punkt, ohne Währungszeichen; unbekannt = null. Nimm nur auf, was wirklich in den Unterlagen steht – nichts erfinden. Ist etwas nicht lesbar, schreibe das in "hinweise". Leere Listen als []. Sprache der Texte: ${en ? 'Englisch' : 'Deutsch'}.`;
+    const { roh, gekuerzt } = await _angKiAnfrage(_angDateien(a), _angDateien(b),
+      `ANGEBOT A (${_angFirmaName(a)}${a.datum ? ', ' + a.datum : ''}):`, `ANGEBOT B (${_angFirmaName(b)}${b.datum ? ', ' + b.datum : ''}):`, prompt);
+    a.kiFirmen = { ...(a.kiFirmen || {}), [String(b.id)]: { am: new Date().toISOString(), e: _angKiFirmenNorm(roh), ...(gekuerzt ? { gekuerzt: true } : {}) } };
+    a._updatedAt = Date.now();
+    save();
+    _angFirmenZeigen(a, b);
+  } catch (err) { _angKiFehler(err); }
+  finally { lade.ende(); _angKiLaeuft = false; }
+}
+function _angFirmenZeigen(a, b) {
+  const k = (a.kiFirmen || {})[String(b.id)], e = k && k.e;
+  if (!e) return;
+  const en = _lang === 'en', nA = _angFirmaName(a), nB = _angFirmaName(b);
+  const sA = e.summe_a != null ? e.summe_a : (parseFloat(a.betrag) || null);
+  const sB = e.summe_b != null ? e.summe_b : (parseFloat(b.betrag) || null);
+  const diffPos = p => (p.a != null && p.b != null) ? ' ' + _angDiffHtml(p.b - p.a) : '';
+  document.getElementById('ang-kiv-titel').textContent = `✨ ${nA} ↔ ${nB}`;
+  document.getElementById('ang-kiv-inhalt').innerHTML = `
+    <div class="ang-kiv-summe" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:0.9rem">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="min-width:0;word-break:break-word"><strong>A</strong> · ${esc(nA)}</span><span style="${_kivMono}">${_kivGeld(sA)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="min-width:0;word-break:break-word"><strong>B</strong> · ${esc(nB)}</span><span style="${_kivMono}">${_kivGeld(sB)}</span></div>
+      ${(sA != null && sB != null && Math.abs(sB - sA) >= 0.005) ? `<div style="font-size:0.8rem;color:var(--text2)">${en ? 'Difference B to A' : 'Unterschied B zu A'}: ${_angDiffHtml(sB - sA)}</div>` : ''}
+      ${e.preisart ? `<div style="font-size:0.72rem;color:var(--text3)">(${e.preisart === 'netto' ? (en ? 'net' : 'netto') : (en ? 'gross' : 'brutto')})</div>` : ''}
+    </div>
+    ${e.zusammenfassung ? `<p style="font-size:0.85rem;line-height:1.55;color:var(--text2);margin:12px 0 0">${esc(e.zusammenfassung)}</p>` : ''}
+    ${_kivBlock('nur-a', '#3d6ff8', (en ? 'Only at A – ' : 'Nur bei A – ') + nA, e.nur_a.map(p => _kivZeile(p.position, _kivGeld(p.betrag))))}
+    ${_kivBlock('nur-b', '#7b5cfa', (en ? 'Only at B – ' : 'Nur bei B – ') + nB, e.nur_b.map(p => _kivZeile(p.position, _kivGeld(p.betrag))))}
+    ${_kivBlock('beide', 'var(--accent)', en ? 'In both – price difference' : 'Bei beiden – Preisunterschied', e.beide.map(p => _kivZeile(p.position, `A ${_kivGeld(p.a)} · B ${_kivGeld(p.b)}${diffPos(p)}`, p.hinweis)))}
+    ${_kivFuss(k, e, en ? 'The AI found no differences between the two quotes.' : 'Die KI hat keine Unterschiede zwischen den beiden Angeboten gefunden.')}`;
+  const neuBtn = document.getElementById('ang-kiv-neu');
+  neuBtn.style.display = '';
+  neuBtn.onclick = () => angFirmenKI(a.id, b.id, true);
   openModal('modal-ang-ki-vergleich');
 }
 
