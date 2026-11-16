@@ -16040,10 +16040,21 @@ function _lpKlicks(lp) {
     if (h.startsWith('#') && h.length > 1) { const z = document.getElementById(h.slice(1)); if (z) { e.preventDefault(); z.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
   });
 }
+// Laeuft Planory als App (iPhone-App oder installierte Web-App) statt im normalen Browser-Tab?
+function _alsAppGestartet() {
+  if (isNativeApp()) return true;
+  try {
+    if (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches)) return true;
+  } catch (e) {}
+  if (window.navigator && navigator.standalone === true) return true;
+  return new URLSearchParams(location.search).get('source') === 'pwa';
+}
 async function showLanding() {
   const lp = document.getElementById('landing-overlay');
   if (!lp) { document.getElementById('auth-splash')?.remove(); showAuthOverlay(); return; }
   if (_lpStart) { const t = _lpStart; _lpStart = null; document.getElementById('auth-splash')?.remove(); enterApp(t); return; }
+  // Als App installiert (Android/Chrome oder iPhone-Home-Bildschirm): wie die iPhone-App direkt zur Anmeldung
+  if (_alsAppGestartet()) { document.getElementById('auth-splash')?.remove(); showAuthOverlay(); return; }
   await _lpCss();
   document.getElementById('auth-splash')?.remove();
   document.getElementById('auth-overlay').style.display = 'none';
