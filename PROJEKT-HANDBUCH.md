@@ -128,6 +128,9 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   Info-Feld der Seite (`PAGE_HINTS` + `PAGE_HINTS_EN`, dabei `PAGE_HINT_VER` erhöhen, damit es Nutzern einmal neu
   erscheint), Website (`site-quelle/seiten/funktionen.html`, `hilfe.html`, Preise-FAQ → `node site-quelle/bauen.mjs`)
   und – bei neuer KI-Nutzung – die Aufzählung in `datenschutz.html`.
+  Erster Start: Willkommens-Kacheln (Onboarding-Schritt 0) und Kurzbeschreibung je Modul (`MODULES[].desc`, auch in
+  den Einstellungen) ebenfalls aktuell halten. Seit 16.11.2026 haben alle Seiten ein Info-Feld (neu: Zeitplan,
+  Helfer, Fotos, Grundrisse; korrigiert: Kostenaufteilung = wer hat wie viel bezahlt, Notizen bis 50 MB, Einstellungen).
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 

@@ -3547,9 +3547,23 @@ await scenario('Info-Felder: geänderte Hinweise (Angebote, Ausgaben, Budget) er
       aus.ki = (text.match(/mit KI vergleichen|KI-Vergleich|KI vergleicht|[Cc]ompar\w* (?:\w+ ){0,3}with AI|AI is comparing|AI comparison/g) || []).join();
       aus.knopf = (document.querySelector('#ang-vergleich-view .ang-vgl-ki') || {}).textContent || '';
       setAngView('liste', document.getElementById('ang-tab-liste'));
+      // Neue Seiten haben ein Info-Feld; Kostenaufteilung beschreibt, wer wie viel bezahlt hat
+      aus.seiten = ['planung', 'helfer', 'fotos', 'grundrisse'].filter(id => !PAGE_HINTS[id] || !PAGE_HINTS_EN[id]).join();
+      aus.aufteilung = /wer wie viel bezahlt/.test(PAGE_HINTS.kostenaufteilung) && /50 MB/.test(PAGE_HINTS.dokumente) && !/Budget-Kategorien/.test(PAGE_HINTS.settings);
+      // Willkommen beim ersten Start: alle großen Bereiche; Modul-Auswahl mit kurzer Beschreibung
+      const w0 = document.querySelector('.ob-step[data-step="0"]');
+      aus.willkommen = [...w0.querySelectorAll('div[style*="font-weight:700"]')].map(x => x.textContent.trim()).join(' | ');
+      renderObModules();
+      const ob = document.getElementById('modal-dummy') || document.getElementById('ob-module-grid');
+      aus.module = ob.querySelectorAll('label').length + '/' + ob.querySelectorAll('.ob-mod-desc').length;
+      aus.angDesc = [...ob.querySelectorAll('label')].find(l => l.querySelector('[data-module="angebote"]'))?.querySelector('.ob-mod-desc')?.textContent || '';
       return aus;
     });
     const f = [];
+    if (r.seiten) f.push('Seiten ohne Info-Feld: ' + r.seiten);
+    if (!r.aufteilung) f.push('Info-Feld Kostenaufteilung/Notizen/Einstellungen noch veraltet');
+    if (r.willkommen !== 'Kosten & Budget | Angebote | Zeitplan & Aufgaben | Bautagebuch & Fotos | Pläne, Mängel & Wartung | KI-Bauberater') f.push('Willkommen: ' + r.willkommen);
+    if (r.module !== '17/17' || !/vergleichen/.test(r.angDesc)) f.push('Modul-Auswahl (Module/Beschreibungen): ' + r.module + ' ' + r.angDesc);
     if (r.neu !== 'angebote,kosten,budget' || r.alt) f.push('Hinweise neu angezeigt: ' + r.neu + ' / unveränderter wieder da: ' + r.alt);
     if (!/neue Version/.test(r.text) || !/Angebote vergleichen/.test(r.text)) f.push('Angebote-Hinweis: ' + r.text);
     if (!/fragt Planory nach/.test(r.kosten) || !/Mappe/.test(r.kosten)) f.push('Ausgaben-Hinweis: ' + r.kosten);
