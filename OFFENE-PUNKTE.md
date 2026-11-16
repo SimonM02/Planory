@@ -33,6 +33,14 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
       `https://bauplan-weld.vercel.app/api/abo-status?hook=revenuecat`, „Authorization header value“ = der Code →
       speichern → **„Send test event“** (trägt alle laufenden Abos nach).
    Danach Claude Bescheid geben → prüft die Ansicht `abo_uebersicht`.
+5e. **Apple Pay im Web prüfen (Simon, später – am 16.11. gemerkt):**
+   1. Stripe → Einstellungen → Zahlungsmethoden: Apple Pay (und Google Pay) eingeschaltet?
+   2. Am iPhone in Safari mit einem Testkonto bis zur Bezahlseite gehen: erscheint der schwarze Apple-Pay-Knopf?
+      Wenn nicht → Screenshot an Claude.
+   Hintergrund: Die Bezahlseite ist die gehostete Stripe-Checkout-Seite mit `payment_method_types: ['card']`
+   (`api/stripe-checkout.js`); Apple Pay erscheint dort laut Stripe ohne weitere Einrichtung. In der iPhone-App läuft
+   das Abo ohnehin über Apple (Face ID). iPhone-Abos stehen nie in Stripe, sondern in Supabase `abo_uebersicht`
+   (sobald Punkt 5c erledigt ist).
 5b. ✅ **Supabase-Kosten:** Testprojekt „buildora-staging“ am 15.11.2026 gelöscht → ab der nächsten Rechnung
    25 $ + MwSt. statt 42 $ im Monat. Planory läuft nur auf „Bau App Project“. Optional: Planory von „Nano“ auf
    „Micro“ stellen (im Pro-Guthaben enthalten, ein paar Minuten Ausfall → abends).
