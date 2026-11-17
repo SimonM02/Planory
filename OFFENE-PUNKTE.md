@@ -74,6 +74,14 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
    (Musik ist eingebaut und für Werbung erlaubt).
 
 **🟡 Wenn Zeit ist:**
+10b. **E-Mail mit planory.at (Simon: „erst später“, 17.11.2026):** z. B. support@planory.at.
+    Empfehlung **Google Workspace Business Starter** (ca. 6,80 €/Monat im Jahrestarif bzw. 8,10 € monatlich, 1 Postfach;
+    support@, info@, rechnung@ als kostenlose Zusatzadressen; Bedienung wie Gmail). Alternativen: Zoho Mail (gratis bis
+    5 Nutzer bzw. ca. 1 $/Monat) oder Postfächer beim Domain-Anbieter, falls im Paket.
+    ① **Simon:** herausfinden, wo planory.at gekauft wurde (Gmail nach „planory.at“/„Domain“ durchsuchen oder Konto-/
+    Kartenauszug) → Namen an Claude. ② Claude: Klick-Anleitung für genau diesen Anbieter (Bestätigungs-Eintrag, MX,
+    SPF/DKIM/DMARC, Testmail). ③ Danach Claude: Impressum/Datenschutz/AGB/Website auf support@planory.at umstellen,
+    Supabase-Mails (Anmeldung, Passwort) über noreply@planory.at (eigener SMTP), restliche Stellen mit der Gmail-Adresse.
 10a. **Belege/Fotos privat speichern (geplant 16.11.2026, Simon: „einplanen“):** Heute liegen Rechnungsbelege,
     Angebots-Anhänge und Fotos im öffentlichen Supabase-Speicher `uploads` – wer einen Link hat, kann die Datei ohne
     Anmeldung öffnen (Liste aller Dateien gibt es nicht, Links praktisch nicht zu erraten). Dokumente sind schon privat
