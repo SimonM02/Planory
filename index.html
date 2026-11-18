@@ -8894,6 +8894,36 @@ function _widgetWarte(n = 0) {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') _widgetPlanen(); });
 })();
 
+// ─── Android: Zurueck-Taste ──────────────────────────────────────────────────
+// Reihenfolge: Foto-Ansicht → Rueckfrage (= Abbrechen) → offenes Fenster (bei Eingaben erst fragen)
+// → Menue → zur Startseite → App in den Hintergrund. Ohne eigenen Haendler ginge die Taste im
+// Browser-Verlauf zurueck bzw. wuerde die App sofort beenden.
+function _istAndroid() {
+  try { return isNativeApp() && window.Capacitor.getPlatform() === 'android'; } catch (e) { return false; }
+}
+async function _androidZurueck() {
+  const App = window.Capacitor?.Plugins?.App;
+  const lb = document.getElementById('lightbox');
+  if (lb && lb.classList.contains('open')) { closeLightbox(); return 'foto'; }
+  const offen = document.querySelectorAll('.modal-overlay.open:not(.closing)');
+  if ([...offen].some(o => o.id === 'modal-app-confirm')) { _acResolve(false); return 'rueckfrage'; }
+  if (offen.length) { await _fensterVerlassen(); return 'fenster'; }
+  const sb = document.querySelector('.sidebar');
+  if (sb && sb.classList.contains('mobile-open')) { closeMobileSidebar(); return 'menue'; }
+  const amLogin = !!(document.getElementById('auth-overlay') && getComputedStyle(document.getElementById('auth-overlay')).display !== 'none');
+  const abo = document.getElementById('probeabo-overlay')?.classList.contains('open');   // Abo-Sperre nie wegtippen
+  const dash = document.getElementById('page-dashboard');
+  if (!amLogin && !abo && dash && !dash.classList.contains('active')) {
+    showPage('dashboard'); return 'startseite';
+  }
+  try { await App?.minimizeApp?.(); } catch (e) {}
+  return 'hintergrund';
+}
+(function _androidZurueckStart() {
+  if (!_istAndroid()) return;
+  try { window.Capacitor?.Plugins?.App?.addListener?.('backButton', () => { _androidZurueck(); }); } catch (e) {}
+})();
+
 // "Demnächst fällig" – nächste Wartung, Zahlung, Meilenstein auf dem Dashboard
 function renderDashReminders() {
   const el = document.getElementById('dash-reminders');
@@ -19882,9 +19912,13 @@ let _nativePushListenersAdded = false;
 function _pushNotifPlugin() {
   return isNativeApp() ? window.Capacitor?.Plugins?.PushNotifications : null;
 }
+// Android braucht fuer Push Firebase (google-services.json) – ohne stuerzt register() die App ab.
+// Erst auf true setzen, wenn Firebase eingerichtet ist UND der Server FCM-Tokens senden kann.
+const ANDROID_PUSH_AKTIV = false;
 async function _registerNativePush() {
   const pn = _pushNotifPlugin();
   if (!pn || !currentUser) return;
+  if (_istAndroid() && !ANDROID_PUSH_AKTIV) return;
   try {
     let perm = await pn.checkPermissions();
     if (perm.receive !== 'granted') perm = await pn.requestPermissions();

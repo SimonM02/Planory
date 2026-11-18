@@ -3722,6 +3722,71 @@ await scenario('Kategorie-Mappe (PDF): Übersicht mit Summen, Bild- und PDF-Bele
 });
 
 
+await scenario('Android: Zurück-Taste (Foto → Rückfrage → Fenster → Menü → Startseite → Hintergrund), Push ohne Firebase aus, kein Stripe-Knopf', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      const echtCap = window.Capacitor, echtConfirm = window.showConfirm, aus = {};
+      let klein = 0, pushReg = 0;
+      aus.webAndroid = _istAndroid();   // im Browser: nein
+      window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android', Plugins: {
+        App: { minimizeApp: async () => { klein++; } },
+        PushNotifications: { checkPermissions: async () => ({ receive: 'granted' }), requestPermissions: async () => ({ receive: 'granted' }),
+                             addListener: () => {}, register: async () => { pushReg++; } } } };
+      window.showConfirm = window.__echtesConfirm || echtConfirm;
+      const altUser = currentUser;
+      try {
+        currentUser = currentUser || { id: '00000000-0000-4000-8000-000000000001' };
+        aus.android = _istAndroid();
+        await _registerNativePush(); aus.pushReg = pushReg;
+        // Stripe-Knöpfe in der App versteckt
+        applyNativePaymentPolicy();
+        aus.stripe = ['btn-stripe-upgrade', 'btn-stripe-portal', 'btn-modal-stripe'].map(id => document.getElementById(id))
+          .filter(el => el && el.style.display !== 'none').map(el => el.id);
+        showPage('kosten'); await w(50);
+        // 1) Foto-Ansicht
+        document.getElementById('lightbox').classList.add('open');
+        aus.s1 = await _androidZurueck(); aus.lbZu = !document.getElementById('lightbox').classList.contains('open');
+        // 2) Fenster mit Eingabe → Rückfrage erscheint
+        openModal('modal-kosten'); await w(250);
+        const m = document.getElementById('modal-kosten'); m._dirty = true;
+        const p = _androidZurueck(); await w(250);
+        aus.frage = document.getElementById('modal-app-confirm').classList.contains('open');
+        // 3) Zurück auf der Rückfrage = Abbrechen → Fenster bleibt
+        aus.s3 = await _androidZurueck(); aus.s2 = await p; await w(300);
+        aus.bleibt = m.classList.contains('open') && !m.classList.contains('closing');
+        // 4) ohne Eingabe: Fenster schließt
+        m._dirty = false;
+        aus.s4 = await _androidZurueck(); await w(300);
+        aus.fensterZu = !m.classList.contains('open');
+        // 5) Menü
+        document.querySelector('.sidebar').classList.add('mobile-open');
+        aus.s5 = await _androidZurueck(); aus.menueZu = !document.querySelector('.sidebar').classList.contains('mobile-open');
+        // 6) Seite → Startseite, 7) Startseite → Hintergrund
+        aus.s6 = await _androidZurueck(); aus.dash = document.getElementById('page-dashboard').classList.contains('active');
+        aus.s7 = await _androidZurueck(); aus.klein = klein;
+      } finally { window.Capacitor = echtCap; window.showConfirm = echtConfirm; currentUser = altUser; }
+      return aus;
+    });
+    const f = [];
+    if (r.webAndroid) f.push('im Browser als Android erkannt');
+    if (!r.android) f.push('Android nicht erkannt');
+    if (r.pushReg !== 0) f.push('Push ohne Firebase registriert');
+    if (r.stripe.length) f.push('Stripe-Knopf sichtbar: ' + r.stripe.join(','));
+    if (r.s1 !== 'foto' || !r.lbZu) f.push('Foto-Ansicht: ' + r.s1);
+    if (!r.frage) f.push('keine Rückfrage bei Eingaben');
+    if (r.s3 !== 'rueckfrage' || !r.bleibt) f.push('Rückfrage-Abbrechen: ' + r.s3 + '/' + r.bleibt);
+    if (r.s4 !== 'fenster' || !r.fensterZu) f.push('Fenster schließen: ' + r.s4 + '/' + r.fensterZu);
+    if (r.s5 !== 'menue' || !r.menueZu) f.push('Menü: ' + r.s5);
+    if (r.s6 !== 'startseite' || !r.dash) f.push('Startseite: ' + r.s6);
+    if (r.s7 !== 'hintergrund' || r.klein !== 1) f.push('Hintergrund: ' + r.s7 + '/' + r.klein);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

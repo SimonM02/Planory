@@ -140,6 +140,15 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
 - **Android ohne Play Store (16.11.2026):** `manifest.webmanifest` + `icon-512.png` → planory.at in Chrome installierbar.
   Installiert geöffnet (`_alsAppGestartet`: display-mode standalone, iPhone-Home-Bildschirm oder `?source=pwa`) startet
   Planory wie die iPhone-App direkt mit der Anmeldung statt der Website.
+- **Android-App vorbereitet (18.11.2026):** Ordner `android/` (Capacitor, dieselbe `www/index.html`, Version 1.4),
+  Anleitung `ANDROID-EINRICHTEN.md`, Store-Texte `PLAY-STORE-TEXT.md`. Regeln:
+  - **Nicht veröffentlichen ohne Google-Abo** (`RC_API_KEY_ANDROID` leer bedeutet, alles ist gratis).
+  - In der App gibt es keinen Stripe-Kauf (Google-Regel).
+  - **Push auf Android erst mit Firebase** (`ANDROID_PUSH_AKTIV`). Ohne `google-services.json` stürzt
+    `register()` ab.
+  - Zurück-Taste über `_androidZurueck()`. Die Abo-Sperre wird dabei nie weggetippt.
+  - Keine Vollzugriff-Fotoberechtigung (Google-Richtlinie), nur die System-Foto-Auswahl.
+  - Upload-Schlüssel (`*.jks`) nie ins Repo.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 

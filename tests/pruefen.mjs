@@ -742,7 +742,7 @@ check('Website veröffentlicht keine internen Dateien, keine Kunden-E-Mails in N
   const vi = read('.vercelignore').split('\n').map(z => z.trim()).filter(z => z && !z.startsWith('#'));
   if (!vi.includes('*.md')) return '.vercelignore schließt *.md nicht aus';
   if (vi.some(z => /^\/?api\/?$|^package/.test(z))) return '.vercelignore darf api/ und package.json nicht ausschließen (Server-Funktionen)';
-  const erlaubt = /^(noreply@anthropic\.com|moser\.simon5211@gmail\.com|simon\.moser@iu-study\.org|info@planory\.app|demo@planory\.app|deine@email\.at|deine-kontakt@e-mail\.at|office@mueller-bau\.at|huber@elektro-graz\.at|berger@architektur\.at)$/i;
+  const erlaubt = /^(noreply@anthropic\.com|moser\.simon5211@gmail\.com|simon\.moser@iu-study\.org|info@planory\.app|[a-z]+@planory\.at|demo@planory\.app|deine@email\.at|deine-kontakt@e-mail\.at|office@mueller-bau\.at|huber@elektro-graz\.at|berger@architektur\.at)$/i;
   const fremd = [];
   for (const f of fs.readdirSync('.').filter(f => f.endsWith('.md'))) {
     for (const m of read(f).matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) if (!erlaubt.test(m[0])) fremd.push(`${f}: ${m[0]}`);

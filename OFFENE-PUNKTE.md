@@ -67,9 +67,13 @@ Kurze Merkliste, damit wir nichts vergessen. Stand: 03.11.2026.
      Weg zum Firmenkonto: ① prüfen, ob es schon eine D-U-N-S gibt (bei Apple-Firmenkonto vorhanden),
      sonst kostenlos über developer.apple.com/enroll/duns-lookup beantragen (Daten genau wie
      Gewerbeanmeldung, ca. 5 Werktage) → ② Google Play Console → „Organisation“ → D-U-N-S eingeben.
-   - **Claude:** Android-Teil im Projekt anlegen (Capacitor), Icon/Startbild, Kamera/Fotos/Teilen,
-     Push über Firebase, Abo über Google Play in RevenueCat, App-Bundle, Store-Texte, Screenshots,
-     Formular „Datensicherheit“.
+   - ✅ **Claude (18.11.2026):** Android-Projekt `android/` angelegt und Probe-Build erfolgreich. Fertig sind
+     Icon/Startbild, Zurück-Taste, Berechtigungen und Schnellzugriffe, außerdem Store-Texte DE/EN, das
+     Formular „Datensicherheit“, Feature-Grafik und Screenshots (`PLAY-STORE-TEXT.md`, `android/STORE/`).
+     **Alle weiteren Schritte für Simon: `ANDROID-EINRICHTEN.md`.**
+   - **Offen (nach Simons Schritten):** Push über Firebase (braucht `google-services.json`, Server-Versand
+     über FCM). RevenueCat-Schlüssel `goog_…` eintragen. Datenschutzerklärung um Google/Firebase ergänzen.
+     **Ohne Google-Abo nicht veröffentlichen.**
 10. **Erste kleine Werbung testen:** z. B. 5 €/Tag, Österreich, Interessen Hausbau/Eigenheim
    (Musik ist eingebaut und für Werbung erlaubt).
 
@@ -287,10 +291,9 @@ abo-api 10/10).
 
 ## Android-Version (Play Store) – NACH iOS läuft
 - [ ] Google-Play-Entwicklerkonto (~25 $ einmalig).
-- [ ] `npx cap add android` → Build aus derselben `www/index.html`.
-- [ ] Abo: Google Play Billing + in RevenueCat als Google-Produkte ergänzen.
-- [ ] **Kleiner Code-Eingriff:** RevenueCat-Schlüssel je Plattform (iOS `appl_…` /
-      Android `goog_…`) – Claude macht die Weiche.
+- [x] `npx cap add android` → Build aus derselben `www/index.html` (18.11.2026, Probe-Build ok).
+- [ ] Abo: Google Play Billing + in RevenueCat als Google-Produkte ergänzen (Anleitung: ANDROID-EINRICHTEN.md).
+- [x] RevenueCat-Schlüssel je Plattform – Weiche ist eingebaut, nur `goog_…` fehlt noch.
 
 ## ✅ Erledigt (zur Info)
 - [x] **Helfer-Modul** (Kalender, Einteilung, offene Plätze, Erinnerung, Bautagebuch-Übernahme).

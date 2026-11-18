@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Planory</string>
+    <string name="title_activity_main">Planory</string>
+    <string name="package_name">com.planory.bauassistent</string>
+    <string name="custom_url_scheme">com.planory.bauassistent</string>
+</resources>
