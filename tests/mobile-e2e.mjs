@@ -120,6 +120,7 @@ const BUTTONS_OUT = sel => [...document.querySelectorAll(sel + ' button')]
 
 const results = [];
 async function scenario(name, fn) {
+  if (process.env.NUR && !name.includes(process.env.NUR)) return;   // NUR=Teil-des-Namens: nur diese Szenarien
   const t0 = Date.now();
   try { const msg = await fn(); results.push([!msg, name, msg || '', Date.now() - t0]); }
   catch (e) { results.push([false, name, 'Abbruch: ' + String(e && e.message || e).split('\n')[0], Date.now() - t0]); }
@@ -3781,6 +3782,72 @@ await scenario('Android: Zurück-Taste (Foto → Rückfrage → Fenster → Men�
     if (r.s5 !== 'menue' || !r.menueZu) f.push('Menü: ' + r.s5);
     if (r.s6 !== 'startseite' || !r.dash) f.push('Startseite: ' + r.s6);
     if (r.s7 !== 'hintergrund' || r.klein !== 1) f.push('Hintergrund: ' + r.s7 + '/' + r.klein);
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
+await scenario('Beträge mit Tausenderpunkt: „18.359,56“ und „3.200“ werden richtig gespeichert (Angebot, Ausgabe, Budget, Zahlung, Bearbeiten)', async () => {
+  const d = await boot();
+  try {
+    // echtes Tippen ins Feld (Handy-Tastatur), dann speichern
+    const r1 = await d.page.evaluate(async () => {
+      document.getElementById('ang-edit-id').value = '';
+      document.getElementById('ang-beschr').value = 'Haustür Test'; document.getElementById('ang-anbieter').value = 'Test GmbH';
+      const f = document.getElementById('ang-betrag');
+      return { typ: f.type, mode: f.inputMode };
+    });
+    await d.page.evaluate(() => { openModal('modal-angebot'); document.getElementById('ang-betrag').value = ''; });
+    await d.page.waitForTimeout(300);
+    await d.page.$eval('#ang-betrag', el => el.focus());
+    await d.page.keyboard.type('18.359,56');
+    const r = await d.page.evaluate(async () => {
+      const aus = {};
+      aus.parse = ['18.359,56', '3.200', '1500,5', '1,234.56', '12', '20.000,81', '99,-', '0,5', ''].map(x => _betragFeld && _parseBetrag(x));
+      await saveAngebot();
+      const a = state.angebote.find(x => x.beschr === 'Haustür Test');
+      aus.ang = a && a.betrag;
+      // Bearbeiten → Feld zeigt eindeutigen Wert → unverändert speichern
+      editAngebot(a.id); aus.feld = document.getElementById('ang-betrag').value;
+      await saveAngebot(); aus.ang2 = state.angebote.find(x => x.id === a.id).betrag;
+      closeModal('modal-angebot');
+      // Ausgabe mit Netto/Brutto-Rechnung
+      document.getElementById('k-edit-id').value = '';
+      document.getElementById('k-beschr').value = 'Fenster Test';
+      document.getElementById('k-mwst').value = '20';
+      document.getElementById('k-betrag').value = '12.000,00';
+      updateKostenNetto(); aus.netto = document.getElementById('k-netto-input').value;
+      document.getElementById('k-netto-input').value = '10.000'; updateKostenBrutto(); aus.brutto = document.getElementById('k-betrag').value;
+      window.showConfirm = async () => true;
+      await saveKosten();
+      aus.kosten = (state.kosten.find(k => k.beschr === 'Fenster Test') || {}).betrag;
+      // Budget-Kategorie
+      document.getElementById('bk-edit-id') && (document.getElementById('bk-edit-id').value = '');
+      document.getElementById('bk-name').value = 'Tausender Test'; document.getElementById('bk-budget').value = '3.200';
+      addBudgetKat(); aus.bk = (state.budgetKat.find(k => k.name === 'Tausender Test') || {}).budget;
+      // Zahlungsplan (englisches Format)
+      document.getElementById('zp-edit-id').value = ''; document.getElementById('zp-beschr').value = 'Rate Test';
+      document.getElementById('zp-betrag').value = '1,234.56'; saveZahlung();
+      aus.zp = (state.zahlungen.find(z => z.beschr === 'Rate Test') || {}).betrag;
+      // keine Geld-Zahlenfelder mehr
+      aus.zahlenfelder = ['ob-budget-total','k-netto-input','k-betrag','scan-netto','scan-brutto','bk-budget','ang-betrag','ang-ki-betrag','zp-betrag','wt-kosten']
+        .filter(id => document.getElementById(id)?.type !== 'text');
+      return aus;
+    });
+    const f = [];
+    if (r1.typ !== 'text' || r1.mode !== 'decimal') f.push('Feld: ' + r1.typ + '/' + r1.mode);
+    const soll = [18359.56, 3200, 1500.5, 1234.56, 12, 20000.81, 99, 0.5];
+    soll.forEach((v, i) => { if (Math.abs(r.parse[i] - v) > 1e-9) f.push('Lesen ' + i + ': ' + r.parse[i] + ' statt ' + v); });
+    if (r.ang !== 18359.56) f.push('Angebot ' + r.ang + ' statt 18359.56');
+    if (r.feld !== '18359,56') f.push('Bearbeiten zeigt „' + r.feld + '“');
+    if (r.ang2 !== 18359.56) f.push('nach Bearbeiten ' + r.ang2);
+    if (r.netto !== '10000') f.push('Netto „' + r.netto + '“ statt 10000');
+    if (r.brutto !== '12000') f.push('Brutto „' + r.brutto + '“ statt 12000');
+    if (r.kosten !== 12000) f.push('Ausgabe ' + r.kosten);
+    if (r.bk !== 3200) f.push('Budget ' + r.bk);
+    if (r.zp !== 1234.56) f.push('Zahlung ' + r.zp);
+    if (r.zahlenfelder.length) f.push('noch Zahlenfeld: ' + r.zahlenfelder.join(','));
     if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
     return f.join(' · ');
   } finally { await d.ctx.close(); }

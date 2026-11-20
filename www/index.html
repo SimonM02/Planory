@@ -2930,7 +2930,7 @@
 
         <div class="form-row" style="margin-bottom:20px">
           <label>Gesamtbudget (€) *</label>
-          <input type="number" id="ob-budget-total" placeholder="z.B. 350000" oninput="updateObBudgetSplit()" style="font-size:1.1rem;font-weight:700">
+          <input type="text" inputmode="decimal" autocomplete="off" id="ob-budget-total" placeholder="z.B. 350000" oninput="updateObBudgetSplit()" style="font-size:1.1rem;font-weight:700">
         </div>
 
         <div id="ob-budget-template-section">
@@ -4057,11 +4057,11 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-row">
         <label>Nettobetrag (€)</label>
-        <input type="number" id="k-netto-input" placeholder="0.00" step="0.01" oninput="updateKostenBrutto()">
+        <input type="text" inputmode="decimal" autocomplete="off" id="k-netto-input" placeholder="0,00" oninput="updateKostenBrutto()">
       </div>
       <div class="form-row">
         <label>Bruttobetrag (€)</label>
-        <input type="number" id="k-betrag" placeholder="0.00" step="0.01" oninput="updateKostenNetto()">
+        <input type="text" inputmode="decimal" autocomplete="off" id="k-betrag" placeholder="0,00" oninput="updateKostenNetto()">
       </div>
     </div>
     <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text2)" id="k-mwst-preview">
@@ -4197,7 +4197,7 @@
         <div class="form-row" style="margin:0"><label>Anbieter</label><input type="text" id="scan-anbieter"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div class="form-row" style="margin:0"><label>Datum</label><input type="date" id="scan-datum"></div>
-          <div class="form-row" style="margin:0"><label>Netto (€)</label><input type="number" id="scan-netto" oninput="scanUpdateBrutto()" step="0.01"></div>
+          <div class="form-row" style="margin:0"><label>Netto (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="scan-netto" oninput="scanUpdateBrutto()"></div>
           <div class="form-row" style="margin:0"><label>MwSt %</label>
             <select id="scan-mwst" onchange="scanUpdateBrutto()">
               <option value="0">0%</option><option value="10">10%</option><option value="20" selected>20%</option>
@@ -4205,7 +4205,7 @@
           </div>
         </div>
         <div class="form-row" style="margin:0"><label>Brutto (€)</label>
-          <input type="number" id="scan-brutto" step="0.01" style="font-weight:700;font-size:1rem;background:var(--accent-light);border-color:var(--accent)">
+          <input type="text" inputmode="decimal" autocomplete="off" id="scan-brutto" style="font-weight:700;font-size:1rem;background:var(--accent-light);border-color:var(--accent)">
         </div>
         <div class="form-row" style="margin:0"><label>Kategorie</label>
           <select id="scan-kat"></select>
@@ -4257,7 +4257,7 @@
 
     <div class="form-row">
       <label>Geplantes Budget (€)</label>
-      <input type="number" id="bk-budget" placeholder="z.B. 50000" oninput="updateBudgetKatPreview()" onkeydown="if(event.key==='Enter')addBudgetKat()">
+      <input type="text" inputmode="decimal" autocomplete="off" id="bk-budget" placeholder="z.B. 50000" oninput="updateBudgetKatPreview()" onkeydown="if(event.key==='Enter')addBudgetKat()">
       <div id="bk-preview" style="font-size:0.82rem;color:var(--accent);margin-top:6px;font-weight:700;min-height:18px"></div>
     </div>
 
@@ -4529,7 +4529,7 @@
       <div class="form-row"><label>Angebotsdatum</label><input type="date" id="ang-datum"></div>
       <div class="form-row"><label>Gültig bis</label><input type="date" id="ang-gueltig"></div>
     </div>
-    <div class="form-row"><label>Betrag (€ brutto)</label><input type="number" id="ang-betrag" placeholder="0.00" step="0.01"></div>
+    <div class="form-row"><label>Betrag (€ brutto)</label><input type="text" inputmode="decimal" autocomplete="off" id="ang-betrag" placeholder="0,00"></div>
     <div class="form-row"><label>Status</label>
       <select id="ang-status">
         <option>Ausstehend</option><option>Angenommen</option><option>Abgelehnt</option><option>In Verhandlung</option>
@@ -4621,7 +4621,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div class="form-row"><label>Beschreibung / Gewerk</label><input type="text" id="ang-ki-beschr"></div>
         <div class="form-row"><label>Anbieter / Firma</label><input type="text" id="ang-ki-anbieter"></div>
-        <div class="form-row"><label>Betrag (€ brutto)</label><input type="number" id="ang-ki-betrag" step="0.01"></div>
+        <div class="form-row"><label>Betrag (€ brutto)</label><input type="text" inputmode="decimal" autocomplete="off" id="ang-ki-betrag"></div>
         <div class="form-row"><label>Angebotsdatum</label><input type="date" id="ang-ki-datum"></div>
         <div class="form-row" style="grid-column:1/-1"><label>Gültig bis</label><input type="date" id="ang-ki-gueltig"></div>
       </div>
@@ -4645,7 +4645,7 @@
     <div class="form-row"><label>Anbieter / Empfänger</label><input type="text" id="zp-anbieter" placeholder="Firma GmbH"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-row"><label>Fällig am</label><input type="date" id="zp-faellig"></div>
-      <div class="form-row"><label>Betrag (€)</label><input type="number" id="zp-betrag" step="0.01" placeholder="0.00"></div>
+      <div class="form-row"><label>Betrag (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="zp-betrag" placeholder="0,00"></div>
     </div>
     <div class="form-row"><label>Status</label>
       <select id="zp-status"><option>Offen</option><option>Bezahlt</option><option>Überfällig</option></select>
@@ -5040,7 +5040,7 @@
       </select>
     </div>
     <div class="form-row"><label>Zuständig / Gewerk</label><input type="text" id="wt-who" placeholder="z.B. Heizungsinstallateur, Eigenleistung"></div>
-    <div class="form-row"><label>Ungefähre Kosten (€)</label><input type="number" id="wt-kosten" placeholder="0"></div>
+    <div class="form-row"><label>Ungefähre Kosten (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="wt-kosten" placeholder="0"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-wartung');resetWartungModal()">Abbrechen</button>
       <button class="btn btn-primary" onclick="addWartung()">Speichern</button>
@@ -9034,10 +9034,10 @@ function renderDashboard() {
 // ──────────────── KOSTEN ────────────────
 // ──────────────── KOSTEN MwSt-Helpers ────────────────
 function updateKostenBrutto() {
-  const netto = parseFloat(document.getElementById('k-netto-input').value) || 0;
+  const netto = _betragFeld('k-netto-input') || 0;
   const mwst = parseFloat(document.getElementById('k-mwst').value) || 0;
   const brutto = netto * (1 + mwst / 100);
-  if (netto > 0) document.getElementById('k-betrag').value = brutto.toFixed(2);
+  if (netto > 0) document.getElementById('k-betrag').value = _betragText(brutto);
   const mwstBetrag = brutto - netto;
   document.getElementById('k-mwst-preview').textContent = (_lang === 'en')
     ? `Net: ${fmt(netto)}  ·  VAT (${mwst}%): ${fmt(mwstBetrag)}  ·  Gross: ${fmt(brutto)}`
@@ -9046,10 +9046,10 @@ function updateKostenBrutto() {
 }
 
 function updateKostenNetto() {
-  const brutto = parseFloat(document.getElementById('k-betrag').value) || 0;
+  const brutto = _betragFeld('k-betrag') || 0;
   const mwst = parseFloat(document.getElementById('k-mwst').value) || 0;
   const netto = mwst > 0 ? brutto / (1 + mwst / 100) : brutto;
-  if (brutto > 0) document.getElementById('k-netto-input').value = netto.toFixed(2);
+  if (brutto > 0) document.getElementById('k-netto-input').value = _betragText(netto);
   updateSkontoPreview('k');
   const mwstBetrag = brutto - netto;
   document.getElementById('k-mwst-preview').textContent = (_lang === 'en')
@@ -9259,7 +9259,7 @@ async function saveKosten() {
   if (!requireSub()) return;
   const editId = parseInt(document.getElementById('k-edit-id').value) || null;
   const mwstRate = parseFloat(document.getElementById('k-mwst').value) || 0;
-  const brutto   = parseFloat(document.getElementById('k-betrag').value) || 0;
+  const brutto   = _betragFeld('k-betrag') || 0;
   const netto    = mwstRate > 0 ? brutto / (1 + mwstRate / 100) : brutto;
   if (!document.getElementById('k-beschr').value.trim()) { showToast('⚠️ Bitte eine Beschreibung eingeben', 'error'); return; }
   if (brutto <= 0) { showToast('⚠️ Betrag muss größer als 0 sein', 'error'); return; }
@@ -9363,8 +9363,8 @@ function editKosten(id) {
   document.getElementById('k-datum').value   = k.datum || '';
   document.getElementById('k-beschr').value  = k.beschr || '';
   document.getElementById('k-anbieter').value = k.anbieter || '';
-  document.getElementById('k-betrag').value  = k.betrag || '';
-  document.getElementById('k-netto-input').value = k.netto ?? k.betrag ?? '';
+  document.getElementById('k-betrag').value  = _betragText(k.betrag || '');
+  document.getElementById('k-netto-input').value = _betragText(k.netto ?? k.betrag ?? '');
   const mwstSel = document.getElementById('k-mwst');
   _selectValue(mwstSel, String(k.mwst || 0));
   const statusSel = document.getElementById('k-status');
@@ -9647,7 +9647,7 @@ function selectBudgetColor(color) {
 }
 
 function updateBudgetKatPreview() {
-  const val = parseFloat(document.getElementById('bk-budget').value) || 0;
+  const val = _betragFeld('bk-budget') || 0;
   const currentTotal = state.budgetKat.reduce((s,k) => s + k.budget, 0);
   const newTotal = currentTotal + val;
   const el = document.getElementById('bk-preview');
@@ -9663,7 +9663,7 @@ function addBudgetKat() {
   if (!requireSub()) return;
   const editId = document.getElementById('bk-edit-id')?.value || null;
   const name   = document.getElementById('bk-name').value.trim();
-  const budget = parseFloat(document.getElementById('bk-budget').value) || 0;
+  const budget = _betragFeld('bk-budget') || 0;
   const color  = document.getElementById('bk-color')?.value || '';
   if (!name) { document.getElementById('bk-name').focus(); return; }
   if (budget <= 0) { document.getElementById('bk-budget').focus(); return; }
@@ -9701,7 +9701,7 @@ function editBudgetKat(id) {
   const k = state.budgetKat.find(k => String(k.id) === String(id));
   if (!k) return;
   document.getElementById('bk-name').value   = k.name;
-  document.getElementById('bk-budget').value = k.budget;
+  document.getElementById('bk-budget').value = _betragText(k.budget);
   if (document.getElementById('bk-color')) document.getElementById('bk-color').value = k.color || '';
   if (document.getElementById('bk-edit-id')) document.getElementById('bk-edit-id').value = String(k.id);
   if (document.getElementById('bk-modal-title')) document.getElementById('bk-modal-title').textContent = 'Kategorie bearbeiten';
@@ -9981,15 +9981,15 @@ function toggleBezahltVon(statusId, bezahltVonId) {
 }
 
 function scanUpdateBrutto() {
-  const n = parseFloat(document.getElementById('scan-netto').value) || 0;
+  const n = _betragFeld('scan-netto') || 0;
   const m = parseFloat(document.getElementById('scan-mwst').value) || 0;
-  document.getElementById('scan-brutto').value = (n * (1 + m/100)).toFixed(2);
+  document.getElementById('scan-brutto').value = _betragText(n * (1 + m/100));
 }
 
 function updateSkontoPreview(prefix) {
   const proz   = parseFloat(document.getElementById(`${prefix}-skonto-proz`).value) || 0;
   const bis    = document.getElementById(`${prefix}-skonto-bis`).value;
-  const brutto = parseFloat(document.getElementById(prefix === 'k' ? 'k-betrag' : 'scan-brutto').value) || 0;
+  const brutto = _betragFeld(prefix === 'k' ? 'k-betrag' : 'scan-brutto') || 0;
   const preview = document.getElementById(`${prefix}-skonto-preview`);
   if (proz > 0 && bis && brutto > 0) {
     const ersparnis = brutto * proz / 100;
@@ -10471,8 +10471,8 @@ async function _processScanFile(file) {
     document.getElementById('scan-beschr').value   = parsed.beschreibung || '';
     document.getElementById('scan-anbieter').value  = parsed.anbieter     || '';
     document.getElementById('scan-datum').value     = /^\d{4}-\d{2}-\d{2}$/.test(parsed.datum || '') ? parsed.datum : today();
-    document.getElementById('scan-netto').value     = nettoN  > 0 ? nettoN  : '';
-    document.getElementById('scan-brutto').value    = bruttoN > 0 ? bruttoN : '';
+    document.getElementById('scan-netto').value     = nettoN  > 0 ? _betragText(nettoN)  : '';
+    document.getElementById('scan-brutto').value    = bruttoN > 0 ? _betragText(bruttoN) : '';
     document.getElementById('scan-ki-notiz').textContent = parsed.hinweis ? `💡 KI-Hinweis: ${parsed.hinweis}` : '';
     const skontoN = _parseBetrag(parsed.skonto_prozent);
     document.getElementById('scan-skonto-proz').value = skontoN > 0 ? skontoN : '';
@@ -10526,6 +10526,20 @@ function _parseBetrag(v) {
   return isFinite(n) ? n : NaN;
 }
 
+// Betragsfelder sind Textfelder (inputmode="decimal"): "18.359,56" oder "3.200" waeren in einem
+// Zahlenfeld zu 18,36 € bzw. 3,20 € geworden. Lesen immer ueber _parseBetrag, Schreiben ohne
+// Tausenderpunkt mit Dezimalkomma ("18359,56") – so ist der Wert beim erneuten Lesen eindeutig.
+function _betragFeld(id) {
+  const n = _parseBetrag(document.getElementById(id)?.value);
+  return isFinite(n) ? n : 0;
+}
+function _betragText(v) {
+  if (v === '' || v == null) return '';
+  const n = typeof v === 'number' ? v : _parseBetrag(v);
+  if (!isFinite(n)) return '';
+  return String(Math.round(n * 100) / 100).replace('.', ',');
+}
+
 // Verstaendliche Meldung, wenn der KI-Server einen Fehler meldet
 function _kiFehlertext(status, data) {
   const detail = data && (data.error?.message || (typeof data.error === 'string' ? data.error : ''));
@@ -10553,7 +10567,7 @@ async function confirmRechnungScan() {
     _focusField('scan-kat');
     return;
   }
-  const brutto   = parseFloat(document.getElementById('scan-brutto').value)  || 0;
+  const brutto   = _betragFeld('scan-brutto')  || 0;
   const mwst     = parseFloat(document.getElementById('scan-mwst').value)    || 0;
   const netto    = mwst > 0 ? brutto / (1 + mwst/100) : brutto;
   if (!(brutto > 0)) {
@@ -14869,7 +14883,7 @@ function addWartung() {
     intervall, einheit, next,
     remind:    document.getElementById('wt-erinnerung')?.value || '3',
     who:       document.getElementById('wt-who').value,
-    kosten:    parseFloat(document.getElementById('wt-kosten').value) || 0
+    kosten:    _betragFeld('wt-kosten') || 0
   };
   if (editId) {
     const idx = state.wartungen.findIndex(w => String(w.id) === String(editId));
@@ -14894,7 +14908,7 @@ function editWartung(id) {
   document.getElementById('wt-name').value   = w.name   || '';
   document.getElementById('wt-desc').value   = w.desc   || '';
   document.getElementById('wt-who').value    = w.who    || '';
-  document.getElementById('wt-kosten').value = w.kosten || '';
+  document.getElementById('wt-kosten').value = _betragText(w.kosten || '');
   // Nächstes Datum: aus w.next oder (Altbestand) aus w.last berechnet
   const nd = _wartungNextDate(w);
   document.getElementById('wt-next').value = (nd && !isNaN(nd)) ? nd.toISOString().slice(0,10) : '';
@@ -17301,7 +17315,7 @@ function applyObBudgetTemplate(key, btn) {
   btn.style.color = 'var(--accent)';
   btn.style.background = 'var(--accent-light)';
 
-  const total = parseFloat(document.getElementById('ob-budget-total').value) || 0;
+  const total = _betragFeld('ob-budget-total') || 0;
   const template = OB_BUDGET_TEMPLATES[key] || [];
   obBudgetCats = template.map(t => ({
     name: t.name, icon: t.icon, color: t.color,
@@ -17316,7 +17330,7 @@ function applyObBudgetTemplate(key, btn) {
 }
 
 function updateObBudgetSplit() {
-  const total = parseFloat(document.getElementById('ob-budget-total').value) || 0;
+  const total = _betragFeld('ob-budget-total') || 0;
   // Recalculate amounts from pct
   obBudgetCats.forEach(c => {
     if (c.pct > 0) c.betrag = Math.round(total * c.pct / 100);
@@ -17338,7 +17352,7 @@ function renderObBudgetCats() {
         oninput="obBudgetCats[${i}].name=this.value"
         style="flex:1;min-width:0;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text);padding:3px 2px;font-family:'Hanken Grotesk',sans-serif;font-size:0.84rem;font-weight:600;outline:none"
         onfocus="this.style.borderBottomColor='var(--accent)'" onblur="this.style.borderBottomColor='var(--border)'">
-      <input type="number" value="${c.betrag||''}" min="0" step="1000" inputmode="numeric"
+      <input type="text" inputmode="decimal" autocomplete="off" value="${_betragText(c.betrag||'')}"
         oninput="obAmountInput(${i}, this.value)"
         style="width:96px;flex-shrink:0;background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;color:var(--text);padding:5px 9px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;outline:none;text-align:right"
         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
@@ -17353,7 +17367,7 @@ function renderObBudgetCats() {
 // Updates only the segment bar, the remaining label and the % values –
 // WITHOUT rebuilding the input rows, so the field you're typing in keeps focus.
 function obRefreshSplit() {
-  const total = parseFloat(document.getElementById('ob-budget-total').value) || 0;
+  const total = _betragFeld('ob-budget-total') || 0;
   const assigned = obBudgetCats.reduce((s,c) => s + (parseFloat(c.betrag)||0), 0);
   const remaining = total - assigned;
 
@@ -17381,7 +17395,7 @@ function obRefreshSplit() {
 
 function obAmountInput(i, val) {
   if (!obBudgetCats[i]) return;
-  obBudgetCats[i].betrag = parseFloat(val) || 0;
+  obBudgetCats[i].betrag = _parseBetrag(val) || 0;
   obBudgetCats[i].pct = 0;
   obRefreshSplit();
 }
@@ -17612,7 +17626,7 @@ function obNext() {
   }
   if (obStep === 3) {
     // Budget step – auto-apply template based on project type if none selected
-    const total = parseFloat(document.getElementById('ob-budget-total').value) || 0;
+    const total = _betragFeld('ob-budget-total') || 0;
     if (total > 0 && obBudgetCats.length === 0) {
       // Auto-apply template matching project type
       const key = obType.includes('Umbau') ? 'umbau' : obType.includes('Sani') ? 'sanierung' : 'neubau';
@@ -17648,7 +17662,7 @@ async function finishOnboarding() {
   proj.settings.modules = modules;
 
   // Add budget categories from onboarding
-  const total = parseFloat(document.getElementById('ob-budget-total').value) || 0;
+  const total = _betragFeld('ob-budget-total') || 0;
   proj.settings.budget = total;
   const _obBase = Date.now();
   proj.budgetKat = obBudgetCats
@@ -17946,7 +17960,7 @@ async function saveAngebot() {
     kat:      document.getElementById('ang-kat').value,
     datum:    document.getElementById('ang-datum').value || today(),
     gueltig:  document.getElementById('ang-gueltig').value,
-    betrag:   parseFloat(document.getElementById('ang-betrag').value) || 0,
+    betrag:   _betragFeld('ang-betrag') || 0,
     status:   document.getElementById('ang-status').value,
     notiz:    document.getElementById('ang-notiz').value
   };
@@ -18011,7 +18025,7 @@ function editAngebot(id) {
   document.getElementById('ang-anbieter').value = a.anbieter || '';
   document.getElementById('ang-datum').value    = a.datum    || '';
   document.getElementById('ang-gueltig').value  = a.gueltig  || '';
-  document.getElementById('ang-betrag').value   = a.betrag   || '';
+  document.getElementById('ang-betrag').value   = _betragText(a.betrag   || '');
   document.getElementById('ang-notiz').value    = a.notiz    || '';
   const katSel = document.getElementById('ang-kat');
   _selectValue(katSel, a.kat);
@@ -18155,7 +18169,7 @@ function angebotZuRechnung() {
   _pendingKostenKat = a.kat || '';
   document.getElementById('k-beschr').value  = a.beschr;
   document.getElementById('k-anbieter').value = a.anbieter;
-  document.getElementById('k-betrag').value  = a.betrag;
+  document.getElementById('k-betrag').value  = _betragText(a.betrag);
   document.getElementById('k-datum').value   = today();
   openModal('modal-kosten');
   showToast('💡 Angebot in Rechnung umgewandelt – bitte prüfen & speichern', 'success');
@@ -18376,7 +18390,7 @@ async function scanAngKI() {
     // Betrag ueber _parseBetrag: die KI liefert ihn oft als Text im deutschen Format.
     // Ungeparst wurde "12.345,00" zu einem leeren Feld (0 €) und "15.000" zu 15 €.
     const _b = _parseBetrag(ex.betrag);
-    document.getElementById('ang-ki-betrag').value   = _b > 0 ? _b : '';
+    document.getElementById('ang-ki-betrag').value   = _b > 0 ? _betragText(_b) : '';
     document.getElementById('ang-ki-datum').value    = ex.datum    || '';
     document.getElementById('ang-ki-gueltig').value  = ex.gueltig  || '';
     document.getElementById('ang-ki-notiz').value    = ex.notiz    || '';
@@ -18816,7 +18830,7 @@ function saveZahlung() {
     kat:           document.getElementById('zp-kat').value,
     anbieter:      document.getElementById('zp-anbieter').value,
     faellig:       document.getElementById('zp-faellig').value,
-    betrag:        parseFloat(document.getElementById('zp-betrag').value) || 0,
+    betrag:        _betragFeld('zp-betrag') || 0,
     status:        document.getElementById('zp-status').value,
     bezahltDatum:  document.getElementById('zp-bezahlt-datum').value,
     notiz:         document.getElementById('zp-notiz').value
@@ -18839,7 +18853,7 @@ function editZahlung(id) {
   document.getElementById('zp-beschr').value        = z.beschr       || '';
   document.getElementById('zp-anbieter').value      = z.anbieter     || '';
   document.getElementById('zp-faellig').value       = z.faellig      || '';
-  document.getElementById('zp-betrag').value        = z.betrag       || '';
+  document.getElementById('zp-betrag').value        = _betragText(z.betrag       || '');
   document.getElementById('zp-bezahlt-datum').value = z.bezahltDatum || '';
   document.getElementById('zp-notiz').value         = z.notiz        || '';
   const katSel = document.getElementById('zp-kat');

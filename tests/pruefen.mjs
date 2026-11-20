@@ -433,6 +433,18 @@ for (const [label, src] of [['Web', web], ['App', app]]) {
     if (/\bawait\b/.test(davor)) return 'vor dem Einbuchen wird gewartet (Ausgabe erscheint erst nach dem Upload)';
     if (!f.includes('_belegVormerken(')) return 'Beleg wird nicht vorgemerkt (geht verloren, wenn die App gleich geschlossen wird)';
   });
+  check(`${label}: Geldbeträge sind Textfelder und werden über _parseBetrag gelesen („18.359,56“ ≠ 18,36 €)`, () => {
+    const felder = ['ob-budget-total', 'k-netto-input', 'k-betrag', 'scan-netto', 'scan-brutto', 'bk-budget', 'ang-betrag', 'ang-ki-betrag', 'zp-betrag', 'wt-kosten'];
+    const f = [];
+    for (const id of felder) {
+      const m = src.match(new RegExp('<input[^>]*id="' + id + '"[^>]*>'));
+      if (!m) { f.push(id + ' fehlt'); continue; }
+      if (!/type="text"/.test(m[0]) || !/inputmode="decimal"/.test(m[0])) f.push(id + ' ist kein Textfeld mit Dezimal-Tastatur');
+      if (new RegExp("parseFloat\\(document\\.getElementById\\('" + id + "'\\)").test(src)) f.push(id + ' wird mit parseFloat gelesen');
+    }
+    if (!src.includes('function _betragFeld(') || !src.includes('function _betragText(')) f.push('Helfer _betragFeld/_betragText fehlen');
+    return f.length ? f.join(', ') : true;
+  });
   check(`${label}: Doppelte Rechnung – Rückfrage beim Scan und bei neuer Ausgabe, nicht beim Bearbeiten`, () => {
     const sc = extractFn(src, 'confirmRechnungScan'), sk = extractFn(src, 'saveKosten');
     if (!sc || !sk) return 'confirmRechnungScan/saveKosten nicht gefunden';

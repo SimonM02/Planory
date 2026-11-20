@@ -350,7 +350,7 @@ await scenario('E1: Scan – KI liefert "4.160,00" als Text → Betrag 4160 übe
       text: 'Hier das Ergebnis:\n{"beschreibung":"Fenster","anbieter":"Fa. X","datum":"2026-10-01","netto":"3.466,67","mwst_prozent":20,"brutto":"4.160,00","kategorie":"Rohbau","skonto_prozent":0,"skonto_bis":null}' }] }) });
     if (r.fehler) return 'Fehlermeldung statt Ergebnis: ' + r.fehler;
     if (Math.abs(parseFloat(r.brutto) - 4160) > 0.001) return `Brutto-Feld = "${r.brutto}" statt 4160`;
-    if (Math.abs(parseFloat(r.netto) - 3466.67) > 0.001) return `Netto-Feld = "${r.netto}" statt 3466.67`;
+    if (Math.abs(parseFloat(String(r.netto).replace(",", ".")) - 3466.67) > 0.001) return `Netto-Feld = "${r.netto}" statt 3466.67`;
     return '';
   } finally { await ctx.close(); }
 });
