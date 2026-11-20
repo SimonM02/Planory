@@ -8654,6 +8654,7 @@ async function doLogout() {
   localStorage.removeItem('bauplan_projects');
   localStorage.removeItem('bauplan_current');
   localStorage.removeItem('bauplan_data');
+  localStorage.removeItem('planory_ki_hinweis');   // KI-Zustimmung gilt je Konto (steht im Konto)
   // Reset sidebar email
   const emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = 'v3.0 · Planory';
@@ -15504,16 +15505,31 @@ function escapeHtml(s) {
 const esc = escapeHtml;
 
 // Header für KI-Aufrufe inkl. Login-Token (der Server prüft/deckelt darüber).
-// Vor der ersten KI-Nutzung (Scan, Bauberater, KI-Zeitplan) einmal pro Gerät transparent machen,
-// dass die Inhalte an den KI-Dienstleister Anthropic (USA) gehen (DSGVO-Transparenz).
+// Vor der ersten KI-Nutzung (Scan, Bauberater, KI-Zeitplan …) einmal pro Konto transparent machen,
+// dass die Inhalte von einem externen KI-Dienst verarbeitet werden (DSGVO-Transparenz, Apple 5.1.2).
 async function _kiHinweis() {
+  // Einmal pro KONTO (nicht pro Geraet): Geraetespeicher, sonst Konto-Merker user_metadata.kiHinweis.
+  // Apple verlangt die einmalige Zustimmung vor der Weitergabe an eine externe KI (5.1.2) – der Anbieter
+  // (Anthropic, USA) steht in der Datenschutzerklaerung.
   try { if (localStorage.getItem('planory_ki_hinweis')) return true; } catch (e) {}
+  const merken = () => { try { localStorage.setItem('planory_ki_hinweis', '1'); } catch (e) {} };
+  if (!_demoMode && currentUser) {
+    let meta = currentUser.user_metadata;
+    if (!meta?.kiHinweis) { try { const { data } = await supa.auth.getUser(); meta = data?.user?.user_metadata || meta; } catch (e) {} }
+    if (meta?.kiHinweis) { merken(); return true; }
+  }
   const en = (_lang === 'en');
   const ok = await showConfirm(en
-    ? 'For this feature the content (e.g. the photo of the invoice or your project details) is sent to our AI service provider Anthropic (USA) and processed there only for this analysis – it is not used to train the AI. Details in the privacy policy.'
-    : 'Für diese Funktion wird der Inhalt (z. B. das Foto der Rechnung oder deine Projektangaben) an unseren KI-Dienstleister Anthropic (USA) übermittelt und dort nur für diese Auswertung verarbeitet – nicht zum Trainieren der KI. Details in der Datenschutzerklärung.',
-    { title: en ? 'About the AI' : 'Hinweis zur KI', okText: en ? 'Got it' : 'Verstanden', danger: false });
-  if (ok) { try { localStorage.setItem('planory_ki_hinweis', '1'); } catch (e) {} }
+    ? 'Your content (e.g. photos) is briefly processed by an AI service for this – not for training.'
+    : 'Deine Inhalte (z. B. Fotos) werden dafür kurz von einem KI-Dienst verarbeitet – nicht zum Trainieren.',
+    { title: en ? 'Quick note' : 'Kurzer Hinweis', okText: 'OK', danger: false });
+  if (ok) {
+    merken();
+    if (!_demoMode && currentUser) {
+      try { supa.auth.updateUser({ data: { kiHinweis: true } }).catch(() => {}); } catch (e) {}
+      try { currentUser.user_metadata = { ...(currentUser.user_metadata || {}), kiHinweis: true }; } catch (e) {}
+    }
+  }
   return !!ok;
 }
 async function _kiHeaders() {

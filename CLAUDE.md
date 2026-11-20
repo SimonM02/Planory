@@ -9,6 +9,7 @@ So effizient, vollständig und korrekt wie möglich arbeiten:
 - Nur nachfragen, wenn die Entscheidung wirklich dem Nutzer gehört.
 - Bei Dingen, bei denen du dich nicht sicher auskennst: **nicht einfach machen, vorher fragen.**
 - Antworten an Simon auf Deutsch, einfach und nicht technisch.
+- Am Ende jeder Aufgabe eine **kurze Zusammenfassung** zum schnellen Überblick: **✅ Erledigt · 👉 Deine Schritte · ⏳ Offen**.
 
 ## Projekt-Fakten (Kurz)
 - Ein-Datei-App: `index.html` == `www/index.html` (byte-identisch halten; `cmp` + `node tests/pruefen.mjs`).

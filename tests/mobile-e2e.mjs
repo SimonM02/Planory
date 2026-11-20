@@ -2895,7 +2895,7 @@ await scenario('Web-Erinnerungen: Planung wird mit dem gültigen Schlüssel an S
   return r.n === 2 && !r.falsch.length ? '' : `${r.n} Aufrufe, mit falschem Schlüssel/Adresse: ${r.falsch.join(', ') || '-'}`;
 });
 
-await scenario('KI-Hinweis (Anthropic, USA): vor der ersten KI-Nutzung genau einmal, Abbrechen schickt nichts an die KI', async () => {
+await scenario('KI-Hinweis (kurz, ohne Anbieter): vor der ersten KI-Nutzung genau einmal, Abbrechen schickt nichts an die KI', async () => {
   const d = await boot();
   try {
     const r = await d.page.evaluate(async () => {
@@ -2924,7 +2924,7 @@ await scenario('KI-Hinweis (Anthropic, USA): vor der ersten KI-Nutzung genau ein
     if (r.nachAbbruch.fragen !== 1 || r.nachAbbruch.kiAufrufe !== 0 || r.nachAbbruch.lauf !== r.lauf0 || r.nachAbbruch.gemerkt) f.push('Abbrechen: ' + JSON.stringify(r.nachAbbruch));
     if (r.nachOk.fragen !== 2 || r.nachOk.lauf !== r.lauf0 + 1 || !r.nachOk.gemerkt) f.push('Verstanden: ' + JSON.stringify(r.nachOk));
     if (r.ende.fragen !== 2) f.push('fragt nach dem OK nochmal');
-    if (!/Anthropic \(USA\)/.test(r.text || '') || !/nicht zum Trainieren/.test(r.text || '')) f.push('Text: ' + r.text);
+    if (!/KI-Dienst/.test(r.text || '') || !/nicht zum Trainieren/.test(r.text || '') || /Anthropic/.test(r.text || '')) f.push('Text: ' + r.text);
     return f.join(' · ');
   } finally { await d.ctx.close(); }
 });
@@ -3848,6 +3848,48 @@ await scenario('Beträge mit Tausenderpunkt: „18.359,56“ und „3.200“ wer
     if (r.bk !== 3200) f.push('Budget ' + r.bk);
     if (r.zp !== 1234.56) f.push('Zahlung ' + r.zp);
     if (r.zahlenfelder.length) f.push('noch Zahlenfeld: ' + r.zahlenfelder.join(','));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
+await scenario('KI-Hinweis gilt je Konto: nach OK im Konto gemerkt, anderes Gerät fragt nicht, andere KI-Funktion fragt nicht, Abmelden vergisst ihn am Gerät', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      const aus = {}; let fragen = 0, updates = [];
+      const altDemo = _demoMode, altUser = currentUser, altConfirm = window.showConfirm, altUpd = supa.auth.updateUser, altGet = supa.auth.getUser;
+      window.showConfirm = async () => { fragen++; return true; };
+      supa.auth.updateUser = async x => { updates.push(x); return { data: {}, error: null }; };
+      try {
+        _demoMode = false;
+        // 1) neues Konto, leeres Gerät: fragt einmal, merkt im Konto
+        localStorage.removeItem('planory_ki_hinweis');
+        currentUser = { id: 'u-ki', user_metadata: {} };
+        supa.auth.getUser = async () => ({ data: { user: { user_metadata: {} } } });
+        aus.erst = await _kiHinweis(); aus.f1 = fragen; aus.upd = JSON.stringify(updates[0] || null);
+        aus.zweit = await _kiHinweis(); aus.f2 = fragen;           // andere KI-Funktion: keine Frage
+        // 2) anderes Gerät (leer), Konto hat den Merker -> keine Frage
+        localStorage.removeItem('planory_ki_hinweis');
+        currentUser = { id: 'u-ki', user_metadata: { kiHinweis: true } };
+        aus.geraet2 = await _kiHinweis(); aus.f3 = fragen;
+        // 3) Konto-Merker nur auf dem Server (Sitzung alt) -> getUser liefert ihn
+        localStorage.removeItem('planory_ki_hinweis');
+        currentUser = { id: 'u-ki', user_metadata: {} };
+        supa.auth.getUser = async () => ({ data: { user: { user_metadata: { kiHinweis: true } } } });
+        aus.server = await _kiHinweis(); aus.f4 = fragen;
+      } finally { _demoMode = altDemo; currentUser = altUser; window.showConfirm = altConfirm; supa.auth.updateUser = altUpd; supa.auth.getUser = altGet; }
+      aus.logout = /removeItem\('planory_ki_hinweis'\)/.test(doLogout.toString());
+      return aus;
+    });
+    const f = [];
+    if (!r.erst || r.f1 !== 1) f.push('erste Frage: ' + r.f1);
+    if (r.upd !== JSON.stringify({ data: { kiHinweis: true } })) f.push('nicht im Konto gemerkt: ' + r.upd);
+    if (!r.zweit || r.f2 !== 1) f.push('fragt bei anderer KI-Funktion nochmal');
+    if (!r.geraet2 || r.f3 !== 1) f.push('fragt auf anderem Gerät nochmal');
+    if (!r.server || r.f4 !== 1) f.push('Konto-Merker vom Server nicht beachtet');
+    if (!r.logout) f.push('Abmelden lässt die Zustimmung am Gerät stehen');
     if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
     return f.join(' · ');
   } finally { await d.ctx.close(); }
