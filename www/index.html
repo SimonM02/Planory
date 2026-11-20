@@ -8902,8 +8902,8 @@ function _widgetWarte(n = 0) {
 function _istAndroid() {
   try { return isNativeApp() && window.Capacitor.getPlatform() === 'android'; } catch (e) { return false; }
 }
-async function _androidZurueck() {
-  const App = window.Capacitor?.Plugins?.App;
+// Oberste Ansicht schliessen (Esc am Computer, Zurueck-Taste bei Android). null = nichts offen.
+async function _obersteSchliessen() {
   const lb = document.getElementById('lightbox');
   if (lb && lb.classList.contains('open')) { closeLightbox(); return 'foto'; }
   const offen = document.querySelectorAll('.modal-overlay.open:not(.closing)');
@@ -8911,6 +8911,12 @@ async function _androidZurueck() {
   if (offen.length) { await _fensterVerlassen(); return 'fenster'; }
   const sb = document.querySelector('.sidebar');
   if (sb && sb.classList.contains('mobile-open')) { closeMobileSidebar(); return 'menue'; }
+  return null;
+}
+async function _androidZurueck() {
+  const App = window.Capacitor?.Plugins?.App;
+  const zu = await _obersteSchliessen();
+  if (zu) return zu;
   const amLogin = !!(document.getElementById('auth-overlay') && getComputedStyle(document.getElementById('auth-overlay')).display !== 'none');
   const abo = document.getElementById('probeabo-overlay')?.classList.contains('open');   // Abo-Sperre nie wegtippen
   const dash = document.getElementById('page-dashboard');
@@ -8920,6 +8926,43 @@ async function _androidZurueck() {
   try { await App?.minimizeApp?.(); } catch (e) {}
   return 'hintergrund';
 }
+// ─── Tastatur wie bei normalen Programmen ────────────────────────────────────
+// Esc: oberste Ansicht schliessen (Foto, Rueckfrage = Abbrechen, Fenster – bei Eingaben wird gefragt, Menue).
+// Enter in einem einzeiligen Feld eines Fensters: dessen Haupt-Knopf (Speichern …) – aber nur, wenn es GENAU
+// einen sichtbaren gibt und das Feld kein eigenes Enter hat. Rueckfrage: Enter = OK (nicht bei Loeschen & Co.).
+function _enterZiel(feld) {
+  if (!feld || feld.tagName !== 'INPUT') return null;
+  if (/^(checkbox|radio|file|button|submit|reset|range|color|hidden)$/i.test(feld.type)) return null;
+  if (/Enter/.test(feld.getAttribute('onkeydown') || '')) return null;   // Feld regelt Enter selbst
+  const m = feld.closest('.modal-overlay.open:not(.closing)');
+  if (!m || m.id === 'modal-app-confirm' || m.id === 'modal-paywall') return null;
+  const knoepfe = [...m.querySelectorAll('.btn-primary')].filter(b => b.offsetParent !== null && !b.disabled);
+  return knoepfe.length === 1 ? knoepfe[0] : null;
+}
+document.addEventListener('keydown', e => {
+  if (e.defaultPrevented || e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === 'Escape') {
+    const offen = document.querySelector('.lightbox.open, .modal-overlay.open:not(.closing)')
+      || document.querySelector('.sidebar.mobile-open');
+    if (!offen) return;
+    e.preventDefault();
+    _obersteSchliessen();
+    return;
+  }
+  if (e.key !== 'Enter' || e.shiftKey) return;
+  const ac = document.getElementById('modal-app-confirm');
+  if (ac && ac.classList.contains('open') && !ac.classList.contains('closing')) {
+    if (e.target && e.target.id === 'ac-input') return;                 // Eingabe-Rueckfrage hat eigenes Enter
+    if (e.target && e.target.tagName === 'BUTTON') return;              // fokussierter Knopf: Browser klickt ihn
+    if (document.getElementById('ac-ok-btn')?.classList.contains('btn-danger')) return;   // Loeschen nur per Klick
+    e.preventDefault(); _acResolve(true); return;
+  }
+  const ziel = _enterZiel(e.target);
+  if (!ziel) return;
+  e.preventDefault();
+  ziel.click();
+});
+
 (function _androidZurueckStart() {
   if (!_istAndroid()) return;
   try { window.Capacitor?.Plugins?.App?.addListener?.('backButton', () => { _androidZurueck(); }); } catch (e) {}

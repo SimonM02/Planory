@@ -3896,6 +3896,82 @@ await scenario('KI-Hinweis gilt je Konto: nach OK im Konto gemerkt, anderes Ger�
 });
 
 
+await scenario('Tastatur: Esc schließt Fenster/Foto/Menü (bei Eingaben mit Rückfrage), Enter speichert, Enter bestätigt Rückfrage (nicht beim Löschen/Verwerfen)', async () => {
+  const d = await boot({ viewport: { width: 1280, height: 860 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
+  try {
+    const p = d.page, aus = {};
+    const offen = id => p.evaluate(id => { const m = document.getElementById(id); return !!m && m.classList.contains('open') && !m.classList.contains('closing'); }, id);
+    await p.evaluate(() => { window.showConfirm = window.__echtesConfirm || window.showConfirm; window.__doppeltAuto = false; });
+    // 1) Enter im Betragsfeld der Budget-Kategorie (Feld hat eigenes Enter) und in der Notiz (globales Enter)
+    await p.evaluate(() => { showPage('notizen'); openModal('modal-notiz'); });
+    await p.waitForTimeout(250);
+    const notizFeld = await p.evaluate(() => { const f = [...document.querySelectorAll('#modal-notiz input')].find(x => x.offsetParent !== null && x.type === 'text'); if (f) { f.id = f.id || 'tmp-notiz-feld'; } return f && f.id; });
+    const vorher = await p.evaluate(() => (state.notizen || []).length);
+    await p.fill('#' + notizFeld, 'Enter-Test Notiz');
+    await p.press('#' + notizFeld, 'Enter');
+    await p.waitForTimeout(350);
+    aus.notizNeu = (await p.evaluate(() => (state.notizen || []).length)) - vorher;
+    aus.notizZu = !(await offen('modal-notiz'));
+    // 2) Esc schließt leeres Fenster
+    await p.evaluate(() => openModal('modal-kontakt')); await p.waitForTimeout(250);
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    aus.escLeer = !(await offen('modal-kontakt'));
+    // 3) Esc mit Eingabe -> Rückfrage; Esc auf Rückfrage = Abbrechen -> Fenster bleibt; Enter auf Rückfrage = Verwerfen
+    await p.evaluate(() => openModal('modal-kontakt')); await p.waitForTimeout(250);
+    const kFeld = await p.evaluate(() => { const f = [...document.querySelectorAll('#modal-kontakt input')].find(x => x.offsetParent !== null && x.type !== 'hidden'); f.id = f.id || 'tmp-k'; return f.id; });
+    await p.type('#' + kFeld, 'Max');
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    aus.frage = await offen('modal-app-confirm');
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    aus.bleibt = (await offen('modal-kontakt')) && !(await offen('modal-app-confirm'));
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    await p.keyboard.press('Enter'); await p.waitForTimeout(300);          // „Verwerfen“ ist rot -> Enter tut nichts
+    aus.enterVerwirftNicht = (await offen('modal-app-confirm')) && (await offen('modal-kontakt'));
+    await p.click('#ac-ok-btn'); await p.waitForTimeout(400);
+    aus.verworfen = !(await offen('modal-kontakt')) && !(await offen('modal-app-confirm'));
+    // 4) Lösch-Rückfrage: Enter löscht NICHT
+    const r = await p.evaluate(async () => {
+      const pr = showConfirm('Wirklich löschen?', { okText: 'Löschen' });
+      await new Promise(res => setTimeout(res, 250));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await new Promise(res => setTimeout(res, 100));
+      const nochOffen = document.getElementById('modal-app-confirm').classList.contains('open');
+      _acResolve(false); await pr;
+      return nochOffen;
+    });
+    aus.loeschenBleibt = r;
+    aus.okPerEnter = await p.evaluate(async () => {
+      const pr = showConfirm('Weiter?', { okText: 'OK', danger: false });
+      await new Promise(res => setTimeout(res, 250));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return await Promise.race([pr, new Promise(res => setTimeout(() => res('haengt'), 500))]);
+    });
+    // 5) Foto-Ansicht und Menü
+    await p.evaluate(() => document.getElementById('lightbox').classList.add('open'));
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    aus.fotoZu = await p.evaluate(() => !document.getElementById('lightbox').classList.contains('open'));
+    await p.evaluate(() => { document.querySelector('.sidebar').classList.add('mobile-open'); });
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    aus.menueZu = await p.evaluate(() => !document.querySelector('.sidebar').classList.contains('mobile-open'));
+    // 6) Enter in einem Feld außerhalb eines Fensters macht nichts Unerwartetes
+    aus.fehler = d.errors.slice(0, 2);
+    const f = [];
+    if (aus.notizNeu !== 1 || !aus.notizZu) f.push('Enter speichert Notiz nicht: ' + aus.notizNeu + '/' + aus.notizZu);
+    if (!aus.escLeer) f.push('Esc schließt leeres Fenster nicht');
+    if (!aus.frage) f.push('Esc mit Eingaben fragt nicht nach');
+    if (!aus.bleibt) f.push('Esc auf Rückfrage schließt das Fenster');
+    if (!aus.enterVerwirftNicht) f.push('Enter verwirft Eingaben ohne Klick');
+    if (!aus.verworfen) f.push('Verwerfen per Klick schließt nicht');
+    if (!aus.loeschenBleibt) f.push('Enter löscht ohne Klick');
+    if (aus.okPerEnter !== true) f.push('Enter bestätigt normale Rückfrage nicht: ' + aus.okPerEnter);
+    if (!aus.fotoZu) f.push('Esc schließt Foto nicht');
+    if (!aus.menueZu) f.push('Esc schließt Menü nicht');
+    if (aus.fehler.length) f.push('JS-Fehler: ' + aus.fehler[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
