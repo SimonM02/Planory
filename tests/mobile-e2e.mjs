@@ -3972,6 +3972,105 @@ await scenario('Tastatur: Esc schließt Fenster/Foto/Menü (bei Eingaben mit Rü
 });
 
 
+await scenario('Rückgängig nach Löschen: Ausgabe samt verknüpftem Scan zurück, Grabstein weg, geleerte Zuordnung zurück, Balken verschwindet', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      const aus = {}, w = ms => new Promise(res => setTimeout(res, ms));
+      window.showConfirm = async () => true;
+      const k = { id: 4242001, datum: '2026-11-01', beschr: 'Rückgängig-Test Fenster', kat: state.budgetKat[0].name, betrag: 4321.5, bezahltVon: 'Kredit' };
+      state.kosten.push(k); state.gescannteRechnungen = state.gescannteRechnungen || [];
+      state.gescannteRechnungen.push({ id: 4242002, kostenId: 4242001, anbieter: 'Test', betrag: 4321.5 });
+      save();
+      await deleteKosten(4242001);
+      aus.weg = !state.kosten.some(x => x.id === 4242001) && !!(state._deletedIds || {})['4242001'];
+      const b = document.getElementById('rg-balken'); aus.balken = !!b; aus.text = b && b.textContent;
+      document.getElementById('rg-knopf').click(); await w(50);
+      const zurueck = state.kosten.find(x => x.id === 4242001);
+      aus.zurueck = !!zurueck && zurueck.beschr === 'Rückgängig-Test Fenster' && zurueck.betrag === 4321.5;
+      aus.scan = state.gescannteRechnungen.some(x => x.id === 4242002);
+      aus.grab = !(state._deletedIds || {})['4242001'] && !(state._deletedIds || {})['4242002'];
+      aus.stempel = (zurueck && zurueck._updatedAt) > Date.now() - 5000;
+      aus.balkenWeg = !document.getElementById('rg-balken');
+      // Person löschen leert Zuordnungen -> Rückgängig stellt sie wieder her
+      await deleteZahlungsPerson(1);   // „Kredit“
+      aus.leer = (state.kosten.find(x => x.id === 4242001) || {}).bezahltVon === '';
+      document.getElementById('rg-knopf').click(); await w(50);
+      aus.person = state.zahlungspersonen.some(p => String(p.id) === '1');
+      aus.zuordnung = (state.kosten.find(x => x.id === 4242001) || {}).bezahltVon === 'Kredit';
+      return aus;
+    });
+    const f = [];
+    if (!r.weg) f.push('nicht gelöscht/kein Grabstein');
+    if (!r.balken || !/Rückgängig/.test(r.text || '') || !/gelöscht/i.test(r.text || '')) f.push('Balken: ' + r.text);
+    if (!r.zurueck) f.push('Ausgabe nicht zurück');
+    if (!r.scan) f.push('verknüpfter Scan nicht zurück');
+    if (!r.grab) f.push('Grabsteine bleiben (Cloud würde wieder löschen)');
+    if (!r.stempel) f.push('kein frischer Zeitstempel');
+    if (!r.balkenWeg) f.push('Balken bleibt');
+    if (!r.leer) f.push('Person-Löschen leert Zuordnung nicht (Test-Annahme)');
+    if (!r.person || !r.zuordnung) f.push('Person/Zuordnung nicht zurück');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('Suche über alles: Strg+K öffnet, findet nach Wort und Betrag, Enter öffnet den Eintrag; Cursor im 1. Feld nur am Computer; Warnung beim Schließen mit Eingaben', async () => {
+  const d = await boot({ viewport: { width: 1280, height: 860 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
+  try {
+    const p = d.page, aus = {};
+    await p.evaluate(() => { state.kosten.push({ id: 5151001, datum: '2026-11-02', beschr: 'Garagentor Sektional', anbieter: 'Bavaria Toranlagen', kat: state.budgetKat[0].name, betrag: 20000.81 }); save(); });
+    await p.keyboard.press('Control+k'); await p.waitForTimeout(250);
+    aus.offen = await p.evaluate(() => document.getElementById('modal-suche').classList.contains('open') && document.activeElement?.id === 'suche-feld');
+    await p.keyboard.type('bavaria'); await p.waitForTimeout(100);
+    aus.wort = await p.evaluate(() => (window._sucheListe || []).map(x => x.titel));
+    await p.fill('#suche-feld', '20.000,81'); await p.waitForTimeout(100);
+    aus.betrag = await p.evaluate(() => (window._sucheListe || []).some(x => x.id === 5151001));
+    await p.press('#suche-feld', 'Enter'); await p.waitForTimeout(600);
+    aus.geoeffnet = await p.evaluate(() => document.getElementById('modal-kosten').classList.contains('open') && document.getElementById('k-beschr').value);
+    aus.seite = await p.evaluate(() => document.getElementById('page-kosten').classList.contains('active'));
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    // Cursor im ersten Feld (Computer)
+    await p.evaluate(() => { document.getElementById('k-edit-id').value = ''; openModal('modal-notiz'); });
+    await p.waitForTimeout(300);
+    aus.fokus = await p.evaluate(() => { const a = document.activeElement; return !!a && document.getElementById('modal-notiz').contains(a) && /INPUT|TEXTAREA/.test(a.tagName); });
+    // Warnung beim Schließen: mit Eingaben ja, ohne nein
+    aus.ohne = await p.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; });
+    await p.keyboard.type('x');
+    aus.mit = await p.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; });
+    const f = [];
+    if (!aus.offen) f.push('Strg+K öffnet die Suche nicht (oder kein Cursor im Feld)');
+    if (!aus.wort.some(t => /Garagentor/.test(t))) f.push('Wortsuche: ' + JSON.stringify(aus.wort));
+    if (!aus.betrag) f.push('Betragssuche findet nichts');
+    if (aus.geoeffnet !== 'Garagentor Sektional' || !aus.seite) f.push('Enter öffnet Eintrag nicht: ' + aus.geoeffnet);
+    if (!aus.fokus) f.push('kein Cursor im ersten Feld');
+    if (aus.ohne) f.push('warnt ohne Eingaben');
+    if (!aus.mit) f.push('warnt nicht trotz Eingaben');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+await scenario('Handy: kein automatischer Cursor (Tastatur springt nicht auf), Suche über 🔍 oben erreichbar', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      openModal('modal-notiz'); await new Promise(res => setTimeout(res, 300));
+      const a = document.activeElement;
+      const fokus = !!a && document.getElementById('modal-notiz').contains(a) && /INPUT|TEXTAREA/.test(a.tagName);
+      closeModal('modal-notiz');
+      const knopf = [...document.querySelectorAll('#mobile-topbar button')].find(b => b.textContent.includes('🔍'));
+      return { fokus, knopf: !!knopf && knopf.offsetParent !== null };
+    });
+    const f = [];
+    if (r.fokus) f.push('Handy bekommt automatischen Cursor');
+    if (!r.knopf) f.push('kein sichtbarer 🔍-Knopf oben');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();

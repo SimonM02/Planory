@@ -725,6 +725,45 @@ await scenario('E16: Eigenleistung → einmalig Ausgabe „nicht im Budget" (Clo
   } finally { await ctx.close(); }
 });
 
+// E20) Rückgängig nach dem Löschen: die Ausgabe (samt verknüpftem Scan) ist danach wieder in der Cloud, ohne
+//      Grabstein im Projekt-Block, und bleibt auch nach einem Neustart da.
+await scenario('E20: Rückgängig nach Löschen bringt die Ausgabe in die Cloud zurück und sie bleibt nach dem Neustart', async () => {
+  const { ctx, page } = await boot(browser, { read: 200, rtDelay: 99999, persist: true });
+  const cloud = () => page.evaluate(() => ({
+    k: window.__fakeDb.projekt_items.some(r => r.item_type === 'kosten' && String(r.payload.id) === '982020'),
+    s: window.__fakeDb.projekt_items.some(r => r.item_type === 'gescannteRechnungen' && String(r.payload.id) === '982021'),
+    grab: JSON.stringify(window.__fakeDb.projektdaten || '').includes('"982020"') }));
+  try {
+    await waitFor(page, BEREIT);
+    await page.evaluate(() => {
+      window.showConfirm = async () => true;
+      state.kosten.push({ id: 982020, datum: '2026-11-03', beschr: 'E20 Rückgängig', kat: 'Rohbau', betrag: 777, _updatedAt: Date.now() });
+      state.gescannteRechnungen = state.gescannteRechnungen || [];
+      state.gescannteRechnungen.push({ id: 982021, kostenId: 982020, anbieter: 'E20', betrag: 777, _updatedAt: Date.now() });
+      save();
+    });
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => String(r.payload.id) === '982020'), null, 10000);
+    await page.evaluate(async () => { await deleteKosten(982020); });
+    await waitFor(page, () => !window.__fakeDb.projekt_items.some(r => String(r.payload.id) === '982020'), null, 10000);
+    await page.evaluate(() => document.getElementById('rg-knopf').click());
+    await waitFor(page, () => window.__fakeDb.projekt_items.some(r => String(r.payload.id) === '982020'), null, 10000);
+    await settle(page, 2500);
+    const p = [];
+    const c1 = await cloud();
+    if (!c1.k || !c1.s) p.push('nach Rückgängig nicht in der Cloud: ' + JSON.stringify(c1));
+    if (c1.grab) p.push('Grabstein steht noch im Projekt-Block');
+    await waitFor(page, () => (sessionStorage.getItem('__fakeDbState') || '').includes('982020'), null, 5000);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitFor(page, BEREIT);
+    await settle(page, 3000);
+    const lokal = await page.evaluate(() => ({ k: state.kosten.filter(k => String(k.id) === '982020').length, s: (state.gescannteRechnungen || []).filter(r => String(r.id) === '982021').length }));
+    if (lokal.k !== 1 || lokal.s !== 1) p.push('nach Neustart: ' + JSON.stringify(lokal));
+    const c2 = await cloud();
+    if (!c2.k || !c2.s) p.push('nach Neustart aus der Cloud verschwunden');
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 // E17) Aufgaben-Kategorie + Unteraufgabe landen als eigene Zeilen in der Cloud, sind nach dem
 //      Neustart wieder da; eine geloeschte Kategorie kommt nicht zurueck.
 await scenario('E17: Aufgaben-Kategorie und Unteraufgabe überleben den Neustart, gelöschte Kategorie bleibt weg', async () => {

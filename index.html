@@ -3051,6 +3051,7 @@
 <div id="mobile-topbar" style="display:none">
   <button onclick="toggleMobileSidebar()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text2);padding:4px;flex-shrink:0;line-height:1">☰</button>
   <span id="mobile-topbar-title">Planory</span>
+  <button onclick="openSuche()" aria-label="Suchen" title="Suchen" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--text2);padding:4px 6px;flex-shrink:0;line-height:1">🔍</button>
 </div>
 <button id="sidebar-show-btn" onclick="toggleSidebar()" title="Menü einblenden">☰</button>
 <div class="sidebar">
@@ -3067,6 +3068,9 @@
   </div>
   <div id="sync-status" style="padding:2px 16px 3px;font-size:0.67rem;min-height:18px;border-bottom:1px solid var(--border)"></div>
   <nav>
+    <div class="nav-item" id="nav-suche" onclick="openSuche()">
+      <span class="icon">🔍</span><span data-i18n="nav_suche">Suchen</span><span class="suche-kbd" style="margin-left:auto;font-size:0.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace">Strg K</span>
+    </div>
     <div class="nav-section" data-i18n="sec_uebersicht">Übersicht</div>
     <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
       <span class="icon">🏗️</span><span data-i18n="nav_dashboard">Dashboard</span>
@@ -5213,6 +5217,66 @@ function _trackDeletion(id, type = '') {
   }
 }
 
+// ─── „Rückgängig“ nach dem Löschen ────────────────────────────────────────────
+// Vor dem Löschen den Stand aller Listen merken; danach 8 s lang „Rückgängig“ anbieten. Wiederherstellen setzt
+// fehlende UND veränderte Einträge (z. B. geleerte Zuordnungen) zurück, entfernt die neuen Grabsteine und
+// speichert mit frischem Zeitstempel – so lädt die Cloud sie wieder hoch und andere Geräte bekommen sie zurück.
+// Nicht für Löschungen, die Dateien aus dem Speicher entfernen (Fotos, Dokumente, Angebote mit Anhang).
+let _rgLaeuft = false, _rgText = '', _rgBalkenT = null;
+function _rueckgaengigStart() {
+  _rgLaeuft = true; _rgText = '';
+  const snap = {};
+  ITEM_TYPES.forEach(t => { if (Array.isArray(state[t])) snap[t] = JSON.parse(JSON.stringify(state[t])); });
+  return { pid: String(currentProjectId), snap, del: new Set(Object.keys(state._deletedIds || {})) };
+}
+function _rueckgaengigAnbieten(rg) {
+  _rgLaeuft = false;
+  const text = _rgText || (_lang === 'en' ? '🗑 Deleted' : '🗑 Gelöscht');
+  _rgText = '';
+  document.getElementById('rg-balken')?.remove();
+  clearTimeout(_rgBalkenT);
+  const b = document.createElement('div');
+  b.id = 'rg-balken';
+  b.setAttribute('role', 'status');
+  b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:10085;display:flex;align-items:center;gap:14px;background:#1f2533;color:#fff;padding:10px 12px 10px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:600;font-size:0.875rem;max-width:calc(100vw - 32px)';
+  const t = document.createElement('span'); t.textContent = text;
+  const k = document.createElement('button');
+  k.type = 'button'; k.id = 'rg-knopf';
+  k.textContent = _lang === 'en' ? 'Undo' : 'Rückgängig';
+  k.style.cssText = 'background:none;border:none;color:#ff9f1c;font-weight:800;font-size:0.875rem;cursor:pointer;padding:6px 8px;font-family:inherit';
+  k.onclick = () => { b.remove(); clearTimeout(_rgBalkenT); _rueckgaengigAusfuehren(rg); };
+  b.append(t, k);
+  document.body.appendChild(b);
+  _rgBalkenT = setTimeout(() => b.remove(), 8000);
+}
+function _rueckgaengigAusfuehren(rg) {
+  if (!rg || String(currentProjectId) !== rg.pid) { showToast(_lang === 'en' ? 'Undo not possible here' : 'Rückgängig hier nicht möglich', 'warning'); return; }
+  const ohneZeit = o => JSON.stringify({ ...o, _updatedAt: 0 });
+  const jetzt = Date.now();
+  let n = 0;
+  for (const [typ, alt] of Object.entries(rg.snap)) {
+    const akt = Array.isArray(state[typ]) ? state[typ] : [];
+    const nachId = new Map(akt.map(x => [String(x && x.id), x]));
+    const neu = [];
+    for (const a of alt) {
+      const id = String(a && a.id);
+      const jetzt_ = nachId.get(id);
+      if (!jetzt_ || ohneZeit(jetzt_) !== ohneZeit(a)) { neu.push({ ...a, _updatedAt: jetzt }); n++; }
+      else neu.push(jetzt_);
+      nachId.delete(id);
+    }
+    for (const rest of nachId.values()) neu.push(rest);   // inzwischen neu angelegte Einträge bleiben
+    state[typ] = neu;
+  }
+  const del = state._deletedIds || {};
+  for (const id of Object.keys(del)) if (!rg.del.has(id)) delete del[id];
+  save();
+  try { const seite = document.querySelector('.page.active')?.id?.replace(/^page-/, ''); if (seite) showPage(seite); } catch (e) {}
+  try { renderDashboard(); } catch (e) {}
+  showToast(_lang === 'en' ? '↩️ Restored' : '↩️ Wiederhergestellt', 'success');
+  return n;
+}
+
 function saveAll() {
   // budgetKat wird jetzt ZEILENWEISE gespeichert (jede Kategorie eine eigene Zeile
   // in projekt_items – wie Rechnungen/Aufgaben). Deshalb bekommt jede Kategorie
@@ -5826,7 +5890,7 @@ const today = () => new Date().toISOString().split('T')[0];
 // (Renderfunktionen, Toasts) werden in Welle 2 auf t() umgestellt.
 const I18N = {
   de: {
-    nav_dashboard:'Dashboard', nav_kosten:'Rechnungen & Ausgaben', nav_angebote:'Angebote',
+    nav_suche:'Suchen', suche_titel:'Suchen', nav_dashboard:'Dashboard', nav_kosten:'Rechnungen & Ausgaben', nav_angebote:'Angebote',
     nav_rechnungen:'Gescannte Rechnungen', nav_zahlungsplan:'Zahlungstermine',
     nav_kostenchart:'Kostenentwicklung', nav_kostenaufteilung:'Kostenaufteilung',
     nav_budget:'Budget', nav_planung:'Zeitplan', nav_aufgaben:'Aufgaben', nav_helfer:'Helfer',
@@ -5860,7 +5924,7 @@ const I18N = {
     set_language:'🌐 Sprache', set_language_hint:'Sprache der App – gilt für dieses Gerät und wird in deinem Konto gespeichert.'
   },
   en: {
-    nav_dashboard:'Dashboard', nav_kosten:'Invoices & Expenses', nav_angebote:'Quotes',
+    nav_suche:'Search', suche_titel:'Search', nav_dashboard:'Dashboard', nav_kosten:'Invoices & Expenses', nav_angebote:'Quotes',
     nav_rechnungen:'Scanned Invoices', nav_zahlungsplan:'Payment Dates',
     nav_kostenchart:'Cost Trend', nav_kostenaufteilung:'Cost Split',
     nav_budget:'Budget', nav_planung:'Schedule', nav_aufgaben:'Tasks', nav_helfer:'Helpers',
@@ -7386,12 +7450,26 @@ function _initI18n() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initI18n);
 else _initI18n();
 
+// Am Computer (Maus/Trackpad) gleich ins erste Eingabefeld eines Fensters – sofort lostippen. Am Handy nicht,
+// sonst springt bei jedem Fenster die Tastatur auf. Hat schon etwas im Fenster den Fokus (z. B. _focusField), bleibt er.
+function _erstesFeldFokus(m) {
+  if (!m || m.id === 'modal-app-confirm') return;
+  try { if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return; } catch (e) { return; }
+  setTimeout(() => {
+    if (!m.classList.contains('open') || m.classList.contains('closing')) return;
+    if (m.contains(document.activeElement) && document.activeElement !== m) return;
+    const f = [...m.querySelectorAll('input, textarea, select')].find(x =>
+      x.offsetParent !== null && !x.disabled && !x.readOnly && !/^(hidden|file|checkbox|radio|button|submit|color|range|date|time|datetime-local)$/i.test(x.type || ''));
+    if (f && f.tagName !== 'SELECT') { try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }, 120);
+}
 function openModal(id) {
   const _m = document.getElementById(id);
   // Merker "etwas eingetippt" (fuer ☰ bei offenem Fenster) – nur bei neu geoeffnetem Fenster zuruecksetzen
   if (_m && !(_m.classList.contains('open') && !_m.classList.contains('closing'))) _m._dirty = false;
   if (_m) { clearTimeout(_m._closeT); _m.classList.remove('closing'); }
   document.getElementById(id).classList.add('open');
+  _erstesFeldFokus(_m);
   if (typeof _lang !== 'undefined' && _lang !== 'de') { setTimeout(() => { try { const el = document.getElementById(id); translateOptions(el); _sweepPhrases(el); } catch(e){} }, 0); }
   // Leeres Datum nur bei NEUEN Eintraegen mit "heute" vorbelegen. Beim Bearbeiten nie –
   // sonst bekam z.B. eine Aufgabe ohne Termin still das heutige Datum (und wurde ueberfaellig).
@@ -8926,6 +9004,80 @@ async function _androidZurueck() {
   try { await App?.minimizeApp?.(); } catch (e) {}
   return 'hintergrund';
 }
+// ─── Suche über alles ────────────────────────────────────────────────────────
+// Durchsucht die Einträge des offenen Projekts (Text-Felder + Beträge) und springt zum Eintrag.
+const SUCHE_TYPEN = [
+  { t: 'kosten',        seite: 'kosten',        edit: 'editKosten',    icon: '💶', name: 'Ausgabe' },
+  { t: 'angebote',      seite: 'angebote',      edit: 'editAngebot',   icon: '📄', name: 'Angebot' },
+  { t: 'zahlungen',     seite: 'zahlungsplan',  edit: 'editZahlung',   icon: '📅', name: 'Zahlung' },
+  { t: 'aufgaben',      seite: 'aufgaben',      edit: 'editTask',      icon: '✅', name: 'Aufgabe' },
+  { t: 'notizen',       seite: 'dokumente',     edit: 'editNotiz',     icon: '📝', name: 'Notiz' },
+  { t: 'kontakte',      seite: 'kontakte',      edit: 'editKontakt',   icon: '👷', name: 'Kontakt' },
+  { t: 'tagebuch',      seite: 'tagebuch',      edit: 'editDiary',     icon: '📓', name: 'Bautagebuch' },
+  { t: 'maengel',       seite: 'maengel',       edit: 'editMangel',    icon: '⚠️', name: 'Mangel' },
+  { t: 'meilensteine',  seite: 'planung',       edit: 'editMilestone', icon: '🏁', name: 'Meilenstein' },
+  { t: 'wartungen',     seite: 'wartung',       edit: 'editWartung',   icon: '🔧', name: 'Wartung' },
+  { t: 'dokumentation', seite: 'dokumentation', edit: 'editDoku',      icon: '🏠', name: 'Gebäude-Doku' },
+  { t: 'gescannteRechnungen', seite: 'rechnungen', edit: '',          icon: '🧾', name: 'Rechnung' },
+];
+const _SUCHE_OHNE = /^(id|_.*|.*url|url|data|.*data|path|.*path|dateien|datei|fotos|photos|versionen|kiVergleiche|kiFirmen|color|farbe)$/i;
+const _norm = x => String(x == null ? '' : x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function openSuche() {
+  if (window.innerWidth <= 1024) { try { closeMobileSidebar(); } catch (e) {} }
+  const f = document.getElementById('suche-feld');
+  f.placeholder = _lang === 'en' ? 'Company, description, amount, person …' : 'Firma, Beschreibung, Betrag, Person …';
+  openModal('modal-suche');
+  setTimeout(() => { try { f.focus(); f.select(); } catch (e) {} }, 60);
+  _sucheZeigen();
+}
+function _sucheTreffer(q) {
+  const wort = _norm(q).trim();
+  if (wort.length < 2) return [];
+  const teile = wort.split(/\s+/).filter(Boolean);
+  const zahl = _parseBetrag(q);
+  const mitZahl = /\d/.test(q) && isFinite(zahl) && zahl > 0;
+  const aus = [];
+  for (const T of SUCHE_TYPEN) {
+    for (const it of (state[T.t] || [])) {
+      if (!it || it.id == null) continue;
+      const werte = Object.entries(it).filter(([k, v]) => !_SUCHE_OHNE.test(k) && (typeof v === 'string' || typeof v === 'number'));
+      const text = _norm(werte.map(([, v]) => v).join(' '));
+      const textOk = teile.every(w => text.includes(w));
+      const betragOk = mitZahl && ['betrag', 'netto', 'kosten', 'budget'].some(k => it[k] != null && it[k] !== '' && Math.abs((parseFloat(it[k]) || 0) - zahl) < 0.005);
+      if (!textOk && !betragOk) continue;
+      const titel = it.name || it.titel || it.title || it.beschr || it.text || it.anbieter || T.name;
+      const neben = [it.anbieter && it.anbieter !== titel ? it.anbieter : '', it.kat || '', it.datum ? fmtDate(it.datum) : '',
+                     (typeof it.betrag === 'number' || it.betrag) ? fmt(parseFloat(it.betrag) || 0) : ''].filter(Boolean).join(' · ');
+      aus.push({ T, id: it.id, titel: String(titel).slice(0, 90), neben, punkte: (betragOk ? 2 : 0) + (_norm(titel).includes(teile[0]) ? 1 : 0) });
+    }
+  }
+  return aus.sort((a, b) => b.punkte - a.punkte).slice(0, 40);
+}
+function _sucheZeigen() {
+  const box = document.getElementById('suche-ergebnis');
+  if (!box) return;
+  const q = document.getElementById('suche-feld').value || '';
+  const en = _lang === 'en';
+  if (_norm(q).trim().length < 2) { box.innerHTML = `<div style="color:var(--text3);font-size:0.85rem;padding:8px 2px">${en ? 'Type at least 2 letters – e.g. a company, a word or an amount.' : 'Mindestens 2 Zeichen eingeben – z. B. Firma, Stichwort oder Betrag.'}</div>`; return; }
+  const t = _sucheTreffer(q);
+  window._sucheListe = t;
+  if (!t.length) { box.innerHTML = `<div style="color:var(--text3);font-size:0.85rem;padding:8px 2px">${en ? 'Nothing found.' : 'Nichts gefunden.'}</div>`; return; }
+  box.innerHTML = t.map((r, i) => `<button type="button" class="suche-treffer" onclick="_sucheOeffnen(${i})"
+      style="display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;color:var(--text);font-family:inherit">
+      <span style="font-size:1.1rem;line-height:1.3">${r.T.icon}</span>
+      <span style="flex:1;min-width:0"><span style="display:block;font-weight:700;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.titel)}</span>
+      <span style="display:block;font-size:0.75rem;color:var(--text3)">${esc(tt(r.T.name))}${r.neben ? ' · ' + esc(r.neben) : ''}</span></span></button>`).join('');
+}
+function _sucheErster() { if ((window._sucheListe || []).length) _sucheOeffnen(0); }
+function _sucheOeffnen(i) {
+  const r = (window._sucheListe || [])[i];
+  if (!r) return;
+  closeModal('modal-suche');
+  showPage(r.T.seite);
+  const f = r.T.edit && window[r.T.edit];
+  if (typeof f === 'function') setTimeout(() => { try { f(r.id); } catch (e) {} }, 220);
+}
+
 // ─── Tastatur wie bei normalen Programmen ────────────────────────────────────
 // Esc: oberste Ansicht schliessen (Foto, Rueckfrage = Abbrechen, Fenster – bei Eingaben wird gefragt, Menue).
 // Enter in einem einzeiligen Feld eines Fensters: dessen Haupt-Knopf (Speichern …) – aber nur, wenn es GENAU
@@ -8940,6 +9092,10 @@ function _enterZiel(feld) {
   return knoepfe.length === 1 ? knoepfe[0] : null;
 }
 document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'k' || e.key === 'K')) {
+    if (document.getElementById('auth-overlay')?.style.display === 'flex') return;
+    e.preventDefault(); openSuche(); return;
+  }
   if (e.defaultPrevented || e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'Escape') {
     const offen = document.querySelector('.lightbox.open, .modal-overlay.open:not(.closing)')
@@ -8963,6 +9119,19 @@ document.addEventListener('keydown', e => {
   ziel.click();
 });
 
+// Browser-Tab schließen/neu laden, während ein Fenster mit Eingaben offen ist oder noch etwas hochgeladen
+// wird: der Browser fragt „Seite verlassen?“ (der Text kommt vom Browser selbst).
+window.addEventListener('beforeunload', e => {
+  try {
+    if (isNativeApp()) return;
+    const eingaben = [...document.querySelectorAll('.modal-overlay.open:not(.closing)')].some(o => o._dirty);
+    const ungesichert = !_demoMode && !!currentUser && _hasUnsyncedChanges();
+    if (eingaben || ungesichert) { e.preventDefault(); e.returnValue = ''; }
+  } catch (err) {}
+});
+
+try { if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) document.querySelectorAll('.suche-kbd').forEach(k => { k.textContent = '⌘ K'; }); } catch (e) {}
+try { if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) document.querySelectorAll('.suche-kbd').forEach(k => { k.style.display = 'none'; }); } catch (e) {}
 (function _androidZurueckStart() {
   if (!_istAndroid()) return;
   try { window.Capacitor?.Plugins?.App?.addListener?.('backButton', () => { _androidZurueck(); }); } catch (e) {}
@@ -9450,11 +9619,13 @@ function _eigenleistungsQuelleLoeschen(kostenId) {
 async function deleteKosten(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'kosten');
   _deleteLinkedScans(id);
   _eigenleistungsQuelleLoeschen(id);
   state.kosten = state.kosten.filter(k => String(k.id) !== String(id));
   save(); _renderKostenAnsichten(); showToast('🗑 Ausgabe gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 // Compatibility shim (old calls still work)
@@ -9521,6 +9692,7 @@ function openBudgetDrilldown(katName) {
 async function deleteDrilldownKosten(id, katName) {
   if (!requireSub()) return;
   if (!(await showConfirm('Ausgabe löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'kosten');
   _deleteLinkedScans(id);
   _eigenleistungsQuelleLoeschen(id);
@@ -9529,6 +9701,7 @@ async function deleteDrilldownKosten(id, katName) {
   renderKosten();
   renderBudget();
   openBudgetDrilldown(katName); // refresh drilldown
+  _rueckgaengigAnbieten(_rg);
 }
 
 function renderKosten() {
@@ -10861,9 +11034,11 @@ function toggleMilestone(id) {
 async function deleteMilestone(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Meilenstein löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'meilensteine');
   state.meilensteine = state.meilensteine.filter(m => String(m.id) !== String(id));
   save(); renderMilestones(); showToast('🗑 Meilenstein gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 // ── KI ZEITPLAN GENERATOR ────────────────────────────────────────────────────
@@ -11373,6 +11548,7 @@ async function deleteTask(id) {
     ? (_lang === 'en' ? `Delete this task and its ${kinder.length} subtask${kinder.length === 1 ? '' : 's'}?` : `Aufgabe samt ${kinder.length === 1 ? '1 Unteraufgabe' : kinder.length + ' Unteraufgaben'} löschen?`)
     : 'Aufgabe löschen?';
   if (!(await showConfirm(frage))) return;
+  const _rg = _rueckgaengigStart();
   const weg = new Set([String(id), ...kinder.map(k => String(k.id))]);
   weg.forEach(x => _trackDeletion(x, 'aufgaben'));
   // Verknuepfte Auto-Notizen mit Grabstein entfernen (kamen sonst aus der Cloud zurueck)
@@ -11380,6 +11556,7 @@ async function deleteTask(id) {
   state.notizen = state.notizen.filter(n => !weg.has(String(n.__taskId)));
   state.aufgaben = state.aufgaben.filter(t => !weg.has(String(t.id)));
   save(); renderTasks(); showToast('🗑 Aufgabe gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 let taskFilter = 'all';
@@ -12577,10 +12754,12 @@ function editNotiz(id) {
 async function deleteNotiz(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Notiz löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'notizen');
   state.notizen = state.notizen.filter(n => String(n.id) !== String(id));
   save(); renderNotizen();
   showToast('🗑 Notiz gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function renderNotizen() {
@@ -12863,6 +13042,7 @@ function editKontakt(id) {
 async function deleteKontakt(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Kontakt löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'kontakte');
   const k = state.kontakte.find(k => String(k.id) === String(id));
   if (k && k.firma) {
@@ -12871,6 +13051,7 @@ async function deleteKontakt(id) {
   state.kontakte = state.kontakte.filter(k => String(k.id) !== String(id));
   save(); renderKontakte();
   showToast('🗑 Kontakt gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function renderKontakte() {
@@ -12947,10 +13128,12 @@ function editGanttItem(id) {
 async function deleteGanttItem(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'gantt');
   state.gantt = state.gantt.filter(g => String(g.id) !== String(id));
   save(); renderGantt();
   showToast('🗑 Phase gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function ganttZoom(dir) {
@@ -14813,10 +14996,12 @@ function editDoku(id) {
 async function deleteDoku(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Eintrag löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'dokumentation');
   state.dokumentation = state.dokumentation.filter(d => String(d.id) !== String(id));
   save(); renderDoku();
   showToast('🗑 Dokumentation gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 const DOKU_COLORS = { Elektro: '#f59e0b', Wasser: '#0ea5e9', Heizung: '#ef4444', Statik: '#8b5cf6', Sonstiges: '#64748b' };
@@ -14976,10 +15161,12 @@ function editWartung(id) {
 async function deleteWartung(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Wartung löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'wartungen');
   state.wartungen = state.wartungen.filter(w => String(w.id) !== String(id));
   save(); renderWartung();
   showToast('🗑 Wartung gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function markWartungDone(id) {
@@ -15291,9 +15478,11 @@ function editEinsatz(id) {
 async function deleteEinsatz(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Helfer-Tag löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'helfereinsaetze');
   state.helfereinsaetze = (state.helfereinsaetze || []).filter(e => String(e.id) !== String(id));
   save(); renderHelfer(); showToast('🗑 Helfer-Tag gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 // Tag im Kalender antippen: vorhandenen Einsatz bearbeiten, sonst neuen mit dem Datum
 function openEinsatzForDay(dateStr) {
@@ -15376,10 +15565,12 @@ function editHelferPerson(id) {
 }
 async function deleteHelferPerson(id) {
   if (!(await showConfirm('Helfer aus der Liste löschen? Bereits eingeteilte Tage bleiben erhalten.'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'helfer');
   state.helfer = (state.helfer || []).filter(h => String(h.id) !== String(id));
   save(); renderHelferPersonList(); _refreshHelferDatalist(); renderHelfer();
   showToast('🗑 Helfer gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 // ── Monatskalender ──
@@ -15586,6 +15777,7 @@ async function _kiHeaders() {
 }
 
 function showToast(msg, type='success', duration=3200) {
+  if (_rgLaeuft && typeof msg === 'string' && msg.startsWith('🗑')) { _rgText = (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) || msg; return; }   // kommt in den Rückgängig-Balken
   if (typeof _lang !== 'undefined' && _lang !== 'de' && typeof TEXTE !== 'undefined' && TEXTE[msg] && TEXTE[msg][_lang]) msg = TEXTE[msg][_lang];
   const bg = type==='success' ? 'var(--success)' : type==='warning' ? '#d97706' : 'var(--danger)';
   const t = document.createElement('div');
@@ -18927,10 +19119,12 @@ function editZahlung(id) {
 async function deleteZahlung(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Zahlung löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'zahlungen');
   state.zahlungen = (state.zahlungen||[]).filter(z => String(z.id) !== String(id));
   save(); renderZahlungsplan();
   showToast('🗑 Zahlung gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function markZahlungBezahlt(id) {
@@ -19102,10 +19296,12 @@ function editMangel(id) {
 async function deleteMangel(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Mangel löschen?'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'maengel');
   state.maengel = (state.maengel||[]).filter(m => String(m.id) !== String(id));
   save(); renderMaengel();
   showToast('🗑 Mangel gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function cycleMaengelStatus(id) {
@@ -19291,6 +19487,7 @@ function renderGescannteRechnungen() {
 async function deleteGescannteRechnung(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Eintrag aus der Rechnungsliste entfernen?\n(Die Ausgabe in „Rechnungen & Ausgaben" bleibt erhalten.)'))) return;
+  const _rg = _rueckgaengigStart();
   // Verknuepfte Ausgabe entmarkieren, sonst wird der Eintrag beim naechsten
   // Render automatisch neu erzeugt (aiScanned-Sync) und taucht sofort wieder auf.
   const _gr = (state.gescannteRechnungen||[]).find(x => String(x.id) === String(id));
@@ -19302,6 +19499,7 @@ async function deleteGescannteRechnung(id) {
   state.gescannteRechnungen = (state.gescannteRechnungen||[]).filter(r => String(r.id) !== String(id));
   save(); renderGescannteRechnungen();
   showToast('🗑 Rechnung gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 // ══════════════════════════════════════
@@ -19326,6 +19524,7 @@ function addZahlungsPerson() {
 async function deleteZahlungsPerson(id) {
   if (!requireSub()) return;
   if (!(await showConfirm('Person löschen? Bestehende Zuweisungen in Rechnungen werden entfernt.'))) return;
+  const _rg = _rueckgaengigStart();
   _trackDeletion(id, 'zahlungspersonen');
   const person = (state.zahlungspersonen||[]).find(p => String(p.id) === String(id));
   if (person) state.kosten.forEach(k => { if (k.bezahltVon === person.name) { k.bezahltVon = ''; k._updatedAt = Date.now(); } });
@@ -19334,6 +19533,7 @@ async function deleteZahlungsPerson(id) {
   renderPersonenList();
   refreshBezahltVonSelects();
   showToast('🗑 Person gelöscht', 'success');
+  _rueckgaengigAnbieten(_rg);
 }
 
 function renderPersonenList() {
@@ -21571,6 +21771,19 @@ function exportRechnungenPDF() {
 </div>
 <div id="readonly-banner" onclick="openPaywall()" style="display:none;position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.25);white-space:nowrap">👁 Nur-Lese-Modus · Abo aktivieren</div>
 <!-- App-eigener Bestaetigungs-/Eingabe-Dialog (ersetzt window.confirm/prompt) -->
+<div class="modal-overlay" id="modal-suche">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h2 style="margin:0">🔍 <span data-i18n="suche_titel">Suchen</span></h2>
+      <button class="btn btn-ghost" onclick="closeModal('modal-suche')" style="padding:6px 12px">✕</button>
+    </div>
+    <input type="search" id="suche-feld" autocomplete="off" enterkeyhint="search"
+      placeholder="Firma, Beschreibung, Betrag, Person …" oninput="_sucheZeigen()"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();_sucheErster();}"
+      style="width:100%;font-size:1rem;padding:12px 14px;margin:6px 0 12px">
+    <div id="suche-ergebnis" style="max-height:min(60vh,520px);overflow:auto"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-app-confirm" style="z-index:10050">
   <div class="modal" style="max-width:380px">
     <h3 id="ac-title" style="margin-bottom:10px">Bist du sicher?</h3>
