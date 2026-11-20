@@ -149,6 +149,11 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   - Zurück-Taste über `_androidZurueck()`. Die Abo-Sperre wird dabei nie weggetippt.
   - Keine Vollzugriff-Fotoberechtigung (Google-Richtlinie), nur die System-Foto-Auswahl.
   - Upload-Schlüssel (`*.jks`) nie ins Repo.
+- **Live im Web seit 20.11.2026 (iPhone mit v1.4):**
+  - Beträge mit Tausenderpunkt: Geldfelder sind Textfelder, gelesen mit `_betragFeld`/`_parseBetrag`.
+  - KI-Hinweis kurz und einmal pro Konto (`user_metadata.kiHinweis`).
+  - Tastatur: Esc schließt die oberste Ansicht (`_obersteSchliessen`). Enter löst den einzigen Haupt-Knopf
+    eines Fensters aus. Bei roten Knöpfen (Löschen/Verwerfen) reicht Enter nie.
 - **Live im Web seit 15.11.2026:** Ladeanzeige, mehrere Anhänge bei Angeboten, Kategorie-Mappe, Rückfrage bei
   doppelter Rechnung. iPhone: mit v1.4.
 
