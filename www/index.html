@@ -4395,7 +4395,10 @@
     <div class="form-row">
       <label>Arbeiter & Stunden</label>
       <div id="tb-worker-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
-      <button type="button" class="btn btn-ghost" style="width:100%;font-size:0.8rem" onclick="addWorkerRow()">+ Arbeiter hinzufügen</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-ghost" style="flex:1;min-width:150px;font-size:0.8rem" onclick="addWorkerRow()">+ Arbeiter hinzufügen</button>
+        <button type="button" class="btn btn-ghost" style="flex:1;min-width:150px;font-size:0.8rem" onclick="tbStundenFuerAlle()">⏱ Gleiche Stunden für alle</button>
+      </div>
     </div>
     <div class="form-row">
       <label>Fotos</label>
@@ -7040,6 +7043,7 @@ const TEXTE = {
   "Temperatur": { en: "Temperature" },
   "🌡️ Abrufen": { en: "🌡️ Fetch" },
   "+ Arbeiter hinzufügen": { en: "+ Add worker" },
+  "⏱ Gleiche Stunden für alle": { en: "⏱ Same hours for all" },
   "Tags (kommagetrennt)": { en: "Tags (comma-separated)" },
   "Rohbau, Betonage": { en: "Shell construction, concreting" },
   "Was ist zu tun / Erinnerung": { en: "What to do / reminder" },
@@ -12244,6 +12248,26 @@ function switchDiaryTab(tab, btn) {
   else renderDiarySummary();
 }
 
+// Arbeitsstunden aus einem Textfeld: „7,5“, „7.5“, „8“ – auf 0–24 begrenzt, auf Viertelstunden gerundet.
+function _stundenAus(wert) {
+  const n = _parseBetrag(wert);
+  if (!isFinite(n) || n <= 0) return 0;
+  return Math.round(Math.min(n, 24) * 4) / 4;
+}
+// „Gleiche Stunden für alle“: einmal fragen, dann in jede Arbeiter-Zeile eintragen (gespeichert wird mit „Speichern“).
+async function tbStundenFuerAlle() {
+  const felder = [...document.querySelectorAll('#tb-worker-rows .tb-worker-hours')];
+  const en = _lang === 'en';
+  if (!felder.length) { showToast(en ? 'Add workers first' : 'Zuerst Arbeiter hinzufügen', 'warning'); return; }
+  const erster = felder.map(f => _stundenAus(f.value)).find(h => h > 0) || 8;
+  const antwort = await showPrompt(en ? 'How many hours for everyone?' : 'Wie viele Stunden für alle?', _betragText(erster),
+    { title: en ? 'Same hours for all' : 'Gleiche Stunden für alle', okText: en ? 'Apply' : 'Übernehmen' });
+  if (antwort === null || antwort === false || antwort === undefined) return;
+  const h = _stundenAus(antwort);
+  if (!h) { showToast(en ? 'Please enter hours, e.g. 7.5' : 'Bitte Stunden eingeben, z. B. 7,5', 'warning'); return; }
+  felder.forEach(f => { f.value = _betragText(h); });
+  const m = document.getElementById('modal-tagebuch'); if (m) m._dirty = true;
+}
 function addWorkerRow(prefillName = '', prefillHours = '') {
   const container = document.getElementById('tb-worker-rows');
   const row = document.createElement('div');
@@ -12258,9 +12282,9 @@ function addWorkerRow(prefillName = '', prefillHours = '') {
       style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none"
       class="tb-worker-name">
     <datalist id="${listId}">${workerOptions}</datalist>
-    <input type="number" min="0.5" max="24" step="0.5" placeholder="Std." value="${prefillHours ? esc(String(prefillHours)) : ''}"
-      style="width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;outline:none"
-      class="tb-worker-hours">
+    <input type="text" inputmode="decimal" autocomplete="off" placeholder="Std." value="${prefillHours ? esc(_betragText(prefillHours)) : ''}"
+      style="width:78px;flex-shrink:0;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 6px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;outline:none"
+      class="tb-worker-hours" title="Stunden, z. B. 7,5">
     <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:4px">✕</button>`;
   container.appendChild(row);
 }
@@ -12320,7 +12344,7 @@ async function addDiary() {
   const workers = [];
   document.querySelectorAll('#tb-worker-rows > div').forEach(row => {
     const name  = row.querySelector('.tb-worker-name')?.value?.trim();
-    const hours = parseFloat(row.querySelector('.tb-worker-hours')?.value) || 0;
+    const hours = _stundenAus(row.querySelector('.tb-worker-hours')?.value);
     if (name) workers.push({ name, hours });
   });
   const editId = parseInt(document.getElementById('tb-edit-id')?.value) || null;
@@ -12421,7 +12445,7 @@ function editDiary(id) {
     const last = rows[rows.length-1];
     if (last) {
       const ni = last.querySelector('.tb-worker-name'); if (ni) ni.value = w.name;
-      const hi = last.querySelector('.tb-worker-hours'); if (hi) hi.value = w.hours;
+      const hi = last.querySelector('.tb-worker-hours'); if (hi) hi.value = w.hours ? _betragText(w.hours) : '';
     }
   });
   if (document.getElementById('tb-edit-id')) document.getElementById('tb-edit-id').value = id;

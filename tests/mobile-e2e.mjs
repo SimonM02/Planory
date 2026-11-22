@@ -4071,6 +4071,48 @@ await scenario('Handy: kein automatischer Cursor (Tastatur springt nicht auf), S
 });
 
 
+for (const [label, geraet] of [['Computer', { viewport: { width: 1280, height: 860 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 }], ['Handy', {}]]) {
+  await scenario(`Bautagebuch-Stunden (${label}): „7,5“ eintippen, „Gleiche Stunden für alle“, Bearbeiten zeigt 7,5`, async () => {
+    const d = await boot(geraet);
+    try {
+      const p = d.page, aus = {};
+      await p.evaluate(() => { window.showConfirm = window.__echtesConfirm || window.showConfirm; showPage('tagebuch'); document.getElementById('tb-edit-id').value = ''; openModal('modal-tagebuch');
+        document.getElementById('tb-worker-rows').innerHTML = ''; addWorkerRow(); addWorkerRow(); addWorkerRow();
+        document.getElementById('tb-title').value = 'Stunden-Test'; });
+      await p.waitForTimeout(300);
+      const namen = await p.$$('#tb-worker-rows .tb-worker-name'), std = await p.$$('#tb-worker-rows .tb-worker-hours');
+      aus.typ = await std[0].evaluate(e => e.type + '/' + e.inputMode);
+      await namen[0].fill('Simon'); await namen[1].fill('Thomas'); await namen[2].fill('Baumeister');
+      await std[0].click(); await p.keyboard.type('7,5');
+      await std[1].click(); await p.keyboard.type('8');
+      await std[2].click(); await p.keyboard.type('abc');
+      await p.evaluate(async () => { await addDiary(); });
+      await p.waitForTimeout(400);
+      const e1 = await p.evaluate(() => (state.tagebuch.find(e => e.title === 'Stunden-Test') || {}));
+      aus.h1 = (e1.workers || []).map(w => w.hours);
+      await p.evaluate(id => editDiary(id), e1.id); await p.waitForTimeout(300);
+      aus.feld = await p.evaluate(() => document.querySelector('#tb-worker-rows .tb-worker-hours').value);
+      await p.evaluate(() => { tbStundenFuerAlle(); });
+      await p.waitForTimeout(300);
+      aus.vorbelegt = await p.evaluate(() => document.getElementById('ac-input').value);
+      await p.fill('#ac-input', '6'); await p.press('#ac-input', 'Enter'); await p.waitForTimeout(300);
+      aus.alle = await p.evaluate(() => [...document.querySelectorAll('#tb-worker-rows .tb-worker-hours')].map(f => f.value));
+      await p.evaluate(async () => { await addDiary(); }); await p.waitForTimeout(400);
+      aus.h2 = await p.evaluate(() => ((state.tagebuch.find(e => e.title === 'Stunden-Test') || {}).workers || []).map(w => w.hours));
+      const f = [];
+      if (aus.typ !== 'text/decimal') f.push('Feld: ' + aus.typ);
+      if (JSON.stringify(aus.h1) !== '[7.5,8,0]') f.push('gespeichert: ' + JSON.stringify(aus.h1));
+      if (aus.feld !== '7,5') f.push('Bearbeiten zeigt „' + aus.feld + '“');
+      if (aus.vorbelegt !== '7,5') f.push('Vorbelegung „' + aus.vorbelegt + '“');
+      if (JSON.stringify(aus.alle) !== '["6","6","6"]') f.push('für alle: ' + JSON.stringify(aus.alle));
+      if (JSON.stringify(aus.h2) !== '[6,6,6]') f.push('nach Speichern: ' + JSON.stringify(aus.h2));
+      if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+      return f.join(' · ');
+    } finally { await d.ctx.close(); }
+  });
+}
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
