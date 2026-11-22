@@ -22,8 +22,8 @@ const BASIS = 'https://planory.at';
 
 const SEITEN = [
   { name: 'funktionen', kurz: 'Funktionen', datei: 'funktionen/index.html', pfad: '/funktionen/',
-    titel: 'Funktionen – Planory, die App für dein Bauprojekt', titelEn: 'Features – Planory, the app for your building project',
-    beschreibung: 'Budget, Rechnungen scannen, Angebote, Zahlungsplan, Zeitplan, Aufgaben, Bautagebuch, Pläne, Mängel, Helfer, Wartung und KI-Berater – alle Funktionen von Planory mit echten App-Bildern.' },
+    titel: 'Funktionen der Hausbau-App – Budget bis Bautagebuch', titelEn: 'Features – Planory, the app for your building project',
+    beschreibung: 'Budget, Rechnungen scannen, Angebote vergleichen, Zeitplan, Aufgaben, Bautagebuch, Pläne, Mängel und Wartung – alle Funktionen der Hausbau-App Planory.' },
   { name: 'preise', kurz: 'Preise', datei: 'preise/index.html', pfad: '/preise/',
     titel: 'Preise – Planory: 30 Tage gratis, danach 3,99 € im Monat', titelEn: 'Pricing – Planory: 30 days free, then €3.99 a month',
     beschreibung: 'Ein Preis, alle Funktionen: 30 Tage gratis testen, danach 3,99 € im Monat oder 28,99 € im Jahr. Jederzeit kündbar.' },
@@ -34,7 +34,38 @@ const SEITEN = [
     titel: 'Hilfe & Kontakt – Planory', titelEn: 'Help & contact – Planory',
     beschreibung: 'Antworten auf häufige Fragen zu Planory: Projekt anlegen, Abo, Kündigung, Daten und Konto löschen – und der direkte Kontakt.' },
 ];
+// Ratgeber-Seiten (SEO): eigener Abschnitt, Artikel- und Fragen-Daten für Google werden automatisch erzeugt
+const RATGEBER = [
+  { name: 'bautagebuch', kurz: 'Bautagebuch', datei: 'bautagebuch/index.html', pfad: '/bautagebuch/', ratgeber: true,
+    titel: 'Bautagebuch führen: Vorlage, Tipps & App', titelEn: 'Keeping a site diary: template, tips & app',
+    beschreibung: 'Was gehört ins Bautagebuch, wer muss es führen und wie dokumentierst du deinen Hausbau einfach am Handy? Mit Vorlage und Tipps für Bauherr:innen.' },
+  { name: 'baukosten', kurz: 'Baukosten', datei: 'baukosten/index.html', pfad: '/baukosten/', ratgeber: true,
+    titel: 'Baukosten im Griff: Budget für den Hausbau', titelEn: 'Building costs under control: budget for your house',
+    beschreibung: 'Was kostet ein Haus 2026 in Österreich, wie teilst du das Budget auf und wie behältst du Rechnungen, Skonto und Reserve im Blick? Tipps für Bauherr:innen.' },
+  { name: 'hausbau-checkliste', kurz: 'Hausbau-Checkliste', datei: 'hausbau-checkliste/index.html', pfad: '/hausbau-checkliste/', ratgeber: true,
+    titel: 'Hausbau-Checkliste: vom Grundstück bis zum Einzug', titelEn: 'House building checklist: from plot to move-in',
+    beschreibung: 'Die Hausbau-Checkliste für Bauherr:innen in Österreich: alle Schritte von Finanzierung und Grundstück über Einreichung und Bau bis zum Einzug – zum Abhaken.' },
+  { name: 'angebote-vergleichen', kurz: 'Angebote vergleichen', datei: 'angebote-vergleichen/index.html', pfad: '/angebote-vergleichen/', ratgeber: true,
+    titel: 'Handwerker-Angebote richtig vergleichen', titelEn: 'How to compare contractor quotes',
+    beschreibung: 'Worauf du beim Vergleich von Handwerker-Angeboten achten solltest: Leistungsumfang, Einheitspreise, Nebenleistungen, Skonto und Nachverhandlung.' },
+];
+SEITEN.push({ name: 'ratgeber', kurz: 'Ratgeber', datei: 'ratgeber/index.html', pfad: '/ratgeber/',
+  titel: 'Ratgeber Hausbau: Baukosten, Checkliste & mehr', titelEn: 'House building guides: costs, checklist & more',
+  beschreibung: 'Ratgeber für Bauherr:innen: Hausbau-Checkliste, Baukosten und Budget, Handwerker-Angebote vergleichen und Bautagebuch führen – kurz und praxisnah.' }, ...RATGEBER);
 const RECHT = ['impressum.html', 'datenschutz.html', 'agb.html'];
+const STAND = '2026-11-23';
+// Fragen aus <details><summary>…</summary><p>…</p></details> → FAQPage; Ratgeber zusätzlich als Artikel
+const ohneTags = h => h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+function zusatzDaten(s, inhalt) {
+  const ld = [];
+  const fragen = [...inhalt.matchAll(/<details[^>]*>\s*<summary[^>]*>([\s\S]*?)<\/summary>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<\/details>/g)]
+    .map(m => ({ '@type': 'Question', name: ohneTags(m[1]), acceptedAnswer: { '@type': 'Answer', text: ohneTags(m[2]) } }));
+  if (fragen.length) ld.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: fragen });
+  if (s.ratgeber) ld.push({ '@context': 'https://schema.org', '@type': 'Article', headline: s.titel, description: s.beschreibung, inLanguage: 'de',
+    datePublished: STAND, dateModified: STAND, mainEntityOfPage: BASIS + s.pfad, image: BASIS + '/og-image.png',
+    author: { '@type': 'Organization', name: 'Planory', url: BASIS + '/' }, publisher: { '@type': 'Organization', name: 'Planory', logo: { '@type': 'ImageObject', url: BASIS + '/favicon-192.png' } } });
+  return ld.map(o => `<script type="application/ld+json">\n${JSON.stringify(o)}\n</script>\n`).join('');
+}
 
 const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 // Kopf mit markiertem Menüpunkt der aktuellen Seite
@@ -43,7 +74,7 @@ const kopf = aktiv => KOPF.replace(new RegExp(`data-seite="${aktiv}"`, 'g'), `da
 // Brotkrumen für Google (Planory › Seite) – hilft, Unterseiten in der Suche unter „Planory“ zu zeigen
 const brotkrumen = (kurz, url) => kurz ? `<script type="application/ld+json">\n${JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList',
   itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Planory', item: BASIS + '/' }, { '@type': 'ListItem', position: 2, name: kurz, item: url }] })}\n</script>\n` : '';
-function kopfbereich({ titel, titelEn, beschreibung, url, kurz, robots = 'index,follow' }) {
+function kopfbereich({ titel, titelEn, beschreibung, url, kurz, robots = 'index,follow', zusatz = '' }) {
   return `<!doctype html>
 <html lang="de"${titelEn ? ` data-en-title="${esc(titelEn)}"` : ''}>
 <head>
@@ -66,7 +97,7 @@ ${beschreibung ? `<meta property="og:description" content="${esc(beschreibung)}"
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/site/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site/site.css">
-${brotkrumen(kurz, url)}</head>`;
+${brotkrumen(kurz, url)}${zusatz}</head>`;
 }
 const seite = (meta, aktiv, inhalt) => `${kopfbereich(meta)}
 <body class="pl-site">
@@ -85,7 +116,7 @@ const ausgabe = new Map();   // Datei → neuer Inhalt
 // 1) Unterseiten
 for (const s of SEITEN) {
   const inhalt = readFileSync(join(HERE, `seiten/${s.name}.html`), 'utf8');
-  ausgabe.set(s.datei, seite({ ...s, url: BASIS + s.pfad }, s.name, inhalt));
+  ausgabe.set(s.datei, seite({ ...s, url: BASIS + s.pfad, zusatz: zusatzDaten(s, inhalt) }, s.ratgeber ? 'ratgeber' : s.name, inhalt));
 }
 
 // 2) Rechtliches: Text unverändert übernehmen, nur Kopf/Fuß/Aussehen neu

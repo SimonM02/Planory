@@ -227,7 +227,7 @@ body.dark-mode .pl-site .s-fuss h2{color:#8f8a80!important}
 
 /* Fußzeile */
 .pl-site .s-fuss{background:var(--night);color:var(--ntx2);border-top:1px solid var(--nrule);font-size:15px}
-.pl-site .s-fuss-in{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;padding-top:64px;padding-bottom:48px}
+.pl-site .s-fuss-in{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:40px;padding-top:64px;padding-bottom:48px}
 .pl-site .s-fuss .s-marke{color:var(--ntx);margin-bottom:14px}
 .pl-site .s-fuss p{max-width:300px;line-height:1.5}
 .pl-site .s-fuss h2{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.07em;text-transform:uppercase;color:#8f8a80;margin-bottom:14px}
@@ -305,3 +305,17 @@ body.dark-mode .pl-site .s-fuss h2{color:#8f8a80!important}
   .pl-site .s-marke span{display:none}
 }
 @media (prefers-reduced-motion:reduce){.pl-site *{transition:none!important;scroll-behavior:auto!important}}
+
+/* Ratgeber-Seiten */
+.pl-site .s-artikel{padding-top:8px}
+.pl-site .s-artikel h2 a{color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.pl-site .s-artikel .s-fragen{margin:8px 0 18px}
+.pl-site .s-artikel .s-hinweis{font-size:14px}
+.pl-site .s-check ul{list-style:none;padding-left:0}
+.pl-site .s-check ul li{position:relative;padding-left:32px;margin-bottom:8px}
+.pl-site .s-check ul li::before{content:"";position:absolute;left:0;top:4px;width:18px;height:18px;border:2px solid var(--ink2);border-radius:5px}
+@media print{
+  .pl-site .s-kopf,.pl-site .s-fuss,.pl-site .s-cta,.pl-site .s-skip{display:none!important}
+  .pl-site .s-recht{padding-top:0}
+  .pl-site .s-check ul li{break-inside:avoid}
+}
