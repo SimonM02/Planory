@@ -232,6 +232,11 @@ abo-api 10/10).
       (dataprivacyframework.gov) – sonst gelten die Standardvertragsklauseln aus dem DPA.
 - [ ] **Datenschutzerklärung zusammen mit den AGB** von WKO/Anwalt gegenlesen lassen.
 
+## ⭐ Nächstes iPhone-Update 1.4 – Anleitung: `NAECHSTER-BUILD-v1.4.md`
+- Im Web live (22.11.2026): Beträge mit Tausenderpunkt, KI-Hinweis einmal pro Konto, Esc/Enter, Rückgängig nach
+  Löschen, Suche über alles, Cursor im 1. Feld, Warnung beim Schließen. Kommt mit 1.4 aufs iPhone.
+- Vorher: RevenueCat-Produkte grün + richtige App/Offering prüfen (Anleitung Schritt 1).
+
 ## Geplant (v1.4)
 - [ ] **Profile im gemeinsamen Konto („Wer bin ich?“)** – für Konten, die mehrere Personen nutzen:
       - je Gerät einmal Person wählen/anlegen (Name), lokal gespeichert – keine eigene Anmeldung
