@@ -249,6 +249,10 @@ abo-api 10/10).
       - Tests: Handy-Test (Vorausfüllen, Filter), Cloud-Test (nichts doppelt gespeichert)
 
 ## Später
+- [ ] **Idee (Simon, 22.11.2026) – „Heute vor einem Jahr“ im Bautagebuch:** Ein Jahr nach einem Eintrag
+      erinnert die App daran, was damals war (Titel, Foto, Datum). Ein Tipp öffnet den Eintrag. In den
+      Einstellungen **ein-/ausschaltbar**. Als Kärtchen auf der Startseite und optional als Mitteilung.
+      Noch nicht umsetzen.
 - [ ] **Projekt teilen** (Info, nach „Profile“): eigenes Login je Person, Besitzer lädt per E-Mail
       ein (Bearbeiten/Ansehen), ein Abo fürs Projekt (Apple-Familienfreigabe fürs Abo möglich).
       Großer Umbau von Datenbank-Rechten, Abgleich und Abo.
