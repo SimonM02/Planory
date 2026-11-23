@@ -149,6 +149,18 @@ Browser-Tests nie über `file://` (sonst Demo-Modus ohne Login).
   - Zurück-Taste über `_androidZurueck()`. Die Abo-Sperre wird dabei nie weggetippt.
   - Keine Vollzugriff-Fotoberechtigung (Google-Richtlinie), nur die System-Foto-Auswahl.
   - Upload-Schlüssel (`*.jks`) nie ins Repo.
+- **Live im Web seit 23.11.2026 (iPhone mit v1.4):**
+  - SEO: Startseite erscheint für Nicht-Angemeldete sofort (`__lpFrueh` im Kopf). jsPDF und Chart.js laden
+    mit `defer`, Schriften blockieren nicht. Gemessen am Handy mit 4G: sichtbar nach 2,0 s statt 4,5 s.
+  - Neue Ratgeber-Seiten aus `site-quelle/seiten/*`: `/ratgeber/`, `/hausbau-checkliste/`, `/baukosten/`,
+    `/angebote-vergleichen/`, `/bautagebuch/`. `bauen.mjs` erzeugt FAQ- und Article-Daten automatisch.
+    Suchbegriffe stehen in `marketing/SEO-KEYWORDS.md`.
+  - Kein Google Business Profile (reine Online-App). Als Ersatz: Organization-Daten.
+  - Bautagebuch-Stunden als Textfeld (`_stundenAus`), dazu `tbStundenFuerAlle()`.
+  - Gesamtbudget überall über `_budgetGesamt()`: Summe der Kategorien. `settings.budget` ist nur der
+    Startwert aus dem Einrichten.
+- **Live im Web seit 22.11.2026:** Rückgängig nach dem Löschen, Suche (Strg/⌘+K), Cursor im ersten Feld,
+  Warnung beim Schließen.
 - **Live im Web seit 20.11.2026 (iPhone mit v1.4):**
   - Beträge mit Tausenderpunkt: Geldfelder sind Textfelder, gelesen mit `_betragFeld`/`_parseBetrag`.
   - KI-Hinweis kurz und einmal pro Konto (`user_metadata.kiHinweis`).

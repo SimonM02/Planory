@@ -232,9 +232,18 @@ abo-api 10/10).
       (dataprivacyframework.gov) – sonst gelten die Standardvertragsklauseln aus dem DPA.
 - [ ] **Datenschutzerklärung zusammen mit den AGB** von WKO/Anwalt gegenlesen lassen.
 
+## 🔎 SEO – Simon (nach dem Live-Stellen am 23.11.2026)
+- [ ] Search Console: **Sitemaps** → `sitemap.xml` neu einreichen.
+- [ ] Search Console: **URL prüfen → Indexierung beantragen** für `/ratgeber/`, `/hausbau-checkliste/`,
+      `/baukosten/`, `/angebote-vergleichen/` und `/bautagebuch/`.
+- [ ] Nach 2–4 Wochen: Leistung → Suchanfragen als Screenshot an Claude, damit die Texte nachgeschärft werden.
+- [ ] Backlinks: planory.at in der Instagram-Bio, im App-Store-Eintrag, ehrlich in Bauherren-Foren.
+- [ ] Alle 1–2 Monate eine neue Ratgeber-Seite (Ideen in `marketing/SEO-KEYWORDS.md`, Liste C).
+
 ## ⭐ Nächstes iPhone-Update 1.4 – Anleitung: `NAECHSTER-BUILD-v1.4.md`
-- Im Web live (22.11.2026): Beträge mit Tausenderpunkt, KI-Hinweis einmal pro Konto, Esc/Enter, Rückgängig nach
-  Löschen, Suche über alles, Cursor im 1. Feld, Warnung beim Schließen. Kommt mit 1.4 aufs iPhone.
+- Im Web live (bis 23.11.2026): Beträge mit Tausenderpunkt, KI-Hinweis einmal pro Konto, Esc/Enter, Rückgängig nach
+  Löschen, Suche über alles, Cursor im 1. Feld, Warnung beim Schließen, Bautagebuch-Stunden, Gesamtbudget-Korrektur.
+  Kommt mit 1.4 aufs iPhone.
 - Vorher: RevenueCat-Produkte grün + richtige App/Offering prüfen (Anleitung Schritt 1).
 
 ## Geplant (v1.4)
