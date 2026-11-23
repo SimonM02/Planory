@@ -54,6 +54,20 @@
 <script>
 // Website (nicht in der App): Wer nicht angemeldet ist und planory.at normal öffnet, sieht die Startseite SOFORT –
 // nicht erst, wenn das ganze App-Programm geladen ist (Google misst diese Zeit). Gleiche Bedingungen wie showLanding().
+// Herkunft (erster Besuch): woher kommt jemand – Werbe-Link (?utm_source=instagram), Google, andere Seite oder direkt?
+// Wird nur im eigenen Gerätespeicher gemerkt und bei der Registrierung im Konto gespeichert. Keine Cookies, keine Tracker.
+try {
+  if (!localStorage.getItem('planory_herkunft')) {
+    const q = new URLSearchParams(location.search);
+    const kurz = v => String(v || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 40);
+    let quelle = kurz(q.get('utm_source')), weg = '';
+    try { const r = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : ''; if (r && !/(^|\.)planory\.at$/.test(r) && r !== location.hostname) weg = r; } catch (e) {}
+    if (!quelle && weg) quelle = /(^|\.)google\./.test(weg) ? 'google' : /instagram\.com$/.test(weg) ? 'instagram' : /facebook\.com$|fb\.me$/.test(weg) ? 'facebook' : /bing\.com$/.test(weg) ? 'bing' : /duckduckgo\.com$/.test(weg) ? 'duckduckgo' : kurz(weg);
+    if (!quelle && q.get('source') === 'pwa') quelle = 'web-app';
+    localStorage.setItem('planory_herkunft', JSON.stringify({ quelle: quelle || 'direkt', kampagne: kurz(q.get('utm_campaign')), medium: kurz(q.get('utm_medium')),
+      von: kurz(weg), seite: location.pathname.slice(0, 60), am: new Date().toISOString().slice(0, 10) }));
+  }
+} catch (e) {}
 window.__lpFrueh = false;
 try {
   const q = new URLSearchParams(location.search), h = location.hash || '';
@@ -16483,7 +16497,12 @@ async function doRegister() {
   const btn = document.getElementById('btn-register');
   btn.textContent = 'Konto erstellen…'; btn.disabled = true;
 
-  const { data, error } = await supa.auth.signUp({ email, password: pw1 });
+  // Herkunft (erster Besuch, siehe Kopf) automatisch im Konto merken – für die eigene Auswertung, wie Werbung wirkt
+  let herkunft = null;
+  try { herkunft = JSON.parse(localStorage.getItem('planory_herkunft') || 'null'); } catch (e) {}
+  if (isNativeApp()) { let pf = 'nativ'; try { pf = window.Capacitor.getPlatform() || pf; } catch (e) {}
+    herkunft = { ...(herkunft || {}), quelle: (herkunft && herkunft.quelle && herkunft.quelle !== 'direkt') ? herkunft.quelle : (pf === 'ios' ? 'iphone-app' : pf === 'android' ? 'android-app' : 'app') }; }
+  const { data, error } = await supa.auth.signUp({ email, password: pw1, options: herkunft ? { data: { herkunft } } : undefined });
   btn.textContent = 'Konto erstellen'; btn.disabled = false;
 
   if (error) {
