@@ -4141,6 +4141,43 @@ await scenario('Gesamtbudget = Summe der Kategorien – auch im Text an die KI (
 });
 
 
+await scenario('Herkunft automatisch: Instagram-Link (utm), Google (Referrer) und direkt werden beim ersten Besuch gemerkt und bei der Registrierung im Konto gespeichert', async () => {
+  const d = await boot();
+  try {
+    const p = d.page, f = [];
+    const lauf = async (url, referer) => {
+      await p.evaluate(() => { try { localStorage.removeItem('planory_herkunft'); } catch (e) {} });
+      await p.goto(url, referer ? { waitUntil: 'domcontentloaded', referer } : { waitUntil: 'domcontentloaded' });
+      await p.waitForFunction(() => typeof doRegister === 'function' && typeof supa !== 'undefined', null, { timeout: 15000 });
+      return p.evaluate(async () => {
+        const gemerkt = JSON.parse(localStorage.getItem('planory_herkunft') || 'null');
+        let gesendet = null;
+        supa.auth.signUp = async (a) => { gesendet = a; return { data: { user: null, session: null }, error: { message: 'test' } }; };
+        document.getElementById('reg-email').value = 'test@example.com';
+        document.getElementById('reg-password').value = 'geheim123';
+        document.getElementById('reg-password2').value = 'geheim123';
+        try { await doRegister(); } catch (e) {}
+        return { gemerkt, gesendet: gesendet && gesendet.options && gesendet.options.data && gesendet.options.data.herkunft };
+      });
+    };
+    const insta = await lauf('https://planory.test/index.html?demo=planory2025&utm_source=Instagram&utm_medium=paid&utm_campaign=Reel1');
+    if (!insta.gemerkt || insta.gemerkt.quelle !== 'instagram' || insta.gemerkt.kampagne !== 'reel1') f.push('Instagram nicht gemerkt: ' + JSON.stringify(insta.gemerkt));
+    if (!insta.gesendet || insta.gesendet.quelle !== 'instagram') f.push('Instagram nicht ans Konto: ' + JSON.stringify(insta.gesendet));
+    const google = await lauf('https://planory.test/index.html?demo=planory2025', 'https://www.google.at/');
+    if (!google.gemerkt || google.gemerkt.quelle !== 'google') f.push('Google nicht erkannt: ' + JSON.stringify(google.gemerkt));
+    const direkt = await lauf('https://planory.test/index.html?demo=planory2025');
+    if (!direkt.gemerkt || direkt.gemerkt.quelle !== 'direkt') f.push('direkt nicht erkannt: ' + JSON.stringify(direkt.gemerkt));
+    // erster Besuch zählt: ein späterer Besuch über Google überschreibt Instagram nicht
+    await p.evaluate(() => localStorage.setItem('planory_herkunft', JSON.stringify({ quelle: 'instagram' })));
+    await p.goto('https://planory.test/index.html?demo=planory2025', { waitUntil: 'domcontentloaded', referer: 'https://www.google.com/' });
+    const bleibt = await p.evaluate(() => JSON.parse(localStorage.getItem('planory_herkunft') || 'null'));
+    if (!bleibt || bleibt.quelle !== 'instagram') f.push('erster Besuch wurde überschrieben: ' + JSON.stringify(bleibt));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
