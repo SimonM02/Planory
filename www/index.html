@@ -5317,6 +5317,12 @@ function _rueckgaengigAusfuehren(rg) {
   return n;
 }
 
+// Gesamtbudget = Summe der Budget-Kategorien (wie überall angezeigt). Der Startwert aus dem Einrichten
+// (settings.budget) zählt nur, solange es noch keine Kategorien gibt.
+function _budgetGesamt() {
+  const kat = state.budgetKat || [];
+  return kat.length ? kat.reduce((s, k) => s + (k.budget || 0), 0) : (state.settings.budget || 0);
+}
 function saveAll() {
   // budgetKat wird jetzt ZEILENWEISE gespeichert (jede Kategorie eine eigene Zeile
   // in projekt_items – wie Rechnungen/Aufgaben). Deshalb bekommt jede Kategorie
@@ -9232,9 +9238,7 @@ function renderDashboard() {
   } catch(e) {}
   const total = state.kosten.reduce((s, k) => s + (_imBudget(k) ? parseFloat(k.betrag)||0 : 0), 0);
   // Immer die Summe der Budgetkategorien verwenden – identisch mit dem Budgetplan
-  const budget = state.budgetKat && state.budgetKat.length > 0
-    ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0)
-    : (state.settings.budget || 0);
+  const budget = _budgetGesamt();
   const remaining = budget - total;
   const done = state.meilensteine.filter(m => m.done).length;
   const all = state.meilensteine.length;
@@ -11116,7 +11120,7 @@ Alle generierten Daten MÜSSEN nach dem Projektstart liegen und realistisch vom 
 PROJEKTDATEN:
 - Typ: ${s.type || 'Neubau'}
 - Name: ${s.name || 'Bauprojekt'}
-- Gesamtbudget: ${fmt(s.budget || 0)}
+- Gesamtbudget: ${fmt(_budgetGesamt())}
 - Projektstart: ${startDate} ${startDate > todayStr ? `(in ${Math.round((new Date(startDate)-new Date())/(1000*60*60*24))} Tagen)` : '(bereits gestartet)'}
 ${endDate ? `- Geplantes Ende: ${endDate}` : '- Kein fixes Enddatum'}
 - Bereits ausgegeben: ${fmt(bezahlt)}
@@ -14436,7 +14440,7 @@ function renderKostenChart() {
     const sorted = [...paid].filter(k => !isNaN(new Date(k.datum))).sort((a,b) => new Date(a.datum)-new Date(b.datum));
     let cum = 0;
     const data = sorted.map(k => { cum += parseFloat(k.betrag)||0; return cum; });
-    const budget = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
+    const budget = _budgetGesamt();
     drawLineChart('cost-chart', sorted.map(k => fmtDate(k.datum)), data, tt('Kumulierte Kosten'), budget, th);
   } else {
     drawDoughnutChart('cost-cat-chart', kats, total, th);
@@ -14453,7 +14457,7 @@ function renderKostenChart() {
   // Kennzahlen
   const avg = paid.length ? total/paid.length : 0;
   const maxB = paid.reduce((m,k) => Math.max(m, parseFloat(k.betrag)||0), 0);
-  const budgetTotal = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
+  const budgetTotal = _budgetGesamt();
   const pct = budgetTotal > 0 ? total / budgetTotal * 100 : null;
   document.getElementById('cost-stats').innerHTML = [
     [tt('Gesamtausgaben'), fmt(total), true],
@@ -15907,7 +15911,7 @@ async function _mitLade(text, fn) { const l = _lade(text); try { return await fn
 // ──────────────── KI-BAUBERATER ────────────────
 function buildProjectSnapshot() {
   const paid = state.kosten.filter(_imBudget);
-  const totalBudget = (state.budgetKat && state.budgetKat.length > 0) ? state.budgetKat.reduce((s,k) => s + (k.budget||0), 0) : (state.settings.budget || 0);
+  const totalBudget = _budgetGesamt();
   const totalSpent  = paid.reduce((s,k) => s + (parseFloat(k.betrag)||0), 0);
   const budgetPct   = totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0;
   const doneMilestones = state.meilensteine.filter(m => m.done).length;

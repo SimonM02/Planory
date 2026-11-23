@@ -4113,6 +4113,34 @@ for (const [label, geraet] of [['Computer', { viewport: { width: 1280, height: 8
 }
 
 
+await scenario('Gesamtbudget = Summe der Kategorien – auch im Text an die KI (KI-Zeitplan), nicht der Startwert aus dem Einrichten', async () => {
+  const d = await boot();
+  try {
+    const r = await d.page.evaluate(async () => {
+      state.settings.budget = 1350000;
+      state.budgetKat = [{ id: 1, name: 'Rohbau', budget: 1000000 }, { id: 2, name: 'Einrichtung', budget: 428000 }];
+      let gesendet = '';
+      const alt = window.fetch;
+      window.fetch = async (url, opts) => {
+        if (String(url).includes('/api/ki')) { gesendet = (opts && opts.body) || ''; return new Response(JSON.stringify({ content: [{ text: '{"meilensteine":[],"phasen":[]}' }] }), { status: 200 }); }
+        return alt(url, opts);
+      };
+      try { await generateKIMeilensteine(); } catch (e) {}
+      await new Promise(res => setTimeout(res, 300));
+      window.fetch = alt;
+      return { gesamt: _budgetGesamt(), gesendet: gesendet.slice(0, 4000) };
+    });
+    const f = [];
+    if (r.gesamt !== 1428000) f.push('Summe ' + r.gesamt);
+    const zeile = (r.gesendet.match(/Gesamtbudget:[^\\]{0,40}/) || [''])[0], ziffern = zeile.replace(/\D/g, '');
+    if (!ziffern.startsWith('1428000')) f.push('KI bekommt nicht die Summe: ' + zeile);
+    if (ziffern.startsWith('1350000')) f.push('KI bekommt den alten Startwert');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+
+
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
 await browser.close();
