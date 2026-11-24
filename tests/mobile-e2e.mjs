@@ -4177,6 +4177,43 @@ await scenario('Herkunft automatisch: Instagram-Link (utm), Google (Referrer) un
   } finally { await d.ctx.close(); }
 });
 
+await scenario('Zur App: In der App registriert, Bestätigungslink in Safari geöffnet → Hinweis „zurück zur Planory-App“ (nur iPhone, nur ohne Herkunft)', async () => {
+  const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1';
+  const d = await boot({ userAgent: UA });
+  try {
+    const p = d.page, f = [];
+    await p.goto('https://planory.test/index.html#access_token=x&type=signup', { waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => typeof _zurAppNoetig === 'function', null, { timeout: 15000 });
+    const r = await p.evaluate(() => ({
+      ausApp: _zurAppNoetig({ user_metadata: {} }),
+      ausWeb: _zurAppNoetig({ user_metadata: { herkunft: { quelle: 'instagram' } } }) }));
+    if (!r.ausApp) f.push('App-Registrierung nicht erkannt');
+    if (r.ausWeb) f.push('Web-Registrierung fälschlich umgeleitet');
+    await p.evaluate(() => _zurAppZeigen());
+    const sichtbar = await p.locator('#zur-app').isVisible();
+    const text = await p.locator('#zur-app').innerText();
+    if (!sichtbar || !/Planory-App/.test(text)) f.push('Hinweis nicht sichtbar: ' + text);
+    if (await p.evaluate(() => _zurAppNoetig({ user_metadata: {} }))) f.push('Hinweis würde zweimal kommen');
+    await p.click('#zur-app-web');
+    if (await p.locator('#zur-app').count()) f.push('„Lieber im Browser weiter“ schließt nicht');
+    // ohne Bestaetigungslink: nie
+    await p.goto('https://planory.test/index.html', { waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => typeof _zurAppNoetig === 'function', null, { timeout: 15000 });
+    if (await p.evaluate(() => _zurAppNoetig({ user_metadata: {} }))) f.push('ohne Bestätigungslink umgeleitet');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+    return f.join(' · ');
+  } finally { await d.ctx.close(); }
+});
+await scenario('Zur App: am Computer oder Android kein Hinweis', async () => {
+  const d = await boot({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0 Mobile Safari/537.36' });
+  try {
+    const p = d.page;
+    await p.goto('https://planory.test/index.html#access_token=x&type=signup', { waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => typeof _zurAppNoetig === 'function', null, { timeout: 15000 });
+    return (await p.evaluate(() => _zurAppNoetig({ user_metadata: {} }))) ? 'Android fälschlich umgeleitet' : '';
+  } finally { await d.ctx.close(); }
+});
+
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();

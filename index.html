@@ -71,7 +71,8 @@ try {
 window.__lpFrueh = false;
 try {
   const q = new URLSearchParams(location.search), h = location.hash || '';
-  const web = /^https?:$/.test(location.protocol) && location.hostname !== 'localhost';
+  window.__ausBestaetigung = /type=signup/.test(h);   // Link aus der Bestaetigungs-E-Mail (Supabase leert den Hash spaeter)
+  const web =/^https?:$/.test(location.protocol) && location.hostname !== 'localhost';
   const start = location.pathname === '/' || location.pathname === '/index.html';
   const app = (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches)) || navigator.standalone === true;
   const angemeldet = !!localStorage.getItem('sb-savrxykygruzyngttekl-auth-token');
@@ -16576,6 +16577,40 @@ function showForgotPassword() {
   });
 }
 
+// In der iPhone-App registriert, Bestaetigungslink aber in Safari geoeffnet -> zurueck in die App schicken
+// (dort startet der Gratismonat ueber Apple). Erkennung: Bestaetigungslink + iPhone/iPad-Browser + keine
+// Herkunft im Konto (das Web schickt sie bei jeder Registrierung mit, die App erst ab 1.4).
+function _zurAppNoetig(user) {
+  if (!window.__ausBestaetigung || _demoMode || isNativeApp()) return false;
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  return ios && !user?.user_metadata?.herkunft;
+}
+function _zurAppZeigen() {
+  window.__ausBestaetigung = false;
+  if (document.getElementById('zur-app')) return;
+  const en = (_lang === 'en');
+  const el = document.createElement('div');
+  el.id = 'zur-app';
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  el.style.cssText = 'position:fixed;inset:0;z-index:10050;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;padding-top:calc(24px + env(safe-area-inset-top))';
+  el.innerHTML = `<div style="max-width:380px;width:100%;text-align:center">
+    <div style="font-size:2.6rem;margin-bottom:10px">✅</div>
+    <h2 style="font-size:1.35rem;margin:0 0 10px;color:var(--text)">${en ? 'Email confirmed!' : 'E-Mail bestätigt!'}</h2>
+    <p style="color:var(--text2);font-size:0.95rem;line-height:1.5;margin:0 0 22px">${en
+      ? 'Now go back to the <strong>Planory app</strong> and log in there – you can start your free month easily with Apple.'
+      : 'Geh jetzt zurück in die <strong>Planory-App</strong> und melde dich dort an – dort startest du den Gratismonat ganz einfach über Apple.'}</p>
+    <button type="button" class="btn btn-primary" id="zur-app-knopf" style="width:100%;padding:14px;font-size:1rem" onclick="_zurAppOeffnen()">${en ? 'Open the Planory app' : 'Zur Planory-App'}</button>
+    <button type="button" id="zur-app-web" style="margin-top:16px;background:none;border:none;color:var(--text3);font-size:0.85rem;text-decoration:underline;cursor:pointer" onclick="document.getElementById('zur-app')?.remove()">${en ? 'Continue in the browser instead' : 'Lieber im Browser weiter'}</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+async function _zurAppOeffnen() {
+  let url = 'https://apps.apple.com/at/search?term=Planory%20Bauassistent';
+  try { const r = await fetch(API_BASE + '/api/app-version'); const d = await r.json(); if (d?.url || d?.id) url = d.url || `https://apps.apple.com/app/id${d.id}`; } catch (e) {}
+  location.href = url;   // App-Store-Seite: dort „Öffnen“, falls die App installiert ist
+}
+
 async function onAuthSuccess(user, isNewUser = false) {
   try { _tdReset(); } catch (e) {}
   currentUser = user;
@@ -16625,6 +16660,8 @@ async function onAuthSuccess(user, isNewUser = false) {
   // Check onboarding: use cloud flag OR isNewUser OR no projects loaded
   const hasProjects = projects.length > 0 && projects[0].settings.name !== 'Mein erstes Projekt' && projects[0].settings.name !== 'Neues Projekt';
   const hasOnboarded = cloudData?.onboarded || (!isNewUser && hasProjects);
+
+  if (_zurAppNoetig(user)) _zurAppZeigen();
 
   if (!hasOnboarded) {
     showOnboarding();

@@ -3,6 +3,14 @@
 **Stand 22.11.2026:** Alle neuen Funktionen sind im Web live und getestet. Für das iPhone-Update braucht es
 diese Datei, der Reihe nach abgearbeitet. Dauer insgesamt ca. 45 Minuten, plus Wartezeit bei Apple.
 
+> **Vor dem Build noch einbauen (Claude, 24.11.2026):** Wer sich in der App registriert, öffnet den
+> Bestätigungslink in Safari und landet dann auf der Website (Web-Abo statt Apple). Im Web gibt es dafür
+> seit 24.11. den Hinweis „Zurück zur Planory-App“. Für 1.4 außerdem:
+> (1) In der App beim `signUp` den Wert `emailRedirectTo` auf eine Seite setzen, die nur „Bestätigt – zurück
+> zur App“ zeigt (vorher in Supabase › Auth › URL Configuration als erlaubte Adresse eintragen).
+> (2) Sobald die App wieder offen ist (`appStateChange` aktiv), meldet sie sich selbst mit den Daten aus der
+> Registrierung an, solange „Bestätige deine E-Mail“ angezeigt wird. Dann muss man nichts mehr eintippen.
+
 ---
 
 ## Schritt 1 – RevenueCat prüfen (Browser, ca. 5 Min.) – WICHTIG
