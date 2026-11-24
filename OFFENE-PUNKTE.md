@@ -262,6 +262,13 @@ abo-api 10/10).
       erinnert die App daran, was damals war (Titel, Foto, Datum). Ein Tipp öffnet den Eintrag. In den
       Einstellungen **ein-/ausschaltbar**. Als Kärtchen auf der Startseite und optional als Mitteilung.
       Noch nicht umsetzen.
+- [ ] **Idee (24.11.2026) – „Mein Haus“-Abo nach dem Bau:** Ansehen + PDF-Export bleibt nach dem Abo
+      immer gratis (Vertrauen, DSGVO). Optional ein günstiges Abo (ca. 1,99 €/Monat oder 14,99 €/Jahr) mit
+      Wartungsplan + Erinnerungen, Gewährleistungsfristen, Dokumenten/Plänen und Mängeln – ohne die
+      Bau-Funktionen. Erst angehen, wenn die ersten Projekte fertig sind (ca. 6–12 Monate).
+- [ ] **Idee (24.11.2026) – Löschregel für alte Konten:** Daten 3 Jahre nach dem letzten Login löschen,
+      vorher 2 Erinnerungs-E-Mails (mit Hinweis auf den PDF-Export). Regel in AGB + Datenschutz aufnehmen.
+      Erst nötig bei einigen hundert inaktiven Konten (Stand 24.11.: 0,12 GB von 100 GB im Supabase-Pro-Abo).
 - [ ] **Projekt teilen** (Info, nach „Profile“): eigenes Login je Person, Besitzer lädt per E-Mail
       ein (Bearbeiten/Ansehen), ein Abo fürs Projekt (Apple-Familienfreigabe fürs Abo möglich).
       Großer Umbau von Datenbank-Rechten, Abgleich und Abo.
