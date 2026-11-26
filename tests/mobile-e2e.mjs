@@ -4214,6 +4214,62 @@ await scenario('Zur App: am Computer oder Android kein Hinweis', async () => {
   } finally { await d.ctx.close(); }
 });
 
+await scenario('Nach dem Start-Assistenten: erst die eigene Übersicht mit Hinweis-Balken, Abo-Fenster beim ersten Eintragen oder nach kurzer Zeit', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    await alsKonto(d.page, '2026-11-20T08:00:00Z', null);
+    const r = await d.page.evaluate(async () => {
+      const offen = () => document.getElementById('probeabo-overlay').classList.contains('open');
+      const balken = () => !!document.getElementById('schnupper-balken');
+      window._userPlan = 'ohneAbo'; _probeaboSchliessen();
+      window.__schnupperMs = 400;
+      _schnupperStart();
+      _probeaboPruefen();
+      const a = { offen: offen(), balken: balken(), text: document.getElementById('schnupper-balken')?.textContent || '' };
+      const erlaubt = requireSub();              // erster Eintrage-Versuch
+      const b = { erlaubt, offen: offen(), balken: balken() };
+      _probeaboSchliessen(); _schnupperStart();
+      await new Promise(r => setTimeout(r, 700));
+      const c = { offen: offen(), balken: balken() };
+      return { a, b, c };
+    });
+    if (r.a.offen || !r.a.balken || !/Das ist dein Projekt/.test(r.a.text)) f.push('Vorschau: ' + JSON.stringify(r.a));
+    if (r.b.erlaubt || !r.b.offen || r.b.balken) f.push('Eintragen nicht gesperrt: ' + JSON.stringify(r.b));
+    if (!r.c.offen || r.c.balken) f.push('Abo-Fenster kommt nicht von selbst: ' + JSON.stringify(r.c));
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
+await scenario('Abo-Fenster: eigenes Budget, 3 App-Bilder und Zeitleiste „Heute frei – erst dann zahlen“', async () => {
+  const d = await boot();
+  const f = [];
+  try {
+    await alsKonto(d.page, '2026-11-20T08:00:00Z', null);
+    const r = await d.page.evaluate(async () => {
+      state.budgetKat = [{ id: 1, name: 'Rohbau', budget: 300000 }, { id: 2, name: 'Dach', budget: 180000 }];
+      window._userPlan = 'ohneAbo'; await openProbeabo();
+      const box = document.getElementById('probeabo-inhalt');
+      return { budget: box.querySelector('.pa-budget')?.textContent || '', bilder: box.querySelectorAll('.pa-bilder img').length,
+        zeit: (box.querySelector('.pa-zeit')?.textContent || '').replace(/\s+/g, ' ').trim(), recht: document.getElementById('pa-recht').textContent };
+    });
+    if (!/480\.000\s€ in 2 Kategorien/.test(r.budget)) f.push('Budget-Zeile: ' + r.budget);
+    if (r.bilder !== 3) f.push('App-Bilder: ' + r.bilder);
+    if (!/Heute.*Alle Funktionen frei.*30 Tage später.*Erst dann 28,99 € pro Jahr.*Jederzeit/.test(r.zeit)) f.push('Zeitleiste: ' + r.zeit);
+    if (!/AGB|Widerruf/.test(r.recht)) f.push('Rechtstext fehlt');
+    if (process.env.SHOT) await d.page.screenshot({ path: process.env.SHOT });
+    await d.page.evaluate(() => _paWahl('monat'));
+    const z2 = await d.page.evaluate(() => document.querySelector('.pa-zeit')?.textContent || '');
+    if (!/3,99 € pro Monat/.test(z2)) f.push('Zeitleiste Monat: ' + z2);
+    // ohne Budget keine Budget-Zeile
+    const ohne = await d.page.evaluate(async () => { state.budgetKat = []; _paRender(); return !!document.querySelector('.pa-budget'); });
+    if (ohne) f.push('Budget-Zeile ohne Budget');
+    if (d.errors.length) f.push('JS-Fehler: ' + d.errors[0]);
+  } finally { await d.ctx.close(); }
+  return f.join(' · ');
+});
+
 
 if (errors.length) results.push([false, 'Keine JavaScript-Fehler', errors.slice(0, 3).join(' · '), 0]);
 await ctx.close();
