@@ -314,6 +314,29 @@ await scenario('D: Gelöschte Ausgabe kommt nach dem Neuladen nicht zurück', as
   } finally { await ctx.close(); }
 });
 
+await scenario('F: Unveränderter Eintrag ohne Änderungsmarke behält beim Abgleich sein altes Datum', async () => {
+  const { ctx, page } = await boot(browser, {}, { seed: [['gantt', { id: 777001, name: 'KI-Abschnitt', type: 'phase', start: '2027-01-01', end: '2027-02-01', status: 'Offen' }]] });
+  try {
+    await waitFor(page, () => typeof _cloudLoadedOk !== 'undefined' && _cloudLoadedOk && window._userPlan === 'pro');
+    const ALT = '2026-09-20T17:00:00.000Z';
+    await page.evaluate(async alt => {
+      const r = window.__fakeDb.projekt_items.find(x => x.item_type === 'gantt' && x.item_id === '777001');
+      delete r.payload._updatedAt; r.updated_at = alt;
+      await loadFromCloud();
+    }, ALT);
+    await ausgabe(page, 'Andere Änderung', 50);      // loest einen kompletten Abgleich aus
+    await settle(page, 3500);
+    const p = [];
+    const nach1 = await page.evaluate(() => window.__fakeDb.projekt_items.find(x => x.item_type === 'gantt' && x.item_id === '777001').updated_at);
+    if (Date.parse(nach1) !== Date.parse(ALT)) p.push('unveränderter Eintrag bekam neues Datum: ' + nach1);
+    await page.evaluate(() => { const g = state.gantt.find(x => String(x.id) === '777001'); g.name = 'Geändert'; g._updatedAt = Date.now(); save(); });
+    await settle(page, 3500);
+    const nach2 = await page.evaluate(() => window.__fakeDb.projekt_items.find(x => x.item_type === 'gantt' && x.item_id === '777001'));
+    if (Date.parse(nach2.updated_at) <= Date.parse(ALT) || nach2.payload.name !== 'Geändert') p.push('Änderung nicht übernommen: ' + JSON.stringify(nach2));
+    return p.join(' · ');
+  } finally { await ctx.close(); }
+});
+
 // E) Rechnung scannen: KI liefert Betraege als deutschen Text bzw. der Server meldet Fehler
 async function scan(page, kiResponse, { pdf = false, gross = false } = {}) {
   page.__kiHandler = route => route.fulfill(kiResponse);

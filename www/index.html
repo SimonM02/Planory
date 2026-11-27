@@ -13224,7 +13224,7 @@ function saveGanttItem() {
     const idx = state.gantt.findIndex(g => String(g.id) === String(editId));
     if (idx > -1) state.gantt[idx] = { ...state.gantt[idx], ...item, _updatedAt: Date.now() };   // eingeklappt/Zeitstempel behalten
   } else {
-    state.gantt.push(item);
+    state.gantt.push({ ...item, _updatedAt: Date.now() });
   }
   save(); closeModal('modal-gantt'); resetGanttModal();
   showToast(editId ? '✏️ Phase aktualisiert' : '✅ Phase gespeichert', 'success');
@@ -17468,6 +17468,12 @@ async function loadFromCloud() {
 
     const cloudMeta    = metaResult.data?.daten;
     const itemRows     = itemsResult.data || [];
+    // Eintraege ohne eigene Aenderungsmarke (z. B. vom KI-Zeitplan) bekommen das Cloud-Datum als Marke.
+    // Sonst erhielten sie bei jedem Abgleich „jetzt“ als Datum und wirkten wie neu eingetragen.
+    for (const r of itemRows) {
+      const t = Date.parse(r.updated_at);
+      if (r.payload && typeof r.payload === 'object' && !r.payload._updatedAt && isFinite(t)) r.payload._updatedAt = t;
+    }
     const itemsHaveData = itemRows.length > 0;
 
     // ── Migration: first run after update ──────────────────────────
